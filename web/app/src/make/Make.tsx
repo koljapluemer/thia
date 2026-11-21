@@ -5,11 +5,13 @@ import { registry } from 'virtual:gestalts-plugins/workshop';
 import { RepoProvider, useHostQuery, type Repo } from '@gestalts/client';
 import { ConnectorSettings } from '@gestalts/host';
 import type { ViewError } from '@gestalts/view';
-import { Chat, Preview, VIEWS, asDraft, bridgeBackend, createDraft, type Draft } from '@gestalts/workshop';
+import { Chat, Preview, VIEWS, asDraft, bridgeBackend, createDraft, loadMembers, type Draft } from '@gestalts/workshop';
 import css from '../app.css?inline';
 import { useDrafts } from '../drafts';
 import { AGENT_NODE, HOME_NODE } from '../nodes';
 import { Areas } from '../router';
+import { SubmitMenu, snapshotOf } from '../submit';
+import * as api from '../teach/api';
 
 /**
  * The learning workshop: views vibecoded into drafts (`view@2` ymls and their members, `@gestalts/workshop`), each run
@@ -17,6 +19,14 @@ import { Areas } from '../router';
  * through the Claude bridge, with the workshop's check run here.
  */
 const SELECTED = 'workshop:view';
+
+/** The draft as it is now: its view yml and its members, with the blobs they use, for the public site. */
+async function submitView(repo: Repo, draft: Draft, offer: api.Offer) {
+  const view = await repo.get(draft.id);
+  if (!view) throw new Error('the draft is gone');
+  const snapshot = await snapshotOf(repo, [view, ...(await loadMembers(repo, draft))]);
+  return api.upload({ ...offer, source: `make:${draft.id}`, ...snapshot });
+}
 
 export function Make() {
   const { repo, error } = useDrafts();
@@ -66,6 +76,7 @@ function Shell({ repo }: { repo: Repo }) {
     <>
       <header className="navbar min-h-0 gap-2 bg-base-100 px-4 py-1 shadow-sm">
         <span className="flex-1 truncate text-sm font-medium text-base-content/70">{current?.title ?? 'Make a learning view'}</span>
+        {current && <SubmitMenu key={current.id} source={`make:${current.id}`} send={(offer) => submitView(repo, current, offer)} />}
         <details className="dropdown dropdown-end">
           <summary className="btn btn-sm btn-ghost btn-square" title="Sync settings"><Settings className="size-4" /></summary>
           <div className="dropdown-content z-50 mt-2 rounded-box border border-base-300 bg-base-100 p-3 shadow"><ConnectorSettings defaultUrl={HOME_NODE} /></div>

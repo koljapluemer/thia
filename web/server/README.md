@@ -2,7 +2,8 @@
 
 Teachers make interactive lessons with an agent and publish them to their students by link. The app is the web
 app's `/teach` ([`../app`](../app)); the server is this folder (`gestalts-teacher`), with its worker
-in `worker/`; lessons open in `web/player` on another domain. See
+in `worker/`; lessons open on another domain, in the public site's build (`web/site`). It also queues what the
+workshops offer for the public site, for review. See
 [`doc/architecture.md`](doc/architecture.md) and, for the box, [`deploy/`](deploy/README.md).
 
 Locally, `mise run just dev` runs it all, with the server's agent if `ANTHROPIC_API_KEY` is set; `mise run just setup`
@@ -10,8 +11,8 @@ made a teacher account (`teacher-data/dev-login.txt`). Piece by piece, from the 
 
 ```sh
 mise run teacher:admin add-school "Test"                          # prints its id
-mise run teacher:admin add-teacher --school <id> --email a@b.c    # prints a password
-ANTHROPIC_API_KEY=… mise run teacher:serve                        # API on :7740, lessons on :7741
+mise run teacher:admin add-teacher --school <id> --email a@b.c    # prints a password; --admin: reviews submissions
+ANTHROPIC_API_KEY=… mise run teacher:serve                        # API on :7740, lessons on :7741; accepts into this checkout
 mise run web:dev                                                  # the app; /teach, /api from :7740
 ```
 

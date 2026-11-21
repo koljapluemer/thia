@@ -1,0 +1,22 @@
+# The public site: every view in it, each opened on one of its decks, for anyone, without signing in. Workshop results
+# accepted in review are added here (web/server, promote.rs). Its models are also what teachers' lessons, played under
+# /l/<lesson>, may read besides the core's and their own: a superset of the teacher app's (checked).
+id: site
+# every view loads only what the build bundled: nothing from elsewhere at run time
+pinned_npm: true
+plugins:
+  - ../../plugins/alphabet-pronunciation-trainer
+  - ../../plugins/phrasebook
+  - ../../plugins/math-drills
+  - ../../plugins/world-map
+  - ../../plugins/flags-practice
+  - ../../plugins/vietnamese-typing-practice
+  - ../../plugins/vizint
+models:
+  - ../../gestalts/media
+  - ../../gestalts/geography
+  - ../../gestalts/typing
+  - ../../gestalts/viz
+# as in the web app (web/app/distributions/home.yml): only for our own views, which load nothing at run time
+grants:
+  phrasebook: [same-origin, microphone]

@@ -1,5 +1,5 @@
-# The user's own data, in this browser: notes (/notes, every installed plugin), learning (/learn, the plugins tagged
-# `learning`) and visualizations (/viz). `id` is gestalter's, for good: tabs are kept per distribution. `core` plugins
+# The user's own data, in this browser: notes (/notes), with every installed plugin, the learning views and vizint
+# among them. `id` is gestalter's, for good: tabs are kept per distribution. `core` plugins
 # are always there; `plugins` can be installed and uninstalled. Paths are from this file.
 id: gestalter
 core:

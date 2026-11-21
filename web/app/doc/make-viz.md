@@ -28,3 +28,9 @@ There is no chat; to change a viz, change its spec and build again.
 
 `mise run check` runs the same check on `@gestalts/viz`'s examples in Node, without the render
 (`packages/check/src/check.test.ts`).
+
+## The public site
+
+Once a viz is built, the **Public site** menu offers it for review: the viz yml with its page, still and files
+(`src/submit.tsx`). Accepted, it becomes a deck of `vizint` and an entry on the public site
+([`doc/architecture/publishing.md`](../../../doc/architecture/publishing.md)).

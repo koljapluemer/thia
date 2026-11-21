@@ -26,15 +26,18 @@ pub mod db;
 pub mod drafts;
 pub mod lessons;
 pub mod npm;
+pub mod promote;
 pub mod publish;
+pub mod submissions;
 pub mod validate;
 pub mod worker;
 
 /// The repo's `gestalts/`, for the model packages a draft may use besides the core's.
 static GESTALTS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../../gestalts");
 
-/// The model packages teachers' views may read: the teacher app's and the player's `models:`, always the same.
-pub const MODELS: &[&str] = &["geography", "typing"];
+/// The model packages teachers' views may read, and submissions are checked against: the teacher app's `models:`,
+/// always the same, and all of them on the public site.
+pub const MODELS: &[&str] = &["geography", "typing", "viz"];
 
 /// The definitions of model packages, as YAML texts.
 pub fn model_texts(packages: &[&str]) -> Result<Vec<String>, String> {
@@ -96,6 +99,8 @@ pub struct Inner {
     /// where lesson links point: the lesson domain, as students reach it
     pub lesson_origin: String,
     pub misses: lessons::Misses,
+    /// the repo checkout accepted submissions are written into; none on a box that only queues them
+    pub promote_into: Option<PathBuf>,
 }
 
 /// What the server runs besides itself.
@@ -103,6 +108,7 @@ pub struct Services {
     pub worker: worker::WorkerConfig,
     pub model: agent::Model,
     pub lesson_origin: String,
+    pub promote_into: Option<PathBuf>,
 }
 
 #[derive(Clone)]
@@ -134,6 +140,7 @@ impl AppState {
             agents,
             lesson_origin: services.lesson_origin,
             misses: lessons::Misses::default(),
+            promote_into: services.promote_into,
         })))
     }
 }
@@ -142,6 +149,8 @@ impl AppState {
 #[derive(Debug)]
 pub enum ApiError {
     Unauthorized,
+    /// signed in, but not allowed
+    Forbidden,
     NotFound,
     BadRequest(String),
     /// written ymls that aren't valid, each with why
@@ -162,6 +171,7 @@ impl IntoResponse for ApiError {
         }
         let (status, error, problems) = match self {
             ApiError::Unauthorized => (StatusCode::UNAUTHORIZED, "not signed in".into(), vec![]),
+            ApiError::Forbidden => (StatusCode::FORBIDDEN, "not allowed".into(), vec![]),
             ApiError::NotFound => (StatusCode::NOT_FOUND, "not found".into(), vec![]),
             ApiError::BadRequest(m) => (StatusCode::BAD_REQUEST, m, vec![]),
             ApiError::Invalid(p) => (StatusCode::UNPROCESSABLE_ENTITY, "not valid".into(), p),
@@ -218,7 +228,7 @@ pub fn now_iso() -> String {
 
 /// The app's routes, under `/api`.
 pub fn app(state: AppState) -> axum::Router {
-    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes())).with_state(state)
+    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(submissions::routes())).with_state(state)
 }
 
 /// The lesson domain's routes.

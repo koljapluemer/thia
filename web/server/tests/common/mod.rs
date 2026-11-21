@@ -22,6 +22,7 @@ pub fn services(model: Option<String>, cache: &std::path::Path) -> Services {
         worker: WorkerConfig { node: "node".into(), script: repo.join("web/server/worker/worker.ts"), template: repo.join("packages/workshop/agent-template"), npm_cache: cache.to_owned() },
         model: Model { api_key: model.as_ref().map(|_| "test-key".into()), base_url: model.unwrap_or_default(), model: "claude-opus-5-5".into() },
         lesson_origin: "https://lessons.example".into(),
+        promote_into: None,
     }
 }
 
@@ -31,13 +32,25 @@ impl Server {
     }
 
     pub fn with_model(limits: Limits, model: Option<String>) -> Self {
+        Self::build(limits, model, None)
+    }
+
+    /// One that accepts submissions into the checkout at `repo`.
+    pub fn promoting_into(repo: &std::path::Path) -> Self {
+        Self::build(Limits::default(), None, Some(repo.to_owned()))
+    }
+
+    fn build(limits: Limits, model: Option<String>, promote_into: Option<std::path::PathBuf>) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let db = Db::memory().unwrap();
         db.add_school("s1", "A school", "2026-11-20T00:00:00Z").unwrap();
         for (id, email) in [("a1", "ada@school.example"), ("a2", "bea@school.example")] {
             db.add_account(id, "s1", email, &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
         }
-        let state = AppState::new(db, dir.path().to_owned(), limits, true, services(model, &dir.path().join("npm-cache"))).unwrap();
+        // bea reviews
+        db.set_admin("bea@school.example", true).unwrap();
+        let services = Services { promote_into, ..services(model, &dir.path().join("npm-cache")) };
+        let state = AppState::new(db, dir.path().to_owned(), limits, true, services).unwrap();
         Server { state, _dir: dir }
     }
 

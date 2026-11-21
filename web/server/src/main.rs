@@ -42,6 +42,10 @@ enum Command {
         /// the lesson domain as students reach it, for links
         #[arg(long, env = "TEACHER_LESSON_ORIGIN", default_value = "http://127.0.0.1:7741")]
         lesson_origin: String,
+        /// a repo checkout to write accepted submissions into (plugins/, gestalts/, the site's distribution); without
+        /// it, submissions queue up and can only be rejected here
+        #[arg(long, env = "TEACHER_PROMOTE_INTO")]
+        promote_into: Option<PathBuf>,
     },
     /// Schools and accounts
     Admin {
@@ -60,15 +64,26 @@ enum Admin {
         school: String,
         #[arg(long)]
         email: String,
+        /// may review submissions for the public site
+        #[arg(long)]
+        admin: bool,
+    },
+    /// Lets an account review submissions for the public site, or (--revoke) no longer
+    #[command(name = "grant-admin")]
+    Grant {
+        email: String,
+        #[arg(long)]
+        revoke: bool,
     },
     /// A new password for a teacher, signing them out everywhere; prints it
     ResetPassword {
         #[arg(long)]
         email: String,
     },
-    /// A player build (web/player/dist) under runtime/<its version>/, for the lessons made against it; prints the version
+    /// A build of the site (web/site/dist), which plays lessons, under runtime/<its version>/, for the lessons made
+    /// against it; prints the version
     InstallPlayer {
-        #[arg(long, default_value = "web/player/dist")]
+        #[arg(long, default_value = "web/site/dist")]
         dist: PathBuf,
     },
 }
@@ -94,14 +109,22 @@ async fn run(cli: Cli) -> Result<(), String> {
                     db.add_school(&id, &name, &now).map_err(|e| e.to_string())?;
                     println!("{id}");
                 }
-                Admin::AddTeacher { school, email } => {
+                Admin::AddTeacher { school, email, admin } => {
                     if !db.school_exists(&school).map_err(|e| e.to_string())? {
                         return Err(format!("no school {school}"));
                     }
                     let password = random_token(12);
                     let email = email.trim().to_lowercase();
                     db.add_account(&random_hex(8), &school, &email, &auth::hash_password(&password), limits.token_budget, &now).map_err(|e| e.to_string())?;
+                    if admin {
+                        db.set_admin(&email, true).map_err(|e| e.to_string())?;
+                    }
                     println!("{password}");
+                }
+                Admin::Grant { email, revoke } => {
+                    if !db.set_admin(&email.trim().to_lowercase(), !revoke).map_err(|e| e.to_string())? {
+                        return Err(format!("no account {email}"));
+                    }
                 }
                 Admin::InstallPlayer { dist } => {
                     let meta = std::fs::read_to_string(dist.join("gestalts-runtime.json")).map_err(|e| format!("{}: {e}: build the player first", dist.display()))?;
@@ -120,7 +143,7 @@ async fn run(cli: Cli) -> Result<(), String> {
             }
             Ok(())
         }
-        Command::Serve { app, lessons, insecure_cookies, repo, node, model, lesson_origin } => {
+        Command::Serve { app, lessons, insecure_cookies, repo, node, model, lesson_origin, promote_into } => {
             let repo = std::fs::canonicalize(&repo).map_err(|e| format!("{}: {e}", repo.display()))?;
             let services = Services {
                 worker: WorkerConfig {
@@ -135,6 +158,7 @@ async fn run(cli: Cli) -> Result<(), String> {
                     model,
                 },
                 lesson_origin,
+                promote_into: promote_into.map(|p| std::fs::canonicalize(&p).map_err(|e| format!("{}: {e}", p.display()))).transpose()?,
             };
             if services.model.api_key.is_none() {
                 eprintln!("no ANTHROPIC_API_KEY: the agent is off");

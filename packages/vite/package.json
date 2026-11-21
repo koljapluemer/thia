@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "yaml": "2.8.1",
+    "@gestalts/npm-bundle": "workspace:*",
     "@gestalts/view": "workspace:*"
   },
   "peerDependencies": {

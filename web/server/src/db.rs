@@ -68,6 +68,30 @@ const MIGRATIONS: &[&str] = &[r"
         cache_write_tokens INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX turns_by_account ON turns(account, started);
+", r"
+    -- reviews submissions and accepts them into the public site
+    ALTER TABLE accounts ADD COLUMN admin INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE submissions (
+        id TEXT PRIMARY KEY,
+        -- what it holds: `view` (a view@2 and its members) or `viz` (a viz@1)
+        kind TEXT NOT NULL,
+        account TEXT NOT NULL REFERENCES accounts(id),
+        -- what it was made from, as `<workshop>:<draft id>`: a later submission of the same updates what was accepted
+        source TEXT NOT NULL,
+        title TEXT NOT NULL,
+        about TEXT NOT NULL,
+        -- how the submitter wants to be credited, if at all
+        credit TEXT,
+        created TEXT NOT NULL,
+        -- pending, accepted or rejected
+        status TEXT NOT NULL DEFAULT 'pending',
+        decided TEXT,
+        -- the reviewer's note to the submitter
+        note TEXT,
+        -- where accepting put it in the repo: `plugins/<id>` or `plugins/vizint/decks/<deck>`
+        promoted TEXT
+    );
+    CREATE INDEX submissions_by_account ON submissions(account, created);
 "];
 
 pub struct Db(Mutex<Connection>);
@@ -78,6 +102,7 @@ pub struct Account {
     pub school: String,
     pub email: String,
     pub token_budget: i64,
+    pub admin: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -147,6 +172,10 @@ impl Db {
             .map(drop)
     }
 
+    pub fn set_admin(&self, email: &str, admin: bool) -> Result<bool, Error> {
+        self.conn().execute("UPDATE accounts SET admin = ?2 WHERE email = ?1", params![email, admin]).map(|n| n == 1)
+    }
+
     pub fn set_password(&self, email: &str, password_hash: &str) -> Result<bool, Error> {
         let conn = self.conn();
         let n = conn.execute("UPDATE accounts SET password = ?2 WHERE email = ?1", params![email, password_hash])?;
@@ -159,9 +188,9 @@ impl Db {
     pub fn account_by_email(&self, email: &str) -> Result<Option<(Account, Option<String>)>, Error> {
         self.conn()
             .query_row(
-                "SELECT id, school, email, token_budget, password FROM accounts WHERE email = ?1 AND disabled IS NULL",
+                "SELECT id, school, email, token_budget, admin, password FROM accounts WHERE email = ?1 AND disabled IS NULL",
                 [email],
-                |r| Ok((Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)? }, r.get(4)?)),
+                |r| Ok((Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)? }, r.get(5)?)),
             )
             .optional()
     }
@@ -178,10 +207,10 @@ impl Db {
     pub fn session(&self, token_hash: &str, now: &str) -> Result<Option<Account>, Error> {
         self.conn()
             .query_row(
-                "SELECT a.id, a.school, a.email, a.token_budget FROM sessions s JOIN accounts a ON a.id = s.account
+                "SELECT a.id, a.school, a.email, a.token_budget, a.admin FROM sessions s JOIN accounts a ON a.id = s.account
                  WHERE s.token_hash = ?1 AND s.expires > ?2 AND a.disabled IS NULL",
                 params![token_hash, now],
-                |r| Ok(Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)? }),
+                |r| Ok(Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)? }),
             )
             .optional()
     }
@@ -297,4 +326,85 @@ impl Db {
             |r| r.get(0),
         )
     }
+
+    pub fn add_submission(&self, s: &Submission) -> Result<(), Error> {
+        self.conn()
+            .execute(
+                "INSERT INTO submissions (id, kind, account, source, title, about, credit, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                params![s.id, s.kind, s.account, s.source, s.title, s.about, s.credit, s.created],
+            )
+            .map(drop)
+    }
+
+    const SUBMISSION: &str = "SELECT s.id, s.kind, s.account, a.email, s.source, s.title, s.about, s.credit, s.created, s.status, s.decided, s.note, s.promoted
+        FROM submissions s JOIN accounts a ON a.id = s.account";
+
+    fn submission_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Submission> {
+        Ok(Submission {
+            id: r.get(0)?,
+            kind: r.get(1)?,
+            account: r.get(2)?,
+            email: r.get(3)?,
+            source: r.get(4)?,
+            title: r.get(5)?,
+            about: r.get(6)?,
+            credit: r.get(7)?,
+            created: r.get(8)?,
+            status: r.get(9)?,
+            decided: r.get(10)?,
+            note: r.get(11)?,
+            promoted: r.get(12)?,
+        })
+    }
+
+    pub fn submission(&self, id: &str) -> Result<Option<Submission>, Error> {
+        self.conn().query_row(&format!("{} WHERE s.id = ?1", Self::SUBMISSION), [id], Self::submission_row).optional()
+    }
+
+    /// Every submission, newest first: the review queue.
+    pub fn submissions(&self) -> Result<Vec<Submission>, Error> {
+        let conn = self.conn();
+        let mut q = conn.prepare(&format!("{} ORDER BY s.created DESC", Self::SUBMISSION))?;
+        q.query_map([], Self::submission_row)?.collect()
+    }
+
+    /// An account's own submissions of one source, newest first.
+    pub fn submissions_of(&self, account: &str, source: &str) -> Result<Vec<Submission>, Error> {
+        let conn = self.conn();
+        let mut q = conn.prepare(&format!("{} WHERE s.account = ?1 AND s.source = ?2 ORDER BY s.created DESC", Self::SUBMISSION))?;
+        q.query_map(params![account, source], Self::submission_row)?.collect()
+    }
+
+    /// The accepted submission that put something at `promoted`, if any.
+    pub fn promoted_to(&self, promoted: &str) -> Result<Option<Submission>, Error> {
+        self.conn()
+            .query_row(&format!("{} WHERE s.promoted = ?1 AND s.status = 'accepted' ORDER BY s.decided DESC LIMIT 1", Self::SUBMISSION), [promoted], Self::submission_row)
+            .optional()
+    }
+
+    pub fn decide_submission(&self, id: &str, status: &str, note: Option<&str>, promoted: Option<&str>, now: &str) -> Result<(), Error> {
+        self.conn()
+            .execute("UPDATE submissions SET status = ?2, note = ?3, promoted = ?4, decided = ?5 WHERE id = ?1", params![id, status, note, promoted, now])
+            .map(drop)
+    }
+}
+
+/// A workshop's result offered for the public site, as the review queue shows it.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct Submission {
+    pub id: String,
+    pub kind: String,
+    #[serde(skip)]
+    pub account: String,
+    /// the submitter's, for the reviewer
+    pub email: String,
+    pub source: String,
+    pub title: String,
+    pub about: String,
+    pub credit: Option<String>,
+    pub created: String,
+    pub status: String,
+    pub decided: Option<String>,
+    pub note: Option<String>,
+    pub promoted: Option<String>,
 }

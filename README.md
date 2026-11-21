@@ -10,8 +10,9 @@ gestalts/     gestalt definitions: the core's, and model packages (gestalts/<pac
 plugins/      the views (and their decks, workers), one folder each, usable by any app
 sdk/python/   what plugin workers import
 web/
-  app/                  the one web app: notes, learning, visualizations, the workshops, lessons; data in the browser
-  player/               the lesson player, on the lesson domain
+  app/                  the one web app: notes, the workshops, lessons, the review; data in the browser
+  site/                 the public site: every view on its decks, accepted workshop results among them; also plays
+                        teachers' lesson links on the lesson domain
   android/              the page the Android app wraps
   server/               the teacher server (gestalts-teacher), its worker, docs and deploy/
 installables/           optional, on the user's computer
@@ -31,7 +32,7 @@ packaging tools as pinned in `mise.toml`; rustup picks up the Rust version (and 
 ```sh
 mise run just setup   # a new machine: the pinned tools and Rust, dependencies, the core in wasm, a local teacher
                       # account; again after pulling
-mise run just dev     # the web app, the claude bridge, folder-sync and the teacher server with hot reload:
+mise run just dev     # the web app, the public site, the claude bridge, folder-sync and the teacher server with hot reload:
                       # where each is, their output in target/dev/<name>.log
 ```
 
@@ -40,6 +41,7 @@ The rest is hidden from `mise tasks` (`mise tasks --hidden` lists it), for one-o
 ```sh
 mise run check                                    # tests, lints, typechecks, deck health
 mise run web:dev                                  # the web app alone, hot reload
+mise run site:dev                                 # the public site alone, hot reload (site:build: static files)
 mise run claude-bridge                            # the Claude bridge alone, headless; localhost pages may use it
 mise run node                                     # folder-sync headless: plugin backends, /net, /llm
 mise run node:dev                                 # the desktop node and its settings page, hot reload

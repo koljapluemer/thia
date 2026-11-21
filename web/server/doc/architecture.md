@@ -3,8 +3,9 @@
 ```
 web/app/src/teach/        the app (/teach): sign-in, drafts, the workbench, publishing, settings (agent.ts)
 web/server/worker/         Node beside the server: compile and check a view, bundle npm packages
-web/player/                runs a published lesson from its link
-web/server/                gestalts-teacher: the API, the agent, publishing, the lesson domain
+web/site/                  the public site, whose build also runs a published lesson from its link
+web/app/src/review/        the review queue (/review): admins accept or reject submissions
+web/server/                gestalts-teacher: the API, the agent, publishing, the lesson domain, submissions
 packages/workshop/         shared with /make: drafts, Preview, Chat, the job protocol, the agent template, the Claude
                            bridge's client and the agents' tools (agents/), the lesson format (lesson.ts)
 packages/check/            the check the local agent runs, in the page
@@ -59,12 +60,20 @@ versions; unpublishing switches it off (410).
 
 ## The lesson domain
 
-A different registrable domain (`lessons.rs`). `/l/<lesson>` serves the player build of the lesson's runtime with a
-`<base>`, `/l/<lesson>/current` names the current manifest, everything else is immutable files. No indexing, no
-referrer, and many not-founds a minute are answered with 429. The player keeps a student's data on the device, one
+A different registrable domain (`lessons.rs`). `/l/<lesson>` serves the site's build (`web/site`, installed per frame
+runtime with `admin install-player`) for the lesson's runtime with a `<base>`, `/l/<lesson>/current` names the current manifest, everything else is immutable files. No indexing, no
+referrer, and many not-founds a minute are answered with 429. The page keeps a student's data on the device, one
 OPFS folder per lesson, with "start fresh" for shared devices.
+
+## Submissions
+
+Any workshop's result can be offered for the public site (`submissions.rs`): a teacher's draft from the server's
+copy, a draft from `/make` or `/make-viz` uploaded whole. It is checked as a write and as publishing would check it,
+and kept as an immutable snapshot (`submissions/<id>/`). Admins (`accounts.admin`) review it in `/review`; accepting
+(`promote.rs`) writes it into the repo checkout given with `--promote-into`, as a plugin or a vizint deck. See
+[`doc/architecture/publishing.md`](../../../doc/architecture/publishing.md).
 
 ## Not yet
 
 Headless screenshots for the agent, QR and short codes, rotating a link, an offline player, schools and sharing in
-the UI, submissions for loops, OIDC sign-in, results for teachers. See [[../../../doc/roadmap/teacher-app|the roadmap]].
+the UI, gates and an AI review before a submission's human review, OIDC sign-in, results for teachers. See [[../../../doc/roadmap/teacher-app|the roadmap]].

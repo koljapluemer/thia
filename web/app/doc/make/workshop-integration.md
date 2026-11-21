@@ -1,7 +1,8 @@
 # From draft to plugin
 
-Status: the learning workshop is its own app (`installables/claude-bridge/make`), deployed apart from loops-for-learning;
-the promotion roadmap below is deferred
+Status: the learning workshop is the web app's `/make`. Promotion is built in a minimal form, as review and acceptance
+of submissions from every workshop: see [`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md).
+What follows is the earlier design, kept for its open points (gates, remixing).
 
 gestalt-workshop was first folded into loops-for-learning as its Make mode, then split out again into its own app in
 the monorepo: it optimises for learning views, but is deployed and used apart from the public Learn site. It keeps

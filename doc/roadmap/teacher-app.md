@@ -130,6 +130,11 @@ need permissions per yml. Later a school library is a read-only layer under a te
 
 ## Offering a lesson for loops
 
+Built in a minimal form (2026-11-21), for all three workshops and on the dev machine: a snapshot, a description and a
+rights affirmation; a human review in `/review`; accepting writes a plugin (and its own model package) into the
+checkout, and the public site is built from it. See [[../architecture/publishing|Publishing]]. Still to do: the gates
+and the AI review below, mapping concepts, and a canonical namespace beyond the reviewer naming the package.
+
 A submission: a snapshot of the draft with its origin hash, a description, and a licence grant accepted with it. It
 lands in a review queue in the same app:
 

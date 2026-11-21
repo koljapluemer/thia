@@ -339,6 +339,9 @@ importers:
       '@gestalts/host':
         specifier: workspace:*
         version: link:../host
+      '@gestalts/npm-bundle':
+        specifier: workspace:*
+        version: link:../npm-bundle
       '@gestalts/view':
         specifier: workspace:*
         version: link:../view
@@ -513,6 +516,9 @@ importers:
       react-dom:
         specifier: 19.3.1
         version: 19.3.1(react@19.3.1)
+      yaml:
+        specifier: 2.8.1
+        version: 2.8.1
     devDependencies:
       '@tailwindcss/vite':
         specifier: 4.3.3
@@ -551,7 +557,23 @@ importers:
         specifier: 8.3.5
         version: 8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.8.1)
 
-  web/player:
+  web/server:
+    dependencies:
+      '@gestalts/npm-bundle':
+        specifier: workspace:*
+        version: link:../../packages/npm-bundle
+      '@gestalts/view':
+        specifier: workspace:*
+        version: link:../../packages/view
+    devDependencies:
+      '@types/node':
+        specifier: 26.6.6
+        version: 26.6.6
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+
+  web/site:
     dependencies:
       '@gestalts/client':
         specifier: workspace:*
@@ -620,22 +642,6 @@ importers:
       vitest:
         specifier: 5.0.5
         version: 5.0.5(@types/node@26.6.6)(vite@8.3.5(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.8.1))
-
-  web/server:
-    dependencies:
-      '@gestalts/npm-bundle':
-        specifier: workspace:*
-        version: link:../../packages/npm-bundle
-      '@gestalts/view':
-        specifier: workspace:*
-        version: link:../../packages/view
-    devDependencies:
-      '@types/node':
-        specifier: 26.6.6
-        version: 26.6.6
-      typescript:
-        specifier: 7.0.2
-        version: 7.0.2
 
 packages:
 

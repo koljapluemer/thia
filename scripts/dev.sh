@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # `mise run just dev`: everything for development at once, with hot reload, stopped together (Ctrl-C, or when any of
 # it exits):
-#   - the web app (web/app): notes, learning and visualizations on the home store in the browser, the workshops, the
-#     teacher area
+#   - the web app (web/app): notes on the home store in the browser, the workshops, the teacher area, the review
+#   - the public site (web/site): the learning views, visualizations and accepted workshop results
 #   - the Claude bridge (scripts/claude-bridge.sh): runs the agents (the claude CLI), with the pages' tools: the
 #     workshops' and the teacher area's
 #   - folder-sync, headless (scripts/node.sh): the plugin backends, /net and /llm for the home areas
-#   - the teacher server (teacher-data/; its agent with ANTHROPIC_API_KEY), and the player it serves lessons with
+#   - the teacher server (teacher-data/; its agent with ANTHROPIC_API_KEY), with the site's build to play lessons, and
+#     accepting reviewed submissions into this checkout
 # Each server gets the first free port from its usual one (scripts/free-port.sh), so it runs beside an installed node
 # (7717/7718) and whatever else listens here. What they print goes to target/dev/<name>.log; this shows one overview,
 # updated as they come up, and the end of the log of one that stops.
@@ -40,6 +41,7 @@ take bridge 7737
 take node 7727 2
 take teacherapi 7740 2
 take web 5173
+take site 5177
 teacherlessons=$((teacherapi + 1))
 
 # prepare LABEL CMD...: CMD with its output in target/dev/prepare.log; on failure, the end of it
@@ -60,9 +62,9 @@ prepare() {
 prepare "dependencies" mise run setup
 # the binaries once, so the node and the teacher server don't wait on each other's cargo
 prepare "Rust binaries" cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-teacher
-# the teacher server serves lessons with the player built from here
-prepare "the player" pnpm --dir web/player build
-prepare "the player, installed" cargo run -q -p gestalts-teacher -- --data teacher-data admin install-player --dist web/player/dist
+# the teacher server plays lessons with the site built from here
+prepare "the site" pnpm --dir web/site build
+prepare "the site, installed as the lessons' player" cargo run -q -p gestalts-teacher -- --data teacher-data admin install-player --dist web/site/dist
 
 trap 'kill 0' EXIT
 
@@ -85,13 +87,15 @@ teachernote="API · lessons on :$teacherlessons"
 [[ -n "${ANTHROPIC_API_KEY:-}" ]] || teachernote+=" · $N${Y}its agent is off without ANTHROPIC_API_KEY"
 serve servers teacherapi "teacher server" "http://127.0.0.1:$teacherapi" "$teacherapi" "$teachernote" \
   env TEACHER_LESSON_ORIGIN="http://127.0.0.1:$teacherlessons" cargo run -q -p gestalts-teacher -- --data teacher-data \
-  serve --insecure-cookies --app "127.0.0.1:$teacherapi" --lessons "127.0.0.1:$teacherlessons"
+  serve --insecure-cookies --app "127.0.0.1:$teacherapi" --lessons "127.0.0.1:$teacherlessons" --promote-into .
 
 if [[ -e teacher-data/dev-login.txt ]]; then login="lessons sign-in: teacher-data/dev-login.txt"
 else login="lessons sign-in: your account, or mise run teacher:admin add-teacher / reset-password"; fi
 serve apps web "web app" "http://localhost:$web/" "$web" "$login" \
   env VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_AGENT_NODE="http://127.0.0.1:$bridge" \
-  VITE_TEACHER_API="http://127.0.0.1:$teacherapi" pnpm --dir web/app dev --port "$web" --strictPort
+  VITE_TEACHER_API="http://127.0.0.1:$teacherapi" VITE_SITE="http://localhost:$site/" pnpm --dir web/app dev --port "$web" --strictPort
+serve apps site "public site" "http://localhost:$site/" "$site" "what's accepted shows here once it's in plugins/" \
+  env VITE_LESSONS="http://127.0.0.1:$teacherlessons" pnpm --dir web/site dev --port "$site" --strictPort
 
 listening() { (exec 3<> "/dev/tcp/127.0.0.1/$1") 2> /dev/null || (exec 3<> "/dev/tcp/::1/$1") 2> /dev/null; }
 

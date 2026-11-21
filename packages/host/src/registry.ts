@@ -19,6 +19,8 @@ export type PluginManifest = {
   network?: string[];
   /** asks for completions from the user's LLM providers */
   llm?: boolean;
+  /** the npm packages its view imports, at exact versions */
+  npm?: Record<string, string>;
 };
 
 /** One of a plugin's decks, as the build serves it: `source` is `<plugin>/<deck>`, `path` relative to the app. */
@@ -32,6 +34,8 @@ export type PluginEntry = {
   js: string;
   /** npm packages its view imports */
   npm: string[];
+  /** where the build put each of `npm`, bundled, relative to the app (a distribution with `pinned_npm`); else esm.sh */
+  npmUrls?: Record<string, string>;
   /** can't be uninstalled here */
   core: boolean;
   /** what the distribution granted of what it asked for */
@@ -51,6 +55,11 @@ export type FrameRuntime = { js: string; css: string; version: string };
 export type Registry = { distribution: Distribution; plugins: PluginEntry[]; gestalts: string[]; runtime: FrameRuntime };
 
 export const findPlugin = (registry: Registry, id: string) => registry.plugins.find((p) => p.manifest.id === id);
+
+/** The plugin's npm bundles as URLs, where the build made them. */
+export function npmUrlsOf(p: PluginEntry): Record<string, string> | undefined {
+  return p.npmUrls && Object.fromEntries(Object.entries(p.npmUrls).map(([spec, path]) => [spec, new URL(path, document.baseURI).href]));
+}
 
 export function deckSources(decks: DeckEntry[]): DeckSource[] {
   return decks.map((d) => ({ source: d.source, url: new URL(d.path, document.baseURI).href }));

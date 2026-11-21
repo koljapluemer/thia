@@ -57,7 +57,7 @@ fn io(e: std::io::Error) -> ApiError {
 }
 
 /// What the lesson folder holds before it's written.
-struct Version {
+pub(crate) struct Version {
     files: BTreeMap<String, Vec<u8>>,
     /// blob name to where it is in the draft
     blobs: BTreeMap<String, PathBuf>,
@@ -65,11 +65,23 @@ struct Version {
     definitions: BTreeMap<String, String>,
 }
 
-async fn build(state: &AppState, draft: &crate::db::Draft) -> ApiResult<Version> {
-    let dir = state.draft_dir(&draft.id);
+/// What a view folder (a draft's, or a submission's snapshot) needs to go out: checked, compiled, its npm bundled.
+pub struct Check<'a> {
+    pub dir: &'a std::path::Path,
+    /// the view yml's id
+    pub view: &'a str,
+    /// what its own gestalts are named in
+    pub package: &'a str,
+    /// as a lesson: the player for its runtime must be here
+    pub lesson: bool,
+}
+
+/// The lesson a view folder makes, or why it can't go out. A submission is checked the same way.
+pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version> {
+    let dir = c.dir.to_owned();
     let s = gestalts_fs::FsStorage::new(&dir);
-    let view_text = s.read_yml_sync(&draft.id)?.ok_or_else(|| ApiError::BadRequest("the draft has no view yet".into()))?;
-    let view = Yml::parse(draft.id.clone(), view_text);
+    let view_text = s.read_yml_sync(c.view)?.ok_or_else(|| ApiError::BadRequest("the draft has no view yet".into()))?;
+    let view = Yml::parse(c.view.to_owned(), view_text);
     if !matches!(state.gestalts.classify(&view), YmlState::Valid(ref g) if is_view(g)) {
         return Err(ApiError::BadRequest("the draft's view isn't valid".into()));
     }
@@ -77,14 +89,18 @@ async fn build(state: &AppState, draft: &crate::db::Draft) -> ApiResult<Version>
     let field = |k: &str| m.get(k).cloned().unwrap_or(serde_yaml_ng::Value::Null);
     let (title, source) = (view.str_field("title").unwrap_or_default().to_owned(), view.str_field("source").unwrap_or_default().to_owned());
     let (reads, writes, members) = (strings(&field("reads")), strings(&field("writes")), strings(&field("members")));
-    let runtime = view.str_field("runtime").ok_or_else(|| ApiError::BadRequest("the draft doesn't say which runtime it was made against: open it once in the app".into()))?.to_owned();
+    let runtime = match view.str_field("runtime") {
+        Some(r) => r.to_owned(),
+        None if c.lesson => return Err(ApiError::BadRequest("the draft doesn't say which runtime it was made against: open it once in the app".into())),
+        None => String::new(),
+    };
     let npm: BTreeMap<String, String> = field("npm").as_mapping().into_iter().flatten().filter_map(|(k, v)| Some((k.as_str()?.to_owned(), v.as_str()?.to_owned()))).collect();
     let mut problems = Vec::new();
 
-    if !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit())) {
+    if c.lesson && !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit())) {
         return Err(ApiError::BadRequest(format!("{runtime} isn't a runtime")));
     }
-    if !state.data.join("runtime").join(&runtime).join("index.html").is_file() {
+    if c.lesson && !state.data.join("runtime").join(&runtime).join("index.html").is_file() {
         problems.push(format!("the player for runtime {runtime} isn't installed here: the app was updated, so reload it, open the draft and publish again"));
     }
 
@@ -96,7 +112,7 @@ async fn build(state: &AppState, draft: &crate::db::Draft) -> ApiResult<Version>
             None => problems.push(format!("{id}: a member that isn't there")),
         }
     }
-    let gestalts = draft_gestalts(&state.gestalts, &draft.package, texts.iter().filter(|(_, t)| t.contains(GESTALT)).map(|(i, t)| (i.clone(), t.clone())));
+    let gestalts = draft_gestalts(&state.gestalts, c.package, texts.iter().filter(|(_, t)| t.contains(GESTALT)).map(|(i, t)| (i.clone(), t.clone())));
     let mut definitions = BTreeMap::new();
     let mut blobs = BTreeMap::new();
     for (id, text) in &texts {
@@ -228,7 +244,7 @@ impl AppState {
 async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Published>> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
     let _guard = state.writes.lock().await;
-    let version = build(&state, &draft).await?;
+    let version = build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: true }).await?;
     let previous = state.db.publication_of(&draft.id)?;
     let mut warnings = Vec::new();
     if let Some(p) = &previous {

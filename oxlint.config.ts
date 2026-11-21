@@ -10,7 +10,8 @@ import { defineConfig } from 'oxlint';
  *   client or the host.
  * - `@gestalts/client` (the core in the browser) builds on the view package; the host on client, view, kit, learning and
  *   sources (learning, sources and the kit only for the runtime frames load).
- * - `@gestalts/vite` (the build preset, run by Node) imports only the view package's compiler.
+ * - `@gestalts/vite` (the build preset, run by Node) imports the view package's compiler, and npm-bundle for pinned
+ *   distributions.
  * - `@gestalts/check` (what an agent's work is checked with, in the page and in Node) imports the view and viz packages.
  * - `@gestalts/workshop` (making a view with an agent) builds on client, host, view and check.
  * - `@gestalts/npm-bundle` (npm packages for views, bundled by a server, run by Node) imports only the view package.
@@ -30,7 +31,7 @@ const kitBelow: Record<string, string[]> = {
 };
 const allowed: Record<string, string[]> = {
   view: [],
-  vite: ['view'],
+  vite: ['view', 'npm-bundle'],
   learning: ['view'],
   sources: [],
   viz: [],

@@ -1,5 +1,9 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { LayoutGrid } from 'lucide-react';
+import { me } from './teach/api';
+
+/** The public site (web/site): what the workshops' accepted results, and the learning views, are published on. */
+export const SITE: string = import.meta.env.VITE_SITE ?? 'http://127.0.0.1:5177';
 
 /** The app's areas, by path, in the landing page's order; `/` is the landing page. */
 export const AREAS = [
@@ -7,9 +11,10 @@ export const AREAS = [
   { path: '/make', title: 'Learning workshop', about: 'Make learning views with a local agent.' },
   { path: '/make-viz', title: 'vizint workshop', about: 'Make interactive visualizations with a local agent.' },
   { path: '/notes', title: 'Gestalter', about: 'Your notes, and the views you install, in tabs.' },
-  { path: '/learn', title: 'Learning', about: 'The learning views, one at a time.' },
-  { path: '/viz', title: 'Interactive visualizations', about: 'The visualizations, one at a time.' },
+  { path: '/review', title: 'Review', about: 'What the workshops offered for the public site: accept or reject it.' },
 ] as const;
+/** The areas only admins see. */
+const ADMIN: readonly string[] = ['/review'];
 export type AreaPath = '/' | (typeof AREAS)[number]['path'];
 const HOME: AreaPath = '/';
 
@@ -47,15 +52,29 @@ export function AreaLink({ path, className, children }: { path: AreaPath; classN
   return <a href={path} className={className} onClick={go}>{children}</a>;
 }
 
+let admin: Promise<boolean> | undefined;
+
+/** The areas this person sees: the admin's only to an admin (asked once). */
+export function useAreas(): (typeof AREAS)[number][] {
+  const [isAdmin, setAdmin] = useState(false);
+  useEffect(() => {
+    admin ??= me().then((m) => m.admin, () => { admin = undefined; return false; });
+    void admin.then(setAdmin);
+  }, []);
+  return AREAS.filter((a) => isAdmin || !ADMIN.includes(a.path));
+}
+
 /** The other areas, from each area's header: at its start, or at its `end`. */
 export function Areas({ end = false }: { end?: boolean }) {
   const here = useArea();
+  const areas = useAreas();
   return (
     <details className={`dropdown ${end ? 'dropdown-end' : ''}`}>
       <summary className="btn btn-sm btn-ghost btn-square" title="Areas"><LayoutGrid className="size-4" /></summary>
       <ul className="dropdown-content menu z-50 mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow">
         <li><AreaLink path="/">All areas</AreaLink></li>
-        {AREAS.map((a) => <li key={a.path}><AreaLink path={a.path} className={a.path === here ? 'menu-active' : ''}>{a.title}</AreaLink></li>)}
+        {areas.map((a) => <li key={a.path}><AreaLink path={a.path} className={a.path === here ? 'menu-active' : ''}>{a.title}</AreaLink></li>)}
+        <li><a href={SITE}>The public site</a></li>
       </ul>
     </details>
   );

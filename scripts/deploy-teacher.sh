@@ -15,7 +15,7 @@ release="/opt/gestalts-teacher/releases/$sha"
 
 cargo build --release -q -p gestalts-teacher
 pnpm --dir web/app build
-pnpm --dir web/player build
+pnpm --dir web/site build
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -23,7 +23,7 @@ git archive --format=tar HEAD web/server/worker web/server/package.json packages
 mkdir -p "$tmp/bin" "$tmp/player"
 cp target/release/gestalts-teacher "$tmp/bin/"
 cp -r web/app/dist "$tmp/app"
-cp -r web/player/dist/. "$tmp/player/"
+cp -r web/site/dist/. "$tmp/player/"
 
 ssh "$TEACHER_HOST" "mkdir -p $release"
 tar -C "$tmp" -c . | ssh "$TEACHER_HOST" "tar -x -C $release"

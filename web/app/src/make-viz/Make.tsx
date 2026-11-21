@@ -7,8 +7,10 @@ import { HOME_NODE } from '../nodes';
 import css from '../app.css?inline';
 import { useDrafts } from '../drafts';
 import { Areas } from '../router';
+import { SubmitMenu, snapshotOf } from '../submit';
+import * as api from '../teach/api';
 import { Editor } from './Editor';
-import { VIZ, asViz, createViz } from './viz';
+import { VIZ, asViz, createViz, ymlOf, type Viz } from './viz';
 
 /**
  * The vizint workshop: vizzes (`viz@1` ymls) each edited beside the `vizint` view showing it, and built from their
@@ -36,6 +38,12 @@ export function Make() {
 
 const NO_NAVIGATION = () => {};
 
+/** The viz as built, with its page, still and files, for the public site. */
+async function submitViz(repo: Repo, viz: Viz, offer: api.Offer) {
+  const snapshot = await snapshotOf(repo, [{ id: viz.id, gestalt: VIZ, value: ymlOf(viz) }]);
+  return api.upload({ ...offer, source: `make-viz:${viz.id}`, ...snapshot });
+}
+
 function Shell({ repo }: { repo: Repo }) {
   const list = useHostQuery({ gestalt: VIZ, fields: ['title'], order: { field: 'title' }, limit: LIST_LIMIT });
   const [selected, setSelected] = useState<string | null>(() => { try { return localStorage.getItem(SELECTED); } catch { return null; } });
@@ -59,6 +67,7 @@ function Shell({ repo }: { repo: Repo }) {
     <>
       <header className="navbar min-h-0 gap-2 bg-base-100 px-4 py-1 shadow-sm">
         <span className="flex-1 truncate text-sm font-medium text-base-content/70">{viz?.title ?? 'Make a visualization'}</span>
+        {viz && <SubmitMenu key={viz.id} source={`make-viz:${viz.id}`} ready={Boolean(viz.built)} send={(offer) => submitViz(repo, viz, offer)} />}
         <details className="dropdown dropdown-end">
           <summary className="btn btn-sm btn-ghost btn-square" title="Sync settings"><Settings className="size-4" /></summary>
           <div className="dropdown-content z-50 mt-2 rounded-box border border-base-300 bg-base-100 p-3 shadow"><ConnectorSettings defaultUrl={HOME_NODE} /></div>

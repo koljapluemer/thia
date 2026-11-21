@@ -5,6 +5,10 @@
  * plugin's `view.tsx` is compiled to the module its frame runs, and everything frames load (React, the kit, learning)
  * is built into one script, shared by all of an app's distributions. The host never imports a plugin.
  *
+ * npm packages a view imports are pinned in its `plugin.yml` (`npm: {name: exact-version}`). A distribution with
+ * `pinned_npm: true` (the public site) refuses a view that imports one unpinned, and bundles each one into the build
+ * (`npm/<file>.js`, with `@gestalts/npm-bundle`), so its views load nothing from elsewhere; others load npm from esm.sh.
+ *
  * Packages may be linked from a sibling checkout, so this also dedupes React (and lucide), lets the dev server read
  * those checkouts, and replaces `@gestalts-sources;` in the app's CSS with an `@source` per package and plugin
  * (Tailwind doesn't reliably scan through pnpm's symlinks). List it before `tailwindcss()`.
@@ -12,6 +16,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
+import { bundle, isVersion, packageName } from '@gestalts/npm-bundle';
 import { compile } from '@gestalts/view/compile';
 import { build, searchForWorkspaceRoot, type Plugin, type PluginOption, type Rollup } from 'vite';
 import { parse } from 'yaml';
@@ -25,9 +30,11 @@ const DISTRIBUTIONS = 'distributions';
 const RUNTIME = 'virtual:gestalts-runtime';
 const SOURCES = /^@gestalts-sources;$/m;
 
-type Manifest = { id: string; title: string; version: string; reads?: string[]; requires?: string[]; permissions?: string[] };
-type DistributionFile = { id?: unknown; core?: string[]; plugins?: string[]; models?: string[]; default_views?: string[]; install_ui?: boolean; grants?: unknown };
-const DISTRIBUTION_KEYS = ['id', 'core', 'plugins', 'models', 'default_views', 'install_ui', 'grants'];
+type Manifest = { id: string; title: string; version: string; reads?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string> };
+type DistributionFile = { id?: unknown; core?: string[]; plugins?: string[]; models?: string[]; default_views?: string[]; install_ui?: boolean; grants?: unknown; pinned_npm?: boolean };
+const DISTRIBUTION_KEYS = ['id', 'core', 'plugins', 'models', 'default_views', 'install_ui', 'grants', 'pinned_npm'];
+/** where npm bundles are kept between builds */
+const NPM_CACHE = resolve(import.meta.dirname, '../../../node_modules/.cache/gestalts-npm');
 /** The repo's `gestalts/`: the core's (`<name>/v<N>.yml`, compiled in) and the model packages (`<package>/<name>/`). */
 const GESTALTS = resolve(import.meta.dirname, '../../../gestalts');
 type PackageJson = { dependencies?: Record<string, string> };
@@ -168,10 +175,17 @@ export function loadDistribution(file: string) {
       throw new Error(`${where}: ${p.id} ${how} ${g}, which ${pkg ? `package ${relative(base, pkg)} defines: add it to \`models\`` : 'nothing defines'}`);
     }
   }
+  const pinned = parsed.pinned_npm ?? false;
+  if (pinned) for (const p of plugins) for (const spec of p.npm) {
+    const name = packageName(spec);
+    const version = name && p.manifest.npm?.[name];
+    if (!version || !isVersion(version)) throw new Error(`${where}: ${p.id} imports ${spec}: pin ${name ?? spec} to an exact version in its plugin.yml (npm: {${name ?? spec}: <version>})`);
+  }
   const granted = grantsFor(parsed.grants, plugins.map((p) => ({ id: p.id, permissions: p.manifest.permissions, npm: p.npm })));
   return {
     file,
     distribution: { id: parsed.id, default_views: parsed.default_views ?? [], install_ui: parsed.install_ui ?? false },
+    pinned,
     plugins: plugins.map((p) => ({ ...p, granted: granted.get(p.id) ?? [] })),
     models,
   };
@@ -206,6 +220,32 @@ function appPlugins(appRoot: string): Loaded['plugins'] {
   return [...byId.values()];
 }
 
+/** A bundle's file in the build: by specifier, version and content. */
+const npmFile = (spec: string, version: string, hash: string) => `npm/${spec.replace(/[^A-Za-z0-9._@-]/g, '+')}@${version}-${hash.slice(0, 12)}.js`;
+
+/**
+ * Each npm import of a pinned distribution's plugins bundled, and what a subpath needs besides (its package's root),
+ * as `{plugin id: {specifier: file in the build}}`; the bundles' cache files by their file in the build.
+ */
+async function bundleNpm(plugins: Loaded['plugins'], files: Map<string, string>): Promise<Record<string, Record<string, string>>> {
+  const out: Record<string, Record<string, string>> = {};
+  for (const p of plugins) {
+    const urls: Record<string, string> = {};
+    const todo = [...p.npm];
+    for (let spec = todo.shift(); spec !== undefined; spec = todo.shift()) {
+      if (urls[spec]) continue;
+      const version = p.manifest.npm?.[packageName(spec) ?? ''] ?? '';
+      const b = await bundle(spec, version, { cacheDir: NPM_CACHE });
+      const file = npmFile(spec, version, b.hash);
+      files.set(file, b.file);
+      urls[spec] = file;
+      todo.push(...b.needs);
+    }
+    if (Object.keys(urls).length) out[p.id] = urls;
+  }
+  return out;
+}
+
 /** Everything a frame loads, as one script and its styles. */
 async function buildRuntime(appRoot: string): Promise<{ js: string; css: string; version: string }> {
   const host = gestaltsPackages(appRoot).find((d) => /[\\/]host$/.test(d));
@@ -236,6 +276,8 @@ async function buildRuntime(appRoot: string): Promise<{ js: string; css: string;
 export function gestaltsPlugins(): PluginOption[] {
   let appRoot = process.cwd();
   let runtime: Promise<{ js: string; css: string; version: string }> | undefined;
+  /** npm bundles of pinned distributions: their cache files, by their file in the build */
+  const npmFiles = new Map<string, string>();
   const sources: Plugin = {
     name: 'gestalts-sources',
     enforce: 'pre',
@@ -274,21 +316,25 @@ export function gestaltsPlugins(): PluginOption[] {
       const file = files.get(name);
       if (!file) throw new Error(`${id.slice(1)}: the app has no such distribution (it has ${[...files.keys()].map((n) => (n ? `${VIRTUAL}/${n}` : VIRTUAL)).join(', ')})`);
       loadApp(appRoot);
-      const { distribution, plugins, models } = loadDistribution(file);
+      const { distribution, plugins, models, pinned } = loadDistribution(file);
+      const npmUrls = pinned ? await bundleNpm(plugins, npmFiles) : {};
       this.addWatchFile(file);
       for (const m of models) for (const f of subdirs(m.root).flatMap(definitionsIn)) this.addWatchFile(f);
       const entries = plugins.map((p) => {
         this.addWatchFile(join(p.root, 'plugin.yml'));
         this.addWatchFile(join(p.root, 'view.tsx'));
         const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}` }));
-        return { manifest: p.manifest, decks, js: p.js, npm: p.npm, core: p.core, granted: p.granted, backend: p.backend };
+        return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], core: p.core, granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);
       return `import { runtime } from ${JSON.stringify(RUNTIME)};\nexport const registry = { ...${JSON.stringify({ distribution, plugins: entries, gestalts })}, runtime };\n`;
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const m = /^\/decks\/([a-z0-9.-]+)\/([a-z0-9.-]+)\/(.+)$/.exec((req.url ?? '').split('?')[0]);
+        const path = (req.url ?? '').split('?')[0];
+        const bundled = npmFiles.get(path.slice(1));
+        if (bundled) { res.setHeader('content-type', 'text/javascript'); res.end(readFileSync(bundled)); return; }
+        const m = /^\/decks\/([a-z0-9.-]+)\/([a-z0-9.-]+)\/(.+)$/.exec(path);
         if (!m) return next();
         const d = appPlugins(appRoot).find((x) => x.id === m[1])?.decks.find((x) => x.id === m[2]);
         if (d && m[3] === 'ymls.json') { res.setHeader('content-type', 'application/json'); res.end(deckBundle(d.dir)); return; }
@@ -300,6 +346,7 @@ export function gestaltsPlugins(): PluginOption[] {
     async generateBundle() {
       // the frame runtime this build carries, by version, for whatever serves builds by it (the lesson player)
       if (runtime) this.emitFile({ type: 'asset', fileName: 'gestalts-runtime.json', source: `${JSON.stringify({ version: (await runtime).version })}\n` });
+      for (const [file, from] of npmFiles) this.emitFile({ type: 'asset', fileName: file, source: readFileSync(from) });
       for (const p of appPlugins(appRoot)) {
         for (const d of p.decks) {
           for (const f of files(d.dir)) {

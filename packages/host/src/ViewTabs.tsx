@@ -5,7 +5,7 @@ import type { JsonMap } from '@gestalts/view';
 import { FrameView, type RunnableView } from './frame/FrameView';
 import type { ViewEnv } from './frame/bridge';
 import { useInstalled } from './installs';
-import { findPlugin, type PluginEntry, type Registry } from './registry';
+import { findPlugin, npmUrlsOf, type PluginEntry, type Registry } from './registry';
 import { closeTab, moveBefore, openSearch, openTab, parseOpen, routeTo, useTabs, withParams, type Tab } from './tabs';
 
 const subscribeUrl = (l: () => void) => { addEventListener('popstate', l); addEventListener('gestalts:url', l); return () => { removeEventListener('popstate', l); removeEventListener('gestalts:url', l); }; };
@@ -43,7 +43,7 @@ function readState(key: string): JsonMap {
 }
 
 function runnable(p: PluginEntry): RunnableView {
-  return { id: p.manifest.id, title: p.manifest.title, js: p.js, npm: p.npm, scope: { reads: p.manifest.reads ?? [], writes: p.manifest.writes ?? [], network: p.manifest.network ?? [], llm: p.manifest.llm ?? false, microphone: p.granted.includes('microphone') }, granted: p.granted };
+  return { id: p.manifest.id, title: p.manifest.title, js: p.js, npm: p.npm, npmUrls: npmUrlsOf(p), scope: { reads: p.manifest.reads ?? [], writes: p.manifest.writes ?? [], network: p.manifest.network ?? [], llm: p.manifest.llm ?? false, microphone: p.granted.includes('microphone') }, granted: p.granted };
 }
 
 const needsBackend = (p: PluginEntry) => (p.manifest.requires ?? []).includes('backend');

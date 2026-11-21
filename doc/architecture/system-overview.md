@@ -25,7 +25,7 @@ packages/workshop making a view with an agent: drafts, their preview, the chat, 
 packages/npm-bundle npm packages for views, installed without scripts, bundled and pinned on a server (Node)
 packages/viz      @gestalts/viz: interactive visualizations (params, clock, model, scene) and their runtime; imports nothing of ours
 plugins/          the views that live in source: notes, flashcards, sources, concepts
-web/              the web app (app/), the lesson player (player/), the page the Android app wraps (android/), the server
+web/              the web app (app/), the public site (site/), the page the Android app wraps (android/), the server
 installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings, the Android app), claude-bridge
                   (Claude Code for a site the person allowed, with the site's tools)
 sdk/python        gestalts_backend.py, what a backend.py imports
@@ -35,14 +35,15 @@ sdk/python        gestalts_backend.py, what a backend.py imports
 
 ## The apps
 
-`web/app` is the one web app, `/` a landing page of cards, its areas paths: `/notes` (the gestalter), `/learn`, `/viz`, `/make` and `/make-viz`
-(the workshops), `/teach` (the teacher app). It needs no node. Notes, learning and visualizations share the **home**
+`web/app` is the one web app, `/` a landing page of cards, its areas paths: `/notes` (the gestalter), `/make` and
+`/make-viz` (the workshops), `/teach` (the teacher app), `/review` (admins). It needs no node. Notes are the **home**
 store, the user's ymls in this browser (OPFS), opened once for the app (`web/app/src/home.tsx`) and asking the
 desktop node, if one runs, for plugin backends, `/net` and `/llm` without syncing with it (`bridge` in `Repo.open`).
 The workshops share a `drafts` store in the browser; their agent is Claude Code through the Claude bridge
 (`installables/claude-bridge`), whose tool calls come back to the page (the `check` is `@gestalts/check`, run there); each lesson draft is its own store
-synced with the teacher server. `web/player` runs published lessons on the lesson domain; the Android app wraps
-`web/android`.
+synced with the teacher server. `web/site` is the public site: every learning view and visualization, workshop results
+accepted in review among them ([[publishing]]); its build also plays teachers' lessons on the lesson domain. The
+Android app wraps `web/android`.
 
 ## Data
 

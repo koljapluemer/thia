@@ -256,6 +256,20 @@ hide = true
 description = "Rebuild plugins/vietnamese-typing-practice's deck from its tools/data and the phrasebook's Vietnamese deck, and publish it"
 run = ["node plugins/vietnamese-typing-practice/tools/build-deck.ts", "mise run publish-data plugins/vietnamese-typing-practice/decks/vietnamese-typing"]
 
+# --- the public site ---
+
+[tasks."site:dev"]
+hide = true
+description = "The public site (web/site) on :5177 with hot reload; lessons' links from the teacher server on :7741"
+depends = ["setup"]
+run = "pnpm --dir web/site dev"
+
+[tasks."site:build"]
+hide = true
+description = "The public site as static files in web/site/dist (serve every path as index.html)"
+depends = ["setup"]
+run = "pnpm --dir web/site build"
+
 # --- the workshops ---
 
 [tasks."workshop:agent-stats"]
@@ -268,19 +282,19 @@ run = "python3 installables/claude-bridge/scripts/agent_stats.py"
 
 [tasks."teacher:serve"]
 hide = true
-description = "The teacher server on :7740 (API) and :7741 (lessons), data in teacher-data/, after installing the player build (needs ANTHROPIC_API_KEY for the agent)"
+description = "The teacher server on :7740 (API) and :7741 (lessons), data in teacher-data/, after installing the site's build as the lessons' player; accepts submissions into this checkout (needs ANTHROPIC_API_KEY for the agent)"
 depends = ["setup"]
 shell = "bash -c"
 run = """
 set -euo pipefail
-pnpm --dir web/player build
-cargo run -q -p gestalts-teacher -- --data teacher-data admin install-player --dist web/player/dist
-cargo run -q -p gestalts-teacher -- --data teacher-data serve --insecure-cookies
+pnpm --dir web/site build
+cargo run -q -p gestalts-teacher -- --data teacher-data admin install-player --dist web/site/dist
+cargo run -q -p gestalts-teacher -- --data teacher-data serve --insecure-cookies --promote-into .
 """
 
 [tasks."teacher:admin"]
 hide = true
-description = "Schools and teachers on the local teacher server: mise run teacher:admin add-school NAME, add-teacher --school ID --email E"
+description = "Schools and teachers on the local teacher server: mise run teacher:admin add-school NAME, add-teacher --school ID --email E [--admin], grant-admin E"
 run = "cargo run -q -p gestalts-teacher -- --data teacher-data admin"
 
 [tasks."teacher:deploy"]

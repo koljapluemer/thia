@@ -4,7 +4,7 @@
 #   - the tools mise pins (Node, pnpm, uv, wasm-pack, packaging tools) and the Rust toolchain rust-toolchain.toml pins
 #   - JS dependencies, the core compiled to wasm, the agent template (mise run setup)
 #   - the Rust binaries `just dev` runs, built once so its first start isn't a long wait
-#   - a local teacher account, the first time (teacher-data/, kept out of git)
+#   - a local teacher account, the first time (teacher-data/, kept out of git), which is an admin (reviews submissions)
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -33,14 +33,16 @@ mise run setup
 step "the Rust binaries"
 cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-teacher
 
+teacher() { cargo run -q -p gestalts-teacher -- --data teacher-data admin "$@"; }
 if [[ ! -e teacher-data/teacher.db ]]; then
   step "a local teacher account"
-  teacher() { cargo run -q -p gestalts-teacher -- --data teacher-data admin "$@"; }
   school="$(teacher add-school "Dev school")"
-  password="$(teacher add-teacher --school "$school" --email dev@localhost)"
+  password="$(teacher add-teacher --school "$school" --email dev@localhost --admin)"
   printf 'email: dev@localhost\npassword: %s\n' "$password" > teacher-data/dev-login.txt
   echo "sign in to the teacher app with dev@localhost, password in teacher-data/dev-login.txt"
 fi
+# the local account reviews submissions for the public site (/review), also one made before there was a review
+if [[ -e teacher-data/dev-login.txt ]]; then teacher grant-admin dev@localhost; fi
 
 step "optional"
 command -v claude > /dev/null || echo "no claude CLI: the workshops' and the teacher's local agent need it (https://claude.com/claude-code)"

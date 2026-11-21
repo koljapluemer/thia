@@ -35,7 +35,9 @@ bridge tells it which files changed outside the conversation.
 
 Tailwind's browser build runs in the frame here, because a vibecoded view's classes aren't known at build time.
 
-A vibecoded view runs only in Make mode for now. Its `reads` and `writes` come from what the agent declared in
+A vibecoded view runs only here until it's offered for the public site (the **Public site** menu, `src/submit.tsx`):
+the view yml, its members and the blobs they use go to the teacher server for review, which needs a teacher account.
+Accepted, it becomes a plugin in `plugins/` ([`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md)). Its `reads` and `writes` come from what the agent declared in
 `view.json`, and there is no prompt when they widen. Chat history isn't kept across reloads; the CLI's session is.
 
 ## Agent run logs

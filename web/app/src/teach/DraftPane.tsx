@@ -7,6 +7,7 @@ import type { ViewError } from '@gestalts/view';
 import { Chat, Preview, VIEWS, asDraft, createDraft, saveDraft } from '@gestalts/workshop';
 import tailwind from '@tailwindcss/browser?raw';
 import css from '../app.css?inline';
+import { SubmitMenu } from '../submit';
 import { backendFor, type AgentChoice } from './agent';
 import * as api from './api';
 
@@ -56,6 +57,7 @@ function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; in
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{draft.title}</span>
         <SyncState />
         <PublishMenu repo={repo} id={info.id} />
+        <SubmitMenu source={`teach:${info.id}`} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
         <DeleteButton id={info.id} title={draft.title} onDeleted={onDeleted} />
       </div>
       <div className="grid min-h-0 flex-1 grid-rows-2 md:grid-cols-[minmax(0,1fr)_24rem] md:grid-rows-1">

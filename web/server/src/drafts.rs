@@ -50,7 +50,7 @@ async fn blocking<T: Send + 'static>(f: impl FnOnce() -> ApiResult<T> + Send + '
     tokio::task::spawn_blocking(f).await.map_err(|e| ApiError::Internal(e.to_string()))?
 }
 
-fn slug(title: &str) -> String {
+pub fn slug(title: &str) -> String {
     let mut out = String::new();
     for c in title.to_lowercase().chars() {
         let c = match c { 'ä' => 'a', 'ö' => 'o', 'ü' => 'u', 'ß' => 's', c => c };

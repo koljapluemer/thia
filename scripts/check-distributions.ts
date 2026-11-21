@@ -45,12 +45,15 @@ for (const file of distributions(web)) {
     else if (!isPackage(path)) problems.push(`${where}: model ${entry} is not a package (gestalts/<package>/<name>/v<N>.yml)`);
   }
 }
-// a lesson made in the teacher app runs in the player and is checked by the server: all three know the same models
-const models = (file: string) => (((parse(readFileSync(join(web, file), 'utf8')) ?? {}) as { models?: string[] }).models ?? []).map((m) => m.split('/').pop()).sort().join(', ');
+// a lesson made in the teacher app is checked by the server and runs on the site: the server knows the teacher app's
+// models, and the site has at least those
+const models = (file: string) => (((parse(readFileSync(join(web, file), 'utf8')) ?? {}) as { models?: string[] }).models ?? []).map((m) => m.split('/').pop() ?? m).sort();
 const server = /pub const MODELS: &\[&str\] = &\[([^\]]*)\]/.exec(readFileSync(join(root, 'web/server/src/lib.rs'), 'utf8'))?.[1].split(',').map((m) => m.trim().replaceAll('"', '')).filter(Boolean).sort().join(', ');
 const teacher = models('app/distributions/teacher.yml');
-const player = models('player/distribution.yml');
-if (teacher !== player || teacher !== server) problems.push(`the web app's teacher area (${teacher}), the player (${player}) and web/server's MODELS (${server}) must name the same models`);
+const site = models('site/distribution.yml');
+if (teacher.join(', ') !== server) problems.push(`the web app's teacher area (${teacher.join(', ')}) and web/server's MODELS (${server}) must name the same models`);
+const missing = teacher.filter((m) => !site.includes(m));
+if (missing.length) problems.push(`the site (web/site/distribution.yml) plays teachers' lessons, so it needs their models too: ${missing.join(', ')}`);
 for (const p of problems) console.error(p);
 if (problems.length) process.exit(1);
 console.log('distributions: every plugin in plugins/, every model in gestalts/');

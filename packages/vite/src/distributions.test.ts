@@ -48,6 +48,19 @@ describe('distributions', () => {
     expect(() => loadApp(join(sameId, 'app'))).toThrow(/another distribution's/);
   });
 
+  it('refuses an npm import a pinned distribution has no exact version of', () => {
+    const imports = "import confetti from 'canvas-confetti';\nexport default function View() { return String(confetti); }\n";
+    const root = folder({
+      'plugins/a/plugin.yml': 'id: a\ntitle: a\nversion: 1.0.0\n', 'plugins/a/view.tsx': imports,
+      'plugins/b/plugin.yml': 'id: b\ntitle: b\nversion: 1.0.0\nnpm: { canvas-confetti: 1.9.3 }\n', 'plugins/b/view.tsx': imports,
+      'app/distributions/open.yml': 'id: open\nplugins: [../../plugins/a]\n',
+      'app/distributions/pinned.yml': 'id: pinned\npinned_npm: true\nplugins: [../../plugins/b]\n',
+      'unpinned/distribution.yml': 'id: unpinned\npinned_npm: true\nplugins: [../plugins/a]\n',
+    });
+    expect(loadApp(join(root, 'app')).get('pinned')?.pinned).toBe(true);
+    expect(() => loadApp(join(root, 'unpinned'))).toThrow(/pin canvas-confetti to an exact version/);
+  });
+
   it('refuses both forms at once', () => {
     const root = folder({ 'app/distribution.yml': 'id: x\n', 'app/distributions/y.yml': 'id: y\n' });
     expect(() => distributionFiles(join(root, 'app'))).toThrow(/one or the other/);
