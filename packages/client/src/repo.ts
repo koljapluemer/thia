@@ -394,7 +394,11 @@ export class Repo {
     if (!url) throw new Error('reaching the network needs the desktop app, which isn\'t connected');
     const headers: Record<string, string> = { ...pick(request.headers ?? {}, ['content-type', 'accept', 'accept-language']), 'x-gestalts-url': request.url, 'x-gestalts-method': request.method ?? 'GET' };
     const r = await fetch(`${url}net`, { method: 'POST', headers, body: request.body as BodyInit | undefined });
-    if (!r.headers.has('x-gestalts-upstream')) throw new Error(`the desktop app refused: ${(await r.text()) || r.status}`);
+    if (!r.headers.has('x-gestalts-upstream')) {
+      // the node's refusals are one line; anything longer isn't one, and mustn't flood the view
+      const why = (await r.text()).slice(0, 300);
+      throw new Error(`the desktop app refused: ${why || r.status}`);
+    }
     return { status: r.status, contentType: r.headers.get('content-type') ?? '', body: new Uint8Array(await r.arrayBuffer()) };
   }
 

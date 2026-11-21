@@ -717,6 +717,8 @@ pub fn app(state: AppState) -> Router {
         .allow_origin(AllowOrigin::predicate(move |origin: &HeaderValue, _| origin.to_str().is_ok_and(|o| origin_allowed(o, &extra_origins))))
         .allow_methods(tower_http::cors::Any)
         .allow_headers(tower_http::cors::Any)
+        // a cross-origin page sees only safelisted response headers; `/net`'s mark must reach it
+        .expose_headers([header::HeaderName::from_static(crate::net::UPSTREAM_HEADER)])
         .allow_private_network(true);
     let control = Router::new()
         .route("/status", get(control_status))
@@ -868,6 +870,14 @@ mod tests {
         assert!(!origin_allowed("https://gestalter.koljasam.com.evil.example", &app));
         assert!(!origin_allowed("http://gestalter.koljasam.com", &app));
         assert!(origin_allowed("https://mine.example", &["https://mine.example".into()]));
+    }
+
+    #[tokio::test]
+    async fn cross_origin_pages_may_read_the_net_mark() {
+        let request = axum::http::Request::get("/status").header(header::ORIGIN, APP_ORIGIN).body(Body::empty()).unwrap();
+        let response = app(state(None)).oneshot(request).await.unwrap();
+        let exposed = response.headers().get(header::ACCESS_CONTROL_EXPOSE_HEADERS).and_then(|v| v.to_str().ok()).unwrap_or("");
+        assert!(exposed.split(',').any(|h| h.trim().eq_ignore_ascii_case(crate::net::UPSTREAM_HEADER)), "exposed: {exposed:?}");
     }
 
     #[test]
