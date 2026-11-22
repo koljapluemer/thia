@@ -98,6 +98,14 @@ that branches inside, not a sequence.
 - Try the agent on a dozen realistic requests for a sequence, by hand. If its splits are poor, the rest doesn't
   matter. The split runs on the same model as the rest, at low effort: it costs little, a cheaper model saves
   nothing worth losing the cache over, and a poor split costs expensive turns later.
+  Tried on 2026-11-22 (12 requests, one CLI call at low effort): the splits hold. It kept three as one view (a
+  recall drill, a quiz, a branching story), split the rest into four concrete steps each, with prerequisites as
+  *skip if known* and easier variants as detours. What to build differently:
+  - It puts *skip if known* on the first step. With one store per sequence, nothing has been practised yet on a new
+    device, so the rule never fires. `check` warns when no earlier step practises a rule's concept, and the
+    contract tells the agent to start with a short check step when it wants to skip (as it did unprompted once).
+  - Four steps means four view drafts to build: say so to the teacher, and build them one at a time, the first
+    before the others.
 
 ### Later
 
