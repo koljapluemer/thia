@@ -1,0 +1,1 @@
+in workshop, it is somehow possible for the agent task to quietly moving to background when switching to another view in the sidebar, coming back to a blocked empty chat saying 'a turn is already running for this draft'. This is bad UX
