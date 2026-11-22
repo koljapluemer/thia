@@ -6,7 +6,7 @@ import { useConnector, useHostQuery, type Repo } from '@gestalts/client';
 import { closedCsp, deckSources, type Registry } from '@gestalts/host';
 import type { DeckSource } from '@gestalts/client';
 import type { ViewError } from '@gestalts/view';
-import { Chat, Preview, VIEWS, asDraft, createDraft, saveDraft } from '@gestalts/workshop';
+import { Chat, Preview, VIEWS, asDraft, createDraft } from '@gestalts/workshop';
 import tailwind from '@tailwindcss/browser?raw';
 import css from '../app.css?inline';
 import { backendFor, type AgentChoice } from './agent';
@@ -24,7 +24,7 @@ const contextOf = (me: api.Me): { registry: Registry; source: { gestalts: string
   ? { registry: workshop, source: { gestalts: workshop.gestalts, decks: deckSources(workshop.plugins.flatMap((p) => p.decks)) } }
   : { registry: teacher, source: { gestalts: teacher.gestalts } });
 
-/** A view's draft: the preview beside the chat that edits it. Opening it records the runtime it's previewed against. */
+/** A view's draft: the preview beside the chat that edits it. */
 export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
   const [{ registry, source }] = useState(() => contextOf(me));
   const init = useCallback(async (repo: Repo) => { await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package }); }, [info, registry]);
@@ -43,10 +43,6 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
   const csp = useMemo(() => closedCsp({ scripts: [`${location.origin}/api/npm/`] }), []);
   const runtime = registry.runtime.version;
-  // previewed against this runtime now, so that's what it's published for
-  useEffect(() => {
-    if (draft && draft.runtime !== runtime) void saveDraft(repo, { draft, put: [], remove: [], added: [], problems: [] }, runtime);
-  }, [repo, draft, runtime]);
   const title = draft?.title;
   useEffect(() => { if (title && title !== info.title) onChanged(); }, [title, info.title, onChanged]);
   if (!draft) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
@@ -80,21 +76,23 @@ export function SyncState() {
   return <span className="text-xs text-base-content/50">Saved</span>;
 }
 
-export function PublishMenu({ repo, id }: { repo: Repo; id: string }) {
+/** Publishing a draft to a class. `agent`: the draft is the agent's to fix (a view), not only the teacher's. */
+export function PublishMenu({ repo, id, agent = true }: { repo: Repo; id: string; agent?: boolean }) {
   const [p, setP] = useState<api.Publication | null>();
   const [busy, setBusy] = useState(false);
-  const [problems, setProblems] = useState<string[]>([]);
+  // the checks' problems are the agent's to fix; anything else is said as it is
+  const [failed, setFailed] = useState<{ message?: string; problems: string[] }>({ problems: [] });
   const [copied, setCopied] = useState(false);
   useEffect(() => { api.publication(id).then(setP, () => setP(null)); }, [id]);
   const run = async (f: () => Promise<void>) => {
     setBusy(true);
-    setProblems([]);
+    setFailed({ problems: [] });
     try { await f(); } catch (e) {
-      setProblems(e instanceof api.ApiError && e.problems.length ? e.problems : [e instanceof Error ? e.message : String(e)]);
+      setFailed(e instanceof api.ApiError && e.problems.length ? { problems: e.problems } : { message: e instanceof Error ? e.message : String(e), problems: [] });
     } finally { setBusy(false); }
   };
   // what the server publishes is its copy: everything here goes there first
-  const publish = () => run(async () => { await repo.connect(api.draftUrl(id)); setP(await api.publish(id)); });
+  const publish = () => run(async () => { await repo.connect(api.draftUrl(id)); setP(await api.publish(id, teacher.runtime.version)); });
   const off = () => run(async () => {
     if (!confirm('Switch the link off? Students who open it see that it isn’t available. Publishing again switches it back on.')) return;
     await api.unpublish(id);
@@ -128,10 +126,11 @@ export function PublishMenu({ repo, id }: { repo: Repo; id: string }) {
         </button>
         {live && <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => void off()}><Link2Off className="size-4" /> Switch the link off</button>}
         {p?.warnings.map((w) => <p key={w} className="text-warning">{w}</p>)}
-        {problems.length > 0 && (
-          <div role="alert" className="text-error">
-            <p>It wasn’t published:</p>
-            <ul className="list-disc pl-5">{problems.map((x) => <li key={x}>{x}</li>)}</ul>
+        {failed.message && <p role="alert" className="text-error">It wasn’t published. {failed.message}</p>}
+        {failed.problems.length > 0 && (
+          <div role="alert" className="flex flex-col gap-1">
+            <p className="text-error">{agent ? 'It wasn’t published: it isn’t ready yet. Ask the agent in the chat to fix this (you can paste it):' : 'It wasn’t published: it isn’t ready yet.'}</p>
+            <ul className="list-disc pl-5 text-xs text-base-content/70">{failed.problems.map((x) => <li key={x}>{x}</li>)}</ul>
           </div>
         )}
       </div>

@@ -35,7 +35,8 @@ export const moveDraft = (title: string, kind: Kind, moved: { id: string; packag
   api<DraftInfo>('/drafts', { method: 'POST', json: { title, kind, moved } });
 export const deleteDraft = (id: string) => api<void>(`/drafts/${id}`, { method: 'DELETE' });
 export const publication = (id: string) => api<Publication | null>(`/drafts/${id}/publication`);
-export const publish = (id: string) => api<Publication>(`/drafts/${id}/publish`, { method: 'POST' });
+/** Published for `runtime`, this page's frame runtime: what its preview runs, and the player the lesson's link serves. */
+export const publish = (id: string, runtime: string) => api<Publication>(`/drafts/${id}/publish`, { method: 'POST', json: { runtime } });
 export const unpublish = (id: string) => api<void>(`/drafts/${id}/publication`, { method: 'DELETE' });
 
 /** A workshop's result offered for the public site, and what became of it. */

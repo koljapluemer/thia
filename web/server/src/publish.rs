@@ -5,7 +5,8 @@
 //! Before anything is written:
 //! - the view compiles, and each npm import is pinned in view.json and bundles
 //! - it reads and writes only gestalts the player has or the draft defines, and every member is valid
-//! - the player for the runtime the draft was made against is deployed here
+//! - the player for the runtime of the page publishing it is deployed here: what the teacher's preview runs, and what
+//!   the lesson's link serves it with from then on
 //! - a gestalt published before keeps its structure (a change is a new version); a lesson whose gestalts changed since
 //!   its last version is published with a warning, since students' data stays on their devices
 
@@ -73,9 +74,14 @@ pub struct Check<'a> {
     pub view: &'a str,
     /// what its own gestalts are named in
     pub package: &'a str,
-    /// as a lesson: the player for its runtime must be here
-    pub lesson: bool,
+    /// as a lesson, for the frame runtime of the page publishing it (`FrameRuntime.version`), whose player must be
+    /// here; none for a submission, which the public site's build runs
+    pub lesson: Option<&'a str>,
 }
+
+/// What a teacher is told when the page publishing has no player here (an old page, or the site updated but its
+/// player not installed yet): nothing they can fix but by reloading, or by telling who runs the site.
+const UPDATED: &str = "This site was just updated and can't publish yet. Reload the page and try again; if it keeps happening, tell your admin.";
 
 /// The lesson a view folder makes, or why it can't go out. A submission is checked the same way.
 pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version> {
@@ -90,19 +96,12 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     let field = |k: &str| m.get(k).cloned().unwrap_or(serde_yaml_ng::Value::Null);
     let (title, source) = (view.str_field("title").unwrap_or_default().to_owned(), view.str_field("source").unwrap_or_default().to_owned());
     let (reads, writes, members) = (strings(&field("reads")), strings(&field("writes")), strings(&field("members")));
-    let runtime = match view.str_field("runtime") {
-        Some(r) => r.to_owned(),
-        None if c.lesson => return Err(ApiError::BadRequest("the draft doesn't say which runtime it was made against: open it once in the app".into())),
-        None => String::new(),
-    };
+    let runtime = c.lesson.unwrap_or_default().to_owned();
     let npm: BTreeMap<String, String> = field("npm").as_mapping().into_iter().flatten().filter_map(|(k, v)| Some((k.as_str()?.to_owned(), v.as_str()?.to_owned()))).collect();
     let mut problems = Vec::new();
 
-    if c.lesson && !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit())) {
-        return Err(ApiError::BadRequest(format!("{runtime} isn't a runtime")));
-    }
-    if c.lesson && !state.data.join("runtime").join(&runtime).join("index.html").is_file() {
-        problems.push(format!("the player for runtime {runtime} isn't installed here: the app was updated, so reload it, open the draft and publish again"));
+    if c.lesson.is_some() && !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit()) && state.data.join("runtime").join(&runtime).join("index.html").is_file()) {
+        return Err(ApiError::Conflict(UPDATED.into()));
     }
 
     // the members, as the lesson ships them
@@ -247,13 +246,24 @@ impl AppState {
     }
 }
 
-async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Published>> {
+#[derive(serde::Deserialize, Default)]
+struct PublishRequest {
+    /// the frame runtime of the page publishing it
+    #[serde(default)]
+    runtime: Option<String>,
+}
+
+async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, body: Option<Json<PublishRequest>>) -> ApiResult<Json<Published>> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
+    if draft.kind == "viz" {
+        return Err(ApiError::BadRequest("a visualization isn't published as a lesson".into()));
+    }
+    let runtime = body.map(|Json(b)| b).unwrap_or_default().runtime.ok_or_else(|| ApiError::Conflict(UPDATED.into()))?;
     let _guard = state.writes.lock().await;
     let version = match draft.kind.as_str() {
-        "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: true }).await?,
-        "sequence" => crate::sequence::build(&state, &teacher.0, &draft).await?,
-        _ => return Err(ApiError::BadRequest("a visualization isn't published as a lesson".into())),
+        "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: Some(&runtime) }).await?,
+        "sequence" => crate::sequence::build(&state, &teacher.0, &draft, &runtime).await?,
+        k => return Err(ApiError::Internal(format!("{}: a draft of kind {k}", draft.id))),
     };
     let previous = state.db.publication_of(&draft.id)?;
     let mut warnings = Vec::new();

@@ -2,7 +2,7 @@
 //! drafts. Checked as a whole here, since the steps are other drafts' folders: that every step's view is there, that
 //! the rules' concepts are, and (warnings) whether an earlier step practises what a rule asks about, without which the
 //! rule never applies on a new device. Published as `lesson@2`: each view as a `lesson@1` folder under `views/<n>/`,
-//! and a manifest naming the steps by those.
+//! and a manifest naming the steps by those, all on the runtime of the page publishing it.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -12,7 +12,7 @@ use axum::{Json, Router};
 use gestalts_core::Yml;
 use gestalts_fs::FsStorage;
 use serde::Serialize;
-use serde_json::{Value, json};
+use serde_json::json;
 
 use crate::auth::Teacher;
 use crate::db::{Account, Draft};
@@ -133,9 +133,9 @@ pub fn check(state: &AppState, account: &Account, steps: &[Step]) -> ApiResult<R
     Ok(r)
 }
 
-/// The lesson a sequence draft makes, or why it can't go out: every view as a lesson, under `views/<n>/`, all on one
-/// runtime.
-pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft) -> ApiResult<Version> {
+/// The lesson a sequence draft makes, or why it can't go out: every view as a lesson, under `views/<n>/`, all on
+/// `runtime`, which one player page plays them with.
+pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft, runtime: &str) -> ApiResult<Version> {
     let (title, steps) = read(state, d)?;
     let report = check(state, account, &steps)?;
     if !report.problems.is_empty() {
@@ -154,20 +154,13 @@ pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft) -> Api
         out_steps.push(s);
     }
     let mut out = Version { files: BTreeMap::new(), blobs: BTreeMap::new(), npm: BTreeMap::new(), definitions: BTreeMap::new() };
-    let mut runtime: Option<String> = None;
     for (i, v) in views.iter().enumerate() {
         let vd = state.db.draft(v, &account.id)?.ok_or_else(|| ApiError::Invalid(vec![format!("step view {v} isn't there")]))?;
-        let one = build_view(state, &Check { dir: &state.draft_dir(&vd.id), view: &vd.id, package: &vd.package, lesson: true }).await.map_err(|e| match e {
+        let one = build_view(state, &Check { dir: &state.draft_dir(&vd.id), view: &vd.id, package: &vd.package, lesson: Some(runtime) }).await.map_err(|e| match e {
             ApiError::Invalid(p) => ApiError::Invalid(p.into_iter().map(|p| format!("{}: {p}", vd.title)).collect()),
             ApiError::BadRequest(m) => ApiError::BadRequest(format!("{}: {m}", vd.title)),
             e => e,
         })?;
-        let m: Value = serde_json::from_slice(&one.files["manifest.json"]).map_err(|e| ApiError::Internal(e.to_string()))?;
-        let rt = m["runtime"].as_str().unwrap_or_default().to_owned();
-        match &runtime {
-            Some(r) if *r != rt => return Err(ApiError::Invalid(vec![format!("{}: made against another version of the app than the first step: open it once, then publish again", vd.title)])),
-            _ => runtime = Some(rt),
-        }
         let at = format!("views/{i}");
         out.files.extend(one.files.into_iter().map(|(f, b)| (format!("{at}/{f}"), b)));
         out.blobs.extend(one.blobs.into_iter().map(|(f, p)| (format!("{at}/{f}"), p)));
@@ -177,7 +170,7 @@ pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft) -> Api
     let manifest = json!({
         "format": "lesson@2",
         "title": title,
-        "runtime": runtime.unwrap_or_default(),
+        "runtime": runtime,
         "views": (0..views.len()).map(|i| format!("views/{i}")).collect::<Vec<_>>(),
         "steps": out_steps,
         "published": now_iso(),

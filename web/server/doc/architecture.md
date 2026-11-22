@@ -76,9 +76,11 @@ the preview first.
 ## Publishing
 
 `publish.rs`: a view's draft as the server has it is checked (compiles, npm pinned and bundling, gestalts a lesson has,
-every member valid, a player installed for the draft's runtime, published gestalts keep their structure), then written
-as a version folder named by its content: `lessons/<lesson>/<version>/` with `manifest.json`, the compiled view, and
-its ymls as a published deck. npm bundles go to `npm/`, shared. A draft has one publication, so its link stays across
+every member valid, published gestalts keep their structure), then written as a version folder named by its content:
+`lessons/<lesson>/<version>/` with `manifest.json`, the compiled view, and its ymls as a published deck. It is
+published for the frame runtime of the page publishing it, which is what its preview runs, and the player its link
+serves from then on (`admin install-player` puts each runtime's player here, as deploying does). Without that player,
+the teacher is told the site was just updated, to reload and try again. npm bundles go to `npm/`, shared. A draft has one publication, so its link stays across
 versions; unpublishing switches it off (410).
 
 ## The lesson domain

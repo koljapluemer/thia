@@ -40,7 +40,7 @@ impl Draft {
     }
 
     async fn publish(&self, s: &Server) -> (StatusCode, Value) {
-        let (status, body, _) = s.call("POST", &format!("{}/publish", self.base), Some(&self.cookie), None).await;
+        let (status, body, _) = s.call("POST", &format!("{}/publish", self.base), Some(&self.cookie), Some(json!({ "runtime": RUNTIME }))).await;
         (status, body)
     }
 }
@@ -119,6 +119,13 @@ async fn what_may_not_go_out() {
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(body.to_string().contains("exact version"), "{body}");
 
+    // a page whose runtime has no player here (an old one, or the site updated before its player was installed)
+    for body in [None, Some(json!({ "runtime": "fedcba9876543210" })), Some(json!({ "runtime": "../../x" }))] {
+        let (status, body, _) = s.call("POST", &format!("{}/publish", d.base), Some(&d.cookie), body).await;
+        assert_eq!(status, StatusCode::CONFLICT);
+        assert!(body["error"].as_str().unwrap().starts_with("This site was just updated"), "said plainly: {body}");
+    }
+
     // guessed links are 404s, and many of them slow down
     for _ in 0..130 {
         s.lessons("/l/AAAAAAAAAAAAAAAAAAAAAA/current").await;
@@ -139,7 +146,7 @@ async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
     let media = "id: m\ngestalt: media-source@1\nprovider: youtube\nexternal_id: abc\nlanguage: it\n";
     let w = json!([{ "id": id, "text": view }, { "id": "m", "text": media }]);
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&cal), Some(w)).await.0, StatusCode::NO_CONTENT, "the repo's models, in a maintainer's draft");
-    let (status, body, _) = s.call("POST", &format!("/api/drafts/{id}/publish"), Some(&cal), None).await;
+    let (status, body, _) = s.call("POST", &format!("/api/drafts/{id}/publish"), Some(&cal), Some(json!({ "runtime": RUNTIME }))).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
     assert!(body.to_string().contains("media-source@1"), "{body}");
 }
@@ -148,7 +155,7 @@ async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
 async fn view_practising(s: &Server, cookie: &str, title: &str, concept: &str) -> String {
     let (_, d, _) = s.call("POST", "/api/drafts", Some(cookie), Some(json!({ "title": title }))).await;
     let (id, p) = (d["id"].as_str().unwrap().to_owned(), d["package"].as_str().unwrap().to_owned());
-    let view = format!("id: {id}\ngestalt: view@2\ntitle: {title}\nsource: {VIEW:?}\nreads: [concept@2, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: [{concept}]\n");
+    let view = format!("id: {id}\ngestalt: view@2\ntitle: {title}\nsource: {VIEW:?}\nreads: [concept@2, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [{concept}]\n");
     let w = json!([{ "id": id, "text": view }, { "id": concept, "text": format!("id: {concept}\ngestalt: concept@2\nname: Zehnerübergang\n") }]);
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(cookie), Some(w)).await.0, StatusCode::NO_CONTENT);
     id
@@ -180,7 +187,7 @@ async fn a_lesson_of_several_views_is_checked_as_a_whole_and_goes_out_as_one() {
     // a view that isn't there, a concept no step practises
     let bad = "  - view: nope\n  - view: x\n    skip_if_known: nichts\n";
     s.call("POST", &format!("{at}/sync/write"), Some(&d.cookie), Some(write(bad))).await;
-    let (status, body, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), None).await;
+    let (status, body, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), Some(json!({ "runtime": RUNTIME }))).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
     assert!(body["problems"].as_array().unwrap().len() >= 3, "{body}");
 
@@ -189,7 +196,7 @@ async fn a_lesson_of_several_views_is_checked_as_a_whole_and_goes_out_as_one() {
     assert_eq!(s.call("POST", &format!("{at}/sync/write"), Some(&d.cookie), Some(write(&good))).await.0, StatusCode::NO_CONTENT);
     let (_, r, _) = s.call("GET", &format!("{at}/sequence"), Some(&d.cookie), None).await;
     assert_eq!(r["warnings"], json!([]), "{r}");
-    let (status, p, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), None).await;
+    let (status, p, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), Some(json!({ "runtime": RUNTIME }))).await;
     assert_eq!(status, StatusCode::OK, "{p}");
     let (_, _, current) = s.lessons(&format!("/l/{}/current", p["id"].as_str().unwrap())).await;
     let path = serde_json::from_slice::<Value>(&current).unwrap()["manifest"].as_str().unwrap().to_owned();
@@ -202,6 +209,6 @@ async fn a_lesson_of_several_views_is_checked_as_a_whole_and_goes_out_as_one() {
     assert_eq!((step["format"].as_str(), step["title"].as_str()), (Some("lesson@1"), Some("Plus bis 100")));
     assert_eq!(s.lessons(&format!("{base}views/1/{}", step["view"].as_str().unwrap())).await.0, StatusCode::OK);
     // the same again is the same version
-    let (_, again, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), None).await;
+    let (_, again, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), Some(json!({ "runtime": RUNTIME }))).await;
     assert_eq!(again["manifest"], p["manifest"]);
 }

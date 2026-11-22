@@ -64,7 +64,7 @@ function Editor({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.Dr
       <div className="flex flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{seq.title}</span>
         <SyncState />
-        <PublishMenu repo={repo} id={info.id} />
+        <PublishMenu repo={repo} id={info.id} agent={false} />
         <ExportButton id={info.id} />
         <DeleteButton id={info.id} title={seq.title} onDeleted={onDeleted} />
       </div>

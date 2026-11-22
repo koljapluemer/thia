@@ -200,7 +200,7 @@ pub async fn create(state: &AppState, account: &Account, sent: Sent) -> ApiResul
     };
     if let Some((view, package)) = &snap.view {
         // as publishing checks it: it compiles, and its npm is pinned and bundles
-        if let Err(e) = build(state, &Check { dir: &dir, view, package, lesson: false }).await {
+        if let Err(e) = build(state, &Check { dir: &dir, view, package, lesson: None }).await {
             let _ = std::fs::remove_dir_all(&dir);
             return Err(e);
         }
