@@ -20,12 +20,14 @@ function savedSession(backend: string, view: string) { try { return localStorage
  * One conversation about one draft. Each turn sends the draft as files, and saves what comes back. What couldn't be
  * saved goes with the next message, as the preview's errors do. `runtime` is recorded on the draft with each save.
  */
-export function Chat({ repo, draft, backend, runtime, errors, onTurnDone }: {
+export function Chat({ repo, draft, backend, runtime, errors, onTurnDone, suggestion }: {
   repo: Repo; draft: Draft; backend: AgentBackend; runtime?: string; errors: ViewError[]; onTurnDone: () => void;
+  /** what the message box starts with (a brief the draft was made from), for the person to read and send */
+  suggestion?: string;
 }) {
   const [refused, setRefused] = useState<Diagnostic[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
-  const [text, setText] = useState('');
+  const [text, setText] = useState(suggestion ?? '');
   const [busy, setBusy] = useState(false);
   const [unavailable, setUnavailable] = useState<string>();
   const abort = useRef<AbortController | null>(null);

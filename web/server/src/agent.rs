@@ -407,7 +407,7 @@ impl Agents {
     }
 
     /// Why the agent can't take a turn now, if it can't.
-    fn unavailable(&self) -> Option<String> {
+    pub(crate) fn unavailable(&self) -> Option<String> {
         if self.model.api_key.is_none() {
             return Some("the agent isn't set up on this server (no API key)".into());
         }
@@ -415,7 +415,7 @@ impl Agents {
     }
 
     async fn call_model(&self, system: &str, messages: &[Value]) -> Result<Value, String> {
-        let body = json!({
+        self.send(&json!({
             "model": self.model.model,
             "max_tokens": MAX_TOKENS,
             // thinking is always on for this model; effort decides how much
@@ -427,7 +427,26 @@ impl Agents {
             "cache_control": { "type": "ephemeral" },
             // a request a safety classifier declines is retried on the model that fits, in the same call
             "fallbacks": "default",
-        });
+        }))
+        .await
+    }
+
+    /// One answer, without tools, at low effort: a short piece of planning (how a lesson splits into views), whose
+    /// text is the answer. Cached like a turn's system prompt.
+    pub(crate) async fn call_once(&self, system: &str, user: &str) -> Result<Value, String> {
+        self.send(&json!({
+            "model": self.model.model,
+            "max_tokens": MAX_TOKENS,
+            "output_config": { "effort": "low" },
+            "system": [{ "type": "text", "text": system, "cache_control": { "type": "ephemeral" } }],
+            "messages": [{ "role": "user", "content": [{ "type": "text", "text": user }] }],
+            "fallbacks": "default",
+        }))
+        .await
+    }
+
+    /// A request to the Messages API, retried as it says.
+    async fn send(&self, body: &Value) -> Result<Value, String> {
         let mut wait = Duration::from_secs(2);
         for attempt in 0..4 {
             let res = self
@@ -436,7 +455,7 @@ impl Agents {
                 .header("x-api-key", self.model.api_key.as_deref().unwrap_or_default())
                 .header("anthropic-version", API_VERSION)
                 .header("anthropic-beta", FALLBACK_BETA)
-                .json(&body)
+                .json(body)
                 .send()
                 .await;
             let retry = match res {
@@ -491,7 +510,7 @@ pub struct TurnRequest {
 }
 
 /// The first instant of this calendar month, as the budget counts.
-fn month_start() -> String {
+pub(crate) fn month_start() -> String {
     format!("{}-01T00:00:00.000Z", &now_iso()[..7])
 }
 

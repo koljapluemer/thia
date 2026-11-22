@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Sparkles, X } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins/teacher';
 import { useHostQuery, type Repo } from '@gestalts/client';
 import type { Belief } from '@gestalts/view';
@@ -70,6 +70,7 @@ function Editor({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.Dr
       </div>
       <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex flex-col gap-3 p-3 text-sm">
+          <Planner id={info.id} seq={seq} onTake={(next) => { change(next); onChanged(); }} />
           <label className="flex flex-col gap-1">
             <span className="text-base-content/60">Title</span>
             <input className="input input-sm w-full" value={seq.title} onChange={(e) => change({ ...seq, title: e.target.value })} />
@@ -101,6 +102,92 @@ function Editor({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.Dr
     </div>
   );
 }
+
+/**
+ * The agent proposes how the lesson splits into views (one call, `POST …/sequence/plan`). Taking it makes each step's
+ * view a draft of its own, with its brief waiting in that draft's chat: the views are built one at a time, by the
+ * teacher sending it.
+ */
+function Planner({ id, seq, onTake }: { id: string; seq: Sequence; onTake: (s: Sequence) => void }) {
+  const [request, setRequest] = useState('');
+  const [plan, setPlan] = useState<api.Plan>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const [made, setMade] = useState<string[]>();
+  const ask = async () => {
+    setBusy(true); setError(undefined); setPlan(undefined); setMade(undefined);
+    try { setPlan(await api.planLesson(id, request.trim())); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+  };
+  const take = async (p: Extract<api.Plan, { steps: unknown }>) => {
+    setBusy(true); setError(undefined);
+    try {
+      const view = async (title: string, text: string) => {
+        const d = await api.newDraft(title, 'view');
+        api.brief.set(d.id, text);
+        return d.id;
+      };
+      const steps: Step[] = [];
+      const titles: string[] = [];
+      for (const st of p.steps) {
+        const v = await view(st.title, st.brief);
+        titles.push(st.title);
+        const rule = st.rule;
+        if (rule && 'skip_if_known' in rule) steps.push({ view: v, skipIfKnown: rule.skip_if_known });
+        else if (rule && 'detour' in rule) {
+          steps.push({ view: v, detour: { concept: rule.detour.concept, view: await view(rule.detour.title, rule.detour.brief) } });
+          titles.push(`${rule.detour.title} (extra)`);
+        } else steps.push({ view: v });
+      }
+      onTake({ ...seq, title: seq.title.trim() ? seq.title : p.title, steps: [...seq.steps, ...steps] });
+      setMade(titles);
+      setPlan(undefined);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); }
+  };
+  return (
+    <details className="rounded-box border border-base-300 bg-base-100 p-2" open={!seq.steps.length}>
+      <summary className="cursor-pointer font-medium"><Sparkles className="mr-1 inline size-4" />Plan it with the agent</summary>
+      <div className="mt-2 flex flex-col gap-2">
+        <textarea className="textarea textarea-sm w-full" rows={3} value={request} onChange={(e) => setRequest(e.target.value)}
+                  placeholder="What should the lesson do, for whom? e.g. Klasse 2: Plusaufgaben mit Zehnerübergang bis 100; wer das schon kann, soll nicht gelangweilt werden." />
+        <button type="button" className="btn btn-sm self-start" disabled={busy || !request.trim()} onClick={() => void ask()}>
+          {busy && !plan ? <span className="loading loading-spinner loading-xs" /> : 'Propose steps'}
+        </button>
+        {error && <p role="alert" className="text-xs text-error">{error}</p>}
+        {plan && 'one_view' in plan && (
+          <p className="text-sm">The agent thinks this is one view, not several: {plan.one_view} Make it with New → View.</p>
+        )}
+        {plan && 'steps' in plan && (
+          <div className="flex flex-col gap-2">
+            <p className="font-medium">{plan.title}</p>
+            <ol className="flex list-decimal flex-col gap-1 pl-5">
+              {plan.steps.map((st, i) => (
+                <li key={i}>
+                  <span className="font-medium">{st.title}</span>: {st.does}
+                  {st.rule && 'skip_if_known' in st.rule && <span className="block text-xs text-base-content/60">skipped if they know {nameIn(plan, st.rule.skip_if_known)}</span>}
+                  {st.rule && 'detour' in st.rule && <span className="block text-xs text-base-content/60">extra first if they struggle with {nameIn(plan, st.rule.detour.concept)}: {st.rule.detour.title}</span>}
+                </li>
+              ))}
+            </ol>
+            <p className="text-xs text-base-content/60">
+              Taking it makes {views(plan)} view drafts, each with its brief ready in its chat. Each is built when you send
+              that, one at a time: start with the first, and see if it’s what you want before the others.
+            </p>
+            <div className="flex gap-2">
+              <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void take(plan)}>{busy ? <span className="loading loading-spinner loading-xs" /> : 'Take it'}</button>
+              <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => setPlan(undefined)}>Discard</button>
+            </div>
+          </div>
+        )}
+        {made && <p role="status" className="text-xs text-success">Made {made.join(', ')}. Open each from the list to build it; until they’re built, the check below misses the concepts they’ll practise.</p>}
+      </div>
+    </details>
+  );
+}
+
+const nameIn = (p: Extract<api.Plan, { steps: unknown }>, id: string) => p.steps.flatMap((s) => s.practises).find((c) => c.id === id)?.name ?? id;
+const views = (p: Extract<api.Plan, { steps: unknown }>) => p.steps.length + p.steps.filter((s) => s.rule && 'detour' in s.rule).length;
 
 /** The concepts a rule of step `i` may name: what the views practise (earlier ones first, as those make it apply). */
 function conceptsBefore(steps: Step[], i: number, views: api.SequenceReport['views']): string[] {

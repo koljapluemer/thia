@@ -22,7 +22,8 @@ Each draft has a kind (`drafts.kind`), set when it's made:
   draft's `package`, which the server hands out, and the ymls it ships with
 - `viz`: one `viz@1` yml and the blobs it names
 - `sequence`: one `sequence@1` yml, whose steps are the account's view drafts (`sequence.rs`: checked as a whole,
-  published as `lesson@2`, each view a `lesson@1` folder under `views/<n>/`)
+  published as `lesson@2`, each view a `lesson@1` folder under `views/<n>/`; the agent plans its split in one call at
+  low effort, `POST /api/drafts/<id>/sequence/plan`, within the budget, making nothing)
 
 Each draft is its own folder, in the browser (OPFS, `teacher-draft-<id>`) and on the server (`drafts/<id>/`), synced
 over the node's `/sync` and `/blobs` shapes under `/api/drafts/<id>/`. The browser is untrusted: the server validates

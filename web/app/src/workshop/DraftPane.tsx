@@ -46,6 +46,7 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const title = draft?.title;
   useEffect(() => { if (title && title !== info.title) onChanged(); }, [title, info.title, onChanged]);
   if (!draft) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
+  const suggestion = api.brief.get(info.id);
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
@@ -61,7 +62,7 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
           <Preview repo={repo} draft={draft} runtime={registry.runtime} css={css} tailwind={tailwind} onError={onError} resolveNpm={api.resolveNpm} csp={csp} />
         </div>
         <div className="min-h-0 border-t border-base-300 md:border-t-0 md:border-l">
-          <Chat repo={repo} draft={draft} backend={backend} runtime={runtime} errors={errors} onTurnDone={() => setErrors([])} />
+          <Chat repo={repo} draft={draft} backend={backend} runtime={runtime} errors={errors} suggestion={suggestion} onTurnDone={() => { setErrors([]); api.brief.clear(info.id); }} />
         </div>
       </div>
     </div>

@@ -36,7 +36,7 @@ installables/claude-bridge/  runs `claude -p` on this computer for a site the pe
 |---|---|---|---|
 | `view` | a `view@2` yml and its members | the server's, or the bridge's | to a class, as a lesson; to the public site, reviewed |
 | `viz` | one `viz@1` yml and its blobs | the bridge's only, until the server renders | to the public site, reviewed |
-| `sequence` | one `sequence@1` yml: steps, each another view draft with at most one rule | none yet: a form (`SequencePane.tsx`) | to a class, as a lesson of several views |
+| `sequence` | one `sequence@1` yml: steps, each another view draft with at most one rule | the server's, to plan the split; then each step's view as any view | to a class, as a lesson of several views |
 
 A draft's id is its view's or viz's. The server checks each kind ([`web/server/src/validate.rs`](../../../server/src/validate.rs)):
 a viz's draft holds its viz and nothing else.
@@ -50,7 +50,11 @@ the vizint view, as the public site shows it.
 
 A lesson of several views is checked as a whole by the server (`GET /api/drafts/<id>/sequence`, `web/server/src/sequence.rs`):
 every step's view is there, every rule's concept is one a step's view practises, and a warning when no earlier step
-practises a rule's concept (on a new device such a rule never applies, so a short check step comes first). Its
+practises a rule's concept (on a new device such a rule never applies, so a short check step comes first). The agent **plans** it: one call at low effort (`POST …/sequence/plan`, its instructions in
+`agent-template/plan-lesson.md`) proposes one view instead, or the steps with their briefs and rules; the server drops
+a rule no earlier step can feed, and appends to each brief what ties the view to the rules (its concepts as
+`concept@2` data, practice logged on them, `done()`). Taking the plan makes each view a draft with its brief waiting in
+its chat, built when the teacher sends it, one at a time. The steps can be edited in the form besides. Its
 **play-through** walks it for a pretend student who is new, knows a concept, or struggles with it
 (`packages/workshop/src/sequence.ts`, `walk`, the same decisions the player makes).
 
