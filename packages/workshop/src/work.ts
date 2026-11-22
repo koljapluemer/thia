@@ -43,7 +43,7 @@ async function one(repo: Pick<Repo, 'query'>, gestalt: string | string[], id: st
   return item;
 }
 
-/** A view's draft (`view@2` and its members). `runtime` is recorded with each save. */
+/** A view's draft (`view@3` and its members). `runtime` is recorded with each save. */
 export function viewWork(repo: Repo, id: string, runtime?: string): Work {
   const read = async () => asDraft(await one(repo, VIEWS, id));
   return {

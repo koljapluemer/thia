@@ -3,13 +3,14 @@ import type { Item, Json, JsonMap } from '@gestalts/view';
 import { parse, stringify } from 'yaml';
 
 /**
- * A draft: one `view@2` yml and its members, the `gestalt@1` definitions and the ymls it ships with. Whatever the view
+ * A draft: one `view@3` yml and its members, the `gestalt@1` definitions and the ymls it ships with. Whatever the view
  * writes while it's tried out stays out of it. A `view@1` reads as a draft without members.
  *
  * The agent sees it as files ([`filesOf`]); what it changed comes back as ymls to write ([`applyFiles`]).
  */
-export const VIEW = 'view@2';
-export const VIEWS = ['view@1', 'view@2'];
+export const VIEW = 'view@3';
+/** what reads as a draft: a `view@1` without members, a `view@2` without a brief, written as a `view@3` when saved */
+export const VIEWS = ['view@1', 'view@2', 'view@3'];
 export const DEFINITION = 'gestalt@1';
 
 export type Draft = {

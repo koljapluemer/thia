@@ -237,7 +237,7 @@ fn promote_view(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Ap
     }
 
     let (store, ymls) = snapshot(state, s)?;
-    let view = ymls.iter().map(|(id, t)| Yml::parse(id.clone(), t.clone())).find(|y| y.map().and_then(|m| m.get("gestalt")).and_then(Value::as_str) == Some(crate::submissions::VIEW)).ok_or_else(|| ApiError::Internal("the snapshot has no view".into()))?;
+    let view = ymls.iter().map(|(id, t)| Yml::parse(id.clone(), t.clone())).find(|y| y.map().and_then(|m| m.get("gestalt")).and_then(Value::as_str).is_some_and(|g| crate::submissions::VIEWS.contains(&g))).ok_or_else(|| ApiError::Internal("the snapshot has no view".into()))?;
     let m = view.map().ok_or_else(|| ApiError::Internal("the view isn't a map".into()))?.clone();
     let old = view.str_field("package").unwrap_or_default().to_owned();
     if !(old.starts_with("d-") && old.len() > 4) {

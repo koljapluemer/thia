@@ -75,6 +75,6 @@ describe('saving', () => {
     const put = vi.fn(async () => ({}) as never);
     const id = await createDraft({ put }, 'Märchen & Co!', 'rt');
     expect(id).toMatch(/^marchen-co-[0-9a-f]{8}$/);
-    expect(put).toHaveBeenCalledWith(expect.objectContaining({ gestalt: 'view@2', package: packageOf(id), runtime: 'rt' }));
+    expect(put).toHaveBeenCalledWith(expect.objectContaining({ gestalt: 'view@3', package: packageOf(id), runtime: 'rt' }));
   });
 });

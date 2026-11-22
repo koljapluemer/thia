@@ -5,7 +5,7 @@
 //! - **Sending**: a draft is copied from the server's own folder (`POST /drafts/<id>/submit`), as
 //!   `workshop:<draft id>`, by its signed-in owner, who affirms they may share it. Older submissions came from the
 //!   workshops that kept drafts in the browser (`make:`, `make-viz:`) or the teacher area (`teach:`).
-//! - **What it is** follows from what it holds: one `view@2` and its members (`view`), or one `viz@1` (`viz`). A view
+//! - **What it is** follows from what it holds: one `view@3` (or `view@2`) and its members (`view`), or one `viz@1` (`viz`). A view
 //!   is checked as publishing checks it: it compiles, and its npm packages are pinned and bundle.
 //! - **Review** (admins): the queue, each submission as a read-only deck for a live preview, and accepting
 //!   ([`crate::promote`]) or rejecting with a note the sender sees.
@@ -31,7 +31,8 @@ use crate::db::Account;
 use crate::validate::{Batch, Kind, check, draft_gestalts};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
-pub const VIEW: &str = "view@2";
+/// What a submitted view is: a draft's, written as `view@3` since drafts keep their brief, or a `view@2` from before.
+pub const VIEWS: &[&str] = &["view@2", "view@3"];
 pub use crate::validate::VIZ;
 
 /// What was sent, before it's checked.
@@ -74,10 +75,10 @@ fn valid_source(s: &str) -> bool {
 }
 
 /// The ymls in `ymls` that say they're of `gestalt`.
-fn of_gestalt(ymls: &BTreeMap<String, String>, gestalt: &str) -> Vec<Yml> {
+fn of_gestalt(ymls: &BTreeMap<String, String>, gestalts: &[&str]) -> Vec<Yml> {
     ymls.iter()
         .map(|(id, t)| Yml::parse(id.clone(), t.clone()))
-        .filter(|y| y.map().and_then(|m| m.get("gestalt")).and_then(|g| g.as_str()) == Some(gestalt))
+        .filter(|y| y.map().and_then(|m| m.get("gestalt")).and_then(|g| g.as_str()).is_some_and(|g| gestalts.contains(&g)))
         .collect()
 }
 
@@ -95,8 +96,8 @@ struct Snapshot {
 fn snapshot(state: &AppState, account: &Account, sent: &Sent) -> ApiResult<Snapshot> {
     let base = state.gestalts_for(account);
     let limits = state.limits_for(account);
-    let views = of_gestalt(&sent.ymls, VIEW);
-    let vizzes = of_gestalt(&sent.ymls, VIZ);
+    let views = of_gestalt(&sent.ymls, VIEWS);
+    let vizzes = of_gestalt(&sent.ymls, &[VIZ]);
     let (kind, keep, gestalts, view) = match (views.as_slice(), vizzes.as_slice()) {
         ([v], []) => {
             let package = v.str_field("package").unwrap_or_default().to_owned();
@@ -123,7 +124,7 @@ fn snapshot(state: &AppState, account: &Account, sent: &Sent) -> ApiResult<Snaps
             let keep = BTreeMap::from([(v.id.clone(), v.raw.clone())]);
             ("viz", keep, base.clone(), None)
         }
-        ([], []) => return Err(ApiError::BadRequest("nothing to submit: a view (view@2) or a visualization (viz@1)".into())),
+        ([], []) => return Err(ApiError::BadRequest("nothing to submit: a view (view@3) or a visualization (viz@1)".into())),
         _ => return Err(ApiError::BadRequest("a submission is one view or one visualization".into())),
     };
     let mut blobs = BTreeMap::new();
@@ -137,7 +138,7 @@ fn snapshot(state: &AppState, account: &Account, sent: &Sent) -> ApiResult<Snaps
         let y = Yml::parse(id.clone(), text.clone());
         let st = gestalts.classify(&y);
         match &st {
-            YmlState::Valid(g) if g == VIEW || g == VIZ => title = y.str_field("title").unwrap_or_default().trim().to_owned(),
+            YmlState::Valid(g) if VIEWS.contains(&g.as_str()) || g == VIZ => title = y.str_field("title").unwrap_or_default().trim().to_owned(),
             YmlState::Valid(_) => {}
             _ => problems.push(format!("{id}: not valid")),
         }

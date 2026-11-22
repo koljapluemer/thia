@@ -2,7 +2,7 @@
 //!
 //! - every yml is valid by the core's gestalts, the model packages', or the draft's own definitions, or a tombstone
 //! - a view's draft: its own definitions (`gestalt@1`) are named in its package, never another's; the view yml
-//!   (`view@1`/`view@2`) has the draft's id and package, and nothing else has that id
+//!   (`view@1`/`view@2`/`view@3`) has the draft's id and package, and nothing else has that id
 //! - a visualization's draft: one `viz@1`, with the draft's id, and nothing else; a lesson's (several views): one
 //!   `sequence@1`, with at most one rule per step
 //! - within the limits on how many ymls and how big
@@ -17,7 +17,7 @@ use crate::Limits;
 /// What a draft makes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Kind {
-    /// a `view@2` and its members
+    /// a `view@3` (or an older one) and its members
     View,
     /// a `viz@1`
     Viz,
@@ -58,7 +58,7 @@ pub const SEQUENCE: &str = "sequence@1";
 
 /// The gestalts of a draft's views.
 pub fn is_view(gestalt: &str) -> bool {
-    matches!(gestalt, "view@1" | "view@2")
+    matches!(gestalt, "view@1" | "view@2" | "view@3")
 }
 
 /// A draft's ymls as they would be after a write.
@@ -126,7 +126,7 @@ pub fn check(base: &Gestalts, limits: &Limits, b: &Batch<'_>) -> Vec<String> {
                 } else if is_view(&g) {
                     if id != b.draft {
                         problems.push(format!("{id}: a draft has one view, {}", b.draft));
-                    } else if g == "view@2" && y.str_field("package") != Some(b.package) {
+                    } else if matches!(g.as_str(), "view@2" | "view@3") && y.str_field("package") != Some(b.package) {
                         problems.push(format!("{id}: its package is {}", b.package));
                     }
                 } else if id == b.draft {

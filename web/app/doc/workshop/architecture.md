@@ -24,7 +24,7 @@ web/app/src/workshop/
   api.ts                     the server's API
 
 packages/workshop/           shared by the panes:
-  draft.ts, viz.ts           a view's draft as ymls (`view@2` and its members), a viz as its `viz@1` yml
+  draft.ts, viz.ts           a view's draft as ymls (`view@3` and its members), a viz as its `viz@1` yml
   work.ts                    a draft as a conversation works on it, per kind (`Work`): what the agent is sent, where
                              what comes back goes, and the page's own check after a turn (`settle`)
   Preview.tsx                compiles a draft's view in the browser and runs it in a frame, as any view runs
@@ -43,7 +43,7 @@ installables/claude-bridge/  runs `claude -p` on this computer for a site the pe
 
 | kind | what it holds | agent | goes out |
 |---|---|---|---|
-| `view` | a `view@2` yml and its members | either | to a class, as a lesson; to the public site, reviewed |
+| `view` | a `view@3` yml and its members | either | to a class, as a lesson; to the public site, reviewed |
 | `viz` | one `viz@1` yml and its blobs | either | to a class, as a lesson (the vizint view on it); to the public site, reviewed |
 | `sequence` | one `sequence@1` yml: steps, each another view or viz draft, with at most one rule | either, to plan the split; then each step as its kind | to a class, as a lesson of several views |
 
@@ -89,9 +89,9 @@ through the Claude bridge (the teacher's own plan, no API tokens), which is how 
 
 ## A view's draft
 
-A draft is a `view@2` yml and its `members`: `gestalt@1` definitions of its own gestalts (named in the draft's
+A draft is a `view@3` yml and its `members`: `gestalt@1` definitions of its own gestalts (named in the draft's
 `package`) and the ymls it ships with. What the view writes while it's tried out isn't a member. A `view@1` reads as
-a draft without members.
+a draft without members, a `view@2` as one without a brief; either is written as a `view@3` when it's next saved.
 
 A turn with the bridge: the browser sends the bridge the draft as files (`view.tsx`, `view.json`, `gestalts/<name>@<N>.yml`,
 `data/<id>.yml`), its brief (`SPEC.md`), the template (the contract, the examples, and the sources of what a view may import, under

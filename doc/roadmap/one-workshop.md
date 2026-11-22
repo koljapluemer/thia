@@ -133,7 +133,7 @@ brief it kept. Now:
   and by the server for its agent. The templates are `packages/workshop`'s.
 - **One turn path.** `Chat` over a `Work` per kind, through `AgentBackend` with either agent. A viz's *Build* is a
   chat message; the page's own check after a turn (`settle`, from the viz) keeps a viz's page only when it passes.
-- **A brief on every draft** (`spec`, sent as `SPEC.md`; `view@2` gained the field), and one layout (`Shell`).
+- **A brief on every draft** (`spec`, sent as `SPEC.md`; `view@3` is `view@2` with it), and one layout (`Shell`).
 - **The bridge knows nothing of kinds.** Its run log records the last result of each page tool by name, not of a tool
   named `check`. It stays the optional, local way to try any kind on one's own plan, at no API cost; the server makes
   the same things on API calls.
@@ -148,7 +148,7 @@ What has to stay apart, and why:
    or handed to the page, `GESTALTS_VIZ_RENDER`). One `@gestalts/check`, `Platform` is the seam.
 5. Sessions and auth: a CLI session and a pairing token per site; a server session file, the account and its budget.
 6. Preview: a view compiled in a frame; a viz's built page in the vizint view; a lesson's play-through.
-7. Draft format and kept paths: `view@2` and members; `viz@1` and blobs.
+7. Draft format and kept paths: `view@3` and members; `viz@1` and blobs.
 8. What goes out: a view's own `lesson@1`; the vizint view on a viz; a sequence of those.
 
 ## Prior art

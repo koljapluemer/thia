@@ -46,7 +46,7 @@ account's owner grants the rights. What's sent is the server's own copy of the d
 
 The server (`web/server/src/submissions.rs`) works out the kind from what was sent:
 
-- exactly one `view@2` makes it a **view**; it keeps the view and its members
+- exactly one `view@3` (or `view@2`) makes it a **view**; it keeps the view and its members
 - exactly one `viz@1` makes it a **viz**
 
 It checks the ymls the way draft writes are checked, and checks a view the way publishing checks one (it compiles, and

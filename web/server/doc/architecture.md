@@ -18,7 +18,7 @@ web/server/deploy/         the box: Caddy, systemd, backups
 
 Each draft has a kind (`drafts.kind`), set when it's made:
 
-- `view`: a `view@2` yml and its `members` (`packages/workshop/src/draft.ts`): `gestalt@1` definitions named in the
+- `view`: a `view@3` yml and its `members` (`packages/workshop/src/draft.ts`): `gestalt@1` definitions named in the
   draft's `package`, which the server hands out, and the ymls it ships with
 - `viz`: one `viz@1` yml and the blobs it names
 - `sequence`: one `sequence@1` yml, whose steps are the account's view and viz drafts (`sequence.rs`: checked as a
