@@ -5,6 +5,7 @@
 #   - the public site (web/site): the learning views, visualizations and accepted workshop results
 #   - the Claude bridge (scripts/claude-bridge.sh): runs the agents (the claude CLI), with the pages' tools: the
 #     workshops' and the teacher area's
+#   - the Ollama bridge (scripts/ollama-bridge.sh, experimental): the same, with a local Ollama model
 #   - folder-sync, headless (scripts/node.sh): the plugin backends, /net and /llm for the home areas
 #   - the teacher server (teacher-data/; its agent with ANTHROPIC_API_KEY), with the site's build to play lessons, and
 #     accepting reviewed submissions into this checkout
@@ -37,6 +38,7 @@ take() {
   printf -v "$1" '%s' "$p"
 }
 take bridge 7737
+take ollamabridge 7738
 # the node in a step of two: the port after it is its home-network port. Clear of an installed node on 7717
 take node 7727 2
 take teacherapi 7740 2
@@ -61,7 +63,7 @@ prepare() {
 # dependencies, the wasm core and the agent template up to date (after a pull)
 prepare "dependencies" mise run setup
 # the binaries once, so the node and the teacher server don't wait on each other's cargo
-prepare "Rust binaries" cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-teacher
+prepare "Rust binaries" cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-ollama-bridge -p gestalts-teacher
 # the teacher server plays lessons with the site built from here
 prepare "the site" pnpm --dir web/site build
 prepare "the site, installed as the lessons' player" cargo run -q -p gestalts-teacher -- --data teacher-data admin install-player --dist web/site/dist
@@ -81,6 +83,8 @@ serve() {
 
 serve servers bridge "Claude bridge" "http://127.0.0.1:$bridge" "$bridge" "the agents: claude, with the pages' tools" \
   env GESTALTS_BRIDGE_PORT="$bridge" scripts/claude-bridge.sh
+serve servers ollamabridge "Ollama bridge" "http://127.0.0.1:$ollamabridge" "$ollamabridge" "experimental: a local model, with the pages' tools" \
+  env GESTALTS_OLLAMA_BRIDGE_PORT="$ollamabridge" scripts/ollama-bridge.sh
 serve servers node "folder-sync" "http://127.0.0.1:$node" "$node" "plugin backends, /net, /llm · dev profile" \
   env GESTALTS_NODE_PORT="$node" scripts/node.sh
 teachernote="API · lessons on :$teacherlessons"
@@ -93,6 +97,7 @@ if [[ -e teacher-data/dev-login.txt ]]; then login="lessons sign-in: teacher-dat
 else login="lessons sign-in: your account, or mise run teacher:admin add-teacher / reset-password"; fi
 serve apps web "web app" "http://localhost:$web/" "$web" "$login" \
   env VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_AGENT_NODE="http://127.0.0.1:$bridge" \
+  VITE_OLLAMA_NODE="http://127.0.0.1:$ollamabridge" \
   VITE_TEACHER_API="http://127.0.0.1:$teacherapi" VITE_SITE="http://localhost:$site/" pnpm --dir web/app dev --port "$web" --strictPort
 serve apps site "public site" "http://localhost:$site/" "$site" "what's accepted shows here once it's in plugins/" \
   env VITE_LESSONS="http://127.0.0.1:$teacherlessons" pnpm --dir web/site dev --port "$site" --strictPort

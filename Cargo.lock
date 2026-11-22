@@ -1353,6 +1353,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "gestalts-ollama-bridge"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "clap",
+ "directories",
+ "futures-util",
+ "regex",
+ "reqwest",
+ "rfd",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "tokio",
+ "tokio-tungstenite",
+ "tower-http",
+ "uuid",
+]
+
+[[package]]
 name = "gestalts-peer"
 version = "0.1.0"
 dependencies = [

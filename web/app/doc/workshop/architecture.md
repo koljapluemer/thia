@@ -20,7 +20,8 @@ web/app/src/workshop/
   SequencePane.tsx           a lesson of several views and vizzes: its steps, the planner, the play-through
   submit.tsx                 offering a draft for the public site
   move.tsx                   moving drafts this browser kept before the workshop moved to accounts
-  agent.ts, Settings.tsx     which agent makes views: the server's, or Claude Code through the Claude bridge
+  agent.ts, Settings.tsx     which agent makes views: the server's, Claude Code through the Claude bridge, or Ollama
+                             through the Ollama bridge (experimental)
   api.ts                     the server's API
 
 packages/workshop/           shared by the panes:
@@ -30,13 +31,15 @@ packages/workshop/           shared by the panes:
   Preview.tsx                compiles a draft's view in the browser and runs it in a frame, as any view runs
   Chat.tsx                   one conversation about one draft of any kind
   agents/                    what an agent backend is; the teacher server's (a job over HTTP, jobs.ts); Claude Code
-                             through the Claude bridge (bridge.ts); each kind's contract (kinds.ts); the agents'
+                             through the Claude bridge (bridge.ts); a local model through the Ollama bridge, on the same
+                             protocol (ollama.ts); each kind's contract (kinds.ts); the agents'
                              tools (tools.ts); the templates sent with each turn (template.ts)
   agent-template/            what the agents work against: `brief.md` (who for), `kinds/<kind>.json` (what each kind's
                              agent is told, which paths are the draft, the check's description: read by the server's
                              agent too), a view's contract (CLAUDE.md) and examples, the lesson planner's instructions
 packages/check/              the `check` tool, run in the page (and in Node, by the tests)
 installables/claude-bridge/  runs `claude -p` on this computer for a site the person allowed
+installables/ollama-bridge/  the same protocol, with an Ollama model asked with tools in a loop (experimental)
 ```
 
 ## Kinds
@@ -86,6 +89,8 @@ files the turn changed come back and are written, what couldn't be saved goes wi
 may check what's there itself (`settle`): a viz is built and rendered in the page, and its page kept only when that
 passes. Which agent runs the turn is Settings': the server's (API calls, within the account's budget) or Claude Code
 through the Claude bridge (the teacher's own plan, no API tokens), which is how anything is tried locally for free.
+Experimental: a local Ollama model through the Ollama bridge. The page sends it the same as the Claude bridge, and
+it runs its own file tools on the files in memory ([its README](../../../../installables/ollama-bridge/README.md)).
 
 ## A view's draft
 

@@ -47,28 +47,28 @@ function token(url: string): string | undefined {
 
 const base = (url: string) => url.replace(/\/+$/, '');
 
-/** What the bridge at `url` says, or why there's no answer. */
-export async function bridgeStatus(url: string): Promise<BridgeStatus | string> {
+/** What the bridge at `url` says, or why there's no answer. `name` and `install` word it (the Claude bridge's by default). */
+export async function bridgeStatus<S = BridgeStatus>(url: string, name = 'Claude bridge', install = INSTALL_BRIDGE): Promise<S | string> {
   try {
     const t = token(url);
     const r = await fetch(`${base(url)}/status`, { headers: t ? { Authorization: `Bearer ${t}` } : {} });
-    if (!r.ok) return `the Claude bridge at ${base(url)} answered ${r.status}`;
-    return (await r.json()) as BridgeStatus;
+    if (!r.ok) return `the ${name} at ${base(url)} answered ${r.status}`;
+    return (await r.json()) as S;
   } catch {
-    return `no Claude bridge answers at ${base(url)}. ${INSTALL_BRIDGE}.`;
+    return `no ${name} answers at ${base(url)}. ${install}.`;
   }
 }
 
 /** Asks the bridge to let this site use it; the person decides in a dialog on their computer. */
-export async function pairBridge(url: string): Promise<true | string> {
+export async function pairBridge(url: string, name = 'Claude bridge'): Promise<true | string> {
   try {
     const r = await fetch(`${base(url)}/pair`, { method: 'POST' });
     const body = (await r.json().catch(() => ({}))) as { token?: string; error?: string };
-    if (!r.ok || !body.token) return body.error ?? `the Claude bridge answered ${r.status}`;
+    if (!r.ok || !body.token) return body.error ?? `the ${name} answered ${r.status}`;
     try { localStorage.setItem(tokenKey(url), body.token); } catch { return 'this browser keeps nothing: allow storage for this site'; }
     return true;
   } catch {
-    return `no Claude bridge answers at ${base(url)}`;
+    return `no ${name} answers at ${base(url)}`;
   }
 }
 
@@ -85,7 +85,7 @@ export async function bridgeAvailable(url: string): Promise<true | string> {
  * Runs one turn on the bridge at `url`, answering its tool calls with `tools`. Aborting `signal` stops claude; what
  * it changed until then still comes back.
  */
-export async function* runOnBridge(url: string, start: BridgeStart, tools: AgentTool[], signal: AbortSignal): AsyncIterable<BridgeEvent> {
+export async function* runOnBridge(url: string, start: BridgeStart, tools: AgentTool[], signal: AbortSignal, name = 'Claude bridge'): AsyncIterable<BridgeEvent> {
   const t = token(url);
   const ws = new WebSocket(`${base(url).replace(/^http/, 'ws')}/runs${t ? `?token=${encodeURIComponent(t)}` : ''}`);
   const queue: BridgeEvent[] = [];
@@ -113,7 +113,7 @@ export async function* runOnBridge(url: string, start: BridgeStart, tools: Agent
   });
   ws.addEventListener('close', () => { closed = true; wake?.(); });
   ws.addEventListener('error', () => {
-    if (queue.length === 0) push({ type: 'error', message: `cannot reach the Claude bridge at ${base(url)}, or it doesn't allow this site` });
+    if (queue.length === 0) push({ type: 'error', message: `cannot reach the ${name} at ${base(url)}, or it doesn't allow this site` });
   });
   const cancel = () => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'cancel' })); };
   signal.addEventListener('abort', cancel, { once: true });
@@ -146,16 +146,19 @@ function errorsFile(diagnostics: TurnRequest['diagnostics']): string {
   return lines.join('\n');
 }
 
+/** Who runs on a bridge, and how the page tells whether it can. */
+export type OnBridge = { id: string; label: string; name: string; available: () => Promise<true | string> };
+
 /**
- * The claude CLI through the bridge at `url`, for any kind of draft: what it's told, given and checked with is the
- * kind's (`kinds.ts`), the same as the server's agent gets. `connect` asks the bridge to allow this site.
+ * A backend on the bridge at `url` (claude-bridge's protocol), for any kind of draft: what it's told, given and checked
+ * with is the kind's (`kinds.ts`), the same as the server's agent gets. `connect` asks the bridge to allow this site.
  */
-export function bridgeBackend(url: string): AgentBackend & { connect(): Promise<true | string> } {
+export function onBridge(url: string, who: OnBridge): AgentBackend & { connect(): Promise<true | string> } {
   return {
-    id: 'claude-cli',
-    label: 'Claude (Claude Code on this computer)',
-    available: () => bridgeAvailable(url),
-    connect: () => pairBridge(url),
+    id: who.id,
+    label: who.label,
+    available: who.available,
+    connect: () => pairBridge(url, who.name),
     async *turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent> {
       const kind = contracts[req.kind ?? 'view'];
       const template = await kind.template();
@@ -170,17 +173,22 @@ export function bridgeBackend(url: string): AgentBackend & { connect(): Promise<
         workspace: req.view, session: req.session, prompt, files, binary: { ...template.binary, ...req.binary }, keep: kind.keep,
         system: systemOf(req.kind ?? 'view'),
       };
-      yield* runOnBridge(url, start, kind.tools(req), signal);
+      yield* runOnBridge(url, start, kind.tools(req), signal, who.name);
     },
     async complete(req: CompleteRequest, signal: AbortSignal): Promise<string> {
       // a run with nothing in its workspace, no tools of the page's and nothing kept: only what it says
       const start: BridgeStart = { workspace: req.view, prompt: req.prompt, system: req.system, files: {}, keep: 'nothing-is-kept', effort: 'low' };
       let text = '';
-      for await (const e of runOnBridge(url, start, [], signal)) {
+      for await (const e of runOnBridge(url, start, [], signal, who.name)) {
         if (e.type === 'text') text += e.text;
         else if (e.type === 'error') throw new Error(e.message);
       }
       return text;
     },
   };
+}
+
+/** The claude CLI through the Claude bridge at `url`. */
+export function bridgeBackend(url: string): AgentBackend & { connect(): Promise<true | string> } {
+  return onBridge(url, { id: 'claude-cli', label: 'Claude (Claude Code on this computer)', name: 'Claude bridge', available: () => bridgeAvailable(url) });
 }

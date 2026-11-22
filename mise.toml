@@ -132,6 +132,14 @@ description = "Build and install the Claude bridge on this machine, the way a us
 depends = ["claude-bridge:package"]
 run = "bash scripts/install-package.sh target/packages gestalts-claude-bridge"
 
+# --- the ollama bridge (experimental) ---
+
+[tasks.ollama-bridge]
+hide = true
+description = "The Ollama bridge headless for development on :7738 (scripts/ollama-bridge.sh): a local model for the workshops, experimental"
+depends = ["setup"]
+run = "bash scripts/ollama-bridge.sh"
+
 # --- folder-sync: gestalts-node, the desktop app ---
 
 [tasks."node:dev"]
