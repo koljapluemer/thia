@@ -202,26 +202,17 @@ async fn a_question_ends_the_turn_and_its_answer_starts_the_next() {
 }
 
 #[tokio::test]
-async fn the_agent_proposes_how_a_lesson_splits_and_makes_nothing() {
-    let plan = r#"{"title": "Plus bis 100", "steps": [
-      {"title": "Kurzer Check", "does": "löst vier Aufgaben", "brief": "Vier Aufgaben wie 38+5.", "practises": [{"id": "zehner", "name": "Zehnerübergang"}], "rule": null},
-      {"title": "Plus mit Übergang", "does": "rechnet am Zahlenstrahl", "brief": "Aufgaben am Zahlenstrahl.", "practises": [{"id": "zehner", "name": "Zehnerübergang"}], "rule": {"skip_if_known": "zehner"}}
-    ]}"#;
-    let (url, seen) = model(vec![reply(json!([{ "type": "text", "text": plan }]), "end_turn")]).await;
+async fn one_answer_without_tools_at_low_effort_within_the_budget() {
+    let (url, seen) = model(vec![reply(json!([{ "type": "text", "text": "{\"one_view\": \"a quiz\"}" }]), "end_turn")]).await;
     let s = Server::with_model(Limits::default(), Some(url));
     let ada = s.login("ada@school.example").await;
     let (_, d, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Plus", "kind": "sequence" }))).await;
-    let at = format!("/api/drafts/{}/sequence/plan", d["id"].as_str().unwrap());
-    let (status, p, _) = s.call("POST", &at, Some(&ada), Some(json!({ "request": "Klasse 2: Plus mit Zehnerübergang bis 100." }))).await;
-    assert_eq!(status, StatusCode::OK, "{p}");
-    assert_eq!(p["steps"].as_array().unwrap().len(), 2);
-    assert_eq!(p["steps"][1]["rule"], json!({ "skip_if_known": "zehner" }));
-    assert!(p["steps"][1]["brief"].as_str().unwrap().contains("gestalt: concept@2"), "tied to the rules: {p}");
-
+    let at = format!("/api/drafts/{}/agent/complete", d["id"].as_str().unwrap());
+    let (status, r, _) = s.call("POST", &at, Some(&ada), Some(json!({ "system": "Plan lessons.", "prompt": "Ein Quiz." }))).await;
+    assert_eq!((status, r["text"].as_str()), (StatusCode::OK, Some("{\"one_view\": \"a quiz\"}")), "{r}");
     let sent = seen.lock().unwrap()[0].1.clone();
-    assert_eq!(sent["output_config"]["effort"], "low");
+    assert_eq!((sent["output_config"]["effort"].as_str(), sent["system"][0]["text"].as_str()), (Some("low"), Some("Plan lessons.")));
     assert!(sent.get("tools").is_none());
-    let (_, list, _) = s.call("GET", "/api/drafts", Some(&ada), None).await;
-    assert_eq!(list.as_array().unwrap().len(), 1, "nothing is made until the teacher takes it");
     assert!(s.state.db.tokens_since("a1", "2026-01-01T00:00:00.000Z").unwrap() > 0, "it counts against the budget");
+    assert_eq!(s.call("POST", &at, Some(&ada), Some(json!({ "system": "", "prompt": " " }))).await.0, StatusCode::BAD_REQUEST);
 }

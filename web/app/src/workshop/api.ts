@@ -85,15 +85,6 @@ export type SequenceReport = {
 };
 export const sequenceReport = (id: string) => api<SequenceReport>(`/drafts/${id}/sequence`);
 
-/** How the agent would split a lesson into views; nothing is made until it's taken. */
-export type Concept = { id: string; name: string };
-export type PlannedStep = {
-  title: string; does: string; brief: string; practises: Concept[];
-  rule: null | { skip_if_known: string } | { detour: { concept: string; title: string; brief: string } };
-};
-export type Plan = { one_view: string } | { title: string; steps: PlannedStep[] };
-export const planLesson = (id: string, request: string) => api<Plan>(`/drafts/${id}/sequence/plan`, { method: 'POST', json: { request } });
-
 /** A brief a view draft was made with, for its chat to start from: kept in this browser until it's sent. */
 const briefKey = (id: string) => `workshop:brief:${id}`;
 export const brief = {

@@ -7,17 +7,17 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use axum::extract::{Path, State};
-use axum::routing::{get, post};
+use axum::routing::get;
 use axum::{Json, Router};
 use gestalts_core::Yml;
 use gestalts_fs::FsStorage;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::json;
 
 use crate::auth::Teacher;
 use crate::db::{Account, Draft};
 use crate::publish::{Check, Version, build as build_view};
-use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
+use crate::{ApiError, ApiResult, AppState, now_iso};
 
 /// A step as written.
 #[derive(Debug, Clone, PartialEq)]
@@ -189,148 +189,6 @@ async fn report(State(state): State<AppState>, teacher: Teacher, Path(id): Path<
     Ok(Json(check(&state, &teacher.0, &steps)?))
 }
 
-/// How the agent splits a lesson into views: one call, low effort, the same model as the rest.
-const PLAN: &str = include_str!("../../../packages/workshop/agent-template/plan-lesson.md");
-
-#[derive(Deserialize)]
-struct PlanRequest {
-    request: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Concept {
-    pub id: String,
-    pub name: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Extra {
-    pub concept: String,
-    pub title: String,
-    pub brief: String,
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-#[serde(rename_all = "snake_case")]
-pub enum Rule {
-    SkipIfKnown(String),
-    Detour(Extra),
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Planned {
-    pub title: String,
-    pub does: String,
-    pub brief: String,
-    #[serde(default)]
-    pub practises: Vec<Concept>,
-    #[serde(default)]
-    pub rule: Option<Rule>,
-}
-
-/// What the agent proposes: one view (and why), or a lesson's steps.
-#[derive(Debug, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum Plan {
-    One { one_view: String },
-    Steps { title: String, steps: Vec<Planned> },
-}
-
-fn concept_id(id: &str) -> bool {
-    !id.is_empty() && id.len() <= 64 && id.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') && !id.starts_with('-')
-}
-
-/// What a view practises, said to the agent that builds it so the lesson's rules can see it: appended to every brief
-/// here, whatever the plan said.
-fn concepts_line(cs: &[Concept]) -> String {
-    if cs.is_empty() {
-        return String::new();
-    }
-    let list = cs.iter().map(|c| format!("`{}` ({})", c.id, c.name)).collect::<Vec<_>>().join(", ");
-    format!("\n\nIt is a step of a lesson of several views, and practises {list}. Put each in data/ as `data/<id>.yml` with `gestalt: concept@2` and its `name`, name it in the `concepts` of the items that practise it, and log each answer with `logPractice`: the lesson skips or adds steps by what the student knows of them. When the student is through, call `done()` from `useHost()`.")
-}
-
-/// The plan as the agent wrote it, checked: ids that can be ymls, at most one rule each, a rule's concept practised
-/// by an earlier step. Each brief gets what ties its view to the rules.
-fn checked(text: &str) -> Result<Plan, String> {
-    let json = text.trim().trim_start_matches("```json").trim_start_matches("```").trim_end_matches("```").trim();
-    let mut plan: Plan = serde_json::from_str(json).map_err(|e| format!("the plan isn't one: {e}"))?;
-    if let Plan::Steps { steps, .. } = &mut plan {
-        if steps.is_empty() || steps.len() > 6 {
-            return Err("the plan has no steps, or too many".into());
-        }
-        let mut practised: BTreeSet<String> = BTreeSet::new();
-        for (i, st) in steps.iter_mut().enumerate() {
-            if let Some(c) = st.practises.iter().find(|c| !concept_id(&c.id)) {
-                return Err(format!("step {}: {} isn't a concept id", i + 1, c.id));
-            }
-            let concept = match &st.rule {
-                Some(Rule::SkipIfKnown(c)) => Some(c.clone()),
-                Some(Rule::Detour(d)) => Some(d.concept.clone()),
-                None => None,
-            };
-            // a rule nothing before it can feed never applies: dropped, rather than kept to mislead
-            if concept.as_ref().is_some_and(|c| !practised.contains(c)) {
-                st.rule = None;
-            }
-            practised.extend(st.practises.iter().map(|c| c.id.clone()));
-            let line = concepts_line(&st.practises);
-            st.brief.push_str(&line);
-            if let Some(Rule::Detour(d)) = &mut st.rule {
-                let c = st.practises.iter().find(|c| c.id == d.concept).cloned().unwrap_or(Concept { id: d.concept.clone(), name: d.concept.clone() });
-                d.brief.push_str(&concepts_line(&[c]));
-            }
-        }
-    }
-    Ok(plan)
-}
-
-/// The agent proposes how the lesson splits into views; nothing is made until the teacher takes it.
-async fn plan(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<PlanRequest>) -> ApiResult<Json<Plan>> {
-    let (d, _) = state.own_draft(&teacher, &id)?;
-    if d.kind != "sequence" {
-        return Err(ApiError::NotFound);
-    }
-    if req.request.trim().is_empty() || req.request.chars().count() > 4000 {
-        return Err(ApiError::BadRequest("say what the lesson should do, in up to 4000 characters".into()));
-    }
-    if let Some(r) = state.agents.unavailable() {
-        return Err(ApiError::Conflict(r));
-    }
-    if state.db.tokens_since(&teacher.0.id, &crate::agent::month_start())? >= teacher.0.token_budget {
-        return Err(ApiError::TooMany("this month's budget for the agent is used up".into()));
-    }
-    let turn = random_hex(16);
-    state.db.add_turn(&turn, &teacher.0.id, &d.id, &now_iso())?;
-    let resp = state.agents.call_once(PLAN, req.request.trim()).await.map_err(ApiError::Conflict)?;
-    let u = &resp["usage"];
-    let n = |k: &str| u[k].as_i64().unwrap_or(0);
-    let _ = state.db.add_usage(&turn, n("input_tokens"), n("output_tokens"), n("cache_read_input_tokens"), n("cache_creation_input_tokens"));
-    let text: String = resp["content"].as_array().into_iter().flatten().filter(|b| b["type"] == "text").filter_map(|b| b["text"].as_str()).collect();
-    checked(&text).map(Json).map_err(|e| ApiError::Conflict(format!("The agent's plan didn't come out right ({e}). Try again, or put the request differently.")))
-}
-
 pub fn routes() -> Router<AppState> {
-    Router::new().route("/drafts/{id}/sequence", get(report)).route("/drafts/{id}/sequence/plan", post(plan))
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn a_plan_is_checked_and_tied_to_its_rules() {
-        assert!(matches!(checked(r#"{"one_view": "a quiz"}"#), Ok(Plan::One { .. })));
-        let text = r#"```json
-        {"title": "Plus", "steps": [
-          {"title": "Check", "does": "4 sums", "brief": "Four sums.", "practises": [{"id": "zehner", "name": "Zehnerübergang"}], "rule": {"skip_if_known": "zehner"}},
-          {"title": "Main", "does": "sums", "brief": "Sums.", "practises": [{"id": "zehner", "name": "Zehnerübergang"}], "rule": {"detour": {"concept": "zehner", "title": "Easy", "brief": "Easier."}}}
-        ]}```"#;
-        let Ok(Plan::Steps { steps, .. }) = checked(text) else { panic!("a plan") };
-        assert!(steps[0].rule.is_none(), "a rule on the first step never applies: dropped");
-        assert!(matches!(&steps[1].rule, Some(Rule::Detour(d)) if d.brief.contains("`zehner` (Zehnerübergang)")));
-        assert!(steps[0].brief.starts_with("Four sums.") && steps[0].brief.contains("gestalt: concept@2") && steps[0].brief.contains("done()"));
-        assert!(checked(r#"{"title": "x", "steps": [{"title": "a", "does": "b", "brief": "c", "practises": [{"id": "Bad Id", "name": "x"}]}]}"#).is_err());
-        assert!(checked("not json").is_err());
-    }
+    Router::new().route("/drafts/{id}/sequence", get(report))
 }

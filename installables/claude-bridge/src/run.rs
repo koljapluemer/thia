@@ -50,6 +50,9 @@ pub struct Start {
     pub tools: Vec<ToolSpec>,
     pub model: Option<String>,
     pub max_budget_usd: Option<f64>,
+    /// how hard Claude thinks (`claude --effort`): low, medium, high, xhigh or max; Claude Code's own default without
+    #[serde(default)]
+    pub effort: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -104,6 +107,7 @@ pub fn validate(s: &Start) -> Result<Regex, String> {
         return Err("model: a model name, like sonnet or claude-sonnet-4-5".into());
     }
     if s.max_budget_usd.is_some_and(|b| !(b > 0.0 && b.is_finite())) { return Err("maxBudgetUsd must be positive".into()); }
+    if s.effort.as_deref().is_some_and(|e| !matches!(e, "low" | "medium" | "high" | "xhigh" | "max")) { return Err("effort: low, medium, high, xhigh or max".into()); }
     Regex::new(&format!("^(?:{})$", s.keep)).map_err(|e| format!("keep: {e}"))
 }
 
@@ -221,6 +225,7 @@ pub fn args(start: &Start, mcp_config: &Path) -> Vec<String> {
     if let Some(s) = &start.session { a.extend(["--resume".into(), s.clone()]); }
     if let Some(m) = &start.model { a.extend(["--model".into(), m.clone()]); }
     if let Some(b) = start.max_budget_usd { a.extend(["--max-budget-usd".into(), format!("{b}")]); }
+    if let Some(e) = &start.effort { a.extend(["--effort".into(), e.clone()]); }
     a.push("--allowedTools".into());
     a.extend(CLAUDE_TOOLS.iter().map(|t| t.to_string()));
     a.extend(start.tools.iter().map(|t| format!("mcp__{MCP_SERVER}__{}", t.name)));
@@ -515,7 +520,7 @@ mod tests {
         Start {
             workspace: "draft-1".into(), session: None, prompt: "hi".into(), system: None,
             files: files.iter().map(|(p, t)| (p.to_string(), t.to_string())).collect(), binary: BTreeMap::new(),
-            keep: r"view\.tsx|data/[^/]+\.yml".into(), tools: vec![], model: None, max_budget_usd: None,
+            keep: r"view\.tsx|data/[^/]+\.yml".into(), tools: vec![], model: None, max_budget_usd: None, effort: None,
         }
     }
 

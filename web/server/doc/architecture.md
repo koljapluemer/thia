@@ -22,8 +22,7 @@ Each draft has a kind (`drafts.kind`), set when it's made:
   draft's `package`, which the server hands out, and the ymls it ships with
 - `viz`: one `viz@1` yml and the blobs it names
 - `sequence`: one `sequence@1` yml, whose steps are the account's view drafts (`sequence.rs`: checked as a whole,
-  published as `lesson@2`, each view a `lesson@1` folder under `views/<n>/`; the agent plans its split in one call at
-  low effort, `POST /api/drafts/<id>/sequence/plan`, within the budget, making nothing)
+  published as `lesson@2`, each view a `lesson@1` folder under `views/<n>/`)
 
 Each draft is its own folder, in the browser (OPFS, `teacher-draft-<id>`) and on the server (`drafts/<id>/`), synced
 over the node's `/sync` and `/blobs` shapes under `/api/drafts/<id>/`. The browser is untrusted: the server validates
@@ -39,6 +38,10 @@ model package in the repo, with a larger quota (`Limits::maintainer`), and one g
 within `MODELS`.
 
 ## The agent
+
+Besides turns, `POST /api/drafts/<id>/agent/complete` `{system, prompt}` gives one answer without tools, at low effort,
+within the budget: the transport for features built on any agent (`AgentBackend.complete`; planning a lesson), which
+the Claude bridge gives as well. What the answer is for is the page's.
 
 It makes views; a viz's draft is built by the CLI agent only, whose check renders it in the page. On the server, on our
 API key (`agent.rs`): a tool loop over the draft's files held in memory. Its tools read and

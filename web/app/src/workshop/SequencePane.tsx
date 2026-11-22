@@ -3,7 +3,8 @@ import { ArrowDown, ArrowUp, Plus, Sparkles, X } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins/teacher';
 import { useHostQuery, type Repo } from '@gestalts/client';
 import type { Belief } from '@gestalts/view';
-import { SEQUENCE, asSequence, ruleConcepts, sequenceYml, walk, type Sequence, type Step } from '@gestalts/workshop';
+import { SEQUENCE, asSequence, planLesson, ruleConcepts, sequenceYml, walk, type AgentBackend, type Plan, type Sequence, type Step } from '@gestalts/workshop';
+import { backendFor, type AgentChoice } from './agent';
 import * as api from './api';
 import { DeleteButton, ExportButton, PublishMenu, SyncState } from './DraftPane';
 import { OpenDraft } from './open';
@@ -16,16 +17,17 @@ const SAVE_AFTER_MS = 500;
  * A lesson of several views (`sequence@1`): its steps in order, each one of the account's view drafts with at most
  * one rule, checked as a whole by the server, and played through for a pretend student before it goes out.
  */
-export function SequencePane({ info, onChanged, onDeleted }: { info: api.DraftInfo; onChanged: () => void; onDeleted: () => void }) {
+export function SequencePane({ info, agent, onChanged, onDeleted }: { info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+  const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
   const init = useCallback(async (repo: Repo) => { await repo.put(sequenceYml({ id: info.id, title: info.title, steps: [] })); }, [info]);
   return (
     <OpenDraft info={info} source={SOURCE} init={init}>
-      {(repo) => <Editor repo={repo} info={info} onChanged={onChanged} onDeleted={onDeleted} />}
+      {(repo) => <Editor repo={repo} info={info} backend={backend} onChanged={onChanged} onDeleted={onDeleted} />}
     </OpenDraft>
   );
 }
 
-function Editor({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; onChanged: () => void; onDeleted: () => void }) {
+function Editor({ repo, info, backend, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; backend: AgentBackend; onChanged: () => void; onDeleted: () => void }) {
   const item = useHostQuery({ gestalt: SEQUENCE, ids: [info.id], limit: 1 })[0];
   const [edited, setSeq] = useState<Sequence>();
   // the draft as typed: what comes back from the repo only seeds it
@@ -70,7 +72,7 @@ function Editor({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.Dr
       </div>
       <div className="grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex flex-col gap-3 p-3 text-sm">
-          <Planner id={info.id} seq={seq} onTake={(next) => { change(next); onChanged(); }} />
+          <Planner id={info.id} seq={seq} backend={backend} onTake={(next) => { change(next); onChanged(); }} />
           <label className="flex flex-col gap-1">
             <span className="text-base-content/60">Title</span>
             <input className="input input-sm w-full" value={seq.title} onChange={(e) => change({ ...seq, title: e.target.value })} />
@@ -104,21 +106,29 @@ function Editor({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.Dr
 }
 
 /**
- * The agent proposes how the lesson splits into views (one call, `POST …/sequence/plan`). Taking it makes each step's
+ * The agent proposes how the lesson splits into views: whichever agent is picked in Settings, one answer at low effort
+ * (`planLesson`). Taking it makes each step's
  * view a draft of its own, with its brief waiting in that draft's chat: the views are built one at a time, by the
  * teacher sending it.
  */
-function Planner({ id, seq, onTake }: { id: string; seq: Sequence; onTake: (s: Sequence) => void }) {
+function Planner({ id, seq, backend, onTake }: { id: string; seq: Sequence; backend: AgentBackend; onTake: (s: Sequence) => void }) {
   const [request, setRequest] = useState('');
-  const [plan, setPlan] = useState<api.Plan>();
+  const [plan, setPlan] = useState<Plan>();
+  const [unavailable, setUnavailable] = useState<string>();
+  const abort = useRef<AbortController | null>(null);
+  useEffect(() => { void backend.available().then((a) => setUnavailable(a === true ? undefined : a)); }, [backend]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [made, setMade] = useState<string[]>();
   const ask = async () => {
     setBusy(true); setError(undefined); setPlan(undefined); setMade(undefined);
-    try { setPlan(await api.planLesson(id, request.trim())); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setBusy(false); }
+    const controller = new AbortController();
+    abort.current = controller;
+    try { setPlan(await planLesson(backend, id, request, controller.signal)); } catch (e) {
+      if (!controller.signal.aborted) setError(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(false); abort.current = null; }
   };
-  const take = async (p: Extract<api.Plan, { steps: unknown }>) => {
+  const take = async (p: Extract<Plan, { steps: unknown }>) => {
     setBusy(true); setError(undefined);
     try {
       const view = async (title: string, text: string) => {
@@ -151,9 +161,14 @@ function Planner({ id, seq, onTake }: { id: string; seq: Sequence; onTake: (s: S
       <div className="mt-2 flex flex-col gap-2">
         <textarea className="textarea textarea-sm w-full" rows={3} value={request} onChange={(e) => setRequest(e.target.value)}
                   placeholder="What should the lesson do, for whom? e.g. Klasse 2: Plusaufgaben mit Zehnerübergang bis 100; wer das schon kann, soll nicht gelangweilt werden." />
-        <button type="button" className="btn btn-sm self-start" disabled={busy || !request.trim()} onClick={() => void ask()}>
-          {busy && !plan ? <span className="loading loading-spinner loading-xs" /> : 'Propose steps'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button type="button" className="btn btn-sm" disabled={busy || !request.trim() || Boolean(unavailable)} onClick={() => void ask()}>
+            {busy && !plan ? <span className="loading loading-spinner loading-xs" /> : 'Propose steps'}
+          </button>
+          {busy && !plan && <button type="button" className="btn btn-sm btn-ghost" onClick={() => abort.current?.abort()}>Stop</button>}
+          <span className="text-xs text-base-content/50">{backend.label}</span>
+        </div>
+        {unavailable && <p role="status" className="text-xs text-warning">{unavailable}</p>}
         {error && <p role="alert" className="text-xs text-error">{error}</p>}
         {plan && 'one_view' in plan && (
           <p className="text-sm">The agent thinks this is one view, not several: {plan.one_view} Make it with New → View.</p>
@@ -186,8 +201,8 @@ function Planner({ id, seq, onTake }: { id: string; seq: Sequence; onTake: (s: S
   );
 }
 
-const nameIn = (p: Extract<api.Plan, { steps: unknown }>, id: string) => p.steps.flatMap((s) => s.practises).find((c) => c.id === id)?.name ?? id;
-const views = (p: Extract<api.Plan, { steps: unknown }>) => p.steps.length + p.steps.filter((s) => s.rule && 'detour' in s.rule).length;
+const nameIn = (p: Extract<Plan, { steps: unknown }>, id: string) => p.steps.flatMap((s) => s.practises).find((c) => c.id === id)?.name ?? id;
+const views = (p: Extract<Plan, { steps: unknown }>) => p.steps.length + p.steps.filter((s) => s.rule && 'detour' in s.rule).length;
 
 /** The concepts a rule of step `i` may name: what the views practise (earlier ones first, as those make it apply). */
 function conceptsBefore(steps: Step[], i: number, views: api.SequenceReport['views']): string[] {

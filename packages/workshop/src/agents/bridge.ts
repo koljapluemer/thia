@@ -1,7 +1,7 @@
 import type { AgentTool } from './tools';
 import { askTool, viewCheckTool } from './tools';
 import { viewTemplate } from './template';
-import type { AgentBackend, AgentEvent, Answers, Question, TurnRequest } from './types';
+import type { AgentBackend, AgentEvent, Answers, CompleteRequest, Question, TurnRequest } from './types';
 
 /**
  * The claude CLI on this computer, through the Claude bridge (`installables/claude-bridge`): a site the person allowed
@@ -25,6 +25,8 @@ export type BridgeStart = {
   keep: string;
   model?: string;
   maxBudgetUsd?: number;
+  /** how hard Claude thinks: low, medium, high, xhigh or max */
+  effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 };
 
 export type BridgeEvent =
@@ -169,6 +171,16 @@ export function bridgeBackend(url: string, opts: { brief?: string } = {}): Agent
         system: brief ? `${brief}\n\n${SYSTEM}` : SYSTEM,
       };
       yield* runOnBridge(url, start, [viewCheckTool(req.gestalts), askTool()], signal);
+    },
+    async complete(req: CompleteRequest, signal: AbortSignal): Promise<string> {
+      // a run with nothing in its workspace, no tools of the page's and nothing kept: only what it says
+      const start: BridgeStart = { workspace: req.view, prompt: req.prompt, system: req.system, files: {}, keep: 'nothing-is-kept', effort: 'low' };
+      let text = '';
+      for await (const e of runOnBridge(url, start, [], signal)) {
+        if (e.type === 'text') text += e.text;
+        else if (e.type === 'error') throw new Error(e.message);
+      }
+      return text;
     },
   };
 }

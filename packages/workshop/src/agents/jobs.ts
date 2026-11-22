@@ -1,4 +1,4 @@
-import type { AgentBackend, AgentEvent, OpenQuestion, TurnRequest } from './types';
+import type { AgentBackend, AgentEvent, CompleteRequest, OpenQuestion, TurnRequest } from './types';
 
 /** One request to wherever the agent runs, by path relative to it (`turn`, `events?…`, `cancel`). */
 export type Call = (path: string, init?: RequestInit) => Promise<Response>;
@@ -16,6 +16,12 @@ export function jobBackend(opts: { id: string; label: string; available: () => P
     label: opts.label,
     available: opts.available,
     open: opts.open,
+    async complete(req: CompleteRequest, signal: AbortSignal): Promise<string> {
+      const r = await call('complete', { ...json({ system: req.system, prompt: req.prompt }), signal });
+      const body = (await r.json().catch(() => ({}))) as { text?: string; error?: string };
+      if (!r.ok || typeof body.text !== 'string') throw new Error(body.error ?? `the agent answered ${r.status}`);
+      return body.text;
+    },
     async *turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent> {
       const started = await call('turn', json(req));
       const body = (await started.json().catch(() => ({}))) as { job?: string; error?: string };

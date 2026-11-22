@@ -5,6 +5,8 @@
 //! - `POST turn` `{view, session?, message, files, gestalts, diagnostics, answer?}` → 202 `{job}`
 //! - `GET events?job=&after=n` → `{events, next, done}`, waiting up to 20 s for events after the n-th
 //! - `POST cancel` `{job}`
+//! - `POST complete` `{system, prompt}` → `{text}`: one answer, no tools, low effort, within the budget: what a
+//!   feature built on any agent asks (`AgentBackend.complete`), the Claude bridge as well as this
 //!
 //! Like the local CLI agent, it hands back the files it changed; the browser writes the ymls, which the sync
 //! validates. Its tools read and write the draft's files, read the kit's sources and the examples (the agent
@@ -431,8 +433,7 @@ impl Agents {
         .await
     }
 
-    /// One answer, without tools, at low effort: a short piece of planning (how a lesson splits into views), whose
-    /// text is the answer. Cached like a turn's system prompt.
+    /// One answer, without tools, at low effort, whose text is the answer. Cached like a turn's system prompt.
     pub(crate) async fn call_once(&self, system: &str, user: &str) -> Result<Value, String> {
         self.send(&json!({
             "model": self.model.model,
@@ -731,6 +732,37 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
 }
 
 #[derive(Deserialize)]
+struct Complete {
+    system: String,
+    prompt: String,
+}
+
+/// One answer for a feature built on the agent (`AgentBackend.complete`): what it's for is the page's, not this.
+async fn complete(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<Complete>) -> ApiResult<Json<Value>> {
+    let (draft, _) = state.own_draft(&teacher, &id)?;
+    if req.prompt.trim().is_empty() || req.prompt.chars().count() > 8_000 || req.system.chars().count() > 20_000 {
+        return Err(ApiError::BadRequest("a prompt of up to 8000 characters, instructions of up to 20000".into()));
+    }
+    if let Some(r) = state.agents.unavailable() {
+        return Err(ApiError::Conflict(r));
+    }
+    if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget {
+        return Err(ApiError::TooMany("this month's budget for the agent is used up".into()));
+    }
+    let turn = random_hex(16);
+    state.db.add_turn(&turn, &teacher.0.id, &draft.id, &now_iso())?;
+    let resp = state.agents.call_once(&req.system, req.prompt.trim()).await.map_err(ApiError::Conflict)?;
+    let u = &resp["usage"];
+    let n = |k: &str| u[k].as_i64().unwrap_or(0);
+    let _ = state.db.add_usage(&turn, n("input_tokens"), n("output_tokens"), n("cache_read_input_tokens"), n("cache_creation_input_tokens"));
+    if resp["stop_reason"] == "refusal" {
+        return Err(ApiError::Conflict("The agent declined this request. Try putting it differently.".into()));
+    }
+    let text: String = resp["content"].as_array().into_iter().flatten().filter(|b| b["type"] == "text").filter_map(|b| b["text"].as_str()).collect();
+    Ok(Json(json!({ "text": text })))
+}
+
+#[derive(Deserialize)]
 struct EventsQuery {
     job: String,
     #[serde(default)]
@@ -776,6 +808,7 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/drafts/{id}/agent/status", get(status))
         .route("/drafts/{id}/agent/turn", post(turn))
+        .route("/drafts/{id}/agent/complete", post(complete))
         .route("/drafts/{id}/agent/events", get(events))
         .route("/drafts/{id}/agent/cancel", post(cancel))
 }

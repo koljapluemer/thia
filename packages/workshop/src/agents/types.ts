@@ -23,6 +23,8 @@ export type TurnRequest = {
   answer?: Answer;
 };
 
+export type CompleteRequest = { view: string; system: string; prompt: string };
+
 /** One question of an `ask` card (`agent-template/ask.json`). */
 export type Question = {
   question: string;
@@ -64,6 +66,11 @@ export interface AgentBackend {
   /** when it isn't available until the person allows this site (the Claude bridge): asks, true when allowed */
   connect?(): Promise<true | string>;
   turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent>;
+  /**
+   * One answer to `prompt` under `system`, without tools and at low effort, for a feature built on the agent (planning
+   * a lesson): its text. `view` is the draft it's for. Throws with why, when there's no answer.
+   */
+  complete(req: CompleteRequest, signal: AbortSignal): Promise<string>;
   /** the question the draft's conversation waits on, if any: kept where the agent runs, so it's there on any device */
   open?(view: string): Promise<OpenQuestion | undefined>;
 }

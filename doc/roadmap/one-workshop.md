@@ -73,7 +73,8 @@ that branches inside, not a sequence.
 
 ### In the MVP
 
-Built. The agent writes the sequence as a plan the teacher takes or discards (one call, low effort): taking it makes
+Built. The agent writes the sequence as a plan the teacher takes or discards (one call, low effort, either agent:
+`AgentBackend.complete`, checked once in `packages/workshop/src/plan.ts`): taking it makes
 each step's view a draft with its brief, built one at a time when the teacher sends it; a form edits the steps
 besides (`SequencePane.tsx`). The done signal is `useHost().done()`, an op the bridge answers when a host listens; no
 protocol bump, since it's only added. The player shows *Next* always, as it can't know whether a view will say it's

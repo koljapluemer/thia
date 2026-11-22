@@ -6,3 +6,5 @@ export { INSTALL_BRIDGE, VIEW_FILES, bridgeAvailable, bridgeBackend, bridgeStatu
 export { answerText, askTool, checkResult, fileTools, questionsOf, viewCheckTool, vizCheckTool, type AgentTool, type ToolContent, type ToolResult } from './agents/tools';
 export type { AgentBackend, AgentEvent, Answer, Answers, Diagnostic, OpenQuestion, Question, TurnRequest } from './agents/types';
 export { KNOWN_P, SEQUENCE, STRUGGLING_P, asSequence, decide, ruleConcepts, sequenceYml, walk, type Decision, type Sequence, type Step, type Walked } from './sequence';
+export { checkPlan, conceptsLine, planLesson, type Concept, type Plan, type PlannedRule, type PlannedStep } from './plan';
+export type { CompleteRequest } from './agents/types';
