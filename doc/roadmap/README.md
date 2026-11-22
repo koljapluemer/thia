@@ -7,6 +7,7 @@ Plans and design discussions. These notes describe proposals, not current behavi
 - [[concept-model]] — proposed inventory sets, navigation, and concept-level estimates
 - [[web-first]] — one web app, the browser as home, an account that syncs encrypted; desktop as optional tools
 - [[teacher-app]] — a hosted app where teachers make views, publish them to students, and offer them for loops (MVP built)
+- [[one-workshop]] — the three workshops as one behind the login; the agent asks; lessons of several views
 
 The current system is documented in [[../architecture/README|Architecture]]. Background for concept modelling is in
 [[../research/concept-modelling|Concept modelling research]].
