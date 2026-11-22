@@ -26,7 +26,7 @@ export function asViz(i: Item): Viz {
 }
 
 /** The yml for `v`, leaving out what's empty (an empty prop is still a prop). */
-export function ymlOf(v: Viz): JsonMap {
+export function vizYml(v: Viz): JsonMap {
   const out: JsonMap = { id: v.id, gestalt: VIZ, title: v.title || 'Untitled' };
   for (const k of ['intro', 'spec', 'outro', 'source', 'built', 'still', 'generator'] as const) if (v[k]) out[k] = v[k];
   if (v.packages.length) out.packages = v.packages;
@@ -34,23 +34,21 @@ export function ymlOf(v: Viz): JsonMap {
   return out;
 }
 
-export const saveViz = (repo: Repo, v: Viz) => repo.put(ymlOf(v));
+export const saveViz = (repo: Pick<Repo, 'put'>, v: Viz) => repo.put(vizYml(v));
 
-/** A draft's viz, empty but for its title: its id is the draft's, which the server handed out. */
-export const createViz = (repo: Repo, id: string, title: string) =>
-  saveViz(repo, { id, title, intro: '', spec: '', outro: '', source: '', packages: [], files: [] });
+/** A draft's viz, empty but for its title and brief: its id is the draft's, which the server handed out. */
+export const createViz = (repo: Pick<Repo, 'put'>, id: string, title: string, spec = '') =>
+  saveViz(repo, { id, title, intro: '', spec, outro: '', source: '', packages: [], files: [] });
 
 /** Stores `bytes` as a blob named by its content, as published decks name them. */
-export async function storeBlob(repo: Repo, bytes: Uint8Array, ext: string): Promise<string> {
+export async function storeBlob(repo: Pick<Repo, 'writeBlob'>, bytes: Uint8Array, ext: string): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes as BufferSource));
   const name = `${Array.from(digest.slice(0, 8), (b) => b.toString(16).padStart(2, '0')).join('')}.${ext}`;
   await repo.writeBlob(name, bytes);
   return name;
 }
 
-export const toBase64 = (bytes: Uint8Array) => {
-  let s = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(s);
-};
-export const fromBase64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+/** A viz's packages (`name@version`) as the package.json the agent edits. */
+export const packagesJson = (packages: string[]) => `${JSON.stringify({
+  private: true, type: 'module', dependencies: Object.fromEntries(packages.map((p) => [p.slice(0, p.lastIndexOf('@')), p.slice(p.lastIndexOf('@') + 1)])),
+}, null, 2)}\n`;

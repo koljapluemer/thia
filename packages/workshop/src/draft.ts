@@ -15,6 +15,8 @@ export const DEFINITION = 'gestalt@1';
 export type Draft = {
   id: string;
   title: string;
+  /** the brief kept with it: what it should be, in the teacher's words (the agent's SPEC.md) */
+  spec: string;
   source: string;
   reads: string[];
   writes: string[];
@@ -51,6 +53,7 @@ export function asDraft(i: Item): Draft {
   return {
     id: i.id,
     title: String(v.title ?? ''),
+    spec: typeof v.spec === 'string' ? v.spec : '',
     source: String(v.source ?? ''),
     reads: strings(v.reads),
     writes: strings(v.writes),
@@ -66,24 +69,31 @@ const STARTER = `export default function View() {
 }
 `;
 
+/** Whether the agent has made anything of it yet: it's still what a new draft starts with. */
+export const isStarter = (d: Pick<Draft, 'source'>) => d.source === STARTER;
+
 /**
  * A new draft named after `title`; its id can be a file name. A server that hands out drafts gives the id and package
  * (`given`); otherwise they're made here.
  */
-export async function createDraft(repo: Pick<Repo, 'put'>, title: string, runtime?: string, given?: { id: string; package: string }): Promise<string> {
+export async function createDraft(repo: Pick<Repo, 'put'>, title: string, runtime?: string, given?: { id: string; package: string; spec?: string }): Promise<string> {
   const slug = title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'view';
   const id = given?.id ?? `${slug}-${hash48(`${title}:${Date.now()}:${Math.random()}`).slice(0, 8)}`;
-  await repo.put(viewYml({ id, title, source: STARTER, reads: [], writes: [], npm: {}, runtime, package: given?.package ?? packageOf(id), members: [] }));
+  await repo.put(viewYml({ id, title, spec: given?.spec ?? '', source: STARTER, reads: [], writes: [], npm: {}, runtime, package: given?.package ?? packageOf(id), members: [] }));
   return id;
 }
 
 function viewYml(d: Draft): JsonMap {
   const out: JsonMap = { id: d.id, gestalt: VIEW, title: d.title, source: d.source, reads: d.reads, writes: d.writes, package: d.package };
+  if (d.spec) out.spec = d.spec;
   if (Object.keys(d.npm).length) out.npm = d.npm;
   if (d.runtime) out.runtime = d.runtime;
   if (d.members.length) out.members = d.members;
   return out;
 }
+
+/** Keeps `spec` as the draft's brief, the rest as it is. */
+export const saveSpec = (repo: Pick<Repo, 'put'>, d: Draft, spec: string) => repo.put(viewYml({ ...d, spec }));
 
 /** The draft's members as they are now, a page at a time. One that's gone or invalid is left out. */
 export async function loadMembers(repo: Pick<Repo, 'query'>, draft: Draft): Promise<Item[]> {

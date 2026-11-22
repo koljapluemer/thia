@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Check, Copy, Download, Link2Off, Send, Trash2 } from 'lucide-react';
 import { registry as teacher } from 'virtual:gestalts-plugins/teacher';
 import { registry as workshop } from 'virtual:gestalts-plugins/workshop';
@@ -6,10 +6,11 @@ import { useConnector, useHostQuery, type Repo } from '@gestalts/client';
 import { closedCsp, deckSources, type Registry } from '@gestalts/host';
 import type { DeckSource } from '@gestalts/client';
 import type { ViewError } from '@gestalts/view';
-import { Chat, Preview, VIEWS, asDraft, createDraft } from '@gestalts/workshop';
+import { Chat, Preview, VIEWS, asDraft, buildActions, createDraft, flushing, isStarter, viewWork } from '@gestalts/workshop';
 import tailwind from '@tailwindcss/browser?raw';
 import css from '../app.css?inline';
 import { backendFor, type AgentChoice } from './agent';
+import { Brief, useDebounced } from './Brief';
 import * as api from './api';
 import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
@@ -27,7 +28,11 @@ const contextOf = (me: api.Me): { registry: Registry; source: { gestalts: string
 /** A view's draft: the preview beside the chat that edits it. */
 export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
   const [{ registry, source }] = useState(() => contextOf(me));
-  const init = useCallback(async (repo: Repo) => { await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package }); }, [info, registry]);
+  // a brief it was made with (a lesson's plan) becomes its spec
+  const init = useCallback(async (repo: Repo) => {
+    await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package, spec: api.brief.get(info.id) });
+    api.brief.clear(info.id);
+  }, [info, registry]);
   return (
     <OpenDraft info={info} source={source} init={init}>
       {(repo) => <Workbench repo={repo} registry={registry} info={info} agent={agent} onChanged={onChanged} onDeleted={onDeleted} />}
@@ -41,29 +46,47 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const [errors, setErrors] = useState<ViewError[]>([]);
   const onError = useCallback((e: ViewError) => setErrors((es) => [...es, e].slice(-20)), []);
   const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
-  const csp = useMemo(() => closedCsp({ scripts: [`${location.origin}/api/npm/`] }), []);
   const runtime = registry.runtime.version;
+  const base = useMemo(() => viewWork(repo, info.id, runtime), [repo, info.id, runtime]);
+  const { edit, flush } = useDebounced((spec) => base.setSpec(spec));
+  const work = useMemo(() => flushing(base, flush), [base, flush]);
+  const csp = useMemo(() => closedCsp({ scripts: [`${location.origin}/api/npm/`] }), []);
   const title = draft?.title;
   useEffect(() => { if (title && title !== info.title) onChanged(); }, [title, info.title, onChanged]);
   if (!draft) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
-  const suggestion = api.brief.get(info.id);
+  return (
+    <Shell
+      header={(
+        <>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">{draft.title}</span>
+          <SyncState />
+          <PublishMenu repo={repo} id={info.id} />
+          <SubmitMenu source={`workshop:${info.id}`} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
+          <ExportButton id={info.id} />
+          <DeleteButton id={info.id} title={draft.title} onDeleted={onDeleted} />
+        </>
+      )}
+      preview={<Preview repo={repo} draft={draft} runtime={registry.runtime} css={css} tailwind={tailwind} onError={onError} resolveNpm={api.resolveNpm} csp={csp} />}
+      side={(
+        <>
+          <Brief work={work} spec={draft.spec} edit={edit} flush={flush} placeholder="What should it be? Who is it for, what do they do in it, what should they get out of it?" />
+          <div className="min-h-0 flex-1">
+            <Chat work={work} backend={backend} errors={errors} actions={buildActions(draft.spec, !isStarter(draft))} onTurnDone={() => setErrors([])} />
+          </div>
+        </>
+      )}
+    />
+  );
+}
+
+/** Every draft's layout, whatever its kind: what it does in its header, what it shows, and beside it its brief and chat. */
+export function Shell({ header, preview, side }: { header: ReactNode; preview: ReactNode; side: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">{draft.title}</span>
-        <SyncState />
-        <PublishMenu repo={repo} id={info.id} />
-        <SubmitMenu source={`workshop:${info.id}`} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
-        <ExportButton id={info.id} />
-        <DeleteButton id={info.id} title={draft.title} onDeleted={onDeleted} />
-      </div>
+      <div className="flex flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">{header}</div>
       <div className="grid min-h-0 flex-1 grid-rows-2 md:grid-cols-[minmax(0,1fr)_24rem] md:grid-rows-1">
-        <div className="min-h-0 min-w-0">
-          <Preview repo={repo} draft={draft} runtime={registry.runtime} css={css} tailwind={tailwind} onError={onError} resolveNpm={api.resolveNpm} csp={csp} />
-        </div>
-        <div className="min-h-0 border-t border-base-300 md:border-t-0 md:border-l">
-          <Chat repo={repo} draft={draft} backend={backend} runtime={runtime} errors={errors} suggestion={suggestion} onTurnDone={() => { setErrors([]); api.brief.clear(info.id); }} />
-        </div>
+        <div className="min-h-0 min-w-0">{preview}</div>
+        <div className="flex min-h-0 flex-col border-t border-base-300 bg-base-100 md:border-t-0 md:border-l">{side}</div>
       </div>
     </div>
   );

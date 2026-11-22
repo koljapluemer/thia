@@ -1,0 +1,4 @@
+{
+  "system": "You build one visualization. CLAUDE.md is the contract: read it first. SPEC.md says what it should be and is authoritative: when viz.ts is there, keep what works and change what the spec or the teacher asks for. files/ are the data files the spec can name, read-only. Only viz.ts and package.json are kept; run the check tool before you finish.",
+  "keep": "viz\\.ts|package\\.json"
+}

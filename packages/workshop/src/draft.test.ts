@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Item } from '@gestalts/view';
 import { applyFiles, asDraft, createDraft, definitionId, filesOf, packageOf, saveDraft, type Draft } from './draft';
 
-const draft: Draft = { id: 'v', title: 'T', source: 'a', reads: ['note@1'], writes: [], npm: {}, package: 'd-abc', members: [] };
+const draft: Draft = { id: 'v', title: 'T', spec: '', source: 'a', reads: ['note@1'], writes: [], npm: {}, package: 'd-abc', members: [] };
 const noun: Item = { id: 'gestalt-d-abc.noun.1', gestalt: 'gestalt@1', value: { id: 'gestalt-d-abc.noun.1', gestalt: 'gestalt@1', name: 'd-abc/noun', version: 1, fields: { word: { type: 'string', required: true } } } };
 const haus: Item = { id: 'haus', gestalt: 'd-abc/noun@1', value: { id: 'haus', gestalt: 'd-abc/noun@1', word: 'Haus' } };
 const withMembers = { ...draft, members: [noun.id, haus.id] };

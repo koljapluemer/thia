@@ -128,7 +128,7 @@ function Drafts({ me, onOut }: { me: api.Me; onOut: () => void }) {
         <main className="min-w-0 flex-1">
           {current?.kind === 'view' && <DraftPane key={current.id} info={current} me={me} agent={choice} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
           {current?.kind === 'sequence' && <SequencePane key={current.id} info={current} agent={choice} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
-          {current?.kind === 'viz' && <VizPane key={current.id} info={current} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
+          {current?.kind === 'viz' && <VizPane key={current.id} info={current} agent={choice} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
           {!current && <div className="flex h-full items-center justify-center p-4 text-center text-base-content/60">Pick a draft, or make a new one.</div>}
         </main>
       </div>

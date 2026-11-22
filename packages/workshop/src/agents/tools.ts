@@ -1,10 +1,12 @@
 import type { CheckResult, Files } from '@gestalts/check';
 import ask from '../../agent-template/ask.json';
+import { toBase64 } from '../base64';
 import type { Answers, Question } from './types';
 
 /**
  * What an agent may do besides thinking: the app's tools, the same whichever model runs the loop. The claude CLI gets
- * them through the bridge (each call comes back to the page); an agent loop in the page would call them directly.
+ * them through the bridge (each call comes back to the page). Reading and editing files are the loop's own: Claude
+ * Code's in its workspace, the server's agent's over the files it holds.
  */
 export type ToolContent = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string };
 export type ToolResult = { content: ToolContent[]; isError?: boolean };
@@ -19,16 +21,10 @@ export type AgentTool = {
 
 const NO_INPUT = { type: 'object', properties: {}, additionalProperties: false };
 
-const base64 = (bytes: Uint8Array) => {
-  let s = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  return btoa(s);
-};
-
 /** A check's result as a tool's: the report, then each screenshot. Failing is an error, so the agent goes on. */
 export function checkResult(r: CheckResult): ToolResult {
   return {
-    content: [{ type: 'text', text: r.report }, ...r.shots.map((s) => ({ type: 'image' as const, data: base64(s.png), mimeType: 'image/png' }))],
+    content: [{ type: 'text', text: r.report }, ...r.shots.map((s) => ({ type: 'image' as const, data: toBase64(s.png), mimeType: 'image/png' }))],
     isError: !r.ok,
   };
 }
@@ -67,44 +63,6 @@ export function vizCheckTool(extra: Files): AgentTool {
       }
     },
   };
-}
-
-/**
- * Reading and changing a draft held in the page, for an agent loop that runs here (a model behind an API). `files` is
- * changed in place; `writable` says which paths it may write. Not used by the CLI, which edits its workspace itself.
- */
-export function fileTools(files: Record<string, string>, writable: RegExp): AgentTool[] {
-  const text = (t: string, isError = false): ToolResult => ({ content: [{ type: 'text', text: t }], isError });
-  const arg = (input: unknown, k: string) => (input && typeof input === 'object' ? (input as Record<string, unknown>)[k] : undefined);
-  const path = { type: 'string', description: 'e.g. view.tsx, data/haus.yml' };
-  return [
-    { name: 'list_files', description: 'Lists the files.', inputSchema: NO_INPUT, run: async () => text(Object.keys(files).sort().join('\n')) },
-    {
-      name: 'read_file', description: 'Reads a file.', inputSchema: { type: 'object', properties: { path }, required: ['path'] },
-      run: async (input) => { const p = String(arg(input, 'path')); return p in files ? text(files[p]) : text(`no file ${p}`, true); },
-    },
-    {
-      name: 'write_file', description: 'Writes a whole file.', inputSchema: { type: 'object', properties: { path, content: { type: 'string' } }, required: ['path', 'content'] },
-      run: async (input) => {
-        const p = String(arg(input, 'path'));
-        if (!writable.test(p)) return text(`${p} can't be written`, true);
-        files[p] = String(arg(input, 'content') ?? '');
-        return text(`wrote ${p}`);
-      },
-    },
-    {
-      name: 'edit_file', description: 'Replaces `old_string`, which must occur once, with `new_string`.',
-      inputSchema: { type: 'object', properties: { path, old_string: { type: 'string' }, new_string: { type: 'string' } }, required: ['path', 'old_string', 'new_string'] },
-      run: async (input) => {
-        const p = String(arg(input, 'path'));
-        const [from, to] = [String(arg(input, 'old_string') ?? ''), String(arg(input, 'new_string') ?? '')];
-        if (!writable.test(p) || !(p in files)) return text(`${p} can't be edited`, true);
-        if (files[p].split(from).length !== 2) return text(`old_string must occur exactly once in ${p}`, true);
-        files[p] = files[p].replace(from, () => to);
-        return text(`edited ${p}`);
-      },
-    },
-  ];
 }
 
 /** The questions of an `ask` call, or what's wrong with them (as the server checks them, `web/server/src/agent.rs`). */

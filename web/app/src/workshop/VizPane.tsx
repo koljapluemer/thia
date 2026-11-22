@@ -2,54 +2,71 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { registry } from 'virtual:gestalts-plugins/workshop';
 import { useHostQuery, type Repo } from '@gestalts/client';
 import { SingleView } from '@gestalts/host';
+import { Chat, VIZ, asViz, buildActions, createViz, flushing, vizWork } from '@gestalts/workshop';
 import css from '../app.css?inline';
+import { backendFor, type AgentChoice } from './agent';
 import * as api from './api';
-import { ExportButton, SyncState } from './DraftPane';
+import { Brief, useDebounced } from './Brief';
+import { DeleteButton, ExportButton, Shell, SyncState } from './DraftPane';
 import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
 import { Editor } from './viz/Editor';
-import { VIZ, asViz, createViz } from './viz/viz';
 
-/** The vizint view shows the viz as the public site will; vizzes go there, never to a class. */
+/** The vizint view shows the viz as the public site will. */
 const SOURCE = { gestalts: registry.gestalts };
 const NO_NAVIGATION = () => {};
+/** a viz's preview doesn't report errors to the chat: its check renders it after every turn that changed it */
+const NO_ERRORS: never[] = [];
 
 /**
- * A visualization's draft (`viz@1`): its texts and files beside the vizint view showing it, built from its spec by
- * Claude Code on this computer, through the Claude bridge, whose check renders it. The server's agent can't build one
- * until the server can render.
+ * A visualization's draft (`viz@1`), laid out as every draft is: the vizint view showing it, beside it its brief and
+ * the chat with whichever agent Settings picks. After a turn that changed it, the page builds and renders it, and keeps
+ * the page only when that passes (`vizWork`).
  */
-export function VizPane({ info, onChanged, onDeleted }: { info: api.DraftInfo; onChanged: () => void; onDeleted: () => void }) {
-  const init = useCallback(async (repo: Repo) => { await createViz(repo, info.id, info.title); }, [info]);
+export function VizPane({ info, agent, onChanged, onDeleted }: { info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+  const init = useCallback(async (repo: Repo) => {
+    await createViz(repo, info.id, info.title, api.brief.get(info.id));
+    api.brief.clear(info.id);
+  }, [info]);
   return (
     <OpenDraft info={info} source={SOURCE} init={init}>
-      {(repo) => <Workbench repo={repo} info={info} onChanged={onChanged} onDeleted={onDeleted} />}
+      {(repo) => <Workbench repo={repo} info={info} agent={agent} onChanged={onChanged} onDeleted={onDeleted} />}
     </OpenDraft>
   );
 }
 
-function Workbench({ repo, info, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; onChanged: () => void; onDeleted: () => void }) {
+function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
   const current = useHostQuery({ gestalt: VIZ, ids: [info.id], limit: 1 })[0];
   const viz = useMemo(() => (current ? asViz(current) : null), [current]);
   const params = useMemo(() => ({ viz: info.id }), [info.id]);
+  const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
+  const base = useMemo(() => vizWork(repo, info.id), [repo, info.id]);
+  const { edit, flush } = useDebounced((spec) => base.setSpec(spec));
+  const work = useMemo(() => flushing(base, flush), [base, flush]);
   const title = viz?.title;
   useEffect(() => { if (title && title !== info.title) onChanged(); }, [title, info.title, onChanged]);
-  const remove = async () => { await api.deleteDraft(info.id); onDeleted(); };
   if (!viz) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
-        <span className="min-w-0 flex-1 truncate text-sm font-medium">{viz.title}</span>
-        <SyncState />
-        <SubmitMenu source={`workshop:${info.id}`} ready={Boolean(viz.built)} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
-        <ExportButton id={info.id} />
-      </div>
-      <div className="grid min-h-0 flex-1 grid-rows-2 md:grid-cols-[24rem_minmax(0,1fr)] md:grid-rows-1">
-        <div className="min-h-0 border-b border-base-300 md:border-r md:border-b-0">
-          <Editor key={viz.id} repo={repo} viz={viz} onDelete={() => void remove()} />
-        </div>
-        <div className="min-h-0 min-w-0"><SingleView registry={registry} css={css} view="vizint" params={params} onParams={NO_NAVIGATION} /></div>
-      </div>
-    </div>
+    <Shell
+      header={(
+        <>
+          <span className="min-w-0 flex-1 truncate text-sm font-medium">{viz.title}</span>
+          <SyncState />
+          <SubmitMenu source={`workshop:${info.id}`} ready={Boolean(viz.built)} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
+          <ExportButton id={info.id} />
+          <DeleteButton id={info.id} title={viz.title} onDeleted={onDeleted} />
+        </>
+      )}
+      preview={<SingleView registry={registry} css={css} view="vizint" params={params} onParams={NO_NAVIGATION} />}
+      side={(
+        <>
+          <Brief work={work} spec={viz.spec} edit={edit} flush={flush} placeholder="e.g. Show how a Bézier curve is drawn by de Casteljau's construction; the control points are draggable." />
+          <Editor key={viz.id} repo={repo} viz={viz} />
+          <div className="min-h-0 flex-1">
+            <Chat work={work} backend={backend} errors={NO_ERRORS} actions={buildActions(viz.spec, Boolean(viz.source))} onTurnDone={() => {}} />
+          </div>
+        </>
+      )}
+    />
   );
 }

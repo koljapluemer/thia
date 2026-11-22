@@ -85,11 +85,11 @@ export type SequenceReport = {
 };
 export const sequenceReport = (id: string) => api<SequenceReport>(`/drafts/${id}/sequence`);
 
-/** A brief a view draft was made with, for its chat to start from: kept in this browser until it's sent. */
+/** The brief a draft was made with (a lesson's plan): kept in this browser until the draft is first opened, which keeps it as its spec. */
 const briefKey = (id: string) => `workshop:brief:${id}`;
 export const brief = {
   get(id: string) { try { return localStorage.getItem(briefKey(id)) ?? undefined; } catch { return undefined; } },
-  set(id: string, text: string) { try { localStorage.setItem(briefKey(id), text); } catch { /* the chat starts empty */ } },
+  set(id: string, text: string) { try { localStorage.setItem(briefKey(id), text); } catch { /* the brief starts empty */ } },
   clear(id: string) { try { localStorage.removeItem(briefKey(id)); } catch { /* nothing kept */ } },
 };
 

@@ -1,4 +1,5 @@
 import type { ViewError } from '@gestalts/view';
+import type { AgentKind } from './kinds';
 
 /**
  * What a workshop asks of an agent, whatever runs it (the claude CLI through the Claude bridge, the teacher app's server).
@@ -6,19 +7,23 @@ import type { ViewError } from '@gestalts/view';
  * into ymls and writes them, so no agent needs access to any.
  */
 export type TurnRequest = {
-  /** the view's id (lowercase letters, digits and -) */
+  /** what the draft is: a view (the default) or a visualization; it says what the agent is given (`kinds.ts`) */
+  kind?: AgentKind;
+  /** the draft's id (lowercase letters, digits and -) */
   view: string;
   /** this backend's conversation to continue, from an earlier `done` */
   session?: string;
   message: string;
-  /** the draft as files, by path: `view.tsx`, `view.json`, `gestalts/<name>@<N>.yml`, `data/<id>.yml` */
+  /** the draft as files, by path: a view's `view.tsx`, `view.json`, `gestalts/<name>@<N>.yml`, `data/<id>.yml`; a viz's `viz.ts`, `package.json` */
   files: Record<string, string>;
+  /** files the agent reads and can't change, as base64 (a viz's `files/<label>`) */
+  binary?: Record<string, string>;
+  /** the brief kept with the draft, which the agent sees as SPEC.md */
+  spec?: string;
   /** the gestalts the app has (`name@N`), which the view may read and write besides its own */
   gestalts: string[];
   /** what the preview reported since the last turn, and what couldn't be saved of the last one */
   diagnostics: Diagnostic[];
-  /** what the app tells the agent about who it makes views for, before the contract (the local CLI's; a server has its own) */
-  brief?: string;
   /** the answer to the question the conversation waits on (`message` may be empty then) */
   answer?: Answer;
 };

@@ -2,9 +2,9 @@ import { INSTALL_BRIDGE, bridgeBackend, httpBackend, type AgentBackend } from '@
 import { AGENT_NODE } from '../nodes';
 
 /**
- * Who works on a lesson with the teacher: the server's agent (on our API key, within the school's budget), or the
- * claude CLI on this computer, through the claude bridge (`mise run claude-bridge`). Kept in this
- * browser, since the CLI is this computer's.
+ * Who works on a draft with the teacher, whatever its kind: the server's agent (on our API key, within the school's
+ * budget), or the claude CLI on this computer, through the claude bridge (`mise run claude-bridge`), which costs no API
+ * tokens. Kept in this browser, since the CLI is this computer's.
  */
 export type AgentChoice = { agent: 'server' | 'cli'; node: string };
 
@@ -36,19 +36,8 @@ export function nodeProblem(url: string): string | undefined {
   return undefined;
 }
 
-/**
- * What the CLI is told before the workshop's contract, as the server's agent is (`PREFACE` in
- * `web/server/src/agent.rs`, less what is about its tools).
- */
-const BRIEF = `\
-You are making an interactive learning view for a teacher, for their class. When it's done they publish it, and \
-their students open it on school devices (old iPads and Chromebooks among them): keep it light, and make it work \
-well with touch and on a small screen. A published view reaches no server: no fetch, no external images or fonts; \
-npm packages are bundled and pinned. Speak to the teacher plainly, in the language they write in; they are not \
-programmers.`;
-
 export function cliAgent(node: string): AgentBackend {
-  return bridgeBackend(node, { brief: BRIEF });
+  return bridgeBackend(node);
 }
 
 export function backendFor(choice: AgentChoice, draft: string): AgentBackend {

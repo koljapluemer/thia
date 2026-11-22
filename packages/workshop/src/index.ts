@@ -1,9 +1,13 @@
-export { DEFINITION, VIEW, VIEWS, applyFiles, asDraft, createDraft, definitionId, filesOf, loadMembers, packageOf, saveDraft, type Draft, type DraftChange } from './draft';
-export { Chat } from './Chat';
+export { DEFINITION, VIEW, VIEWS, applyFiles, asDraft, createDraft, definitionId, filesOf, isStarter, loadMembers, packageOf, saveDraft, saveSpec, type Draft, type DraftChange } from './draft';
+export { Chat, type Action } from './Chat';
+export { buildActions, flushing, viewWork, vizWork, type Settled, type Snapshot, type Work } from './work';
+export { VIZ, asViz, createViz, packagesJson, saveViz, storeBlob, vizYml, type BlobRef, type Viz } from './viz';
+export { fromBase64, toBase64 } from './base64';
+export { BRIEF, contracts, systemOf, type AgentKind, type KindContract } from './agents/kinds';
 export { Preview, type ResolveNpm } from './Preview';
 export { httpBackend, jobBackend, type Call } from './agents/jobs';
 export { INSTALL_BRIDGE, VIEW_FILES, bridgeAvailable, bridgeBackend, bridgeStatus, pairBridge, runOnBridge, type BridgeEvent, type BridgeStart, type BridgeStatus } from './agents/bridge';
-export { answerText, askTool, checkResult, fileTools, questionsOf, viewCheckTool, vizCheckTool, type AgentTool, type ToolContent, type ToolResult } from './agents/tools';
+export { answerText, askTool, checkResult, questionsOf, viewCheckTool, vizCheckTool, type AgentTool, type ToolContent, type ToolResult } from './agents/tools';
 export type { AgentBackend, AgentEvent, Answer, Answers, Diagnostic, OpenQuestion, Question, TurnRequest } from './agents/types';
 export { KNOWN_P, SEQUENCE, STRUGGLING_P, asSequence, decide, ruleConcepts, sequenceYml, walk, type Decision, type Sequence, type Step, type Walked } from './sequence';
 export { checkPlan, conceptsLine, planLesson, type Concept, type Plan, type PlannedRule, type PlannedStep } from './plan';

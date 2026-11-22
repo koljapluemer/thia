@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { registry } from 'virtual:gestalts-plugins/workshop';
 import { useOpenRepo, type Repo } from '@gestalts/client';
 import type { Item } from '@gestalts/view';
-import { VIEWS, asDraft, loadMembers, packageOf } from '@gestalts/workshop';
+import { VIEWS, VIZ, asDraft, loadMembers, packageOf, toBase64 } from '@gestalts/workshop';
 import { stringify } from 'yaml';
 import * as api from './api';
-import { VIZ, toBase64 } from './viz/viz';
+
 
 /**
  * Drafts the workshops kept in this browser before they moved to accounts: the learning workshop's views and the

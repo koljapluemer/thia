@@ -1,6 +1,5 @@
+import { contracts, systemOf } from './kinds';
 import type { AgentTool } from './tools';
-import { askTool, viewCheckTool } from './tools';
-import { viewTemplate } from './template';
 import type { AgentBackend, AgentEvent, Answers, CompleteRequest, Question, TurnRequest } from './types';
 
 /**
@@ -138,9 +137,8 @@ export async function* runOnBridge(url: string, start: BridgeStart, tools: Agent
   }
 }
 
-/** What a draft is, as files; everything else in a workspace is the template's or scratch. */
-export const VIEW_FILES = String.raw`view\.tsx|view\.json|gestalts/[a-z0-9-]+@[1-9][0-9]*\.yml|data/[^/\\.][^/\\]{0,199}\.yml`;
-const SYSTEM = 'You are editing one view in this directory. CLAUDE.md here is the contract: read it first. Only view.tsx, view.json, gestalts/ and data/ are kept; run the check tool before you finish.';
+/** What a view's draft is, as files; everything else in a workspace is the template's or scratch. */
+export const VIEW_FILES = contracts.view.keep;
 
 function errorsFile(diagnostics: TurnRequest['diagnostics']): string {
   const lines = ['# Errors the preview reported since the last turn', ''];
@@ -149,28 +147,30 @@ function errorsFile(diagnostics: TurnRequest['diagnostics']): string {
 }
 
 /**
- * A draft view's agent: the claude CLI through the bridge at `url`, with the workshop's check. `brief` goes before
- * the contract: who the app makes views for. `connect` asks the bridge to allow this site.
+ * The claude CLI through the bridge at `url`, for any kind of draft: what it's told, given and checked with is the
+ * kind's (`kinds.ts`), the same as the server's agent gets. `connect` asks the bridge to allow this site.
  */
-export function bridgeBackend(url: string, opts: { brief?: string } = {}): AgentBackend & { connect(): Promise<true | string> } {
+export function bridgeBackend(url: string): AgentBackend & { connect(): Promise<true | string> } {
   return {
     id: 'claude-cli',
     label: 'Claude (Claude Code on this computer)',
     available: () => bridgeAvailable(url),
     connect: () => pairBridge(url),
     async *turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent> {
-      const files: Record<string, string> = { ...(await viewTemplate()), ...req.files };
+      const kind = contracts[req.kind ?? 'view'];
+      const template = await kind.template();
+      const files: Record<string, string> = { ...template.files, ...req.files };
+      if (req.spec?.trim()) files['SPEC.md'] = `${req.spec.trim()}\n`;
       let prompt = req.message;
       if (req.diagnostics.length) {
         files['runtime-errors.md'] = errorsFile(req.diagnostics);
         prompt += `\n\n(The preview reported ${req.diagnostics.length} error(s) since the last turn: see runtime-errors.md.)`;
       }
-      const brief = req.brief ?? opts.brief;
       const start: BridgeStart = {
-        workspace: req.view, session: req.session, prompt, files, keep: VIEW_FILES,
-        system: brief ? `${brief}\n\n${SYSTEM}` : SYSTEM,
+        workspace: req.view, session: req.session, prompt, files, binary: { ...template.binary, ...req.binary }, keep: kind.keep,
+        system: systemOf(req.kind ?? 'view'),
       };
-      yield* runOnBridge(url, start, [viewCheckTool(req.gestalts), askTool()], signal);
+      yield* runOnBridge(url, start, kind.tools(req), signal);
     },
     async complete(req: CompleteRequest, signal: AbortSignal): Promise<string> {
       // a run with nothing in its workspace, no tools of the page's and nothing kept: only what it says
