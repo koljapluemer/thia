@@ -54,7 +54,7 @@ A sync peer, an agent runner and publishing. Not the node, hosted.
   cancel stay as the workshop's protocol has them.
 - **Seeing what it built**: compile and typecheck say little about an interactive view. The server renders the draft
   headless and gives the agent screenshots and runtime errors (the visual feedback in
-  `installables/claude-bridge/make/doc/local-agents-and-pattern-foundry.md`). That costs per turn, so budgets per account,
+  `web/app/doc/workshop/local-agents-and-pattern-foundry.md`). That costs per turn, so budgets per account,
   concurrency limits and prompt caching come with it.
 - **Auth**: admin-made accounts behind OIDC, so school logins can plug in later.
 - **Hosting** in the EU; published lessons on a CDN, also in the EU.
@@ -138,7 +138,7 @@ and the AI review below, mapping concepts, and a canonical namespace beyond the 
 A submission: a snapshot of the draft with its origin hash, a description, and a licence grant accepted with it. It
 lands in a review queue in the same app:
 
-1. the deterministic gates of `installables/claude-bridge/make/doc/workshop-integration.md`, plus actual against declared
+1. the deterministic gates of `web/app/doc/workshop/workshop-integration.md`, plus actual against declared
    network use, imports, bundle size, and a performance budget on a low-end device profile
 2. an AI review of kit and gestalt usage, advisory only
 3. a human, on the diff and on what it may read, write and reach

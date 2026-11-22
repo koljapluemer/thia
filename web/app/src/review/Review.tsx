@@ -8,7 +8,7 @@ import type { ViewError } from '@gestalts/view';
 import { Preview, VIEW, asDraft } from '@gestalts/workshop';
 import css from '../app.css?inline';
 import { AreaLink, Areas } from '../router';
-import * as api from '../teach/api';
+import * as api from '../workshop/api';
 
 /**
  * The review queue: what the workshops offered for the public site. Each submission shows what it is, its files, and
@@ -25,7 +25,7 @@ export function Review() {
         <span className="font-semibold">Review</span>
       </header>
       {me === undefined && <div className="flex justify-center p-8"><span className="loading loading-spinner" /></div>}
-      {me === null && <p className="p-8">Sign in at the <AreaLink path="/teach" className="link">teacher portal</AreaLink> first.</p>}
+      {me === null && <p className="p-8">Sign in at the <AreaLink path="/workshop" className="link">workshop</AreaLink> first.</p>}
       {me && !me.admin && <p className="p-8">Only admins review submissions.</p>}
       {me?.admin && <Queue />}
     </div>

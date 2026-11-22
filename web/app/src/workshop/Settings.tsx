@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import { pairBridge } from '@gestalts/workshop';
 import { DEFAULT_NODE, START, cliAgent, nodeProblem, type AgentChoice } from './agent';
 
-/** This browser's settings: who makes lessons with the teacher. */
+/** This browser's settings: who makes views with you. */
 export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onSave: (c: AgentChoice) => void; onClose: () => void }) {
   const [agent, setAgent] = useState(choice.agent);
   const [node, setNode] = useState(choice.node);
@@ -21,7 +21,7 @@ export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onS
           <button type="button" className="btn btn-ghost btn-sm btn-square" title="Close" onClick={onClose}><X className="size-4" /></button>
         </div>
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 font-medium">Who makes lessons with you</legend>
+          <legend className="mb-1 font-medium">Who makes views with you</legend>
           <label className="flex items-start gap-2">
             <input type="radio" className="radio radio-sm mt-0.5" name="agent" checked={agent === 'server'} onChange={() => setAgent('server')} />
             <span>Claude, on this site<span className="block text-xs text-base-content/60">Within your school’s monthly budget.</span></span>

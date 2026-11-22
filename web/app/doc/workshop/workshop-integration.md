@@ -1,6 +1,6 @@
 # From draft to plugin
 
-Status: the learning workshop is the web app's `/make`. Promotion is built in a minimal form, as review and acceptance
+Status: the learning workshop is now the web app's `/workshop` ([`architecture.md`](architecture.md)). Promotion is built in a minimal form, as review and acceptance
 of submissions from every workshop: see [`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md).
 What follows is the earlier design, kept for its open points (gates, remixing).
 
@@ -34,7 +34,7 @@ User-space yml is personal, editable draft state. A plugin directory is maintain
 
 ## Where things live
 
-- `web/app/src/make` and `packages/workshop` own the authoring experience: the draft list, chat, preview, the agent's
+- `web/app/src/workshop` and `packages/workshop` own the authoring experience: the draft list, chat, preview, the agent's
   tools and the agent template; `installables/claude-bridge` runs Claude Code for it.
 - `plugins/` holds source plugins, flat, usable by any app; promotion writes there.
 - `packages/` and `crates/` own generic execution, compilation, schemas and APIs.

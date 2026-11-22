@@ -414,9 +414,15 @@ fn month_start() -> String {
     format!("{}-01T00:00:00.000Z", &now_iso()[..7])
 }
 
+/// Why the server's agent can't work on this draft, if it can't: it makes views; a visualization is built by the
+/// local agent, whose check renders it.
+fn not_for(draft: &crate::db::Draft) -> Option<String> {
+    (draft.kind != "view").then(|| "the server's agent makes views: a visualization is built by the agent on your computer, through the Claude bridge".into())
+}
+
 async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Value>> {
-    state.own_draft(&teacher, &id)?;
-    let reason = match state.agents.unavailable() {
+    let (draft, _) = state.own_draft(&teacher, &id)?;
+    let reason = match state.agents.unavailable().or_else(|| not_for(&draft)) {
         Some(r) => Some(r),
         None if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget => Some("this month's budget for the agent is used up".into()),
         None => None,
@@ -429,6 +435,9 @@ async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<
 
 async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<TurnRequest>) -> ApiResult<(StatusCode, Json<Value>)> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
+    if let Some(r) = not_for(&draft) {
+        return Err(ApiError::Conflict(r));
+    }
     if req.view != draft.id {
         return Err(ApiError::BadRequest("view: not this draft".into()));
     }

@@ -126,3 +126,20 @@ async fn what_may_not_go_out() {
     assert_eq!(s.lessons("/l/AAAAAAAAAAAAAAAAAAAAAA/current").await.0, StatusCode::TOO_MANY_REQUESTS);
     assert_eq!(s.lessons("/lessons/../teacher.db").await.0, StatusCode::NOT_FOUND);
 }
+
+#[tokio::test]
+async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
+    let s = Server::new(Limits::default());
+    // the player for its runtime is here
+    draft(&s).await;
+    let cal = s.login("cal@school.example").await;
+    let (_, c, _) = s.call("POST", "/api/drafts", Some(&cal), Some(json!({ "title": "Video" }))).await;
+    let (id, p) = (c["id"].as_str().unwrap(), c["package"].as_str().unwrap());
+    let view = format!("id: {id}\ngestalt: view@2\ntitle: Video\nsource: {VIEW:?}\nreads: [media-source@1]\nwrites: []\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: [m]\n");
+    let media = "id: m\ngestalt: media-source@1\nprovider: youtube\nexternal_id: abc\nlanguage: it\n";
+    let w = json!([{ "id": id, "text": view }, { "id": "m", "text": media }]);
+    assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&cal), Some(w)).await.0, StatusCode::NO_CONTENT, "the repo's models, in a maintainer's draft");
+    let (status, body, _) = s.call("POST", &format!("/api/drafts/{id}/publish"), Some(&cal), None).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    assert!(body.to_string().contains("media-source@1"), "{body}");
+}

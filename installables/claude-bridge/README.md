@@ -3,7 +3,7 @@
 `gestalts-claude-bridge` lets a website you allow run Claude Code (the `claude` CLI, signed in on this computer)
 with the website's own tools. It knows nothing of what the site makes: the site sends the files, the instructions
 and its tools. The bridge runs `claude -p` on them in a workspace, and hands every tool call back to the page. The
-web app's `/make`, `/make-viz` and `/teach` (Claude Code on this computer) use it, with `@gestalts/check` as their
+web app's `/workshop` (Claude Code on this computer) uses it, with `@gestalts/check` as their
 `check` tool.
 
 - **Install:** `mise run claude-bridge:package` builds this OS's installers into `target/packages` (`.deb`, `.rpm`,

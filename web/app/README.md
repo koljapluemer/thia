@@ -1,21 +1,20 @@
 # web
 
 The one web app. `/` is a landing page with a card per area; each area is a path: `/notes` (the gestalter: notes and
-installable views in tabs), `/make` and `/make-viz` (the workshops, with a local agent), `/teach` (lessons, on the
-teacher server), `/review` (admins: what the workshops offered for the public site). It needs no node: the user's data
-is in the browser (OPFS). The learning views and visualizations, for anyone, are the public site, [`../site`](../site).
+installable views in tabs), `/workshop` (views and visualizations made with an agent, behind an account, kept on the
+server), `/review` (admins: what the workshop offered for the public site). Notes need no node: they are in the
+browser (OPFS). The learning views and visualizations, for anyone, are the public site, [`../site`](../site).
 
 - notes are the home store and `distributions/home.yml`; the desktop node, when one
   runs (`VITE_GESTALTS_NODE`, default :7717), is asked for plugin backends, `/net` and `/llm`, and the user may sync
   with it (settings)
-- the workshops share a `drafts` store in the browser (`distributions/workshop.yml`); their agent, and the teacher's
-  local one, is Claude Code through the Claude bridge (`VITE_AGENT_NODE`, default :7737, `mise run claude-bridge`),
-  with the page's tools: the `check` is `@gestalts/check`, run here. See [`doc/make`](doc/make) and
-  [`doc/make-viz.md`](doc/make-viz.md)
-- each lesson draft is its own store (`distributions/teacher.yml`), synced with the teacher server under `/api`
-  (`VITE_TEACHER_API` in dev, default :7740)
-- every workshop can offer a result for the public site (`src/submit.tsx`), reviewed in `/review`: see
-  [`doc/architecture/publishing.md`](../../doc/architecture/publishing.md)
+- each workshop draft is its own store, synced with the server under `/api` (`VITE_TEACHER_API` in dev, default
+  :7740), previewed in the context it goes out in (`distributions/teacher.yml` for a lesson,
+  `distributions/workshop.yml` for the public site). The agent is the server's, or Claude Code through the Claude
+  bridge (`VITE_AGENT_NODE`, default :7737, `mise run claude-bridge`) with the page's tools: the `check` is
+  `@gestalts/check`, run here. See [`doc/workshop`](doc/workshop)
+- a draft is published to a class, or offered for the public site (`src/workshop/submit.tsx`) and reviewed in
+  `/review`: see [`doc/architecture/publishing.md`](../../doc/architecture/publishing.md)
 
 From the repo root: `mise run just dev` (this, the claude bridge, folder-sync and the teacher server), `mise run web:dev` (this alone),
 `mise run web:build` (a static site in `dist/`; serve every path as `index.html`).

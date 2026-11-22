@@ -1,11 +1,16 @@
 # One workshop, and lessons of several views
 
-Decided on 2026-11-22. Not built. Three steps, in this order: the workshops become one, the agent can ask, then
-lessons made of several views (sequences). Prior art is at the end.
+Decided on 2026-11-22. Three steps, in this order: the workshops become one (built, 2026-11-22), the agent can ask,
+then lessons made of several views (sequences). Prior art is at the end.
 
 ## 1. One workshop
 
-Today there are three areas for making something with an agent: `/make` (learning views, local, the bridge agent),
+Built: `/workshop` ([`web/app/doc/workshop`](../../web/app/doc/workshop/architecture.md)). Where it went another way
+than below: a viz is previewed in the workshop distribution (the vizint view, as the public site shows it), so
+`teacher.yml` didn't change; a moved draft keeps its id and package; *New* offers a view and a visualization until
+sequences exist.
+
+There were three areas for making something with an agent: `/make` (learning views, local, the bridge agent),
 `/make-viz` (vizzes, local, the bridge agent) and `/teach` (lessons, an account, the server's agent or the bridge).
 `/make` is `/teach` without the server: the same `view@2` draft, `Chat`, `Preview` and `createDraft`. Their shells are
 near-copies. A sequence has to point at views and vizzes alike, which three stores don't allow; merging after
@@ -70,7 +75,7 @@ that branches inside, not a sequence.
   - *skip if known*: a concept, known at `p ≥ 0.8` (as for set members);
   - *detour if struggling*: a concept, and a step played first before coming back.
   Thresholds are fixed. Rules name concepts, never other steps, so steps stay independent and every view feeds them
-  through its `concept-practice-event`s.
+  through its `practice-event`s.
 - **The player plays a sequence** under one link: a path (*step 2 of 5*), skipped steps shown with why and a way to
   do them anyway, a detour marked as extra with why, going back always allowed. One store on the device for the whole
   sequence, so beliefs build up across its steps.
@@ -78,13 +83,14 @@ that branches inside, not a sequence.
 - **A sequence draft** holds `sequence.yml` and points at the account's other drafts. The agent writes it with the
   tools it has; each new step is built in its own draft, from a brief that names the concepts the rules depend on.
   `check` also checks that steps exist and the rules' concepts do, and warns when no earlier step declares writing
-  `concept-practice-event`.
+  `practice-event`.
 - **A play-through preview**: the sequence played as a pretend student (*knows X*, *struggles with X*), showing what
   gets skipped and added.
 
 ### Before building
 
-- Does the player compute beliefs? It has a store per lesson; rules need belief queries there.
+- Does the player compute beliefs? Yes: it runs the core on a store per lesson (`web/site/src/Run.tsx`), and a view
+  that reads `concept@…` gets beliefs; rules can ask the same.
 - Try the agent on a dozen realistic requests for a sequence, by hand. If its splits are poor, the rest doesn't
   matter. The split runs on the same model as the rest, at low effort: it costs little, a cheaper model saves
   nothing worth losing the cache over, and a poor split costs expensive turns later.

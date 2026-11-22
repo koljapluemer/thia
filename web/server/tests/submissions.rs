@@ -3,7 +3,6 @@
 mod common;
 
 use axum::http::StatusCode;
-use base64::Engine;
 use common::Server;
 use gestalts_teacher::Limits;
 use serde_json::{Value, json};
@@ -50,11 +49,11 @@ async fn a_teachers_draft_is_queued_as_a_snapshot_for_admins_only() {
     assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
     let (status, sub) = submit(&s, &id, &ada).await;
     assert_eq!(status, StatusCode::CREATED, "{sub}");
-    assert_eq!((sub["kind"].as_str(), sub["status"].as_str(), sub["source"].clone()), (Some("view"), Some("pending"), json!(format!("teach:{id}"))));
+    assert_eq!((sub["kind"].as_str(), sub["status"].as_str(), sub["source"].clone()), (Some("view"), Some("pending"), json!(format!("workshop:{id}"))));
     let sid = sub["id"].as_str().unwrap();
 
     // the sender sees their own
-    let (_, mine, _) = s.call("GET", &format!("/api/submissions?source=teach:{id}"), Some(&ada), None).await;
+    let (_, mine, _) = s.call("GET", &format!("/api/submissions?source=workshop:{id}"), Some(&ada), None).await;
     assert_eq!(mine.as_array().unwrap().len(), 1);
 
     // only admins review
@@ -81,7 +80,7 @@ async fn a_teachers_draft_is_queued_as_a_snapshot_for_admins_only() {
     assert_eq!(s.call("POST", &format!("/api/admin/submissions/{sid}/accept"), Some(&bea), Some(target)).await.0, StatusCode::CONFLICT);
     assert_eq!(s.call("POST", &format!("/api/admin/submissions/{sid}/reject"), Some(&bea), Some(json!({ "note": " " }))).await.0, StatusCode::BAD_REQUEST);
     assert_eq!(s.call("POST", &format!("/api/admin/submissions/{sid}/reject"), Some(&bea), Some(json!({ "note": "Too short." }))).await.0, StatusCode::NO_CONTENT);
-    let (_, mine, _) = s.call("GET", &format!("/api/submissions?source=teach:{id}"), Some(&ada), None).await;
+    let (_, mine, _) = s.call("GET", &format!("/api/submissions?source=workshop:{id}"), Some(&ada), None).await;
     assert_eq!((mine[0]["status"].as_str(), mine[0]["note"].as_str()), (Some("rejected"), Some("Too short.")));
     assert_eq!(s.call("POST", &format!("/api/admin/submissions/{sid}/reject"), Some(&bea), Some(json!({ "note": "again" }))).await.0, StatusCode::CONFLICT);
 }
@@ -129,25 +128,24 @@ async fn an_accepted_view_becomes_a_plugin_with_its_own_package_and_deck() {
 }
 
 #[tokio::test]
-async fn an_uploaded_visualization_becomes_a_vizint_deck() {
+async fn a_visualization_draft_becomes_a_vizint_deck() {
     let repo = checkout();
     let s = Server::promoting_into(repo.path());
     let ada = s.login("ada@school.example").await;
+    let (_, d, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Wellen", "kind": "viz" }))).await;
+    let id = d["id"].as_str().unwrap().to_owned();
     let html = b"<!doctype html><p>a viz</p>";
-    let viz = "id: viz-1\ngestalt: viz@1\ntitle: Wellen\nintro: Eine Welle.\nbuilt: page.html\n";
-    let upload = |ymls: Value, blobs: Value| json!({ "about": "Wellen sehen.", "rights": true, "source": "make-viz:viz-1", "ymls": ymls, "blobs": blobs });
-    let blobs = json!({ "page.html": base64::engine::general_purpose::STANDARD.encode(html) });
+    let viz = format!("id: {id}\ngestalt: viz@1\ntitle: Wellen\nintro: Eine Welle.\nbuilt: page.html\n");
+    let w = json!([{ "id": id, "text": viz }]);
+    assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&ada), Some(w)).await.0, StatusCode::NO_CONTENT);
 
-    // what isn't one view or one visualization
-    let (status, body, _) = s.call("POST", "/api/submissions", Some(&ada), Some(upload(json!([{ "id": "n", "text": "id: n\ngestalt: note@1\n" }]), json!({})))).await;
-    assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
-    let (status, body, _) = s.call("POST", "/api/submissions", Some(&ada), Some(upload(json!([{ "id": "viz-1", "text": viz }]), json!({})))).await;
+    // its page isn't there yet
+    let (status, body) = submit(&s, &id, &ada).await;
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "its file is missing: {body}");
-    let (status, _, _) = s.call("POST", "/api/submissions", None, Some(upload(json!([{ "id": "viz-1", "text": viz }]), blobs.clone()))).await;
-    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert_eq!(s.bytes("PUT", &format!("/api/drafts/{id}/blobs/page.html"), &ada, html.to_vec()).await.0, StatusCode::NO_CONTENT);
+    let (status, sub) = submit(&s, &id, &ada).await;
+    assert_eq!((status, sub["kind"].as_str(), sub["title"].as_str(), sub["source"].clone()), (StatusCode::CREATED, Some("viz"), Some("Wellen"), json!(format!("workshop:{id}"))), "{sub}");
 
-    let (status, sub, _) = s.call("POST", "/api/submissions", Some(&ada), Some(upload(json!([{ "id": "viz-1", "text": viz }]), blobs))).await;
-    assert_eq!((status, sub["kind"].as_str(), sub["title"].as_str()), (StatusCode::CREATED, Some("viz"), Some("Wellen")), "{sub}");
     let bea = s.login("bea@school.example").await;
     let accept = format!("/api/admin/submissions/{}/accept", sub["id"].as_str().unwrap());
     assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "examples" }))).await.0, StatusCode::CONFLICT);
@@ -155,11 +153,14 @@ async fn an_uploaded_visualization_becomes_a_vizint_deck() {
     assert_eq!((status, p["at"].as_str()), (StatusCode::OK, Some("plugins/vizint/decks/wellen")), "{p}");
 
     let r = repo.path();
-    let yml = read(r, "plugins/vizint/decks/wellen/notes/viz-1.yml");
+    let yml = read(r, &format!("plugins/vizint/decks/wellen/notes/{id}.yml"));
     let blob = yml.lines().find_map(|l| l.strip_prefix("built: ")).unwrap().to_owned();
     assert!(blob.ends_with(".html") && blob.len() == 21, "named by content: {blob}");
     assert_eq!(std::fs::read(r.join("plugins/vizint/decks/wellen/blobs").join(&blob)).unwrap(), html);
     assert!(read(r, "plugins/vizint/decks/wellen/notes/deck-vizint-wellen.yml").contains("title: Wellen"));
     assert!(read(r, "plugins/vizint/decks/wellen/origin.yml").contains("licence: CC BY-SA 4.0"));
     assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "wellen" }))).await.0, StatusCode::CONFLICT, "decided already");
+
+    // drafts are submitted from the server's copy only
+    assert_eq!(s.call("POST", "/api/submissions", Some(&ada), Some(json!({}))).await.0, StatusCode::METHOD_NOT_ALLOWED);
 }

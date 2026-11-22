@@ -67,10 +67,20 @@ enum Admin {
         /// may review submissions for the public site
         #[arg(long)]
         admin: bool,
+        /// may use every model package in the repo in drafts, with more room
+        #[arg(long)]
+        maintainer: bool,
     },
     /// Lets an account review submissions for the public site, or (--revoke) no longer
     #[command(name = "grant-admin")]
     Grant {
+        email: String,
+        #[arg(long)]
+        revoke: bool,
+    },
+    /// Lets an account's drafts use every model package in the repo, with more room, or (--revoke) no longer
+    #[command(name = "grant-maintainer")]
+    GrantMaintainer {
         email: String,
         #[arg(long)]
         revoke: bool,
@@ -109,7 +119,7 @@ async fn run(cli: Cli) -> Result<(), String> {
                     db.add_school(&id, &name, &now).map_err(|e| e.to_string())?;
                     println!("{id}");
                 }
-                Admin::AddTeacher { school, email, admin } => {
+                Admin::AddTeacher { school, email, admin, maintainer } => {
                     if !db.school_exists(&school).map_err(|e| e.to_string())? {
                         return Err(format!("no school {school}"));
                     }
@@ -119,10 +129,18 @@ async fn run(cli: Cli) -> Result<(), String> {
                     if admin {
                         db.set_admin(&email, true).map_err(|e| e.to_string())?;
                     }
+                    if maintainer {
+                        db.set_maintainer(&email, true).map_err(|e| e.to_string())?;
+                    }
                     println!("{password}");
                 }
                 Admin::Grant { email, revoke } => {
                     if !db.set_admin(&email.trim().to_lowercase(), !revoke).map_err(|e| e.to_string())? {
+                        return Err(format!("no account {email}"));
+                    }
+                }
+                Admin::GrantMaintainer { email, revoke } => {
+                    if !db.set_maintainer(&email.trim().to_lowercase(), !revoke).map_err(|e| e.to_string())? {
                         return Err(format!("no account {email}"));
                     }
                 }

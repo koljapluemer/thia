@@ -34,19 +34,22 @@ step "the Rust binaries"
 cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-teacher
 
 teacher() { cargo run -q -p gestalts-teacher -- --data teacher-data admin "$@"; }
-if [[ ! -e teacher-data/teacher.db ]]; then
-  step "a local teacher account"
-  school="$(teacher add-school "Dev school")"
-  password="$(teacher add-teacher --school "$school" --email dev@localhost --admin)"
+if [[ ! -e teacher-data/dev-login.txt ]]; then
+  # the workshop is behind a login: on a dev machine, this account's
+  step "the local account (dev@localhost)"
+  if ! password="$(teacher reset-password --email dev@localhost 2> /dev/null)"; then
+    school="$(teacher add-school "Dev school")"
+    password="$(teacher add-teacher --school "$school" --email dev@localhost --admin --maintainer)"
+  fi
   printf 'email: dev@localhost\npassword: %s\n' "$password" > teacher-data/dev-login.txt
-  echo "sign in to the teacher app with dev@localhost, password in teacher-data/dev-login.txt"
+  echo "sign in to the workshop with dev@localhost, password in teacher-data/dev-login.txt"
 fi
-# the local account reviews submissions for the public site (/review), also one made before there was a review
-if [[ -e teacher-data/dev-login.txt ]]; then teacher grant-admin dev@localhost; fi
+# the local account reviews submissions for the public site (/review) and makes what it ships, also one made before
+if [[ -e teacher-data/dev-login.txt ]]; then teacher grant-admin dev@localhost && teacher grant-maintainer dev@localhost; fi
 
 step "optional"
-command -v claude > /dev/null || echo "no claude CLI: the workshops' and the teacher's local agent need it (https://claude.com/claude-code)"
-[[ -n "${ANTHROPIC_API_KEY:-}" ]] || echo "no ANTHROPIC_API_KEY: the teacher server's own agent stays off in just dev (the local CLI agent works without it)"
+command -v claude > /dev/null || echo "no claude CLI: the workshop's local agent needs it, and it's the only one that builds visualizations (https://claude.com/claude-code)"
+[[ -n "${ANTHROPIC_API_KEY:-}" ]] || echo "no ANTHROPIC_API_KEY: the server's own agent stays off in just dev (the local CLI agent works without it)"
 echo "Android: needs the SDK and NDK, see installables/folder-sync/doc/android.md"
 
 printf '\nReady: mise run just dev\n'

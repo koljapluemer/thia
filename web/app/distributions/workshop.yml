@@ -1,5 +1,7 @@
-# The workshops (/make, /make-viz): drafts are user data, not plugins. These are the views a draft's preview runs
-# beside, and the vizint view that shows the viz being made. `id` is the learning workshop's, for good.
+# The workshop (/workshop) where what it makes goes to the public site: the views a maintainer's view draft is
+# previewed beside (with their decks), and the vizint view that shows a viz being made. `id` is the learning
+# workshop's, for good: drafts were kept in this browser under it before they moved to accounts, and are offered to
+# move from there (web/app/src/workshop/move.tsx) as long as anyone may still have some.
 id: learning-workshop
 plugins:
   - ../../../plugins/flashcards

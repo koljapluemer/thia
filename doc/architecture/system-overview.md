@@ -35,13 +35,13 @@ sdk/python        gestalts_backend.py, what a backend.py imports
 
 ## The apps
 
-`web/app` is the one web app, `/` a landing page of cards, its areas paths: `/notes` (the gestalter), `/make` and
-`/make-viz` (the workshops), `/teach` (the teacher app), `/review` (admins). It needs no node. Notes are the **home**
+`web/app` is the one web app, `/` a landing page of cards, its areas paths: `/notes` (the gestalter), `/workshop`
+(views and visualizations made with an agent, behind an account), `/review` (admins). Notes need no node. Notes are the **home**
 store, the user's ymls in this browser (OPFS), opened once for the app (`web/app/src/home.tsx`) and asking the
 desktop node, if one runs, for plugin backends, `/net` and `/llm` without syncing with it (`bridge` in `Repo.open`).
-The workshops share a `drafts` store in the browser; their agent is Claude Code through the Claude bridge
-(`installables/claude-bridge`), whose tool calls come back to the page (the `check` is `@gestalts/check`, run there); each lesson draft is its own store
-synced with the teacher server. `web/site` is the public site: every learning view and visualization, workshop results
+Each workshop draft is its own store synced with the server (`web/server`); its agent is the server's, or Claude Code
+through the Claude bridge (`installables/claude-bridge`), whose tool calls come back to the page (the `check` is
+`@gestalts/check`, run there). `web/site` is the public site: every learning view and visualization, workshop results
 accepted in review among them ([[publishing]]); its build also plays teachers' lessons on the lesson domain. The
 Android app wraps `web/android`.
 

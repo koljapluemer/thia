@@ -1,41 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Globe } from 'lucide-react';
-import type { Repo } from '@gestalts/client';
-import type { Item } from '@gestalts/view';
-import { stringify } from 'yaml';
-import { toBase64 } from './make-viz/viz';
-import { AreaLink } from './router';
-import * as api from './teach/api';
+import * as api from './api';
 
 /** What the sender agrees to: the licence everything on the public site is under (web/server, promote.rs). */
 const LICENCE = 'CC BY-SA 4.0';
 
-/**
- * A draft's ymls and the blobs they use, as the server takes them. Which strings are blob names isn't known here
- * (that's the gestalts'), so every string that names a blob in this repo goes along; the server keeps the ones used.
- */
-export async function snapshotOf(repo: Repo, items: Item[]): Promise<Pick<api.Upload, 'ymls' | 'blobs'>> {
-  const names = new Set<string>();
-  const walk = (v: unknown) => {
-    if (typeof v === 'string') { if (/^[A-Za-z0-9][A-Za-z0-9._-]{0,199}$/.test(v) && v.includes('.')) names.add(v); }
-    else if (Array.isArray(v)) v.forEach(walk);
-    else if (v && typeof v === 'object') Object.values(v).forEach(walk);
-  };
-  items.forEach((i) => walk(i.value));
-  const blobs: Record<string, string> = {};
-  for (const n of names) {
-    const bytes = await repo.readBlob(n).catch(() => undefined);
-    if (bytes) blobs[n] = toBase64(bytes);
-  }
-  return { ymls: items.map((i) => ({ id: i.id, text: stringify({ ...i.value, id: i.id, gestalt: i.gestalt }) })), blobs };
-}
-
 const STATUS = { pending: 'waiting for review', accepted: 'accepted', rejected: 'not accepted' } as const;
 
 /**
- * Offering a workshop's draft for the public site: what it is, how to credit its maker, and that they may share it.
- * Every workshop has one; it needs a teacher account (the person who grants the rights), and shows what became of
- * earlier submissions of the same draft.
+ * Offering a draft for the public site: what it is, how to credit its maker, and that they may share it (the
+ * account's owner grants the rights). Shows what became of earlier submissions of the same draft.
  */
 export function SubmitMenu({ source, send, ready = true }: { source: string; send: (offer: api.Offer) => Promise<api.Submission>; ready?: boolean }) {
   const [past, setPast] = useState<api.Submission[] | null>();
@@ -67,7 +41,7 @@ export function SubmitMenu({ source, send, ready = true }: { source: string; sen
       <summary className="btn btn-sm btn-ghost" title="Offer it for the public site"><Globe className="size-4" /> Public site</summary>
       <div className="dropdown-content z-50 mt-2 flex w-96 max-w-[90vw] flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 text-sm shadow">
         <p>Offer this for the public site, where anyone can use it for free. It’s reviewed first, and may be changed.</p>
-        {signedOut && <p className="text-warning">Submitting needs an account: <AreaLink path="/teach" className="link">sign in at the teacher portal</AreaLink> first.</p>}
+        {signedOut && <p className="text-warning">You were signed out: reload the page and sign in again.</p>}
         {last && (
           <p className="text-base-content/70">
             Sent {new Date(last.created).toLocaleDateString()}: {STATUS[last.status]}.

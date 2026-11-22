@@ -1,4 +1,4 @@
-import { stableId, type Repo } from '@gestalts/client';
+import type { Repo } from '@gestalts/client';
 import type { Item, JsonMap } from '@gestalts/view';
 
 /** One viz is one yml (gestalts/viz/viz/v1.yml). */
@@ -36,12 +36,9 @@ export function ymlOf(v: Viz): JsonMap {
 
 export const saveViz = (repo: Repo, v: Viz) => repo.put(ymlOf(v));
 
-export async function createViz(repo: Repo, title: string): Promise<string> {
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'viz';
-  const id = `viz-${slug}-${stableId('viz', `${title}:${Date.now()}`).slice(0, 8)}`;
-  await saveViz(repo, { id, title, intro: '', spec: '', outro: '', source: '', packages: [], files: [] });
-  return id;
-}
+/** A draft's viz, empty but for its title: its id is the draft's, which the server handed out. */
+export const createViz = (repo: Repo, id: string, title: string) =>
+  saveViz(repo, { id, title, intro: '', spec: '', outro: '', source: '', packages: [], files: [] });
 
 /** Stores `bytes` as a blob named by its content, as published decks name them. */
 export async function storeBlob(repo: Repo, bytes: Uint8Array, ext: string): Promise<string> {

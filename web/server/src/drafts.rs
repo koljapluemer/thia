@@ -1,4 +1,4 @@
-//! A teacher's drafts: each a folder of ymls and blobs (`drafts/<id>/`), which the browser's wasm repo syncs with over
+//! An account's drafts, of a view, a visualization or (later) a lesson of several views: each a folder of ymls and blobs (`drafts/<id>/`), which the browser's wasm repo syncs with over
 //! the same routes a node serves (`health`, `sync/*`, `blobs/*`), under `/api/drafts/<id>/`. Every write is checked
 //! ([`crate::validate`]) before it lands; a draft is only ever its owner's.
 
@@ -18,7 +18,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::auth::Teacher;
 use crate::db::Draft;
-use crate::validate::{Batch, check, is_view};
+use crate::validate::{Batch, Kind, check};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
 /// What the node's sync speaks; the browser's sync checks it.
@@ -68,27 +68,64 @@ pub fn slug(title: &str) -> String {
 #[derive(Deserialize)]
 struct NewDraft {
     title: String,
+    /// `view` or `viz`
+    #[serde(default = "view")]
+    kind: String,
+    /// a draft moved here from a browser, which keeps its id, and its package: its gestalts are named in it
+    #[serde(default)]
+    moved: Option<Moved>,
+}
+
+#[derive(Deserialize)]
+struct Moved {
+    id: String,
+    package: String,
+}
+
+/// A package as drafts made in a browser name it: `d-` and 12 hex digits.
+fn valid_package(p: &str) -> bool {
+    p.strip_prefix("d-").is_some_and(|h| h.len() == 12 && h.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)))
+}
+
+fn view() -> String {
+    "view".into()
+}
+
+/// What a draft makes, as it was created.
+pub fn kind_of(d: &Draft) -> ApiResult<Kind> {
+    Kind::parse(&d.kind).ok_or_else(|| ApiError::Internal(format!("{}: a draft of kind {}", d.id, d.kind)))
 }
 
 async fn list(State(state): State<AppState>, teacher: Teacher) -> ApiResult<Json<Vec<Draft>>> {
     Ok(Json(state.db.drafts(&teacher.0.id)?))
 }
 
-/// A new, empty draft: its id (the view's), and the package its own gestalts are named in. The browser writes the
-/// view yml through sync.
+/// A new, empty draft: its id (its view's or viz's), and the package its own gestalts are named in. The browser
+/// writes the view or viz yml through sync.
 async fn create(State(state): State<AppState>, teacher: Teacher, Json(req): Json<NewDraft>) -> ApiResult<(StatusCode, Json<Draft>)> {
     let title = req.title.trim();
     if title.is_empty() || title.chars().count() > 200 || title.contains('\n') {
         return Err(ApiError::BadRequest("a title is one line, up to 200 characters".into()));
     }
-    if state.db.count_drafts(&teacher.0.id)? >= state.limits.drafts_per_account {
-        return Err(ApiError::TooMany(format!("at most {} drafts: delete one first", state.limits.drafts_per_account)));
+    let kind = Kind::parse(&req.kind).ok_or_else(|| ApiError::BadRequest("kind: view or viz".into()))?;
+    let limits = state.limits_for(&teacher.0);
+    if state.db.count_drafts(&teacher.0.id)? >= limits.drafts_per_account {
+        return Err(ApiError::TooMany(format!("at most {} drafts: delete one first", limits.drafts_per_account)));
+    }
+    let (id, package) = match req.moved {
+        Some(m) if valid_draft_id(&m.id) && valid_package(&m.package) => (m.id, m.package),
+        Some(_) => return Err(ApiError::BadRequest("moved: a draft's id and its package (d-<12 hex digits>)".into())),
+        None => (format!("{}-{}", slug(title), random_hex(4)), format!("d-{}", random_hex(6))),
+    };
+    if state.db.draft_taken(&id, &package)? {
+        return Err(ApiError::Conflict("a draft with this id or package is here already".into()));
     }
     let draft = Draft {
-        id: format!("{}-{}", slug(title), random_hex(4)),
+        id,
         owner: teacher.0.id.clone(),
         school: teacher.0.school.clone(),
-        package: format!("d-{}", random_hex(6)),
+        package,
+        kind: kind.as_str().into(),
         title: title.into(),
         created: now_iso(),
     };
@@ -158,10 +195,13 @@ async fn read(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
 /// Writes ymls once all of them are fine, or none (422 with each problem).
 async fn write(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(ymls): Json<Vec<YmlEntry>>) -> ApiResult<StatusCode> {
     let (d, s) = state.own_draft(&teacher, &id)?;
+    let kind = kind_of(&d)?;
     // one write at a time, so what's checked is what's there when it lands
     let _guard = state.writes.lock().await;
     let st = state.clone();
+    let account = teacher.0;
     let title = blocking(move || {
+        let gestalts = st.gestalts_for(&account);
         let incoming: BTreeMap<String, String> = ymls.into_iter().map(|y| (y.id, y.text)).collect();
         let existing: BTreeSet<String> = s.list_ymls_sync()?.into_iter().collect();
         let mut definitions = BTreeMap::new();
@@ -170,7 +210,7 @@ async fn write(State(state): State<AppState>, teacher: Teacher, Path(id): Path<S
                 definitions.insert(e.clone(), t);
             }
         }
-        let problems = check(&st.gestalts, &st.limits, &Batch { draft: &d.id, package: &d.package, incoming: &incoming, existing: &existing, definitions: &definitions });
+        let problems = check(gestalts, &st.limits_for(&account), &Batch { kind, draft: &d.id, package: &d.package, incoming: &incoming, existing: &existing, definitions: &definitions });
         if !problems.is_empty() {
             return Err(ApiError::Invalid(problems));
         }
@@ -178,8 +218,8 @@ async fn write(State(state): State<AppState>, teacher: Teacher, Path(id): Path<S
             s.write_yml_sync(id, text)?;
         }
         // what the list shows
-        let view = incoming.get(&d.id).map(|t| Yml::parse(d.id.clone(), t.clone()));
-        Ok(view.filter(|y| matches!(st.gestalts.classify(y), YmlState::Valid(g) if is_view(&g))).and_then(|y| y.str_field("title").map(str::to_owned)))
+        let main = incoming.get(&d.id).map(|t| Yml::parse(d.id.clone(), t.clone()));
+        Ok(main.filter(|y| matches!(gestalts.classify(y), YmlState::Valid(g) if kind.is_main(&g))).and_then(|y| y.str_field("title").map(str::to_owned)))
     })
     .await?;
     if let Some(t) = title {
@@ -214,15 +254,16 @@ fn blob_usage(state: &AppState, owner: &str) -> ApiResult<u64> {
 
 async fn write_blob(State(state): State<AppState>, teacher: Teacher, Path((id, name)): Path<(String, String)>, body: Bytes) -> ApiResult<StatusCode> {
     let (_, s) = state.own_draft(&teacher, &id)?;
-    if body.len() > state.limits.blob_bytes {
-        return Err(ApiError::TooLarge(format!("a file may be up to {} MB", state.limits.blob_bytes / 1024 / 1024)));
+    let limits = state.limits_for(&teacher.0);
+    if body.len() > limits.blob_bytes {
+        return Err(ApiError::TooLarge(format!("a file may be up to {} MB", limits.blob_bytes / 1024 / 1024)));
     }
     let _guard = state.writes.lock().await;
     let st = state.clone();
     let owner = teacher.0.id.clone();
     blocking(move || {
-        if blob_usage(&st, &owner)? + body.len() as u64 > st.limits.account_blob_bytes {
-            return Err(ApiError::TooLarge(format!("your files take up more than {} MB: delete some first", st.limits.account_blob_bytes / 1024 / 1024)));
+        if blob_usage(&st, &owner)? + body.len() as u64 > limits.account_blob_bytes {
+            return Err(ApiError::TooLarge(format!("your files take up more than {} MB: delete some first", limits.account_blob_bytes / 1024 / 1024)));
         }
         Ok(s.write_blob_sync(&name, &body)?)
     })
@@ -247,11 +288,52 @@ async fn collect_blobs(State(state): State<AppState>, teacher: Teacher, Path(id)
     Ok(Json(Collected { deleted: vec![] }))
 }
 
+/// Everything in a folder below `dir`, as paths relative to it; nothing hidden (a write's temporary files).
+fn files_below(dir: &std::path::Path) -> std::io::Result<Vec<PathBuf>> {
+    let mut out = Vec::new();
+    let mut todo = vec![PathBuf::new()];
+    while let Some(rel) = todo.pop() {
+        let Ok(entries) = std::fs::read_dir(dir.join(&rel)) else { continue };
+        for e in entries {
+            let e = e?;
+            if e.file_name().to_string_lossy().starts_with('.') {
+                continue;
+            }
+            let p = rel.join(e.file_name());
+            if e.file_type()?.is_dir() { todo.push(p) } else { out.push(p) }
+        }
+    }
+    out.sort();
+    Ok(out)
+}
+
+/// The draft's folder as a zip, as the server keeps it (a folder a gestalts node opens): what folder sync was for.
+async fn export(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Response> {
+    let (d, _) = state.own_draft(&teacher, &id)?;
+    let dir = state.draft_dir(&d.id);
+    let name = d.id.clone();
+    let bytes = blocking(move || {
+        let io = |e: std::io::Error| ApiError::Internal(e.to_string());
+        let mut zip = zip::ZipWriter::new(std::io::Cursor::new(Vec::new()));
+        let options = zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Deflated);
+        for rel in files_below(&dir).map_err(io)? {
+            let path = format!("{name}/{}", rel.to_string_lossy().replace('\\', "/"));
+            zip.start_file(path, options).map_err(|e| ApiError::Internal(e.to_string()))?;
+            std::io::Write::write_all(&mut zip, &std::fs::read(dir.join(&rel)).map_err(io)?).map_err(io)?;
+        }
+        Ok(zip.finish().map_err(|e| ApiError::Internal(e.to_string()))?.into_inner())
+    })
+    .await?;
+    let disposition = format!("attachment; filename=\"{}.zip\"", d.id);
+    Ok(([(header::CONTENT_TYPE, "application/zip".to_owned()), (header::CONTENT_DISPOSITION, disposition)], bytes).into_response())
+}
+
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/drafts", get(list).post(create))
         .route("/drafts/{id}", axum::routing::delete(delete))
         .route("/drafts/{id}/health", get(health))
+        .route("/drafts/{id}/export", get(export))
         .route("/drafts/{id}/sync/hashes", get(hashes))
         .route("/drafts/{id}/sync/read", post(read))
         .route("/drafts/{id}/sync/write", post(write).layer(DefaultBodyLimit::max(MAX_SYNC_BODY)))
@@ -270,5 +352,6 @@ mod tests {
         assert_eq!(slug("!!!"), "view");
         assert!(valid_draft_id("der-die-das-1a2b3c4d"));
         assert!(!valid_draft_id("../x") && !valid_draft_id("-x") && !valid_draft_id("A"));
+        assert!(valid_package("d-0123456789ab") && !valid_package("d-xyz") && !valid_package("artikel"));
     }
 }

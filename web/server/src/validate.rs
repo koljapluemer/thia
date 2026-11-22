@@ -1,8 +1,9 @@
 //! What a draft's folder may hold, checked on every write: the browser is untrusted here.
 //!
 //! - every yml is valid by the core's gestalts, the model packages', or the draft's own definitions, or a tombstone
-//! - its own definitions (`gestalt@1`) are named in its package, never another's
-//! - the view yml (`view@1`/`view@2`) has the draft's id and package, and nothing else has that id
+//! - a view's draft: its own definitions (`gestalt@1`) are named in its package, never another's; the view yml
+//!   (`view@1`/`view@2`) has the draft's id and package, and nothing else has that id
+//! - a visualization's draft: one `viz@1`, with the draft's id, and nothing else
 //! - within the limits on how many ymls and how big
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -12,6 +13,42 @@ use gestalts_core::{Gestalts, Yml, YmlState};
 
 use crate::Limits;
 
+/// What a draft makes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Kind {
+    /// a `view@2` and its members
+    View,
+    /// a `viz@1`
+    Viz,
+}
+
+impl Kind {
+    pub fn parse(s: &str) -> Option<Kind> {
+        match s {
+            "view" => Some(Kind::View),
+            "viz" => Some(Kind::Viz),
+            _ => None,
+        }
+    }
+
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Kind::View => "view",
+            Kind::Viz => "viz",
+        }
+    }
+
+    /// The gestalt of the yml with the draft's id, which says its title.
+    pub fn is_main(self, gestalt: &str) -> bool {
+        match self {
+            Kind::View => is_view(gestalt),
+            Kind::Viz => gestalt == VIZ,
+        }
+    }
+}
+
+pub const VIZ: &str = "viz@1";
+
 /// The gestalts of a draft's views.
 pub fn is_view(gestalt: &str) -> bool {
     matches!(gestalt, "view@1" | "view@2")
@@ -19,6 +56,7 @@ pub fn is_view(gestalt: &str) -> bool {
 
 /// A draft's ymls as they would be after a write.
 pub struct Batch<'a> {
+    pub kind: Kind,
     pub draft: &'a str,
     pub package: &'a str,
     /// what's being written
@@ -57,6 +95,13 @@ pub fn check(base: &Gestalts, limits: &Limits, b: &Batch<'_>) -> Vec<String> {
         }
         let y = Yml::parse(id.clone(), text.clone());
         match gestalts.classify(&y) {
+            YmlState::Valid(g) if b.kind == Kind::Viz => {
+                if id != b.draft {
+                    problems.push(format!("{id}: a visualization's draft holds its viz only, {}", b.draft));
+                } else if g != VIZ {
+                    problems.push(format!("{id}: the draft's own id is its viz's"));
+                }
+            }
             YmlState::Valid(g) => {
                 if g == GESTALT {
                     let name = gestalts.definition(&y).map(|d| d.name).unwrap_or_default();
@@ -73,7 +118,7 @@ pub fn check(base: &Gestalts, limits: &Limits, b: &Batch<'_>) -> Vec<String> {
                     problems.push(format!("{id}: the draft's own id is its view's"));
                 }
             }
-            YmlState::Tombstone if id == b.draft => problems.push(format!("{id}: the view can't be deleted, only the draft")),
+            YmlState::Tombstone if id == b.draft => problems.push(format!("{id}: the {} can't be deleted, only the draft", b.kind.as_str())),
             YmlState::Tombstone => {}
             YmlState::Unknown(g) => problems.push(format!("{id}: no gestalt {g} here")),
             YmlState::Invalid(p) => problems.push(format!("{id}: {}", p.iter().map(|p| if p.path.is_empty() { p.message.clone() } else { format!("{} {}", p.path, p.message) }).collect::<Vec<_>>().join("; "))),
@@ -91,11 +136,14 @@ mod tests {
     use super::*;
 
     fn run(incoming: &[(&str, &str)], definitions: &[(&str, &str)]) -> Vec<String> {
-        let base = Gestalts::builtin();
+        run_kind(Kind::View, &Gestalts::builtin(), incoming, definitions)
+    }
+
+    fn run_kind(kind: Kind, base: &Gestalts, incoming: &[(&str, &str)], definitions: &[(&str, &str)]) -> Vec<String> {
         let incoming: BTreeMap<String, String> = incoming.iter().map(|(a, b)| ((*a).to_owned(), (*b).to_owned())).collect();
         let definitions: BTreeMap<String, String> = definitions.iter().map(|(a, b)| ((*a).to_owned(), (*b).to_owned())).collect();
         let existing = definitions.keys().cloned().collect();
-        check(&base, &Limits { ymls_per_draft: 4, ..Limits::default() }, &Batch { draft: "v", package: "d-abc", incoming: &incoming, existing: &existing, definitions: &definitions })
+        check(base, &Limits { ymls_per_draft: 4, ..Limits::default() }, &Batch { kind, draft: "v", package: "d-abc", incoming: &incoming, existing: &existing, definitions: &definitions })
     }
 
     const VIEW: &str = "id: v\ngestalt: view@2\ntitle: T\nsource: x\nreads: []\nwrites: []\npackage: d-abc\n";
@@ -128,5 +176,22 @@ mod tests {
         let notes: Vec<(&str, &str)> = notes.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         assert_eq!(run(&notes[..4], &[]), Vec::<String>::new());
         assert_eq!(run(&notes, &[]).len(), 1, "too many");
+    }
+
+    #[test]
+    fn a_visualization_draft() {
+        let models = crate::model_texts(crate::MODELS).unwrap();
+        let base = Gestalts::builtin_with(&models.iter().map(String::as_str).collect::<Vec<_>>()).unwrap();
+        let viz = "id: v\ngestalt: viz@1\ntitle: T\nspec: a curve\n";
+        assert_eq!(run_kind(Kind::Viz, &base, &[("v", viz)], &[]), Vec::<String>::new());
+        for (why, incoming) in [
+            ("a view", vec![("v", VIEW)]),
+            ("anything besides the viz", vec![("v", viz), ("n", "id: n\ngestalt: note@1\n")]),
+            ("a second viz", vec![("w", &viz.replace("id: v", "id: w"))]),
+            ("the viz deleted", vec![("v", "id: v\ndeleted: 2026-11-20T10:00:00Z\n")]),
+        ] {
+            let incoming: Vec<(&str, &str)> = incoming.iter().map(|(a, b)| (*a, *b)).collect();
+            assert!(!run_kind(Kind::Viz, &base, &incoming, &[]).is_empty(), "{why}");
+        }
     }
 }

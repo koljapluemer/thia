@@ -134,7 +134,7 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     }
     for g in reads.iter().chain(&writes) {
         if gestalts.get(g).is_none() {
-            problems.push(format!("view.json: no gestalt {g} in a lesson"));
+            problems.push(format!("view.json: no gestalt {g} in a lesson (a lesson may use the core's, its own, and the models {})", crate::MODELS.join(", ")));
         }
     }
     for g in &writes {
@@ -243,6 +243,9 @@ impl AppState {
 
 async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Published>> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
+    if draft.kind != "view" {
+        return Err(ApiError::BadRequest("only a view is published as a lesson, for now".into()));
+    }
     let _guard = state.writes.lock().await;
     let version = build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: true }).await?;
     let previous = state.db.publication_of(&draft.id)?;

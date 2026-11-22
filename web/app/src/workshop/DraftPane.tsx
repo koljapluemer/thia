@@ -1,42 +1,41 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Check, Copy, Link2Off, Send, Trash2 } from 'lucide-react';
-import { registry } from 'virtual:gestalts-plugins/teacher';
-import { RepoProvider, useConnector, useHostQuery, useOpenRepo, type Repo } from '@gestalts/client';
-import { closedCsp } from '@gestalts/host';
+import { Check, Copy, Download, Link2Off, Send, Trash2 } from 'lucide-react';
+import { registry as teacher } from 'virtual:gestalts-plugins/teacher';
+import { registry as workshop } from 'virtual:gestalts-plugins/workshop';
+import { useConnector, useHostQuery, type Repo } from '@gestalts/client';
+import { closedCsp, deckSources, type Registry } from '@gestalts/host';
+import type { DeckSource } from '@gestalts/client';
 import type { ViewError } from '@gestalts/view';
 import { Chat, Preview, VIEWS, asDraft, createDraft, saveDraft } from '@gestalts/workshop';
 import tailwind from '@tailwindcss/browser?raw';
 import css from '../app.css?inline';
-import { SubmitMenu } from '../submit';
 import { backendFor, type AgentChoice } from './agent';
 import * as api from './api';
+import { OpenDraft } from './open';
+import { SubmitMenu } from './submit';
 
 /**
- * One draft: its own folder in this browser, synced with the server's copy, which the server checks. Opening it
- * makes its view if the server has none yet, and records the runtime it is now previewed against.
+ * Where a view's draft is tried out: what it would go out in. A teacher's is a lesson's (the `teacher` distribution:
+ * the core's gestalts and the lesson models, nothing else). A maintainer's is the public site's learning views'
+ * (the workshop distribution, with the plugins' decks beside it); what they make can still only be published as a
+ * lesson within the lesson models, which the server checks.
  */
-export function DraftPane({ info, agent, onChanged, onDeleted }: { info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
-  const source = useMemo(() => ({ dir: `teacher-draft-${info.id}`, gestalts: registry.gestalts }), [info.id]);
-  const { repo, error } = useOpenRepo(source);
-  const [ready, setReady] = useState<Repo>();
-  const [failed, setFailed] = useState<string>();
-  useEffect(() => {
-    if (!repo) return;
-    let live = true;
-    (async () => {
-      await repo.connect(api.draftUrl(info.id));
-      if (!(await repo.get(info.id))) await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package });
-      if (live) setReady(repo);
-    })().catch((e: unknown) => { if (live) setFailed(e instanceof Error ? e.message : String(e)); });
-    return () => { live = false; };
-  }, [repo, info.id, info.title, info.package]);
-  const problem = error ?? failed;
-  if (problem) return <div role="alert" className="alert alert-error m-4">This lesson couldn’t open: {problem}</div>;
-  if (!ready) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
-  return <RepoProvider repo={ready}><Workbench repo={ready} info={info} agent={agent} onChanged={onChanged} onDeleted={onDeleted} /></RepoProvider>;
+const contextOf = (me: api.Me): { registry: Registry; source: { gestalts: string[]; decks?: DeckSource[] } } => (me.maintainer
+  ? { registry: workshop, source: { gestalts: workshop.gestalts, decks: deckSources(workshop.plugins.flatMap((p) => p.decks)) } }
+  : { registry: teacher, source: { gestalts: teacher.gestalts } });
+
+/** A view's draft: the preview beside the chat that edits it. Opening it records the runtime it's previewed against. */
+export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+  const [{ registry, source }] = useState(() => contextOf(me));
+  const init = useCallback(async (repo: Repo) => { await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package }); }, [info, registry]);
+  return (
+    <OpenDraft info={info} source={source} init={init}>
+      {(repo) => <Workbench repo={repo} registry={registry} info={info} agent={agent} onChanged={onChanged} onDeleted={onDeleted} />}
+    </OpenDraft>
+  );
 }
 
-function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo: Repo; registry: Registry; info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
   const items = useHostQuery({ gestalt: VIEWS, ids: [info.id] });
   const draft = useMemo(() => (items[0] ? asDraft(items[0]) : undefined), [items]);
   const [errors, setErrors] = useState<ViewError[]>([]);
@@ -57,7 +56,8 @@ function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; in
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{draft.title}</span>
         <SyncState />
         <PublishMenu repo={repo} id={info.id} />
-        <SubmitMenu source={`teach:${info.id}`} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
+        <SubmitMenu source={`workshop:${info.id}`} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
+        <ExportButton id={info.id} />
         <DeleteButton id={info.id} title={draft.title} onDeleted={onDeleted} />
       </div>
       <div className="grid min-h-0 flex-1 grid-rows-2 md:grid-cols-[minmax(0,1fr)_24rem] md:grid-rows-1">
@@ -73,7 +73,7 @@ function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; in
 }
 
 /** Whether the server has what's here; what it refused, if it did. */
-function SyncState() {
+export function SyncState() {
   const c = useConnector();
   if (c.state === 'error') return <span role="alert" className="max-w-xs truncate text-xs text-error" title={c.error}>Not saved: {c.error}</span>;
   if (c.state === 'syncing') return <span className="text-xs text-base-content/50">Saving…</span>;
@@ -139,7 +139,12 @@ function PublishMenu({ repo, id }: { repo: Repo; id: string }) {
   );
 }
 
-function DeleteButton({ id, title, onDeleted }: { id: string; title: string; onDeleted: () => void }) {
+/** The draft as the server keeps it, as a zip: a folder a gestalts node opens. */
+export function ExportButton({ id }: { id: string }) {
+  return <a className="btn btn-ghost btn-sm btn-square" href={api.exportUrl(id)} download title="Download it, as a folder in a zip"><Download className="size-4" /></a>;
+}
+
+export function DeleteButton({ id, title, onDeleted }: { id: string; title: string; onDeleted: () => void }) {
   const remove = async () => {
     if (!confirm(`Delete “${title}”? A link you published keeps working until you switch it off.`)) return;
     await api.deleteDraft(id);

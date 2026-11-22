@@ -1,15 +1,13 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { LayoutGrid } from 'lucide-react';
-import { me } from './teach/api';
+import { me } from './workshop/api';
 
 /** The public site (web/site): what the workshops' accepted results, and the learning views, are published on. */
 export const SITE: string = import.meta.env.VITE_SITE ?? 'http://127.0.0.1:5177';
 
 /** The app's areas, by path, in the landing page's order; `/` is the landing page. */
 export const AREAS = [
-  { path: '/teach', title: 'Teacher portal', about: 'Make lessons with an agent and publish them.' },
-  { path: '/make', title: 'Learning workshop', about: 'Make learning views with a local agent.' },
-  { path: '/make-viz', title: 'vizint workshop', about: 'Make interactive visualizations with a local agent.' },
+  { path: '/workshop', title: 'Workshop', about: 'Make learning views and visualizations with an agent; publish them to a class, or offer them for the public site.' },
   { path: '/notes', title: 'Gestalter', about: 'Your notes, and the views you install, in tabs.' },
   { path: '/review', title: 'Review', about: 'What the workshops offered for the public site: accept or reject it.' },
 ] as const;

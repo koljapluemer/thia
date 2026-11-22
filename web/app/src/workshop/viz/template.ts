@@ -2,12 +2,12 @@
  * What the viz agent works against, sent with every build: the contract (CLAUDE.md), the finished examples with what
  * they were made from, and @gestalts/viz's sources (`viz-sources/`, read-only). Loaded on the first build.
  */
-const contract = import.meta.glob('../../../../packages/viz/agent/CLAUDE.md', { query: '?raw', import: 'default' });
-const examples = import.meta.glob('../../../../packages/viz/examples/*/viz.{ts,yml}', { query: '?raw', import: 'default' });
-const exampleFiles = import.meta.glob('../../../../packages/viz/examples/*/files/*', { query: '?url', import: 'default' });
-const sources = import.meta.glob(['../../../../packages/viz/src/*.ts', '!../../../../packages/viz/src/*.test.ts'], { query: '?raw', import: 'default' });
+const contract = import.meta.glob('../../../../../packages/viz/agent/CLAUDE.md', { query: '?raw', import: 'default' });
+const examples = import.meta.glob('../../../../../packages/viz/examples/*/viz.{ts,yml}', { query: '?raw', import: 'default' });
+const exampleFiles = import.meta.glob('../../../../../packages/viz/examples/*/files/*', { query: '?url', import: 'default' });
+const sources = import.meta.glob(['../../../../../packages/viz/src/*.ts', '!../../../../../packages/viz/src/*.test.ts'], { query: '?raw', import: 'default' });
 
-const VIZ = '../../../../packages/viz/';
+const VIZ = '../../../../../packages/viz/';
 
 const base64 = (bytes: Uint8Array) => {
   let s = '';

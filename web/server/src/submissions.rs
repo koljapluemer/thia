@@ -2,9 +2,9 @@
 //! ymls and blobs it holds as they were when it was sent (`submissions/<id>/`, a folder as a deck is kept, with its
 //! `index.json`), and a row saying who sent it, from which draft, and what became of it.
 //!
-//! - **Sending**: a teacher's draft is copied from the server's own folder (`POST /drafts/<id>/submit`); a draft that
-//!   lives in the browser (the learning and visualization workshops) is uploaded whole (`POST /submissions`). Either
-//!   needs a signed-in account, and the sender affirms they may share it.
+//! - **Sending**: a draft is copied from the server's own folder (`POST /drafts/<id>/submit`), as
+//!   `workshop:<draft id>`, by its signed-in owner, who affirms they may share it. Older submissions came from the
+//!   workshops that kept drafts in the browser (`make:`, `make-viz:`) or the teacher area (`teach:`).
 //! - **What it is** follows from what it holds: one `view@2` and its members (`view`), or one `viz@1` (`viz`). A view
 //!   is checked as publishing checks it: it compiles, and its npm packages are pinned and bundle.
 //! - **Review** (admins): the queue, each submission as a read-only deck for a live preview, and accepting
@@ -13,12 +13,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path as FsPath, PathBuf};
 
-use axum::extract::{DefaultBodyLimit, Path, Query, State};
+use axum::extract::{Path, Query, State};
 use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use base64::Engine;
 use gestalts_core::gestalt::DEFINITION_PREFIX;
 use gestalts_core::{Yml, YmlState, blobs_of};
 use gestalts_fs::FsStorage;
@@ -28,12 +27,12 @@ use serde_json::json;
 use crate::auth::{Admin, Teacher};
 use crate::db::Submission;
 use crate::publish::{Check, build};
-use crate::validate::{Batch, check, draft_gestalts};
+use crate::db::Account;
+use crate::validate::{Batch, Kind, check, draft_gestalts};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
-const MAX_UPLOAD: usize = 96 * 1024 * 1024;
 pub const VIEW: &str = "view@2";
-pub const VIZ: &str = "viz@1";
+pub use crate::validate::VIZ;
 
 /// What was sent, before it's checked.
 pub struct Sent {
@@ -51,18 +50,6 @@ struct Offer {
     credit: Option<String>,
     /// the sender may share it, and agrees to its being published
     rights: bool,
-}
-
-#[derive(Deserialize)]
-struct Upload {
-    #[serde(flatten)]
-    offer: Offer,
-    /// the workshop and its draft: `make:<id>` or `make-viz:<id>`
-    source: String,
-    ymls: Vec<crate::drafts::YmlEntry>,
-    /// base64, by name
-    #[serde(default)]
-    blobs: BTreeMap<String, String>,
 }
 
 impl AppState {
@@ -83,7 +70,7 @@ fn line(s: &str, what: &str, max: usize) -> ApiResult<()> {
 }
 
 fn valid_source(s: &str) -> bool {
-    s.split_once(':').is_some_and(|(w, id)| matches!(w, "teach" | "make" | "make-viz") && !id.is_empty() && id.len() <= 100 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b)))
+    s.split_once(':').is_some_and(|(w, id)| w == "workshop" && !id.is_empty() && id.len() <= 100 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b)))
 }
 
 /// The ymls in `ymls` that say they're of `gestalt`.
@@ -105,7 +92,9 @@ struct Snapshot {
     blobs: BTreeMap<String, Vec<u8>>,
 }
 
-fn snapshot(state: &AppState, sent: &Sent) -> ApiResult<Snapshot> {
+fn snapshot(state: &AppState, account: &Account, sent: &Sent) -> ApiResult<Snapshot> {
+    let base = state.gestalts_for(account);
+    let limits = state.limits_for(account);
     let views = of_gestalt(&sent.ymls, VIEW);
     let vizzes = of_gestalt(&sent.ymls, VIZ);
     let (kind, keep, gestalts, view) = match (views.as_slice(), vizzes.as_slice()) {
@@ -122,17 +111,17 @@ fn snapshot(state: &AppState, sent: &Sent) -> ApiResult<Snapshot> {
                 }
             }
             let ids: BTreeSet<String> = BTreeSet::new();
-            problems.extend(check(&state.gestalts, &state.limits, &Batch { draft: &v.id, package: &package, incoming: &keep, existing: &ids, definitions: &BTreeMap::new() }));
+            problems.extend(check(base, &limits, &Batch { kind: Kind::View, draft: &v.id, package: &package, incoming: &keep, existing: &ids, definitions: &BTreeMap::new() }));
             if !problems.is_empty() {
                 return Err(ApiError::Invalid(problems));
             }
             let defs = keep.iter().filter(|(id, _)| id.starts_with(DEFINITION_PREFIX)).map(|(i, t)| (i.clone(), t.clone()));
-            let gestalts = draft_gestalts(&state.gestalts, &package, defs);
+            let gestalts = draft_gestalts(base, &package, defs);
             ("view", keep, gestalts, Some((v.id.clone(), package)))
         }
         ([], [v]) => {
             let keep = BTreeMap::from([(v.id.clone(), v.raw.clone())]);
-            ("viz", keep, state.gestalts.clone(), None)
+            ("viz", keep, base.clone(), None)
         }
         ([], []) => return Err(ApiError::BadRequest("nothing to submit: a view (view@2) or a visualization (viz@1)".into())),
         _ => return Err(ApiError::BadRequest("a submission is one view or one visualization".into())),
@@ -155,8 +144,8 @@ fn snapshot(state: &AppState, sent: &Sent) -> ApiResult<Snapshot> {
         for b in blobs_of(&y, &st, &gestalts) {
             match sent.blobs.get(&b) {
                 Some(bytes) if gestalts_core::yml::valid_key(&b) => {
-                    if bytes.len() > state.limits.blob_bytes {
-                        problems.push(format!("{id}: its file {b} is larger than {} MB", state.limits.blob_bytes / 1024 / 1024));
+                    if bytes.len() > limits.blob_bytes {
+                        problems.push(format!("{id}: its file {b} is larger than {} MB", limits.blob_bytes / 1024 / 1024));
                     }
                     blobs.insert(b, bytes.clone());
                 }
@@ -187,7 +176,7 @@ fn write_snapshot(dir: &FsPath, s: &Snapshot) -> ApiResult<()> {
 }
 
 /// Checks what was sent, keeps its snapshot and queues it.
-pub async fn create(state: &AppState, account: &str, sent: Sent) -> ApiResult<Submission> {
+pub async fn create(state: &AppState, account: &Account, sent: Sent) -> ApiResult<Submission> {
     if !valid_source(&sent.source) {
         return Err(ApiError::BadRequest("source: <workshop>:<draft id>".into()));
     }
@@ -201,7 +190,8 @@ pub async fn create(state: &AppState, account: &str, sent: Sent) -> ApiResult<Su
     }
     let source = sent.source.clone();
     let st = state.clone();
-    let snap = tokio::task::spawn_blocking(move || snapshot(&st, &sent)).await.map_err(io)??;
+    let a = account.clone();
+    let snap = tokio::task::spawn_blocking(move || snapshot(&st, &a, &sent)).await.map_err(io)??;
     let id = format!("{}-{}", crate::drafts::slug(&snap.title), random_hex(4));
     let dir = state.submission_dir(&id);
     let snap = {
@@ -218,7 +208,7 @@ pub async fn create(state: &AppState, account: &str, sent: Sent) -> ApiResult<Su
     let s = Submission {
         id: id.clone(),
         kind: snap.kind.into(),
-        account: account.into(),
+        account: account.id.clone(),
         email: String::new(),
         source,
         title: snap.title,
@@ -259,24 +249,8 @@ async fn submit_draft(State(state): State<AppState>, teacher: Teacher, Path(id):
     })
     .await
     .map_err(io)??;
-    let sent = Sent { source: format!("teach:{}", draft.id), about: o.about, credit: o.credit, ymls, blobs };
-    Ok((StatusCode::CREATED, Json(create(&state, &teacher.0.id, sent).await?)))
-}
-
-/// A draft from a workshop in the browser, whole.
-async fn upload(State(state): State<AppState>, teacher: Teacher, Json(u): Json<Upload>) -> ApiResult<(StatusCode, Json<Submission>)> {
-    rights(&u.offer)?;
-    if u.source.starts_with("teach:") {
-        return Err(ApiError::BadRequest("a teacher's draft is submitted from the server's copy".into()));
-    }
-    let ymls = u.ymls.into_iter().map(|y| (y.id, y.text)).collect();
-    let mut blobs = BTreeMap::new();
-    for (name, b64) in u.blobs {
-        let bytes = base64::engine::general_purpose::STANDARD.decode(b64.as_bytes()).map_err(|_| ApiError::BadRequest(format!("{name}: not base64")))?;
-        blobs.insert(name, bytes);
-    }
-    let sent = Sent { source: u.source, about: u.offer.about, credit: u.offer.credit, ymls, blobs };
-    Ok((StatusCode::CREATED, Json(create(&state, &teacher.0.id, sent).await?)))
+    let sent = Sent { source: format!("workshop:{}", draft.id), about: o.about, credit: o.credit, ymls, blobs };
+    Ok((StatusCode::CREATED, Json(create(&state, &teacher.0, sent).await?)))
 }
 
 #[derive(Deserialize)]
@@ -400,7 +374,7 @@ async fn reject(State(state): State<AppState>, _: Admin, Path(id): Path<String>,
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/drafts/{id}/submit", post(submit_draft))
-        .route("/submissions", get(mine).post(upload).layer(DefaultBodyLimit::max(MAX_UPLOAD)))
+        .route("/submissions", get(mine))
         .route("/admin/submissions", get(list))
         .route("/admin/submissions/{id}", get(detail))
         .route("/admin/submissions/{id}/deck/{*file}", get(deck))

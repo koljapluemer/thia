@@ -1,5 +1,5 @@
 import { bridgeAvailable, pairBridge, runOnBridge, vizCheckTool } from '@gestalts/workshop';
-import { AGENT_NODE } from '../nodes';
+import { AGENT_NODE } from '../../nodes';
 import { vizTemplate } from './template';
 import { fromBase64, toBase64 } from './viz';
 

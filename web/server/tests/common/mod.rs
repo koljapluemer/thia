@@ -1,4 +1,4 @@
-//! A server on a temporary folder, with two teachers at one school, called as the browser calls it.
+//! A server on a temporary folder, with two teachers and a maintainer at one school, called as the browser calls it.
 #![allow(dead_code)]
 
 use axum::body::Body;
@@ -44,11 +44,13 @@ impl Server {
         let dir = tempfile::tempdir().unwrap();
         let db = Db::memory().unwrap();
         db.add_school("s1", "A school", "2026-11-20T00:00:00Z").unwrap();
-        for (id, email) in [("a1", "ada@school.example"), ("a2", "bea@school.example")] {
+        for (id, email) in [("a1", "ada@school.example"), ("a2", "bea@school.example"), ("a3", "cal@school.example")] {
             db.add_account(id, "s1", email, &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
         }
         // bea reviews
         db.set_admin("bea@school.example", true).unwrap();
+        // cal makes what the public site ships
+        db.set_maintainer("cal@school.example", true).unwrap();
         let services = Services { promote_into, ..services(model, &dir.path().join("npm-cache")) };
         let state = AppState::new(db, dir.path().to_owned(), limits, true, services).unwrap();
         Server { state, _dir: dir }
@@ -68,6 +70,14 @@ impl Server {
         let set_cookie = res.headers().get(header::SET_COOKIE).map(|v| v.to_str().unwrap().split(';').next().unwrap().to_owned());
         let bytes = res.into_body().collect().await.unwrap().to_bytes();
         (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null), set_cookie)
+    }
+
+    /// A request with a body of bytes, answered with bytes: blobs, exports.
+    pub async fn bytes(&self, method: &str, path: &str, cookie: &str, body: Vec<u8>) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
+        let req = Request::builder().method(method).uri(path).header(header::COOKIE, cookie).body(Body::from(body)).unwrap();
+        let res = gestalts_teacher::app(self.state.clone()).oneshot(req).await.unwrap();
+        let (status, headers) = (res.status(), res.headers().clone());
+        (status, headers, res.into_body().collect().await.unwrap().to_bytes().to_vec())
     }
 
     /// A GET on the lesson domain: status, headers, body.

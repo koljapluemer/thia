@@ -39,6 +39,14 @@ static GESTALTS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../../gestalts
 /// always the same, and all of them on the public site.
 pub const MODELS: &[&str] = &["geography", "typing", "viz"];
 
+/// Every model package in the repo (`gestalts/<package>/<name>/`): what a maintainer's drafts may use besides the
+/// core's. What uses one outside [`MODELS`] can't go out as a lesson.
+pub fn repo_models() -> Vec<&'static str> {
+    let mut out: Vec<&str> = GESTALTS.dirs().filter(|d| d.dirs().next().is_some()).filter_map(|d| d.path().to_str()).collect();
+    out.sort_unstable();
+    out
+}
+
 /// The definitions of model packages, as YAML texts.
 pub fn model_texts(packages: &[&str]) -> Result<Vec<String>, String> {
     let mut out = Vec::new();
@@ -81,12 +89,27 @@ impl Default for Limits {
     }
 }
 
+impl Limits {
+    /// A maintainer's: they make what the public site ships, so more of it.
+    pub fn maintainer(&self) -> Limits {
+        Limits {
+            drafts_per_account: self.drafts_per_account * 5,
+            ymls_per_draft: self.ymls_per_draft * 5,
+            account_blob_bytes: self.account_blob_bytes * 4,
+            ..self.clone()
+        }
+    }
+}
+
 pub struct Inner {
     pub db: db::Db,
     /// `drafts/<id>/` (a folder as the node keeps one), `lessons/`, `npm/`, `runtime/`
     pub data: PathBuf,
-    /// the core's definitions and the model packages': what a draft's own are judged beside
+    /// the core's definitions and the model packages' ([`MODELS`]): what a draft's own are judged beside, and what a
+    /// lesson may use
     pub gestalts: Gestalts,
+    /// the core's and every model package in the repo: a maintainer's drafts are judged beside these
+    pub repo_gestalts: Gestalts,
     pub limits: Limits,
     /// cookies only over https; off for a local run on http
     pub secure_cookies: bool,
@@ -126,12 +149,16 @@ impl AppState {
         let models = model_texts(MODELS)?;
         let texts: Vec<&str> = models.iter().map(String::as_str).collect();
         let gestalts = Gestalts::builtin_with(&texts)?;
+        let all = model_texts(&repo_models())?;
+        let all: Vec<&str> = all.iter().map(String::as_str).collect();
+        let repo_gestalts = Gestalts::builtin_with(&all)?;
         let agents = agent::Agents::new(services.model, agent::Reference::new(services.worker.template.clone()));
         let worker = worker::Worker::new(services.worker.clone());
         Ok(AppState(Arc::new(Inner {
             db,
             data,
             gestalts,
+            repo_gestalts,
             limits,
             secure_cookies,
             failures: Mutex::default(),
@@ -142,6 +169,18 @@ impl AppState {
             misses: lessons::Misses::default(),
             promote_into: services.promote_into,
         })))
+    }
+}
+
+impl AppState {
+    /// The gestalts an account's drafts are judged beside: every model package for a maintainer, [`MODELS`] for
+    /// anyone else.
+    pub fn gestalts_for(&self, account: &db::Account) -> &Gestalts {
+        if account.maintainer { &self.repo_gestalts } else { &self.gestalts }
+    }
+
+    pub fn limits_for(&self, account: &db::Account) -> Limits {
+        if account.maintainer { self.limits.maintainer() } else { self.limits.clone() }
     }
 }
 

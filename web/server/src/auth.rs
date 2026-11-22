@@ -87,6 +87,7 @@ pub struct Me {
     pub email: String,
     pub school: String,
     pub admin: bool,
+    pub maintainer: bool,
 }
 
 async fn login(State(state): State<AppState>, Json(req): Json<Login>) -> ApiResult<Response> {
@@ -112,7 +113,7 @@ async fn login(State(state): State<AppState>, Json(req): Json<Login>) -> ApiResu
     let token = random_token(32);
     let expires = gestalts_core::iso_datetime(now_ms() + SESSION_DAYS * 86_400_000);
     state.db.add_session(&token_hash(&token), &account.id, &expires)?;
-    let mut res = Json(Me { email: account.email, school: account.school, admin: account.admin }).into_response();
+    let mut res = Json(Me { email: account.email, school: account.school, admin: account.admin, maintainer: account.maintainer }).into_response();
     res.headers_mut().insert(header::SET_COOKIE, cookie(&state, &token, SESSION_DAYS * 86_400));
     Ok(res)
 }
@@ -131,7 +132,7 @@ async fn logout(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<
 }
 
 async fn me(Teacher(a): Teacher) -> Json<Me> {
-    Json(Me { email: a.email, school: a.school, admin: a.admin })
+    Json(Me { email: a.email, school: a.school, admin: a.admin, maintainer: a.maintainer })
 }
 
 pub fn routes() -> Router<AppState> {

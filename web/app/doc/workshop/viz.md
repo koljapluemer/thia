@@ -1,12 +1,18 @@
-# Make viz (`/make-viz`)
+# A visualization's draft
+
+A viz is a draft of the workshop ([`architecture.md`](architecture.md)) of kind `viz`: one `viz@1` yml, with the
+draft's id, and its blobs, synced with the server.
 
 ```
-src/make-viz/Make.tsx      the list of vizzes, and the workbench: the editor beside the vizint view showing the viz
-src/make-viz/Editor.tsx    a viz's title, intro, spec, outro and files; Build
-src/make-viz/agent.ts      a build: Claude Code through the Claude bridge, then the page's own check
-src/make-viz/template.ts   what the agent works against: packages/viz/agent/CLAUDE.md, the examples, viz-sources/
-src/make-viz/viz.ts        a viz as a `viz@1` yml; blobs named by content
+src/workshop/VizPane.tsx        the editor beside the vizint view showing the viz
+src/workshop/viz/Editor.tsx     a viz's title, intro, spec, outro and files; Build
+src/workshop/viz/agent.ts       a build: Claude Code through the Claude bridge, then the page's own check
+src/workshop/viz/template.ts    what the agent works against: packages/viz/agent/CLAUDE.md, the examples, viz-sources/
+src/workshop/viz/viz.ts         a viz as a `viz@1` yml; blobs named by content
 ```
+
+Only the bridge's agent builds one: its check renders the viz in the page, with screenshots, which the server can't do
+yet. Without the bridge, the editor says so and offers to connect.
 
 ## A build
 
@@ -32,5 +38,5 @@ There is no chat; to change a viz, change its spec and build again.
 ## The public site
 
 Once a viz is built, the **Public site** menu offers it for review: the viz yml with its page, still and files
-(`src/submit.tsx`). Accepted, it becomes a deck of `vizint` and an entry on the public site
-([`doc/architecture/publishing.md`](../../../doc/architecture/publishing.md)).
+(`src/workshop/submit.tsx`), from the server's copy. Accepted, it becomes a deck of `vizint` and an entry on the public
+site ([`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md)).

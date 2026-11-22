@@ -1,7 +1,6 @@
 # Publishing to the public site
 
-What the workshops make (a teacher's lesson in `/teach`, a learning view in `/make`, a visualization in `/make-viz`)
-can be offered for the public site. An admin reviews it, and accepting it makes it part of the repo. The site is built
+What the workshop (`/workshop`) makes, a learning view or a visualization, can be offered for the public site. An admin reviews it, and accepting it makes it part of the repo. The site is built
 from the repo. Built for the dev machine; nothing of it is deployed yet.
 
 ```
@@ -41,13 +40,9 @@ On the site:
 
 ## Submitting
 
-The workshops' **Public site** menu (`web/app/src/submit.tsx`) asks for three things: what the result is, how to
-credit its maker (optional), and that the maker may share it and agrees to publication under CC BY-SA 4.0. Submitting
-needs a teacher account: the person who grants the rights.
-
-- `/teach`: the server's own copy of the draft (`POST /api/drafts/<id>/submit`).
-- `/make` and `/make-viz`: the draft lives in the browser, so it is uploaded whole: the ymls plus every blob they name
-  (`POST /api/submissions`).
+The workshop's **Public site** menu (`web/app/src/workshop/submit.tsx`) asks for three things: what the result is, how
+to credit its maker (optional), and that the maker may share it and agrees to publication under CC BY-SA 4.0. The
+account's owner grants the rights. What's sent is the server's own copy of the draft (`POST /api/drafts/<id>/submit`).
 
 The server (`web/server/src/submissions.rs`) works out the kind from what was sent:
 
@@ -56,7 +51,8 @@ The server (`web/server/src/submissions.rs`) works out the kind from what was se
 
 It checks the ymls the way draft writes are checked, and checks a view the way publishing checks one (it compiles, and
 its npm is pinned and bundles). The snapshot is kept immutable in `submissions/<id>/`, as a deck with an `index.json`.
-A submission records its `source` (`<workshop>:<draft id>`), so the sender can see what became of each version.
+A submission records its `source` (`workshop:<draft id>`; older ones `make:`, `make-viz:` or `teach:`), so the sender
+can see what became of each version.
 
 ## Reviewing
 

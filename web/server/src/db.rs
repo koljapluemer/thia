@@ -92,6 +92,11 @@ const MIGRATIONS: &[&str] = &[r"
         promoted TEXT
     );
     CREATE INDEX submissions_by_account ON submissions(account, created);
+", r"
+    -- what a draft makes: `view` (a view@2 and its members), `viz` (a viz@1) or `sequence` (a lesson of several views)
+    ALTER TABLE drafts ADD COLUMN kind TEXT NOT NULL DEFAULT 'view';
+    -- may use every model package in the repo in drafts, and has more room
+    ALTER TABLE accounts ADD COLUMN maintainer INTEGER NOT NULL DEFAULT 0;
 "];
 
 pub struct Db(Mutex<Connection>);
@@ -103,6 +108,7 @@ pub struct Account {
     pub email: String,
     pub token_budget: i64,
     pub admin: bool,
+    pub maintainer: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
@@ -113,6 +119,7 @@ pub struct Draft {
     #[serde(skip)]
     pub school: String,
     pub package: String,
+    pub kind: String,
     pub title: String,
     pub created: String,
 }
@@ -176,6 +183,10 @@ impl Db {
         self.conn().execute("UPDATE accounts SET admin = ?2 WHERE email = ?1", params![email, admin]).map(|n| n == 1)
     }
 
+    pub fn set_maintainer(&self, email: &str, maintainer: bool) -> Result<bool, Error> {
+        self.conn().execute("UPDATE accounts SET maintainer = ?2 WHERE email = ?1", params![email, maintainer]).map(|n| n == 1)
+    }
+
     pub fn set_password(&self, email: &str, password_hash: &str) -> Result<bool, Error> {
         let conn = self.conn();
         let n = conn.execute("UPDATE accounts SET password = ?2 WHERE email = ?1", params![email, password_hash])?;
@@ -188,9 +199,9 @@ impl Db {
     pub fn account_by_email(&self, email: &str) -> Result<Option<(Account, Option<String>)>, Error> {
         self.conn()
             .query_row(
-                "SELECT id, school, email, token_budget, admin, password FROM accounts WHERE email = ?1 AND disabled IS NULL",
+                "SELECT id, school, email, token_budget, admin, maintainer, password FROM accounts WHERE email = ?1 AND disabled IS NULL",
                 [email],
-                |r| Ok((Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)? }, r.get(5)?)),
+                |r| Ok((Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)?, maintainer: r.get(5)? }, r.get(6)?)),
             )
             .optional()
     }
@@ -207,10 +218,10 @@ impl Db {
     pub fn session(&self, token_hash: &str, now: &str) -> Result<Option<Account>, Error> {
         self.conn()
             .query_row(
-                "SELECT a.id, a.school, a.email, a.token_budget, a.admin FROM sessions s JOIN accounts a ON a.id = s.account
+                "SELECT a.id, a.school, a.email, a.token_budget, a.admin, a.maintainer FROM sessions s JOIN accounts a ON a.id = s.account
                  WHERE s.token_hash = ?1 AND s.expires > ?2 AND a.disabled IS NULL",
                 params![token_hash, now],
-                |r| Ok(Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)? }),
+                |r| Ok(Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)?, maintainer: r.get(5)? }),
             )
             .optional()
     }
@@ -218,21 +229,21 @@ impl Db {
     pub fn add_draft(&self, d: &Draft) -> Result<(), Error> {
         self.conn()
             .execute(
-                "INSERT INTO drafts (id, owner, school, package, title, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                params![d.id, d.owner, d.school, d.package, d.title, d.created],
+                "INSERT INTO drafts (id, owner, school, package, kind, title, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![d.id, d.owner, d.school, d.package, d.kind, d.title, d.created],
             )
             .map(drop)
     }
 
     fn draft_row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Draft> {
-        Ok(Draft { id: r.get(0)?, owner: r.get(1)?, school: r.get(2)?, package: r.get(3)?, title: r.get(4)?, created: r.get(5)? })
+        Ok(Draft { id: r.get(0)?, owner: r.get(1)?, school: r.get(2)?, package: r.get(3)?, kind: r.get(4)?, title: r.get(5)?, created: r.get(6)? })
     }
 
     /// A draft that isn't deleted, if `owner` owns it.
     pub fn draft(&self, id: &str, owner: &str) -> Result<Option<Draft>, Error> {
         self.conn()
             .query_row(
-                "SELECT id, owner, school, package, title, created FROM drafts WHERE id = ?1 AND owner = ?2 AND deleted IS NULL",
+                "SELECT id, owner, school, package, kind, title, created FROM drafts WHERE id = ?1 AND owner = ?2 AND deleted IS NULL",
                 params![id, owner],
                 Self::draft_row,
             )
@@ -241,8 +252,13 @@ impl Db {
 
     pub fn drafts(&self, owner: &str) -> Result<Vec<Draft>, Error> {
         let conn = self.conn();
-        let mut q = conn.prepare("SELECT id, owner, school, package, title, created FROM drafts WHERE owner = ?1 AND deleted IS NULL ORDER BY created DESC")?;
+        let mut q = conn.prepare("SELECT id, owner, school, package, kind, title, created FROM drafts WHERE owner = ?1 AND deleted IS NULL ORDER BY created DESC")?;
         q.query_map([owner], Self::draft_row)?.collect()
+    }
+
+    /// Whether a draft, even a deleted one, has this id or package: neither is ever used twice.
+    pub fn draft_taken(&self, id: &str, package: &str) -> Result<bool, Error> {
+        self.conn().query_row("SELECT 1 FROM drafts WHERE id = ?1 OR package = ?2", params![id, package], |_| Ok(())).optional().map(|r| r.is_some())
     }
 
     pub fn count_drafts(&self, owner: &str) -> Result<i64, Error> {

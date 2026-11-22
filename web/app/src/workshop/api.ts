@@ -1,7 +1,9 @@
-/** The teacher server's API, on this origin under /api, with the session cookie. */
+/** The workshop server's API (web/server), on this origin under /api, with the session cookie. */
 
-export type Me = { email: string; school: string; admin: boolean };
-export type DraftInfo = { id: string; package: string; title: string; created: string };
+export type Me = { email: string; school: string; admin: boolean; maintainer: boolean };
+/** What a draft makes: a learning view, or a visualization. */
+export type Kind = 'view' | 'viz';
+export type DraftInfo = { id: string; package: string; kind: Kind; title: string; created: string };
 export type Publication = { id: string; url: string; manifest: string; updated: string; revoked: string | null; warnings: string[] };
 
 export class ApiError extends Error {
@@ -27,7 +29,10 @@ export const me = () => api<Me>('/me');
 export const login = (email: string, password: string) => api<Me>('/login', { method: 'POST', json: { email, password } });
 export const logout = () => api<void>('/logout', { method: 'POST' });
 export const drafts = () => api<DraftInfo[]>('/drafts');
-export const newDraft = (title: string) => api<DraftInfo>('/drafts', { method: 'POST', json: { title } });
+export const newDraft = (title: string, kind: Kind) => api<DraftInfo>('/drafts', { method: 'POST', json: { title, kind } });
+/** A draft that was kept in this browser, moved to the account: its id and package stay. */
+export const moveDraft = (title: string, kind: Kind, moved: { id: string; package: string }) =>
+  api<DraftInfo>('/drafts', { method: 'POST', json: { title, kind, moved } });
 export const deleteDraft = (id: string) => api<void>(`/drafts/${id}`, { method: 'DELETE' });
 export const publication = (id: string) => api<Publication | null>(`/drafts/${id}/publication`);
 export const publish = (id: string) => api<Publication>(`/drafts/${id}/publish`, { method: 'POST' });
@@ -40,15 +45,22 @@ export type Submission = {
 };
 /** What the sender says about it; `rights`: they may share it, and agree to it being published. */
 export type Offer = { about: string; credit?: string; rights: boolean };
-/** A draft from a workshop in this browser: every yml it ships, and the blobs they use (base64). */
-export type Upload = Offer & { source: string; ymls: { id: string; text: string }[]; blobs: Record<string, string> };
+/** Ymls as sync writes them, and the blobs they use (base64). */
+export type Snapshot = { ymls: { id: string; text: string }[]; blobs: Record<string, string> };
 /** Where accepting puts it: `plugin` and `package` for a view, `deck` for both. */
 export type Target = { plugin?: string; package?: string; deck: string };
 export type Promoted = { at: string; written: string[]; next: string[]; warnings: string[] };
 
 export const submissionsOf = (source: string) => api<Submission[]>(`/submissions?source=${encodeURIComponent(source)}`);
 export const submitDraft = (id: string, offer: Offer) => api<Submission>(`/drafts/${id}/submit`, { method: 'POST', json: offer });
-export const upload = (u: Upload) => api<Submission>('/submissions', { method: 'POST', json: u });
+/** Writes ymls into a draft as its sync does, checked as they are; then the blobs. */
+export async function writeDraft(id: string, s: Snapshot) {
+  if (s.ymls.length) await api<void>(`/drafts/${id}/sync/write`, { method: 'POST', json: s.ymls });
+  for (const [name, b64] of Object.entries(s.blobs)) {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    await api<void>(`/drafts/${id}/blobs/${encodeURIComponent(name)}`, { method: 'PUT', body: bytes });
+  }
+}
 
 export const queue = () => api<{ submissions: Submission[]; repo: string | null }>('/admin/submissions');
 export const submission = (id: string) => api<Submission & { ymls: { id: string; text: string }[]; proposed: Target }>(`/admin/submissions/${id}`);
@@ -62,6 +74,9 @@ export async function resolveNpm(imports: string[], versions: Record<string, str
   const paths = await api<Record<string, string>>('/npm', { method: 'POST', json: { npm: versions, imports } });
   return Object.fromEntries(Object.entries(paths).map(([spec, path]) => [spec, new URL(path, location.origin).href]));
 }
+
+/** The draft's folder as the server keeps it, as a zip. */
+export const exportUrl = (id: string) => `/api/drafts/${id}/export`;
 
 /** The repo folder a draft syncs with. */
 export const draftUrl = (id: string) => `${location.origin}/api/drafts/${id}`;
