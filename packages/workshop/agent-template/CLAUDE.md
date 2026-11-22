@@ -106,6 +106,10 @@ const { beliefs } = useBeliefs(conceptIds);           // Map id -> {mean, sd, p 
 // a set's belief has `members: {known}`: how many concepts `in` it are known. Sets are open: never show "k of n" or a %
 ```
 
+A view may be one step of a lesson of several. When the learner is through with what it asks of them, say so:
+`const { done } = useHost(); … done()`, and the lesson goes on to the next step (elsewhere nothing happens). A view
+that never says so gets a *Next* button from the player anyway.
+
 A learning view logs each answer with `logPractice(write, cardId, '<view id>', ratingOf(grade), new Date())` and shows
 progress with `useBeliefs`. Never load `practice-event`s to work out what someone knows: the app does that. A view whose
 items name `responses` (like `multiple-choice@1`) passes the picked option's as `{ response }` and declares

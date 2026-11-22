@@ -1,8 +1,8 @@
 /** The workshop server's API (web/server), on this origin under /api, with the session cookie. */
 
 export type Me = { email: string; school: string; admin: boolean; maintainer: boolean };
-/** What a draft makes: a learning view, or a visualization. */
-export type Kind = 'view' | 'viz';
+/** What a draft makes: a learning view, a visualization, or a lesson of several views. */
+export type Kind = 'view' | 'viz' | 'sequence';
 export type DraftInfo = { id: string; package: string; kind: Kind; title: string; created: string };
 export type Publication = { id: string; url: string; manifest: string; updated: string; revoked: string | null; warnings: string[] };
 
@@ -74,6 +74,15 @@ export async function resolveNpm(imports: string[], versions: Record<string, str
   const paths = await api<Record<string, string>>('/npm', { method: 'POST', json: { npm: versions, imports } });
   return Object.fromEntries(Object.entries(paths).map(([spec, path]) => [spec, new URL(path, location.origin).href]));
 }
+
+/** A lesson of several views, checked as a whole: and the account's views it can pick from, with what they practise. */
+export type SequenceReport = {
+  problems: string[]; warnings: string[];
+  views: { id: string; title: string; practises: string[] }[];
+  /** concept ids to names, where a view's concepts have them */
+  concepts: Record<string, string>;
+};
+export const sequenceReport = (id: string) => api<SequenceReport>(`/drafts/${id}/sequence`);
 
 /** The draft's folder as the server keeps it, as a zip. */
 export const exportUrl = (id: string) => `/api/drafts/${id}/export`;

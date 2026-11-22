@@ -68,7 +68,7 @@ pub fn slug(title: &str) -> String {
 #[derive(Deserialize)]
 struct NewDraft {
     title: String,
-    /// `view` or `viz`
+    /// `view`, `viz` or `sequence`
     #[serde(default = "view")]
     kind: String,
     /// a draft moved here from a browser, which keeps its id, and its package: its gestalts are named in it
@@ -107,7 +107,7 @@ async fn create(State(state): State<AppState>, teacher: Teacher, Json(req): Json
     if title.is_empty() || title.chars().count() > 200 || title.contains('\n') {
         return Err(ApiError::BadRequest("a title is one line, up to 200 characters".into()));
     }
-    let kind = Kind::parse(&req.kind).ok_or_else(|| ApiError::BadRequest("kind: view or viz".into()))?;
+    let kind = Kind::parse(&req.kind).ok_or_else(|| ApiError::BadRequest("kind: view, viz or sequence".into()))?;
     let limits = state.limits_for(&teacher.0);
     if state.db.count_drafts(&teacher.0.id)? >= limits.drafts_per_account {
         return Err(ApiError::TooMany(format!("at most {} drafts: delete one first", limits.drafts_per_account)));

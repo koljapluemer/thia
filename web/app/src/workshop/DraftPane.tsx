@@ -80,7 +80,7 @@ export function SyncState() {
   return <span className="text-xs text-base-content/50">Saved</span>;
 }
 
-function PublishMenu({ repo, id }: { repo: Repo; id: string }) {
+export function PublishMenu({ repo, id }: { repo: Repo; id: string }) {
   const [p, setP] = useState<api.Publication | null>();
   const [busy, setBusy] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);

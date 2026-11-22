@@ -143,3 +143,65 @@ async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
     assert!(body.to_string().contains("media-source@1"), "{body}");
 }
+
+/// A view draft of ada's that practises `concept` (one of its members), with the runtime the tests' player has.
+async fn view_practising(s: &Server, cookie: &str, title: &str, concept: &str) -> String {
+    let (_, d, _) = s.call("POST", "/api/drafts", Some(cookie), Some(json!({ "title": title }))).await;
+    let (id, p) = (d["id"].as_str().unwrap().to_owned(), d["package"].as_str().unwrap().to_owned());
+    let view = format!("id: {id}\ngestalt: view@2\ntitle: {title}\nsource: {VIEW:?}\nreads: [concept@2, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: [{concept}]\n");
+    let w = json!([{ "id": id, "text": view }, { "id": concept, "text": format!("id: {concept}\ngestalt: concept@2\nname: Zehnerübergang\n") }]);
+    assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(cookie), Some(w)).await.0, StatusCode::NO_CONTENT);
+    id
+}
+
+#[tokio::test]
+async fn a_lesson_of_several_views_is_checked_as_a_whole_and_goes_out_as_one() {
+    let s = Server::new(Limits::default());
+    let d = draft(&s).await;
+    let first = view_practising(&s, &d.cookie, "Kurzer Check", "zehner").await;
+    let main = view_practising(&s, &d.cookie, "Plus bis 100", "zehner").await;
+    let (_, q, _) = s.call("POST", "/api/drafts", Some(&d.cookie), Some(json!({ "title": "Plus mit Übergang", "kind": "sequence" }))).await;
+    let id = q["id"].as_str().unwrap().to_owned();
+    let write = |steps: &str| json!([{ "id": id, "text": format!("id: {id}\ngestalt: sequence@1\ntitle: Plus mit Übergang\nsteps:\n{steps}") }]);
+    let at = format!("/api/drafts/{id}");
+
+    // a step with two rules isn't written
+    let two = format!("  - view: {main}\n    skip_if_known: zehner\n    detour: {{ concept: zehner, view: {first} }}\n");
+    assert_eq!(s.call("POST", &format!("{at}/sync/write"), Some(&d.cookie), Some(write(&two))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
+
+    // a rule on the first step never applies on a new device: a warning
+    let alone = format!("  - view: {main}\n    skip_if_known: zehner\n");
+    assert_eq!(s.call("POST", &format!("{at}/sync/write"), Some(&d.cookie), Some(write(&alone))).await.0, StatusCode::NO_CONTENT);
+    let (_, r, _) = s.call("GET", &format!("{at}/sequence"), Some(&d.cookie), None).await;
+    assert_eq!((r["problems"].as_array().unwrap().len(), r["warnings"].as_array().unwrap().len()), (0, 1), "{r}");
+    assert!(r["warnings"][0].as_str().unwrap().contains("Zehnerübergang"), "by its name: {r}");
+    assert_eq!(r["views"].as_array().unwrap().len(), 3, "the account's views to pick from: {r}");
+
+    // a view that isn't there, a concept no step practises
+    let bad = "  - view: nope\n  - view: x\n    skip_if_known: nichts\n";
+    s.call("POST", &format!("{at}/sync/write"), Some(&d.cookie), Some(write(bad))).await;
+    let (status, body, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), None).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    assert!(body["problems"].as_array().unwrap().len() >= 3, "{body}");
+
+    // a short check first, then the step it may skip, and a detour on the same concept
+    let good = format!("  - view: {first}\n  - view: {main}\n    skip_if_known: zehner\n  - view: {main}\n    detour: {{ concept: zehner, view: {first} }}\n");
+    assert_eq!(s.call("POST", &format!("{at}/sync/write"), Some(&d.cookie), Some(write(&good))).await.0, StatusCode::NO_CONTENT);
+    let (_, r, _) = s.call("GET", &format!("{at}/sequence"), Some(&d.cookie), None).await;
+    assert_eq!(r["warnings"], json!([]), "{r}");
+    let (status, p, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), None).await;
+    assert_eq!(status, StatusCode::OK, "{p}");
+    let (_, _, current) = s.lessons(&format!("/l/{}/current", p["id"].as_str().unwrap())).await;
+    let path = serde_json::from_slice::<Value>(&current).unwrap()["manifest"].as_str().unwrap().to_owned();
+    let manifest: Value = serde_json::from_slice(&s.lessons(&path).await.2).unwrap();
+    assert_eq!((manifest["format"].as_str(), manifest["runtime"].as_str()), (Some("lesson@2"), Some(RUNTIME)));
+    assert_eq!(manifest["views"], json!(["views/0", "views/1"]), "each view once");
+    assert_eq!(manifest["steps"], json!([{ "view": 0 }, { "view": 1, "skipIfKnown": "zehner" }, { "view": 1, "detour": { "concept": "zehner", "view": 0 } }]));
+    let base = path.trim_end_matches("manifest.json");
+    let step: Value = serde_json::from_slice(&s.lessons(&format!("{base}views/1/manifest.json")).await.2).unwrap();
+    assert_eq!((step["format"].as_str(), step["title"].as_str()), (Some("lesson@1"), Some("Plus bis 100")));
+    assert_eq!(s.lessons(&format!("{base}views/1/{}", step["view"].as_str().unwrap())).await.0, StatusCode::OK);
+    // the same again is the same version
+    let (_, again, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), None).await;
+    assert_eq!(again["manifest"], p["manifest"]);
+}

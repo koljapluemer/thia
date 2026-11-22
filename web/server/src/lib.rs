@@ -28,6 +28,7 @@ pub mod lessons;
 pub mod npm;
 pub mod promote;
 pub mod publish;
+pub mod sequence;
 pub mod submissions;
 pub mod validate;
 pub mod worker;
@@ -267,7 +268,7 @@ pub fn now_iso() -> String {
 
 /// The app's routes, under `/api`.
 pub fn app(state: AppState) -> axum::Router {
-    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(submissions::routes())).with_state(state)
+    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(sequence::routes()).merge(submissions::routes())).with_state(state)
 }
 
 /// The lesson domain's routes.

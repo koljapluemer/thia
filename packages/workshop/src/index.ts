@@ -5,3 +5,4 @@ export { httpBackend, jobBackend, type Call } from './agents/jobs';
 export { INSTALL_BRIDGE, VIEW_FILES, bridgeAvailable, bridgeBackend, bridgeStatus, pairBridge, runOnBridge, type BridgeEvent, type BridgeStart, type BridgeStatus } from './agents/bridge';
 export { answerText, askTool, checkResult, fileTools, questionsOf, viewCheckTool, vizCheckTool, type AgentTool, type ToolContent, type ToolResult } from './agents/tools';
 export type { AgentBackend, AgentEvent, Answer, Answers, Diagnostic, OpenQuestion, Question, TurnRequest } from './agents/types';
+export { KNOWN_P, SEQUENCE, STRUGGLING_P, asSequence, decide, ruleConcepts, sequenceYml, walk, type Decision, type Sequence, type Step, type Walked } from './sequence';

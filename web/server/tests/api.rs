@@ -107,7 +107,7 @@ async fn quotas_hold() {
 async fn drafts_of_each_kind() {
     let s = Server::new(Limits::default());
     let ada = s.login("ada@school.example").await;
-    assert_eq!(s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "x", "kind": "sequence" }))).await.0, StatusCode::BAD_REQUEST, "not yet");
+    assert_eq!(s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "x", "kind": "lesson" }))).await.0, StatusCode::BAD_REQUEST, "no such kind");
     let (_, view, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Artikel" }))).await;
     assert_eq!(view["kind"], "view", "a view, unless it says");
     let (status, viz, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Wellen", "kind": "viz" }))).await;

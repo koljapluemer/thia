@@ -36,6 +36,7 @@ installables/claude-bridge/  runs `claude -p` on this computer for a site the pe
 |---|---|---|---|
 | `view` | a `view@2` yml and its members | the server's, or the bridge's | to a class, as a lesson; to the public site, reviewed |
 | `viz` | one `viz@1` yml and its blobs | the bridge's only, until the server renders | to the public site, reviewed |
+| `sequence` | one `sequence@1` yml: steps, each another view draft with at most one rule | none yet: a form (`SequencePane.tsx`) | to a class, as a lesson of several views |
 
 A draft's id is its view's or viz's. The server checks each kind ([`web/server/src/validate.rs`](../../../server/src/validate.rs)):
 a viz's draft holds its viz and nothing else.
@@ -46,6 +47,12 @@ and the lesson models (`distributions/teacher.yml`, the server's `MODELS`). A **
 and the plugins' decks beside it (`distributions/workshop.yml`), with more room. The server judges a maintainer's
 drafts by every model package, and still publishes one to a class only within the lesson models. A viz is shown by
 the vizint view, as the public site shows it.
+
+A lesson of several views is checked as a whole by the server (`GET /api/drafts/<id>/sequence`, `web/server/src/sequence.rs`):
+every step's view is there, every rule's concept is one a step's view practises, and a warning when no earlier step
+practises a rule's concept (on a new device such a rule never applies, so a short check step comes first). Its
+**play-through** walks it for a pretend student who is new, knows a concept, or struggles with it
+(`packages/workshop/src/sequence.ts`, `walk`, the same decisions the player makes).
 
 Each draft can be downloaded as a zip of the folder the server keeps (a folder a gestalts node opens).
 

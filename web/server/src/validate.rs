@@ -3,7 +3,8 @@
 //! - every yml is valid by the core's gestalts, the model packages', or the draft's own definitions, or a tombstone
 //! - a view's draft: its own definitions (`gestalt@1`) are named in its package, never another's; the view yml
 //!   (`view@1`/`view@2`) has the draft's id and package, and nothing else has that id
-//! - a visualization's draft: one `viz@1`, with the draft's id, and nothing else
+//! - a visualization's draft: one `viz@1`, with the draft's id, and nothing else; a lesson's (several views): one
+//!   `sequence@1`, with at most one rule per step
 //! - within the limits on how many ymls and how big
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -20,6 +21,8 @@ pub enum Kind {
     View,
     /// a `viz@1`
     Viz,
+    /// a `sequence@1`: a lesson of several views, each another draft
+    Sequence,
 }
 
 impl Kind {
@@ -27,6 +30,7 @@ impl Kind {
         match s {
             "view" => Some(Kind::View),
             "viz" => Some(Kind::Viz),
+            "sequence" => Some(Kind::Sequence),
             _ => None,
         }
     }
@@ -35,6 +39,7 @@ impl Kind {
         match self {
             Kind::View => "view",
             Kind::Viz => "viz",
+            Kind::Sequence => "sequence",
         }
     }
 
@@ -43,11 +48,13 @@ impl Kind {
         match self {
             Kind::View => is_view(gestalt),
             Kind::Viz => gestalt == VIZ,
+            Kind::Sequence => gestalt == SEQUENCE,
         }
     }
 }
 
 pub const VIZ: &str = "viz@1";
+pub const SEQUENCE: &str = "sequence@1";
 
 /// The gestalts of a draft's views.
 pub fn is_view(gestalt: &str) -> bool {
@@ -95,11 +102,19 @@ pub fn check(base: &Gestalts, limits: &Limits, b: &Batch<'_>) -> Vec<String> {
         }
         let y = Yml::parse(id.clone(), text.clone());
         match gestalts.classify(&y) {
-            YmlState::Valid(g) if b.kind == Kind::Viz => {
+            YmlState::Valid(g) if b.kind != Kind::View => {
+                let what = b.kind.as_str();
                 if id != b.draft {
-                    problems.push(format!("{id}: a visualization's draft holds its viz only, {}", b.draft));
-                } else if g != VIZ {
-                    problems.push(format!("{id}: the draft's own id is its viz's"));
+                    problems.push(format!("{id}: this draft holds its {what} only, {}", b.draft));
+                } else if !b.kind.is_main(&g) {
+                    problems.push(format!("{id}: the draft's own id is its {what}'s"));
+                } else if b.kind == Kind::Sequence {
+                    let steps = y.map().and_then(|m| m.get("steps")).and_then(|s| s.as_sequence()).cloned().unwrap_or_default();
+                    for (i, st) in steps.iter().enumerate() {
+                        if st.get("skip_if_known").is_some() && st.get("detour").is_some() {
+                            problems.push(format!("{id}: step {} has two rules; a step has at most one", i + 1));
+                        }
+                    }
                 }
             }
             YmlState::Valid(g) => {

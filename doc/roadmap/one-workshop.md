@@ -1,7 +1,7 @@
 # One workshop, and lessons of several views
 
 Decided on 2026-11-22. Three steps, in this order: the workshops become one (built, 2026-11-22), the agent can ask
-(built, 2026-11-22), then lessons made of several views (sequences). Prior art is at the end.
+(built, 2026-11-22), then lessons made of several views (sequences; the MVP built 2026-11-22, but for the agent). Prior art is at the end.
 
 ## 1. One workshop
 
@@ -72,6 +72,11 @@ a list, each step with at most one rule, read top to bottom; detours always come
 that branches inside, not a sequence.
 
 ### In the MVP
+
+Built, but for the agent writing the sequence: a form puts the steps together for now (`SequencePane.tsx`), from
+view drafts made first. The done signal is `useHost().done()`, an op the bridge answers when a host listens; no
+protocol bump, since it's only added. The player shows *Next* always, as it can't know whether a view will say it's
+done. *Struggling* is practised and `p` below a half.
 
 - **A done signal** in the view protocol, with a helper in the kit. A view that never sends it gets a *Next* button
   from the player, so existing views work as steps.

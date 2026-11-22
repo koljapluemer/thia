@@ -478,5 +478,10 @@ export function useHost() {
      */
     openView: (view: string, params?: Params, { newTab = false }: { newTab?: boolean } = {}): Promise<boolean> =>
       host.call({ op: 'openView', view, ...(params ? { params } : {}), ...(newTab ? { newTab } : {}) }),
+    /**
+     * Says the learner is through with this view: in a lesson of several, the player goes on to the next step. Whether
+     * anything went on from it; elsewhere nothing does, and a host from before it answers nothing.
+     */
+    done: (): Promise<boolean> => host.call({ op: 'done' }).catch(() => false),
   }), [host, init]);
 }

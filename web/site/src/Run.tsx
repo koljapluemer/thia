@@ -75,7 +75,7 @@ export function RunPage({ run }: { run: Run }) {
 }
 
 /** Lets go of a folder this device no longer uses. Best effort: a browser that won't is no worse off. */
-async function forget(dir: string, repo: Repo | undefined) {
+export async function forget(dir: string, repo: Repo | undefined) {
   repo?.dispose();
   try {
     const root = await navigator.storage.getDirectory();

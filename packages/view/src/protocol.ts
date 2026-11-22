@@ -62,7 +62,9 @@ export type Call =
    * shows `view`: its most recent tab, moved to `params` if given, else a new one; `newTab`: in a new browser tab
    * instead, where there are browser tabs (else as without it)
    */
-  | { op: 'openView'; view: string; params?: Record<string, string>; newTab?: boolean };
+  | { op: 'openView'; view: string; params?: Record<string, string>; newTab?: boolean }
+  /** the learner is through with what this view asks of them: a lesson of several views goes on to the next */
+  | { op: 'done' };
 
 /** What each call answers. */
 export type Answers = {
@@ -71,6 +73,7 @@ export type Answers = {
   beliefs: { sub: number; beliefs: Belief[] };
   outline: { sub: number; page: OutlinePage };
   unsubscribe: null;
+  done: boolean;
   put: Item;
   delete: boolean;
   readBlob: Uint8Array | null;

@@ -21,6 +21,8 @@ Each draft has a kind (`drafts.kind`), set when it's made:
 - `view`: a `view@2` yml and its `members` (`packages/workshop/src/draft.ts`): `gestalt@1` definitions named in the
   draft's `package`, which the server hands out, and the ymls it ships with
 - `viz`: one `viz@1` yml and the blobs it names
+- `sequence`: one `sequence@1` yml, whose steps are the account's view drafts (`sequence.rs`: checked as a whole,
+  published as `lesson@2`, each view a `lesson@1` folder under `views/<n>/`)
 
 Each draft is its own folder, in the browser (OPFS, `teacher-draft-<id>`) and on the server (`drafts/<id>/`), synced
 over the node's `/sync` and `/blobs` shapes under `/api/drafts/<id>/`. The browser is untrusted: the server validates
@@ -81,7 +83,11 @@ versions; unpublishing switches it off (410).
 
 ## The lesson domain
 
-A different registrable domain (`lessons.rs`). `/l/<lesson>` serves the site's build (`web/site`, installed per frame
+A different registrable domain (`lessons.rs`). A `lesson@2` plays its steps in order under the one link
+(`web/site/src/Sequence.tsx`), on one folder for the whole lesson, so a step's practice counts in the next: a step
+skipped when its concept is known (`p` ≥ 0.8), a detour first when the student struggles (practised, `p` < 0.5), the
+path shown, going back and doing a skipped step anyway always allowed. A view goes on with `useHost().done()`; the
+player's *Next* is always there besides. `/l/<lesson>` serves the site's build (`web/site`, installed per frame
 runtime with `admin install-player`) for the lesson's runtime with a `<base>`, `/l/<lesson>/current` names the current manifest, everything else is immutable files. No indexing, no
 referrer, and many not-founds a minute are answered with 429. The page keeps a student's data on the device, one
 OPFS folder per lesson, with "start fresh" for shared devices.

@@ -59,3 +59,54 @@ export function parseManifest(v: unknown): LessonManifest {
   for (const g of writes) if (!reads.includes(g)) throw new Error(`it writes ${g} without reading it`);
   return { format: LESSON, title: text('title'), runtime: text('runtime'), reads, writes, view, npm: npm as Record<string, string>, published: text('published') };
 }
+
+/**
+ * A lesson of several views (`sequence@1`, published): each view a `lesson@1` folder under `views/<n>/` (its manifest,
+ * view and deck), and the steps naming them by index. All on one runtime.
+ *
+ * ```
+ * lessons/<lesson>/<version>/manifest.json         this
+ *                            views/<n>/manifest.json  a `lesson@1`, and its files beside it
+ * ```
+ */
+export const SEQUENCE_LESSON = 'lesson@2';
+
+export type SequenceStep = { view: number; skipIfKnown?: string; detour?: { concept: string; view: number } };
+export type SequenceManifest = {
+  format: typeof SEQUENCE_LESSON;
+  title: string;
+  runtime: string;
+  /** folders relative to the manifest */
+  views: string[];
+  steps: SequenceStep[];
+  published: string;
+};
+
+const SEQUENCE_KEYS = ['format', 'title', 'runtime', 'views', 'steps', 'published'];
+
+/** A `lesson@2` manifest as the player trusts it, or why not; as [`parseManifest`], nothing it doesn't know. */
+export function parseSequenceManifest(v: unknown): SequenceManifest {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) throw new Error('a manifest is a map');
+  const m = v as Record<string, unknown>;
+  const extra = Object.keys(m).filter((k) => !SEQUENCE_KEYS.includes(k));
+  if (extra.length) throw new Error(`a lesson can't have ${extra.join(', ')}`);
+  if (m.format !== SEQUENCE_LESSON) throw new Error(`not a ${SEQUENCE_LESSON}`);
+  const text = (k: string) => { if (typeof m[k] !== 'string' || !(m[k] as string)) throw new Error(`${k} is missing`); return m[k] as string; };
+  const views = m.views;
+  if (!Array.isArray(views) || !views.length || !views.every((f) => typeof f === 'string' && /^views\/[0-9]+$/.test(f))) throw new Error('views must be folders views/<n>');
+  const index = (n: unknown) => { if (typeof n !== 'number' || !Number.isInteger(n) || n < 0 || n >= views.length) throw new Error('a step names a view that isn\'t there'); return n; };
+  const concept = (c: unknown) => { if (typeof c !== 'string' || !c) throw new Error('a rule names a concept'); return c; };
+  if (!Array.isArray(m.steps) || !m.steps.length) throw new Error('a lesson has steps');
+  const steps = (m.steps as unknown[]).map((s): SequenceStep => {
+    if (typeof s !== 'object' || s === null) throw new Error('a step is a map');
+    const st = s as Record<string, unknown>;
+    if (Object.keys(st).some((k) => !['view', 'skipIfKnown', 'detour'].includes(k)) || (st.skipIfKnown !== undefined && st.detour !== undefined)) throw new Error('a step is a view and at most one rule');
+    if (st.skipIfKnown !== undefined) return { view: index(st.view), skipIfKnown: concept(st.skipIfKnown) };
+    if (st.detour !== undefined) {
+      const d = st.detour as Record<string, unknown> | null;
+      return { view: index(st.view), detour: { concept: concept(d?.concept), view: index(d?.view) } };
+    }
+    return { view: index(st.view) };
+  });
+  return { format: SEQUENCE_LESSON, title: text('title'), runtime: text('runtime'), views: views as string[], steps, published: text('published') };
+}

@@ -58,11 +58,12 @@ fn io(e: std::io::Error) -> ApiError {
 
 /// What the lesson folder holds before it's written.
 pub(crate) struct Version {
-    files: BTreeMap<String, Vec<u8>>,
-    /// blob name to where it is in the draft
-    blobs: BTreeMap<String, PathBuf>,
-    npm: BTreeMap<String, (PathBuf, String)>,
-    definitions: BTreeMap<String, String>,
+    /// by path in the version's folder
+    pub(crate) files: BTreeMap<String, Vec<u8>>,
+    /// by path in the version's folder (`blobs/<name>`), to where it is in the draft
+    pub(crate) blobs: BTreeMap<String, PathBuf>,
+    pub(crate) npm: BTreeMap<String, (PathBuf, String)>,
+    pub(crate) definitions: BTreeMap<String, String>,
 }
 
 /// What a view folder (a draft's, or a submission's snapshot) needs to go out: checked, compiled, its npm bundled.
@@ -182,6 +183,7 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
         "published": now_iso(),
     });
     files.insert("manifest.json".to_owned(), serde_json::to_vec_pretty(&manifest).expect("json"));
+    let blobs = blobs.into_iter().map(|(b, p)| (format!("blobs/{b}"), p)).collect();
     Ok(Version { files, blobs, npm: npm_files, definitions })
 }
 
@@ -190,7 +192,7 @@ fn version_name(v: &Version) -> ApiResult<String> {
     let mut h = Sha256::new();
     for (name, bytes) in &v.files {
         h.update(name.as_bytes());
-        if name == "manifest.json" {
+        if name == "manifest.json" || name.ends_with("/manifest.json") {
             let mut m: Value = serde_json::from_slice(bytes).map_err(|e| ApiError::Internal(e.to_string()))?;
             m.as_object_mut().map(|o| o.remove("published"));
             h.update(m.to_string().as_bytes());
@@ -215,10 +217,14 @@ fn write(state: &AppState, lesson: &str, name: &str, v: &Version) -> ApiResult<(
     let _ = std::fs::remove_dir_all(&tmp);
     std::fs::create_dir_all(tmp.join("blobs")).map_err(io)?;
     for (file, bytes) in &v.files {
-        std::fs::write(tmp.join(file), bytes).map_err(io)?;
+        let to = tmp.join(file);
+        std::fs::create_dir_all(to.parent().expect("in the folder")).map_err(io)?;
+        std::fs::write(to, bytes).map_err(io)?;
     }
-    for (b, from) in &v.blobs {
-        std::fs::copy(from, tmp.join("blobs").join(b)).map_err(io)?;
+    for (path, from) in &v.blobs {
+        let to = tmp.join(path);
+        std::fs::create_dir_all(to.parent().expect("in the folder")).map_err(io)?;
+        std::fs::copy(from, to).map_err(io)?;
     }
     let npm = state.data.join("npm");
     std::fs::create_dir_all(&npm).map_err(io)?;
@@ -243,11 +249,12 @@ impl AppState {
 
 async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Published>> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
-    if draft.kind != "view" {
-        return Err(ApiError::BadRequest("only a view is published as a lesson, for now".into()));
-    }
     let _guard = state.writes.lock().await;
-    let version = build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: true }).await?;
+    let version = match draft.kind.as_str() {
+        "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: true }).await?,
+        "sequence" => crate::sequence::build(&state, &teacher.0, &draft).await?,
+        _ => return Err(ApiError::BadRequest("a visualization isn't published as a lesson".into())),
+    };
     let previous = state.db.publication_of(&draft.id)?;
     let mut warnings = Vec::new();
     if let Some(p) = &previous {

@@ -21,6 +21,8 @@ export type ViewEnv = {
   setParams(params: Record<string, string>): void;
   /** shows `view` (in a new browser tab with `newTab`, where there are any); whether the app could */
   openView(view: string, params?: Record<string, string>, newTab?: boolean): boolean;
+  /** the view says the learner is through with it; whether anything here goes on from that (a lesson's next step) */
+  done?: () => boolean;
 };
 
 /** Params are a flat map of strings, like a URL's query; anything else is refused before it's kept. */
@@ -172,6 +174,7 @@ export class Bridge {
       case 'setTitle': this.env.setTitle(c.title); return null;
       case 'setParams': this.env.setParams(checkParams(c.params)); return null;
       case 'openView': return this.env.openView(c.view, c.params === undefined ? undefined : checkParams(c.params), c.newTab === true);
+      case 'done': return this.env.done?.() ?? false;
     }
   }
 

@@ -1,0 +1,22 @@
+name: sequence
+version: 1
+description: >-
+  A lesson of several views, played in order: each step is a view (by its draft's id), with at most one rule. A step
+  with `skip_if_known` is skipped when the learner knows that concept (its belief's `p` is at least the core's
+  `known_p`), and can still be done. A step with `detour` first plays its `view` when the learner struggles with its
+  `concept` (practised, and its `p` below a half), then the step itself. Rules name concepts, never other steps: every
+  step feeds them through what it practises. A lesson being made may have no steps yet.
+fields:
+  title: { type: string, required: true }
+  steps:
+    type: list
+    items:
+      type: map
+      fields:
+        view: { type: string, required: true }
+        skip_if_known: { type: string }
+        detour:
+          type: map
+          fields:
+            concept: { type: string, required: true }
+            view: { type: string, required: true }

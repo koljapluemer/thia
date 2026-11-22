@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { ChartSpline, LayoutTemplate, LogOut, Plus, Settings as SettingsIcon } from 'lucide-react';
+import { ChartSpline, LayoutTemplate, ListOrdered, LogOut, Plus, Settings as SettingsIcon } from 'lucide-react';
 import * as api from './api';
 import { loadChoice, saveChoice, type AgentChoice } from './agent';
 import { DraftPane } from './DraftPane';
 import { MoveOffer } from './move';
+import { SequencePane } from './SequencePane';
 import { Settings } from './Settings';
 import { VizPane } from './VizPane';
 import { Areas } from '../router';
@@ -60,6 +61,7 @@ const SELECTED = 'workshop:draft';
 const KINDS: { kind: api.Kind; label: string; icon: typeof Plus; ask: string }[] = [
   { kind: 'view', label: 'View', icon: LayoutTemplate, ask: 'What will it be? A title; you describe it in the chat next.' },
   { kind: 'viz', label: 'Visualization', icon: ChartSpline, ask: 'What will it be? A title; you write its spec next.' },
+  { kind: 'sequence', label: 'Lesson of several views', icon: ListOrdered, ask: 'What will the lesson be? A title; you put its steps together next.' },
 ];
 const KIND = Object.fromEntries(KINDS.map((k) => [k.kind, k])) as Record<api.Kind, (typeof KINDS)[number]>;
 
@@ -121,10 +123,11 @@ function Drafts({ me, onOut }: { me: api.Me; onOut: () => void }) {
               );
             })}
           </ul>
-          {list?.length === 0 && <p className="p-2 text-sm text-base-content/60">Nothing yet: make a view or a visualization.</p>}
+          {list?.length === 0 && <p className="p-2 text-sm text-base-content/60">Nothing yet: make a view, a visualization, or a lesson of several views.</p>}
         </nav>
         <main className="min-w-0 flex-1">
           {current?.kind === 'view' && <DraftPane key={current.id} info={current} me={me} agent={choice} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
+          {current?.kind === 'sequence' && <SequencePane key={current.id} info={current} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
           {current?.kind === 'viz' && <VizPane key={current.id} info={current} onChanged={() => void refresh()} onDeleted={() => { choose(null); void refresh(); }} />}
           {!current && <div className="flex h-full items-center justify-center p-4 text-center text-base-content/60">Pick a draft, or make a new one.</div>}
         </main>
