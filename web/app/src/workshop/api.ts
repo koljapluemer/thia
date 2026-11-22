@@ -79,7 +79,8 @@ export async function resolveNpm(imports: string[], versions: Record<string, str
 /** A lesson of several views, checked as a whole: and the account's views it can pick from, with what they practise. */
 export type SequenceReport = {
   problems: string[]; warnings: string[];
-  views: { id: string; title: string; practises: string[] }[];
+  /** the account's views and visualizations (a viz practises nothing) */
+  views: { id: string; title: string; kind: 'view' | 'viz'; practises: string[] }[];
   /** concept ids to names, where a view's concepts have them */
   concepts: Record<string, string>;
 };

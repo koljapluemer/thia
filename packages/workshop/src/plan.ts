@@ -2,12 +2,13 @@ import instructions from '../agent-template/plan-lesson.md?raw';
 import type { AgentBackend } from './agents/types';
 
 /**
- * How a lesson splits into views, as an agent proposes it: whichever agent (`AgentBackend.complete`, one answer at low
+ * How a lesson splits into views and visualizations, as an agent proposes it: whichever agent (`AgentBackend.complete`, one answer at low
  * effort), checked here the same for all. Nothing is made: taking it is the workshop's.
  */
 export type Concept = { id: string; name: string };
 export type PlannedRule = null | { skip_if_known: string } | { detour: { concept: string; title: string; brief: string } };
-export type PlannedStep = { title: string; does: string; brief: string; practises: Concept[]; rule: PlannedRule };
+/** `kind`: a view (the default), or a visualization, which practises nothing and is played in the vizint view. */
+export type PlannedStep = { kind: 'view' | 'viz'; title: string; does: string; brief: string; practises: Concept[]; rule: PlannedRule };
 export type Plan = { one_view: string } | { title: string; steps: PlannedStep[] };
 
 const CONCEPT_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -40,7 +41,9 @@ export function checkPlan(answer: string): Plan {
   const practised = new Set<string>();
   const steps = (raw.steps as Record<string, unknown>[]).map((s, i): PlannedStep => {
     const n = `step ${i + 1}`;
-    const practises = (Array.isArray(s.practises) ? s.practises : []).map((c: { id?: unknown; name?: unknown }) => {
+    // a viz practises nothing, whatever the plan says: no rule can depend on it
+    const kind = s.kind === 'viz' ? 'viz' : 'view';
+    const practises = (kind === 'viz' || !Array.isArray(s.practises) ? [] : s.practises).map((c: { id?: unknown; name?: unknown }) => {
       const id = str(c?.id, `${n}: a concept's id`);
       if (!CONCEPT_ID.test(id)) throw new Error(`${n}: ${id} isn't a concept id`);
       return { id, name: typeof c.name === 'string' && c.name.trim() ? c.name.trim() : id };
@@ -60,7 +63,7 @@ export function checkPlan(answer: string): Plan {
       const c = practises.find((x) => x.id === detour.concept) ?? { id: detour.concept, name: detour.concept };
       rule = { detour: { ...detour, brief: detour.brief + conceptsLine([c]) } };
     }
-    return { title: str(s.title, `${n}: its title`), does: typeof s.does === 'string' ? s.does.trim() : '', brief: str(s.brief, `${n}: its brief`) + conceptsLine(practises), practises, rule };
+    return { kind, title: str(s.title, `${n}: its title`), does: typeof s.does === 'string' ? s.does.trim() : '', brief: str(s.brief, `${n}: its brief`) + conceptsLine(practises), practises, rule };
   });
   return { title: str(raw.title, 'the lesson\'s title'), steps };
 }

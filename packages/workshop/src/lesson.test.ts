@@ -6,6 +6,8 @@ const ok = { format: 'lesson@1', title: 'der, die, das', runtime: 'abc', reads: 
 describe('a lesson manifest', () => {
   it('is taken as it is', () => {
     expect(parseManifest(ok)).toEqual(ok);
+    // a viz's lesson starts the vizint view on its viz
+    expect(parseManifest({ ...ok, params: { viz: 'wellen' } }).params).toEqual({ viz: 'wellen' });
   });
 
   it('is refused when it asks for more than a lesson gets, or points elsewhere', () => {
@@ -17,6 +19,7 @@ describe('a lesson manifest', () => {
       ['a view elsewhere', { ...ok, view: '../other/view.js' }],
       ['writing what it does not read', { ...ok, writes: ['note@1'] }],
       ['another format', { ...ok, format: 'lesson@2' }],
+      ['params that are not texts', { ...ok, params: { viz: 1 } }],
     ] as const) expect(() => parseManifest(bad), why).toThrow();
   });
 });

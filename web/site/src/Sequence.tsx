@@ -164,7 +164,7 @@ function Player({ repo, lesson, keys }: { repo: Repo; lesson: LoadedSequence; ke
 /** One step's view; its `done` goes on to the next step. */
 function StepFrame({ repo, n, view, stateKey, onDone }: { repo: Repo; n: number; view: LoadedSequence['views'][number]; stateKey: string; onDone: () => void }) {
   const [state] = useState<JsonMap>(() => { try { return JSON.parse(store.get(stateKey) ?? '{}') as JsonMap; } catch { return {}; } });
-  const [params, setParams] = useState<Record<string, string>>({});
+  const [params, setParams] = useState<Record<string, string>>(() => view.manifest.params ?? {});
   // the frame keeps its env: what's done goes to the step as it is now
   const done = useRef(onDone);
   useEffect(() => { done.current = onDone; }, [onDone]);

@@ -7,12 +7,12 @@ import css from '../app.css?inline';
 import { backendFor, type AgentChoice } from './agent';
 import * as api from './api';
 import { Brief, useDebounced } from './Brief';
-import { DeleteButton, ExportButton, Shell, SyncState } from './DraftPane';
+import { DeleteButton, ExportButton, PublishMenu, Shell, SyncState } from './DraftPane';
 import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
 import { Editor } from './viz/Editor';
 
-/** The vizint view shows the viz as the public site will. */
+/** The vizint view shows the viz as the public site will, and as a lesson plays it. */
 const SOURCE = { gestalts: registry.gestalts };
 const NO_NAVIGATION = () => {};
 /** a viz's preview doesn't report errors to the chat: its check renders it after every turn that changed it */
@@ -52,6 +52,7 @@ function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; in
         <>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{viz.title}</span>
           <SyncState />
+          <PublishMenu repo={repo} id={info.id} />
           <SubmitMenu source={`workshop:${info.id}`} ready={Boolean(viz.built)} send={async (offer) => { await repo.connect(api.draftUrl(info.id)); return api.submitDraft(info.id, offer); }} />
           <ExportButton id={info.id} />
           <DeleteButton id={info.id} title={viz.title} onDeleted={onDeleted} />

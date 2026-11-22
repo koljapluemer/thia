@@ -90,6 +90,7 @@ function Loaded({ lesson }: { lesson: Loaded }) {
       npmUrls: Object.fromEntries(Object.entries(manifest.npm).map(([spec, path]) => [spec, new URL(path, location.origin).href])),
       scope: { reads: manifest.reads, writes: manifest.writes },
     },
+    params: manifest.params,
     csp: closedCsp({ scripts: [`${location.origin}/npm/`] }),
   }), [id, manifest, base, js]);
   return <RunPage run={run} />;

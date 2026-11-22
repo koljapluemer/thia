@@ -1,5 +1,5 @@
 //! A lesson of several views (`sequence@1`): a draft holding only its sequence, whose steps are the account's view
-//! drafts. Checked as a whole here, since the steps are other drafts' folders: that every step's view is there, that
+//! and visualization drafts (a viz played in the vizint view). Checked as a whole here, since the steps are other drafts' folders: that every step's view is there, that
 //! the rules' concepts are, and (warnings) whether an earlier step practises what a rule asks about, without which the
 //! rule never applies on a new device. Published as `lesson@2`: each view as a `lesson@1` folder under `views/<n>/`,
 //! and a manifest naming the steps by those, all on the runtime of the page publishing it.
@@ -16,7 +16,7 @@ use serde_json::json;
 
 use crate::auth::Teacher;
 use crate::db::{Account, Draft};
-use crate::publish::{Check, Version, build as build_view};
+use crate::publish::{Check, Version, build as build_view, build_viz};
 use crate::{ApiError, ApiResult, AppState, now_iso};
 
 /// A step as written.
@@ -33,11 +33,13 @@ impl Step {
     }
 }
 
-/// A view draft, as a sequence sees it.
+/// A step's draft, as a sequence sees it: a view, or a visualization (played in the vizint view).
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct StepView {
     pub id: String,
     pub title: String,
+    /// `view` or `viz`
+    pub kind: String,
     /// the concepts it practises: its members that are concepts, and those its members name
     pub practises: Vec<String>,
 }
@@ -71,7 +73,7 @@ fn read(state: &AppState, d: &Draft) -> ApiResult<(String, Vec<Step>)> {
 /// A view draft's title and the concepts it practises, with their names.
 fn view_of(state: &AppState, d: &Draft, names: &mut BTreeMap<String, String>) -> ApiResult<StepView> {
     let store = FsStorage::new(state.draft_dir(&d.id));
-    let Some(text) = store.read_yml_sync(&d.id)? else { return Ok(StepView { id: d.id.clone(), title: d.title.clone(), practises: vec![] }) };
+    let Some(text) = store.read_yml_sync(&d.id)? else { return Ok(StepView { id: d.id.clone(), title: d.title.clone(), kind: d.kind.clone(), practises: vec![] }) };
     let view = Yml::parse(d.id.clone(), text);
     let members: Vec<String> = view.map().and_then(|m| m.get("members")).and_then(|v| v.as_sequence()).into_iter().flatten().filter_map(|v| v.as_str().map(str::to_owned)).collect();
     let mut practises = BTreeSet::new();
@@ -89,13 +91,14 @@ fn view_of(state: &AppState, d: &Draft, names: &mut BTreeMap<String, String>) ->
             practises.insert(c.to_owned());
         }
     }
-    Ok(StepView { id: d.id.clone(), title: view.str_field("title").unwrap_or(&d.title).to_owned(), practises: practises.into_iter().collect() })
+    Ok(StepView { id: d.id.clone(), title: view.str_field("title").unwrap_or(&d.title).to_owned(), kind: d.kind.clone(), practises: practises.into_iter().collect() })
 }
 
 /// The check of the steps as written, against the account's views.
 pub fn check(state: &AppState, account: &Account, steps: &[Step]) -> ApiResult<Report> {
     let mut r = Report::default();
-    for d in state.db.drafts(&account.id)?.into_iter().filter(|d| d.kind == "view") {
+    // a viz practises nothing: it's a step, never what a rule asks about
+    for d in state.db.drafts(&account.id)?.into_iter().filter(|d| d.kind == "view" || d.kind == "viz") {
         r.views.push(view_of(state, &d, &mut r.concepts)?);
     }
     let by_id: BTreeMap<&str, &StepView> = r.views.iter().map(|v| (v.id.as_str(), v)).collect();
@@ -156,7 +159,12 @@ pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft, runtim
     let mut out = Version { files: BTreeMap::new(), blobs: BTreeMap::new(), npm: BTreeMap::new(), definitions: BTreeMap::new() };
     for (i, v) in views.iter().enumerate() {
         let vd = state.db.draft(v, &account.id)?.ok_or_else(|| ApiError::Invalid(vec![format!("step view {v} isn't there")]))?;
-        let one = build_view(state, &Check { dir: &state.draft_dir(&vd.id), view: &vd.id, package: &vd.package, gestalts: &state.gestalts, lesson: Some(runtime) }).await.map_err(|e| match e {
+        let built = if vd.kind == "viz" {
+            build_viz(state, &state.draft_dir(&vd.id), &vd.id, runtime).await
+        } else {
+            build_view(state, &Check { dir: &state.draft_dir(&vd.id), view: &vd.id, package: &vd.package, gestalts: &state.gestalts, lesson: Some(runtime) }).await
+        };
+        let one = built.map_err(|e| match e {
             ApiError::Invalid(p) => ApiError::Invalid(p.into_iter().map(|p| format!("{}: {p}", vd.title)).collect()),
             ApiError::BadRequest(m) => ApiError::BadRequest(format!("{}: {m}", vd.title)),
             e => e,

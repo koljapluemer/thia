@@ -29,12 +29,14 @@ export type LessonManifest = {
   npm: Record<string, string>;
   /** when this version was published, ISO */
   published: string;
+  /** where the view starts (a viz's lesson: the vizint view, on that viz); a link's own params win */
+  params?: Record<string, string>;
 };
 
 /** A lesson's id in its link: 128 random bits, base64url. */
 export const LESSON_ID = /^[A-Za-z0-9_-]{22}$/;
 
-const KEYS = ['format', 'title', 'runtime', 'reads', 'writes', 'view', 'npm', 'published'];
+const KEYS = ['format', 'title', 'runtime', 'reads', 'writes', 'view', 'npm', 'published', 'params'];
 const NPM_PATH = /^\/npm\/[A-Za-z0-9._@+-]+\.js$/;
 
 /**
@@ -57,7 +59,11 @@ export function parseManifest(v: unknown): LessonManifest {
   const writes = list('writes');
   const reads = list('reads');
   for (const g of writes) if (!reads.includes(g)) throw new Error(`it writes ${g} without reading it`);
-  return { format: LESSON, title: text('title'), runtime: text('runtime'), reads, writes, view, npm: npm as Record<string, string>, published: text('published') };
+  const params = m.params;
+  if (params !== undefined && (typeof params !== 'object' || params === null || Array.isArray(params) || !Object.values(params).every((x) => typeof x === 'string'))) throw new Error('params must map names to texts');
+  const out: LessonManifest = { format: LESSON, title: text('title'), runtime: text('runtime'), reads, writes, view, npm: npm as Record<string, string>, published: text('published') };
+  if (params) out.params = params as Record<string, string>;
+  return out;
 }
 
 /**

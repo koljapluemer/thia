@@ -125,10 +125,6 @@ async fn drafts_of_each_kind() {
     let listed = list.as_array().unwrap().iter().find(|d| d["id"] == id).unwrap();
     assert_eq!((listed["title"].as_str(), listed["kind"].as_str()), (Some("Wellen sehen"), Some("viz")), "the viz's title shows in the list");
 
-    // the server's agent makes views; a viz isn't published as a lesson
-    let (_, status, _) = s.call("GET", &format!("{base}/agent/status"), Some(&ada), None).await;
-    assert_eq!(status["available"], false);
-    assert_eq!(s.call("POST", &format!("{base}/publish"), Some(&ada), None).await.0, StatusCode::BAD_REQUEST);
 
     // exported as the folder the server keeps
     let (status, h, zip) = s.bytes("GET", &format!("{base}/export"), &ada, vec![]).await;

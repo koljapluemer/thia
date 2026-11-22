@@ -22,6 +22,8 @@ export type Run = {
   /** the data it opens on, read-only */
   deck: DeckSource;
   view: RunnableView;
+  /** where the view starts, when the link doesn't say */
+  params?: Record<string, string>;
   csp?: string;
   /** a way back, where there's somewhere to go back to */
   back?: () => void;
@@ -83,17 +85,17 @@ export async function forget(dir: string, repo: Repo | undefined) {
   } catch { /* still open somewhere, or no OPFS: it stays, unused */ }
 }
 
-const paramsOfHash = (): Record<string, string> => Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+const paramsOfHash = (start: Record<string, string> = {}): Record<string, string> => (location.hash.length > 1 ? Object.fromEntries(new URLSearchParams(location.hash.slice(1))) : start);
 
 /** The view, where it is (its params) in the URL's hash: a link opens it there, and going back goes back in it. */
 function Frame({ repo, run }: { repo: Repo; run: Run }) {
   const [state] = useState<JsonMap>(() => { try { return JSON.parse(store.get(run.keys.state) ?? '{}') as JsonMap; } catch { return {}; } });
-  const [params, setParams] = useState(paramsOfHash);
+  const [params, setParams] = useState(() => paramsOfHash(run.params));
   useEffect(() => {
-    const update = () => setParams(paramsOfHash());
+    const update = () => setParams(paramsOfHash(run.params));
     addEventListener('popstate', update);
     return () => removeEventListener('popstate', update);
-  }, []);
+  }, [run.params]);
   const env = useMemo<ViewEnv>(() => ({
     setState: (s) => store.set(run.keys.state, JSON.stringify(s)),
     setTitle: () => {},

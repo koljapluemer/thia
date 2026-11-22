@@ -218,3 +218,58 @@ async fn a_lesson_of_several_views_is_checked_as_a_whole_and_goes_out_as_one() {
     let (_, again, _) = s.call("POST", &format!("{at}/publish"), Some(&d.cookie), Some(json!({ "runtime": RUNTIME }))).await;
     assert_eq!(again["manifest"], p["manifest"]);
 }
+
+/// A viz draft of ada's, with its page (`built`) unless `built` is false.
+async fn viz(s: &Server, cookie: &str, title: &str, built: bool) -> String {
+    let (_, d, _) = s.call("POST", "/api/drafts", Some(cookie), Some(json!({ "title": title, "kind": "viz" }))).await;
+    let id = d["id"].as_str().unwrap().to_owned();
+    let mut yml = format!("id: {id}\ngestalt: viz@1\ntitle: {title}\nspec: Eine Welle.\nsource: 'export default 1;'\n");
+    if built {
+        assert_eq!(s.bytes("PUT", &format!("/api/drafts/{id}/blobs/page.html"), cookie, b"<!doctype html><p>a viz</p>".to_vec()).await.0, StatusCode::NO_CONTENT);
+        yml.push_str("built: page.html\n");
+    }
+    assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(cookie), Some(json!([{ "id": id, "text": yml }]))).await.0, StatusCode::NO_CONTENT);
+    id
+}
+
+#[tokio::test]
+async fn a_visualization_goes_out_alone_or_as_a_step_beside_views() {
+    let s = Server::new(Limits::default());
+    let d = draft(&s).await;
+    async fn publish(s: &Server, cookie: &str, id: &str) -> (StatusCode, Value, Option<String>) {
+        s.call("POST", &format!("/api/drafts/{id}/publish"), Some(cookie), Some(json!({ "runtime": RUNTIME }))).await
+    }
+
+    // not before it's built
+    let raw = viz(&s, &d.cookie, "Roh", false).await;
+    let (status, body, _) = publish(&s, &d.cookie, &raw).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY, "{body}");
+    assert!(body["problems"][0].as_str().unwrap().contains("built"), "{body}");
+
+    // alone: the vizint view, started on it, with it and its page as the deck
+    let waves = viz(&s, &d.cookie, "Wellen", true).await;
+    let (status, p, _) = publish(&s, &d.cookie, &waves).await;
+    assert_eq!(status, StatusCode::OK, "{p}");
+    let manifest: Value = serde_json::from_slice(&s.lessons(p["manifest"].as_str().unwrap()).await.2).unwrap();
+    assert_eq!((manifest["format"].as_str(), manifest["reads"].clone(), manifest["writes"].clone(), manifest["params"].clone()), (Some("lesson@1"), json!(["viz@1"]), json!([]), json!({ "viz": waves })), "{manifest}");
+    let base = p["manifest"].as_str().unwrap().trim_end_matches("manifest.json").to_owned();
+    assert_eq!(s.lessons(&format!("{base}blobs/page.html")).await.0, StatusCode::OK);
+    assert_eq!(s.lessons(&format!("{base}{}", manifest["view"].as_str().unwrap())).await.0, StatusCode::OK);
+
+    // a step of a lesson, after a view: one of the account's drafts to pick from
+    let view = view_practising(&s, &d.cookie, "Kurzer Check", "zehner").await;
+    let (_, q, _) = s.call("POST", "/api/drafts", Some(&d.cookie), Some(json!({ "title": "Wellen und Zahlen", "kind": "sequence" }))).await;
+    let id = q["id"].as_str().unwrap().to_owned();
+    let steps = format!("id: {id}\ngestalt: sequence@1\ntitle: Wellen und Zahlen\nsteps:\n  - view: {view}\n  - view: {waves}\n");
+    assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&d.cookie), Some(json!([{ "id": id, "text": steps }]))).await.0, StatusCode::NO_CONTENT);
+    let (_, r, _) = s.call("GET", &format!("/api/drafts/{id}/sequence"), Some(&d.cookie), None).await;
+    assert_eq!(r["problems"], json!([]), "{r}");
+    let picked = r["views"].as_array().unwrap().iter().find(|v| v["id"] == waves.as_str()).unwrap();
+    assert_eq!((picked["kind"].as_str(), picked["practises"].clone()), (Some("viz"), json!([])));
+    let (status, p, _) = publish(&s, &d.cookie, &id).await;
+    assert_eq!(status, StatusCode::OK, "{p}");
+    let base = p["manifest"].as_str().unwrap().trim_end_matches("manifest.json").to_owned();
+    let step: Value = serde_json::from_slice(&s.lessons(&format!("{base}views/1/manifest.json")).await.2).unwrap();
+    assert_eq!((step["title"].as_str(), step["params"]["viz"].as_str()), (Some("Wellen"), Some(waves.as_str())), "{step}");
+    assert_eq!(s.lessons(&format!("{base}views/1/blobs/page.html")).await.0, StatusCode::OK);
+}

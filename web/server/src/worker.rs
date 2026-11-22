@@ -50,6 +50,11 @@ impl Worker {
         &self.config
     }
 
+    /// The repo checkout the worker and the agent template are in (`packages/workshop/agent-template`'s).
+    pub fn repo(&self) -> PathBuf {
+        self.config.template.ancestors().nth(3).map_or_else(|| PathBuf::from("."), std::path::Path::to_path_buf)
+    }
+
     fn spawn(&self) -> Result<Running, String> {
         let mut child = Command::new(&self.config.node)
             .arg(&self.config.script)

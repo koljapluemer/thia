@@ -17,4 +17,13 @@ describe('a plan', () => {
     expect(() => checkPlan('{"title": "x", "steps": [{"title": "a", "brief": "c", "practises": [{"id": "Bad Id"}]}]}')).toThrow();
     expect(() => checkPlan('no plan')).toThrow();
   });
+
+  it('may have a visualization as a step, which practises nothing', () => {
+    const p = checkPlan('{"title": "Wellen", "steps": ['
+      + '{"kind": "viz", "title": "Eine Welle", "does": "zieht", "brief": "Eine Welle, Frequenz ziehbar.", "practises": [{"id": "frequenz", "name": "Frequenz"}], "rule": null},'
+      + '{"title": "Check", "does": "3 Fragen", "brief": "Drei Fragen.", "practises": [{"id": "frequenz", "name": "Frequenz"}], "rule": null}]}');
+    if (!('steps' in p)) throw new Error('steps');
+    expect(p.steps.map((s) => s.kind)).toEqual(['viz', 'view']);
+    expect(p.steps[0]).toMatchObject({ practises: [], brief: 'Eine Welle, Frequenz ziehbar.' });
+  });
 });

@@ -5,6 +5,12 @@ ordered list of steps; each step is one view, with at most one rule:
 - `skip_if_known`: the step is skipped when the student already knows that concept well
 - `detour`: when the student struggles with that concept, an extra, easier view is played first, then the step
 
+A step may instead be a visualization (`"kind": "viz"`): one interactive picture of a mechanism that the student
+explores by dragging and changing what can be changed, between a short text before and after it. It practises no
+concept, so no rule can depend on it, and its brief is the spec of what it shows and what the student can change. Use
+one where watching a mechanism move is the point (a curve built step by step, a population over time), never for
+practice, and rarely more than one per lesson.
+
 Rules name concepts, never other steps. A concept is one thing a student practises (an id in lowercase letters,
 digits and `-`, and a name in the teacher's language). A view practises the concepts its brief names, and only those.
 A rule only applies once some earlier step practised its concept: the lesson starts with nothing known. So a rule
@@ -25,13 +31,14 @@ Answer with JSON only, no prose, no code fence, one of:
 
 {"title": "<the lesson's title>",
  "steps": [
-   {"title": "<the view's title>",
+   {"kind": "view",
+    "title": "<the view's title>",
     "does": "<what the student does, one line, for the teacher>",
     "brief": "<the brief>",
     "practises": [{"id": "<concept id>", "name": "<concept name>"}],
     "rule": null}
  ]}
 
-where `rule` is null, `{"skip_if_known": "<concept id>"}`, or
+where `kind` is `view` or `viz` (a visualization, with `practises` empty), `rule` is null, `{"skip_if_known": "<concept id>"}`, or
 `{"detour": {"concept": "<concept id>", "title": "<the extra view's title>", "brief": "<its brief>"}}`; the extra view
 practises the detour's concept.
