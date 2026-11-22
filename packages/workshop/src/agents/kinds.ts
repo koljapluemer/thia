@@ -7,7 +7,7 @@ import type { TurnRequest } from './types';
 
 /**
  * What an agent is told and given for each kind of draft it works on, whichever backend runs it. `system` and `keep`
- * come from `agent-template/kinds/<kind>.json`, which the server's agent reads too; `brief.md` goes before them.
+ * (and the check tool's description) come from `agent-template/kinds/<kind>.json`, which the server's agent reads too; `brief.md` goes before them.
  */
 export type AgentKind = 'view' | 'viz';
 
@@ -28,8 +28,8 @@ export const BRIEF = String(Object.values(briefs)[0] ?? '').trim();
 const bytesOf = (binary: Record<string, string> = {}) => Object.fromEntries(Object.entries(binary).map(([p, b]) => [p, fromBase64(b)]));
 
 export const contracts: Record<AgentKind, KindContract> = {
-  view: { ...view, template: viewTemplate, tools: (req) => [viewCheckTool(req.gestalts), askTool()] },
-  viz: { ...viz, template: vizTemplate, tools: (req) => [vizCheckTool(bytesOf(req.binary)), askTool()] },
+  view: { system: view.system, keep: view.keep, template: viewTemplate, tools: (req) => [viewCheckTool(req.gestalts), askTool()] },
+  viz: { system: viz.system, keep: viz.keep, template: vizTemplate, tools: (req) => [vizCheckTool(bytesOf(req.binary)), askTool()] },
 };
 
 /** The system text for a kind: the brief, then the kind's. */

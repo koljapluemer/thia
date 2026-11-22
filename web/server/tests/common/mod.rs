@@ -23,6 +23,7 @@ pub fn services(model: Option<String>, cache: &std::path::Path) -> Services {
         model: Model { api_key: model.as_ref().map(|_| "test-key".into()), base_url: model.unwrap_or_default(), model: "claude-opus-5-5".into() },
         lesson_origin: "https://lessons.example".into(),
         promote_into: None,
+        viz_render: gestalts_teacher::agent::VizRender::Page,
     }
 }
 

@@ -6,6 +6,8 @@
 //   page, the agents and publishing all run), plus whether each npm package it pins bundles: `{ok, output, problems}`,
 //   `problems` each failing line on its own
 // - `check-draft {ymls, view, gestalts}`: the same, on a draft as ymls (publishing, submissions)
+// - `check-viz {files, binary}`: `checkViz` on a viz as the agent sees it (`binary`: its `files/`, base64), rendered in
+//   headless Chromium (`render.ts`): `{ok, content}`, the report and a screenshot of each size as MCP content
 // - `compile {source}`: the view as the frame loads it
 // - `npm {specifier, version}`: one bundle, from the cache when it was made before
 //
@@ -13,13 +15,14 @@
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
-import { checkView } from '@gestalts/check';
+import { checkView, checkViz, type Files } from '@gestalts/check';
 import { nodePlatform } from '@gestalts/check/node';
 import { compile } from '@gestalts/view/compile';
 import type { Item, JsonMap } from '@gestalts/view';
 import { bundle, isVersion, packageName, resolveVersion } from '@gestalts/npm-bundle';
 import { asDraft, filesOf } from '@gestalts/workshop/draft';
 import { parse } from 'yaml';
+import { render } from './render.ts';
 
 const CACHE = resolve(process.env.TEACHER_NPM_CACHE ?? join(tmpdir(), 'gestalts-npm-cache'));
 
@@ -81,10 +84,21 @@ function draftFiles(ymls: { id: string; text: string }[], view: string): Record<
   return filesOf(draft, draft.members.flatMap((m) => items.get(m) ?? []));
 }
 
+/** A viz's check with the render, as the agent's `check` tool answers. */
+async function checkVizHere(files: Record<string, string>, binary: Record<string, string>) {
+  const bytes: Files = Object.fromEntries(Object.entries(binary).map(([p, b64]) => [p, new Uint8Array(Buffer.from(b64, 'base64'))]));
+  const r = await checkViz({ ...bytes, ...files }, { ...nodePlatform, render });
+  return {
+    ok: r.ok,
+    content: [{ type: 'text', text: r.report }, ...r.shots.map((s) => ({ type: 'image', data: Buffer.from(s.png).toString('base64'), mimeType: 'image/png' }))],
+  };
+}
+
 async function handle(req: Request): Promise<unknown> {
   switch (req.op) {
     case 'check': return check(req.files as Record<string, string>, (req.gestalts as string[]) ?? []);
     case 'check-draft': return check(draftFiles(req.ymls as { id: string; text: string }[], String(req.view)), (req.gestalts as string[]) ?? []);
+    case 'check-viz': return checkVizHere(req.files as Record<string, string>, (req.binary as Record<string, string>) ?? {});
     case 'compile': return compile(String(req.source ?? ''));
     case 'npm': return bundle(String(req.specifier), String(req.version), { cacheDir: CACHE });
     default: throw new Error(`no op ${req.op}`);

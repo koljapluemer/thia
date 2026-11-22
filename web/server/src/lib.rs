@@ -133,6 +133,8 @@ pub struct Services {
     pub model: agent::Model,
     pub lesson_origin: String,
     pub promote_into: Option<PathBuf>,
+    /// where a viz's check renders it for the server's agent
+    pub viz_render: agent::VizRender,
 }
 
 #[derive(Clone)]
@@ -153,7 +155,7 @@ impl AppState {
         let all = model_texts(&repo_models())?;
         let all: Vec<&str> = all.iter().map(String::as_str).collect();
         let repo_gestalts = Gestalts::builtin_with(&all)?;
-        let agents = agent::Agents::new(services.model, agent::Reference::new(services.worker.template.clone()));
+        let agents = agent::Agents::new(services.model, agent::Reference::new(services.worker.template.clone()), services.viz_render);
         let worker = worker::Worker::new(services.worker.clone());
         Ok(AppState(Arc::new(Inner {
             db,

@@ -118,6 +118,13 @@ impl Worker {
         Ok((r["ok"].as_bool().unwrap_or(false), r["output"].as_str().unwrap_or_default().to_owned()))
     }
 
+    /// A viz's check (`@gestalts/check`'s `checkViz`), rendered in headless Chromium (`VizRender::Worker`): whether it
+    /// passed, and its report and screenshots as MCP content. `binary` is its `files/`, as base64.
+    pub async fn check_viz(&self, files: &std::collections::BTreeMap<String, String>, binary: &std::collections::BTreeMap<String, String>) -> Result<(bool, Vec<Value>), String> {
+        let r = self.call("check-viz", json!({ "files": files, "binary": binary })).await?;
+        Ok((r["ok"].as_bool().unwrap_or(false), r["content"].as_array().cloned().unwrap_or_default()))
+    }
+
     /// The same check on a draft as ymls (its view `view` among them): each problem, none when it passed.
     pub async fn check_draft(&self, ymls: &std::collections::BTreeMap<String, String>, view: &str, gestalts: &[String]) -> Result<Vec<String>, String> {
         let ymls: Vec<_> = ymls.iter().map(|(id, text)| json!({ "id": id, "text": text })).collect();

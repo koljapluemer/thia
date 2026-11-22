@@ -1,5 +1,7 @@
 import type { CheckResult, Files } from '@gestalts/check';
 import ask from '../../agent-template/ask.json';
+import view from '../../agent-template/kinds/view.json';
+import viz from '../../agent-template/kinds/viz.json';
 import { toBase64 } from '../base64';
 import type { Answers, Question } from './types';
 
@@ -35,7 +37,7 @@ const fail = (e: unknown): ToolResult => ({ content: [{ type: 'text', text: `the
 export function viewCheckTool(gestalts: string[]): AgentTool {
   return {
     name: 'check',
-    description: 'Compiles and typechecks view.tsx as the workshop does, checks view.json, gestalts/ and data/, and that each npm import is pinned in view.json. Run it before you finish.',
+    description: view.check,
     inputSchema: NO_INPUT,
     async run(_input, files) {
       try {
@@ -52,7 +54,7 @@ export function viewCheckTool(gestalts: string[]): AgentTool {
 export function vizCheckTool(extra: Files): AgentTool {
   return {
     name: 'check',
-    description: 'Typechecks viz.ts, runs its checks, builds the page (with the packages in package.json) and renders it at 360 and 1000 px, light and dark, with the network blocked. Returns what failed and a screenshot of each. Run it before you finish.',
+    description: viz.check,
     inputSchema: NO_INPUT,
     async run(_input, files) {
       try {

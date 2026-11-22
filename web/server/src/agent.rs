@@ -49,49 +49,114 @@ const ASK: &str = include_str!("../../../packages/workshop/agent-template/ask.js
 const MAX_FILE_BYTES: usize = 512 * 1024;
 const MAX_READ_BYTES: usize = 200 * 1024;
 
-/// What a draft is, as files; anything else the agent writes is refused.
-pub fn is_draft_file(path: &str) -> bool {
-    if matches!(path, "view.tsx" | "view.json") {
-        return true;
-    }
-    if let Some(rest) = path.strip_prefix("gestalts/") {
-        let Some(stem) = rest.strip_suffix(".yml") else { return false };
-        let Some((name, v)) = stem.split_once('@') else { return false };
-        return !name.is_empty() && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-') && !v.is_empty() && !v.starts_with('0') && v.bytes().all(|b| b.is_ascii_digit());
-    }
-    if let Some(rest) = path.strip_prefix("data/") {
-        let Some(id) = rest.strip_suffix(".yml") else { return false };
-        return gestalts_core::yml::valid_key(id);
-    }
-    false
+/// Who the agent makes things for, before any kind's contract: the same text the Claude bridge's agent gets.
+const BRIEF: &str = include_str!("../../../packages/workshop/agent-template/brief.md");
+const VIEW_KIND: &str = include_str!("../../../packages/workshop/agent-template/kinds/view.json");
+const VIZ_KIND: &str = include_str!("../../../packages/workshop/agent-template/kinds/viz.json");
+
+/// How a visualization's check renders it here (`GESTALTS_VIZ_RENDER`): headless Chromium in the worker, or handed to
+/// the workshop page the turn was started from, as the Claude bridge hands every tool to it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum VizRender {
+    Worker,
+    #[default]
+    Page,
 }
 
-/// Where the agent reads the kit and examples: the agent template, which links the packages' sources.
-pub struct Reference {
-    template: PathBuf,
+impl std::str::FromStr for VizRender {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, String> {
+        match s {
+            "worker" => Ok(VizRender::Worker),
+            "page" => Ok(VizRender::Page),
+            other => Err(format!("GESTALTS_VIZ_RENDER: worker or page, not {other}")),
+        }
+    }
 }
 
-impl Reference {
-    pub fn new(template: PathBuf) -> Self {
-        Reference { template }
+/// What the agent works on and with for one kind of draft. `agent-template/kinds/<kind>.json` is shared with the page:
+/// what it's told about the kind, which paths are the draft, the check's description. The rest is this agent's own,
+/// as its file tools are (the CLI has its own): what it may read besides the draft, and how those tools are described.
+pub struct KindRef {
+    kind: &'static str,
+    told: String,
+    keep: regex::Regex,
+    check: String,
+    contract: PathBuf,
+    /// readable, not writable: a path prefix and the folder it is
+    mounts: Vec<(String, PathBuf)>,
+    /// what may be deleted (prefixes of the draft's paths)
+    deletable: &'static [&'static str],
+    /// what the draft is and what else may be read, for the tools' paragraph
+    draft_files: &'static str,
+    readable: &'static str,
+    example_path: &'static str,
+}
+
+impl KindRef {
+    fn new(kind: &'static str, json: &str, contract: PathBuf, mounts: Vec<(String, PathBuf)>) -> Self {
+        let v: Value = serde_json::from_str(json).expect("the kind's json is JSON");
+        let s = |k: &str| v[k].as_str().unwrap_or_else(|| panic!("{kind}.json: no {k}")).to_owned();
+        let keep = regex::Regex::new(&format!("^(?:{})$", s("keep"))).expect("the kind's keep is a regex");
+        let (deletable, draft_files, readable, example_path): (&[&str], _, _, _) = match kind {
+            "view" => (&["gestalts/", "data/"], "`view.tsx`, `view.json`, `gestalts/` and `data/`", "`SPEC.md`, the kit's sources (`node_modules/@gestalts/<package>/src/…`) and `examples/`", "e.g. view.tsx, gestalts/noun@1.yml, data/haus.yml, examples/noun-gender/view.tsx"),
+            _ => (&[], "`viz.ts` and `package.json`", "`SPEC.md`, `files/`, `@gestalts/viz`'s sources (`viz-sources/`) and `examples/`", "e.g. viz.ts, package.json, SPEC.md, files/data.csv, viz-sources/marks.ts"),
+        };
+        KindRef { kind, told: s("system"), keep, check: s("check"), contract, mounts, deletable, draft_files, readable, example_path }
     }
 
-    /// The contract, from the template's CLAUDE.md, with how it applies here. Fixed text, so it caches.
-    pub fn system(&self) -> Result<String, String> {
-        let contract = std::fs::read_to_string(self.template.join("CLAUDE.md")).map_err(|e| format!("the agent's contract: {e}"))?;
-        Ok(format!("{PREFACE}\n\n{contract}"))
+    pub fn is_draft_file(&self, path: &str) -> bool {
+        self.keep.is_match(path)
     }
 
-    /// A path under `examples/` or `node_modules/@gestalts/<package>/src/`, as a file there, or `None`.
+    /// The brief, how this agent's tools work, the kind's instructions and its contract. Fixed text, so it caches.
+    fn system(&self) -> Result<String, String> {
+        let contract = std::fs::read_to_string(&self.contract).map_err(|e| format!("the {} agent's contract ({}): {e}", self.kind, self.contract.display()))?;
+        let delete = if self.deletable.is_empty() { "" } else { ", `delete_file`" };
+        let tools = format!(
+            "Here the folder below is not a disk: you work on the draft's files through tools. `read_file`, `write_file`, \
+             `edit_file`{delete} and `list_files` work on {}; {} can be read and listed, not written; `search` finds text \
+             in all of them; `check` is the contract's check. There is no shell.",
+            self.draft_files, self.readable
+        );
+        Ok(format!("{}\n\n{tools}\n\n{}\n\n{contract}", BRIEF.trim(), self.told))
+    }
+
+    fn tools(&self) -> Value {
+        let path = json!({ "type": "string", "description": self.example_path });
+        let mut tools = vec![
+            json!({ "name": "list_files", "description": "Lists the draft's files and what may be read besides, or with `path` a folder of what may be read.",
+              "input_schema": { "type": "object", "properties": { "path": path }, "additionalProperties": false } }),
+            json!({ "name": "read_file", "description": "Reads a file of the draft, or one that may be read besides.",
+              "input_schema": { "type": "object", "properties": { "path": path }, "required": ["path"], "additionalProperties": false } }),
+            json!({ "name": "write_file", "description": format!("Writes a whole file of the draft: {}.", self.draft_files),
+              "input_schema": { "type": "object", "properties": { "path": path, "content": { "type": "string" } }, "required": ["path", "content"], "additionalProperties": false } }),
+            json!({ "name": "edit_file", "description": "Replaces `old_string` with `new_string` in a file of the draft. `old_string` must occur exactly once, unless `replace_all`.",
+              "input_schema": { "type": "object", "properties": { "path": path, "old_string": { "type": "string" }, "new_string": { "type": "string" }, "replace_all": { "type": "boolean" } }, "required": ["path", "old_string", "new_string"], "additionalProperties": false } }),
+        ];
+        if !self.deletable.is_empty() {
+            tools.push(json!({ "name": "delete_file", "description": format!("Deletes a file of the draft under {}.", self.deletable.join(" or ")),
+              "input_schema": { "type": "object", "properties": { "path": path }, "required": ["path"], "additionalProperties": false } }));
+        }
+        tools.push(json!({ "name": "search", "description": "Finds lines containing `text` (case-insensitive) in the draft and in what may be read; `path` limits it to a folder or file.",
+          "input_schema": { "type": "object", "properties": { "text": { "type": "string" }, "path": path }, "required": ["text"], "additionalProperties": false } }));
+        tools.push(json!({ "name": "check", "description": self.check, "input_schema": { "type": "object", "properties": {}, "additionalProperties": false } }));
+        tools.push(serde_json::from_str::<Value>(ASK).expect("ask.json is JSON"));
+        Value::Array(tools)
+    }
+
+    /// A path under one of the readable folders, as a file there, or `None`.
     fn resolve(&self, path: &str) -> Option<PathBuf> {
         if path.split('/').any(|p| p == ".." || p.is_empty() || p == ".") {
             return None;
         }
-        let allowed = path.starts_with("examples/") || path == "examples" || ["view", "kit", "learning", "sources"].iter().any(|p| {
-            let root = format!("node_modules/@gestalts/{p}/src");
-            path == root || path.starts_with(&format!("{root}/"))
-        });
-        allowed.then(|| self.template.join(path))
+        self.mounts.iter().find_map(|(prefix, dir)| {
+            if path == prefix {
+                Some(dir.clone())
+            } else {
+                path.strip_prefix(&format!("{prefix}/")).map(|rest| dir.join(rest))
+            }
+        })
     }
 
     fn read(&self, path: &str) -> Option<String> {
@@ -113,7 +178,7 @@ impl Reference {
         Some(out)
     }
 
-    /// Every file under the readable roots, for searching.
+    /// Every file under the readable folders, for searching.
     fn files(&self) -> Vec<String> {
         fn walk(dir: &FsPath, rel: &str, out: &mut Vec<String>, depth: usize) {
             let Ok(entries) = std::fs::read_dir(dir) else { return };
@@ -128,81 +193,83 @@ impl Reference {
             }
         }
         let mut out = Vec::new();
-        walk(&self.template.join("examples"), "examples", &mut out, 0);
-        for p in ["view", "kit", "learning", "sources"] {
-            let root = format!("node_modules/@gestalts/{p}/src");
-            walk(&self.template.join(&root), &root, &mut out, 0);
+        for (prefix, dir) in &self.mounts {
+            walk(dir, prefix, &mut out, 0);
         }
         out.sort();
         out
     }
 }
 
-const PREFACE: &str = "\
-You are making an interactive learning view for a teacher, for their class. When it's done they publish it, and \
-their students open it on school devices (old iPads and Chromebooks among them): keep it light, and make it work \
-well with touch and on a small screen. A published view reaches no server: no fetch, no external images or fonts; \
-npm packages are bundled and pinned. Speak to the teacher plainly, in the language they write in; they are not \
-programmers.
-
-Here the folder below is not a disk: you work on the draft's files through tools. `read_file`, `write_file`, \
-`edit_file`, `delete_file` and `list_files` work on `view.tsx`, `view.json`, `gestalts/` and `data/`; the kit's \
-sources (`node_modules/@gestalts/<package>/src/…`) and `examples/` can be read and listed, not written; `search` \
-finds text in all of them; `check` is the contract's check. There is no shell.";
-
-fn tools() -> Value {
-    let path = json!({ "type": "string", "description": "e.g. view.tsx, gestalts/noun@1.yml, data/haus.yml, examples/noun-gender/view.tsx" });
-    json!([
-        { "name": "list_files", "description": "Lists the draft's files, or with `path` a folder of the kit's sources or examples.",
-          "input_schema": { "type": "object", "properties": { "path": path }, "additionalProperties": false } },
-        { "name": "read_file", "description": "Reads a file of the draft, the kit's sources or the examples.",
-          "input_schema": { "type": "object", "properties": { "path": path }, "required": ["path"], "additionalProperties": false } },
-        { "name": "write_file", "description": "Writes a whole file of the draft: view.tsx, view.json, gestalts/<name>@<N>.yml or data/<id>.yml.",
-          "input_schema": { "type": "object", "properties": { "path": path, "content": { "type": "string" } }, "required": ["path", "content"], "additionalProperties": false } },
-        { "name": "edit_file", "description": "Replaces `old_string` with `new_string` in a file of the draft. `old_string` must occur exactly once, unless `replace_all`.",
-          "input_schema": { "type": "object", "properties": { "path": path, "old_string": { "type": "string" }, "new_string": { "type": "string" }, "replace_all": { "type": "boolean" } }, "required": ["path", "old_string", "new_string"], "additionalProperties": false } },
-        { "name": "delete_file", "description": "Deletes a file of the draft under gestalts/ or data/.",
-          "input_schema": { "type": "object", "properties": { "path": path }, "required": ["path"], "additionalProperties": false } },
-        { "name": "search", "description": "Finds lines containing `text` (case-insensitive) in the draft, the kit's sources and the examples; `path` limits it to a folder or file.",
-          "input_schema": { "type": "object", "properties": { "text": { "type": "string" }, "path": path }, "required": ["text"], "additionalProperties": false } },
-        { "name": "check", "description": "Compiles and typechecks view.tsx as the workshop does, checks view.json, gestalts/ and data/, and that each npm import is pinned in view.json and bundles. Run it before you finish.",
-          "input_schema": { "type": "object", "properties": {}, "additionalProperties": false } },
-        serde_json::from_str::<Value>(ASK).expect("ask.json is JSON")
-    ])
+/// Where the agent reads what it works against, by kind. A view's: the agent template, which links the packages'
+/// sources. A viz's: `@gestalts/viz` (`packages/viz`, beside the template's package).
+pub struct Reference {
+    view: KindRef,
+    viz: KindRef,
 }
+
+impl Reference {
+    pub fn new(template: PathBuf) -> Self {
+        let mut view_mounts = vec![("examples".to_owned(), template.join("examples"))];
+        for p in ["view", "kit", "learning", "sources"] {
+            let root = format!("node_modules/@gestalts/{p}/src");
+            view_mounts.push((root.clone(), template.join(&root)));
+        }
+        let viz = template.join("../../viz");
+        let viz_mounts = vec![("examples".to_owned(), viz.join("examples")), ("viz-sources".to_owned(), viz.join("src"))];
+        Reference {
+            view: KindRef::new("view", VIEW_KIND, template.join("CLAUDE.md"), view_mounts),
+            viz: KindRef::new("viz", VIZ_KIND, viz.join("agent/CLAUDE.md"), viz_mounts),
+        }
+    }
+
+    /// The kind of draft the agent works on, if it works on it (a lesson of several views it only plans).
+    pub fn kind(&self, kind: &str) -> Option<&KindRef> {
+        match kind {
+            "view" => Some(&self.view),
+            "viz" => Some(&self.viz),
+            _ => None,
+        }
+    }
+}
+
+/// A tool's result for the model: its content (a text, or text and images), and whether it failed.
+type ToolOut = (Value, bool);
 
 /// The draft's files during a turn, and what the turn may read besides.
 struct Workspace<'a> {
     files: BTreeMap<String, String>,
+    /// read-only: the brief (`SPEC.md`), a viz's `files/` as text where they are
+    extra: BTreeMap<String, String>,
     gestalts: &'a [String],
-    reference: &'a Reference,
+    kind: &'a KindRef,
 }
 
 impl Workspace<'_> {
-    /// What a tool did, as its result text, or an error the model sees.
-    async fn run(&mut self, name: &str, input: &Value, worker: &crate::worker::Worker) -> Result<String, String> {
+    /// What a file tool did, as its result text, or an error the model sees. `check` is the turn's (`check`).
+    fn run(&mut self, name: &str, input: &Value) -> Result<String, String> {
         let s = |k: &str| input.get(k).and_then(Value::as_str);
         let need = |k: &str| s(k).ok_or_else(|| format!("`{k}` is missing"));
         match name {
             "list_files" => match s("path").filter(|p| !p.is_empty() && *p != ".") {
-                None => Ok(self.files.keys().cloned().collect::<Vec<_>>().join("\n")),
+                None => Ok(self.files.keys().chain(self.extra.keys()).cloned().collect::<Vec<_>>().join("\n")),
                 Some(p) => {
                     let p = p.trim_end_matches('/');
-                    let mine: Vec<String> = self.files.keys().filter(|f| f.starts_with(&format!("{p}/"))).cloned().collect();
-                    if !mine.is_empty() || matches!(p, "gestalts" | "data") {
+                    let mine: Vec<String> = self.files.keys().chain(self.extra.keys()).filter(|f| f.starts_with(&format!("{p}/"))).cloned().collect();
+                    if !mine.is_empty() || self.kind.deletable.iter().any(|d| d.trim_end_matches('/') == p) {
                         return Ok(mine.join("\n"));
                     }
-                    self.reference.list(p).map(|l| l.join("\n")).ok_or_else(|| format!("{p}: no such folder here"))
+                    self.kind.list(p).map(|l| l.join("\n")).ok_or_else(|| format!("{p}: no such folder here"))
                 }
             },
             "read_file" => {
                 let p = need("path")?;
-                self.files.get(p).cloned().or_else(|| self.reference.read(p)).ok_or_else(|| format!("{p}: no such file"))
+                self.files.get(p).or_else(|| self.extra.get(p)).cloned().or_else(|| self.kind.read(p)).ok_or_else(|| format!("{p}: no such file"))
             }
             "write_file" => {
                 let (p, content) = (need("path")?, need("content")?);
-                if !is_draft_file(p) {
-                    return Err(format!("{p}: only view.tsx, view.json, gestalts/<name>@<N>.yml and data/<id>.yml can be written"));
+                if !self.kind.is_draft_file(p) {
+                    return Err(format!("{p}: only {} can be written", self.kind.draft_files));
                 }
                 if content.len() > MAX_FILE_BYTES {
                     return Err(format!("{p}: longer than {MAX_FILE_BYTES} bytes"));
@@ -230,8 +297,8 @@ impl Workspace<'_> {
             }
             "delete_file" => {
                 let p = need("path")?;
-                if !(p.starts_with("gestalts/") || p.starts_with("data/")) || self.files.remove(p).is_none() {
-                    return Err(format!("{p}: only an existing file under gestalts/ or data/ can be deleted"));
+                if !self.kind.deletable.iter().any(|d| p.starts_with(d)) || self.files.remove(p).is_none() {
+                    return Err(format!("{p}: only an existing file under {} can be deleted", if self.kind.deletable.is_empty() { "nothing here".to_owned() } else { self.kind.deletable.join(" or ") }));
                 }
                 Ok(format!("deleted {p}"))
             }
@@ -247,21 +314,26 @@ impl Workspace<'_> {
                         }
                     }
                 };
-                for (f, body) in &self.files {
+                for (f, body) in self.files.iter().chain(self.extra.iter()) {
                     if in_scope(f) { search(f, body); }
                 }
-                for f in self.reference.files().into_iter().filter(|f| in_scope(f)) {
-                    if let Some(body) = self.reference.read(&f) { search(&f, &body); }
+                for f in self.kind.files().into_iter().filter(|f| in_scope(f)) {
+                    if let Some(body) = self.kind.read(&f) { search(&f, &body); }
                 }
                 Ok(if hits.is_empty() { "nothing found".into() } else { hits.join("\n") })
-            }
-            "check" => {
-                let (ok, output) = worker.check(&self.files, self.gestalts).await?;
-                if ok { Ok(output) } else { Err(output) }
             }
             other => Err(format!("no tool {other}")),
         }
     }
+}
+
+/// MCP content (the page's: `{type: text, text}`, `{type: image, data, mimeType}`) as the Messages API takes it.
+fn api_content(content: &[Value]) -> Value {
+    Value::Array(content.iter().filter_map(|c| match c["type"].as_str() {
+        Some("text") => Some(json!({ "type": "text", "text": c["text"].as_str().unwrap_or_default() })),
+        Some("image") => Some(json!({ "type": "image", "source": { "type": "base64", "media_type": c["mimeType"].as_str().unwrap_or("image/png"), "data": c["data"].as_str().unwrap_or_default() } })),
+        _ => None,
+    }).collect())
 }
 
 fn summary(name: &str, input: &Value) -> String {
@@ -277,6 +349,10 @@ pub struct Job {
     pub id: String,
     pub account: String,
     pub draft: String,
+    /// the draft's kind, which says what the agent is given
+    kind: String,
+    /// tools handed to the page the turn came from (`VizRender::Page`), waiting on its answer, by call id
+    waiting: Mutex<HashMap<String, tokio::sync::oneshot::Sender<ToolOut>>>,
     events: Mutex<Vec<Value>>,
     done: AtomicBool,
     cancelled: AtomicBool,
@@ -392,14 +468,16 @@ pub struct Agents {
     http: reqwest::Client,
     pub model: Model,
     pub reference: Reference,
-    system: Result<String, String>,
+    /// by kind: the system prompt, or why there's none
+    systems: BTreeMap<&'static str, Result<String, String>>,
+    pub viz_render: VizRender,
 }
 
 impl Agents {
-    pub fn new(model: Model, reference: Reference) -> Self {
-        let system = reference.system();
+    pub fn new(model: Model, reference: Reference, viz_render: VizRender) -> Self {
+        let systems = ["view", "viz"].into_iter().map(|k| (k, reference.kind(k).expect("a kind the agent makes").system())).collect();
         let http = reqwest::Client::builder().timeout(Duration::from_secs(600)).build().expect("an HTTP client");
-        Agents { jobs: Mutex::default(), http, model, reference, system }
+        Agents { jobs: Mutex::default(), http, model, reference, systems, viz_render }
     }
 
     fn prune(&self) {
@@ -408,22 +486,27 @@ impl Agents {
         });
     }
 
-    /// Why the agent can't take a turn now, if it can't.
-    pub(crate) fn unavailable(&self) -> Option<String> {
+    /// Why the agent can't take a turn now, if it can't; with a kind, on a draft of that kind.
+    pub(crate) fn unavailable(&self, kind: Option<&str>) -> Option<String> {
         if self.model.api_key.is_none() {
             return Some("the agent isn't set up on this server (no API key)".into());
         }
-        self.system.as_ref().err().cloned()
+        let kind = kind?;
+        match self.systems.get(kind) {
+            Some(Ok(_)) => None,
+            Some(Err(e)) => Some(e.clone()),
+            None => Some(format!("the agent doesn't work on a draft of kind {kind}")),
+        }
     }
 
-    async fn call_model(&self, system: &str, messages: &[Value]) -> Result<Value, String> {
+    async fn call_model(&self, system: &str, tools: &Value, messages: &[Value]) -> Result<Value, String> {
         self.send(&json!({
             "model": self.model.model,
             "max_tokens": MAX_TOKENS,
             // thinking is always on for this model; effort decides how much
             "output_config": { "effort": "high" },
             "system": [{ "type": "text", "text": system, "cache_control": { "type": "ephemeral" } }],
-            "tools": tools(),
+            "tools": tools,
             "messages": messages,
             // the conversation so far, cached as it grows
             "cache_control": { "type": "ephemeral" },
@@ -501,6 +584,12 @@ pub struct TurnRequest {
     session: Option<String>,
     message: String,
     files: BTreeMap<String, String>,
+    /// read-only files, as base64: a viz's `files/<label>`
+    #[serde(default)]
+    binary: BTreeMap<String, String>,
+    /// the brief kept with the draft, which the agent reads as SPEC.md
+    #[serde(default)]
+    spec: Option<String>,
     #[serde(default)]
     gestalts: Vec<String>,
     #[serde(default)]
@@ -515,15 +604,9 @@ pub(crate) fn month_start() -> String {
     format!("{}-01T00:00:00.000Z", &now_iso()[..7])
 }
 
-/// Why the server's agent can't work on this draft, if it can't: it makes views; a visualization is built by the
-/// local agent, whose check renders it.
-fn not_for(draft: &crate::db::Draft) -> Option<String> {
-    (draft.kind != "view").then(|| "the server's agent makes views: a visualization is built by the agent on your computer, through the Claude bridge".into())
-}
-
 async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Value>> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
-    let reason = match state.agents.unavailable().or_else(|| not_for(&draft)) {
+    let reason = match state.agents.unavailable(Some(&draft.kind)) {
         Some(r) => Some(r),
         None if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget => Some("this month's budget for the agent is used up".into()),
         None => None,
@@ -543,9 +626,7 @@ async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<
 
 async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<TurnRequest>) -> ApiResult<(StatusCode, Json<Value>)> {
     let (draft, _) = state.own_draft(&teacher, &id)?;
-    if let Some(r) = not_for(&draft) {
-        return Err(ApiError::Conflict(r));
-    }
+    let kind = state.agents.reference.kind(&draft.kind).ok_or_else(|| ApiError::Conflict(format!("the agent doesn't work on a draft of kind {}", draft.kind)))?;
     if req.view != draft.id {
         return Err(ApiError::BadRequest("view: not this draft".into()));
     }
@@ -558,10 +639,13 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
             return Err(ApiError::Conflict("that question isn't open any more".into()));
         }
     }
-    if let Some(p) = req.files.keys().find(|p| !is_draft_file(p)) {
-        return Err(ApiError::BadRequest(format!("files: {p} isn't part of a draft")));
+    if let Some(p) = req.files.keys().find(|p| !kind.is_draft_file(p)) {
+        return Err(ApiError::BadRequest(format!("files: {p} isn't part of a draft of kind {}", draft.kind)));
     }
-    if let Some(r) = state.agents.unavailable() {
+    if let Some(p) = req.binary.keys().find(|p| !p.starts_with("files/") || p.split('/').count() != 2) {
+        return Err(ApiError::BadRequest(format!("binary: {p} isn't one of the draft's files/")));
+    }
+    if let Some(r) = state.agents.unavailable(Some(&draft.kind)) {
         return Err(ApiError::Conflict(r));
     }
     if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget {
@@ -577,6 +661,8 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
             id: random_hex(16),
             account: teacher.0.id.clone(),
             draft: draft.id.clone(),
+            kind: draft.kind.clone(),
+            waiting: Mutex::default(),
             events: Mutex::default(),
             done: AtomicBool::new(false),
             cancelled: AtomicBool::new(false),
@@ -594,7 +680,7 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
 }
 
 /// The user's message, with what changed since the agent last saw the draft and what went wrong meanwhile.
-fn opening(req: &TurnRequest, last: Option<&BTreeMap<String, String>>) -> String {
+fn opening(req: &TurnRequest, last: Option<&BTreeMap<String, String>>, extra: &BTreeMap<String, String>) -> String {
     let mut text = req.message.clone();
     if let Some(last) = last {
         let changed: Vec<&String> = last.keys().chain(req.files.keys()).filter(|p| last.get(*p) != req.files.get(*p)).collect::<std::collections::BTreeSet<_>>().into_iter().collect();
@@ -603,6 +689,9 @@ fn opening(req: &TurnRequest, last: Option<&BTreeMap<String, String>>) -> String
         }
     } else {
         text.push_str(&format!("\n\n(The draft's files now: {}.)", req.files.keys().cloned().collect::<Vec<_>>().join(", ")));
+        if !extra.is_empty() {
+            text.push_str(&format!("\n\n(To read besides: {}.)", extra.keys().cloned().collect::<Vec<_>>().join(", ")));
+        }
     }
     if !req.diagnostics.is_empty() {
         text.push_str("\n\n(Since your last turn the preview reported these errors, or saving refused these files. Fix them first.)");
@@ -612,6 +701,67 @@ fn opening(req: &TurnRequest, last: Option<&BTreeMap<String, String>>) -> String
         }
     }
     text
+}
+
+/// What the turn may read besides the draft: its brief as SPEC.md, and a viz's files where they're text.
+fn extra_files(req: &TurnRequest) -> BTreeMap<String, String> {
+    use base64::Engine as _;
+    let mut out = BTreeMap::new();
+    if let Some(spec) = req.spec.as_deref().map(str::trim).filter(|s| !s.is_empty()) {
+        out.insert("SPEC.md".to_owned(), format!("{spec}\n"));
+    }
+    for (p, b64) in &req.binary {
+        let bytes = base64::engine::general_purpose::STANDARD.decode(b64).unwrap_or_default();
+        let text = match String::from_utf8(bytes) {
+            Ok(t) if t.len() <= MAX_READ_BYTES => t,
+            Ok(t) => format!("({} bytes of text: too long to read here; the check imports it as the viz does)", t.len()),
+            Err(e) => format!("({} bytes, not text: the check imports it as the viz does)", e.as_bytes().len()),
+        };
+        out.insert(p.clone(), text);
+    }
+    out
+}
+
+/// How long a tool handed to the page may take, as the Claude bridge waits on one.
+const PAGE_TOOL_WAIT: Duration = Duration::from_secs(600);
+
+/// The kind's check: a view's in the worker; a viz's rendered where `GESTALTS_VIZ_RENDER` says, with its screenshots.
+async fn check(state: &AppState, job: &Job, ws: &Workspace<'_>, req: &TurnRequest, input: &Value) -> ToolOut {
+    match ws.kind.kind {
+        "view" => match state.worker.check(&ws.files, ws.gestalts).await {
+            Ok((ok, output)) => (json!(output), !ok),
+            Err(e) => (json!(format!("the check couldn't run: {e}")), true),
+        },
+        _ => match state.agents.viz_render {
+            VizRender::Worker => match state.worker.check_viz(&ws.files, &req.binary).await {
+                Ok((ok, content)) => (api_content(&content), !ok),
+                Err(e) => (json!(format!("the check couldn't run: {e}")), true),
+            },
+            VizRender::Page => page_tool(job, "check", input, &ws.files).await,
+        },
+    }
+}
+
+/// A tool handed to the workshop page the turn came from, which answers it as it does the Claude bridge's: the page
+/// sees a `tool_call` event and posts `tool_result`.
+async fn page_tool(job: &Job, name: &str, input: &Value, files: &BTreeMap<String, String>) -> ToolOut {
+    let id = random_hex(8);
+    let (tx, rx) = tokio::sync::oneshot::channel();
+    job.waiting.lock().unwrap_or_else(std::sync::PoisonError::into_inner).insert(id.clone(), tx);
+    let cancelled = job.cancel.notified();
+    job.emit(json!({ "type": "tool_call", "id": id, "name": name, "input": input, "files": files }));
+    if job.cancelled.load(Ordering::SeqCst) {
+        return (json!("stopped"), true);
+    }
+    let out = tokio::select! {
+        r = tokio::time::timeout(PAGE_TOOL_WAIT, rx) => match r {
+            Ok(Ok(out)) => out,
+            _ => (json!(format!("{name} runs in the workshop page, which didn't answer: the page has to stay open while the agent works on this")), true),
+        },
+        () = cancelled => (json!("stopped"), true),
+    };
+    job.waiting.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id);
+    out
 }
 
 async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
@@ -633,14 +783,22 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
         job.emit(json!({ "type": "tool", "name": "ask", "summary": "answered" }));
         first.push(json!({ "type": "tool_result", "tool_use_id": a.id, "content": text }));
     }
-    let opening = opening(&req, last.as_ref());
+    let Some(kind) = agents.reference.kind(&job.kind) else {
+        job.emit(json!({ "type": "error", "message": format!("the agent doesn't work on a draft of kind {}", job.kind) }));
+        job.emit(json!({ "type": "done" }));
+        job.finish();
+        return;
+    };
+    let extra = extra_files(&req);
+    let opening = opening(&req, last.as_ref(), &extra);
     if !opening.trim().is_empty() {
         first.push(json!({ "type": "text", "text": opening.trim() }));
     }
     messages.push(json!({ "role": "user", "content": first }));
     let mut asked: Option<Ask> = None;
-    let mut ws = Workspace { files: req.files.clone(), gestalts: &req.gestalts, reference: &agents.reference };
-    let system = agents.system.clone().unwrap_or_default();
+    let mut ws = Workspace { files: req.files.clone(), extra, gestalts: &req.gestalts, kind };
+    let system = agents.systems.get(kind.kind).and_then(|s| s.as_ref().ok()).cloned().unwrap_or_default();
+    let tools = kind.tools();
 
     let outcome: Result<(), String> = async {
         for _ in 0..MAX_STEPS {
@@ -648,7 +806,7 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
                 return Err("stopped".into());
             }
             let resp = tokio::select! {
-                r = agents.call_model(&system, &messages) => r?,
+                r = agents.call_model(&system, &tools, &messages) => r?,
                 () = job.cancel.notified() => return Err("stopped".into()),
             };
             let u = &resp["usage"];
@@ -683,9 +841,12 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
                             continue;
                         }
                         job.emit(json!({ "type": "tool", "name": name, "summary": summary(name, &b["input"]) }));
-                        let r = ws.run(name, &b["input"], &state.worker).await;
-                        let (text, is_error) = match r { Ok(t) => (t, false), Err(t) => (t, true) };
-                        results.push(json!({ "type": "tool_result", "tool_use_id": b["id"], "content": text, "is_error": is_error }));
+                        let (content, is_error) = if name == "check" {
+                            check(&state, &job, &ws, &req, &b["input"]).await
+                        } else {
+                            match ws.run(name, &b["input"]) { Ok(t) => (json!(t), false), Err(t) => (json!(t), true) }
+                        };
+                        results.push(json!({ "type": "tool_result", "tool_use_id": b["id"], "content": content, "is_error": is_error }));
                     }
                     if let Some((id, questions)) = question {
                         // the turn ends here, with the call open, until the person answers
@@ -743,7 +904,7 @@ async fn complete(State(state): State<AppState>, teacher: Teacher, Path(id): Pat
     if req.prompt.trim().is_empty() || req.prompt.chars().count() > 8_000 || req.system.chars().count() > 20_000 {
         return Err(ApiError::BadRequest("a prompt of up to 8000 characters, instructions of up to 20000".into()));
     }
-    if let Some(r) = state.agents.unavailable() {
+    if let Some(r) = state.agents.unavailable(None) {
         return Err(ApiError::Conflict(r));
     }
     if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget {
@@ -797,6 +958,24 @@ struct Cancel {
     job: String,
 }
 
+/// The page's answer to a tool the turn handed it (`page_tool`), as MCP content.
+#[derive(Deserialize)]
+struct PageResult {
+    job: String,
+    id: String,
+    #[serde(default)]
+    content: Vec<Value>,
+    #[serde(default, rename = "isError")]
+    is_error: bool,
+}
+
+async fn tool_result(State(state): State<AppState>, teacher: Teacher, Path(_id): Path<String>, Json(req): Json<PageResult>) -> ApiResult<Json<Value>> {
+    let job = own_job(&state, &teacher, &req.job)?;
+    let tx = job.waiting.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&req.id).ok_or(ApiError::NotFound)?;
+    let _ = tx.send((api_content(&req.content), req.is_error));
+    Ok(Json(json!({})))
+}
+
 async fn cancel(State(state): State<AppState>, teacher: Teacher, Path(_id): Path<String>, Json(req): Json<Cancel>) -> ApiResult<Json<Value>> {
     let job = own_job(&state, &teacher, &req.job)?;
     job.cancelled.store(true, Ordering::SeqCst);
@@ -811,6 +990,7 @@ pub fn routes() -> Router<AppState> {
         .route("/drafts/{id}/agent/complete", post(complete))
         .route("/drafts/{id}/agent/events", get(events))
         .route("/drafts/{id}/agent/cancel", post(cancel))
+        .route("/drafts/{id}/agent/tool_result", post(tool_result))
 }
 
 #[cfg(test)]
@@ -819,12 +999,20 @@ mod tests {
 
     #[test]
     fn draft_files() {
+        let r = Reference::new(PathBuf::from("/t/packages/workshop/agent-template"));
+        let view = r.kind("view").unwrap();
         for ok in ["view.tsx", "view.json", "gestalts/noun@1.yml", "data/haus.yml"] {
-            assert!(is_draft_file(ok), "{ok}");
+            assert!(view.is_draft_file(ok), "{ok}");
         }
-        for bad in ["notes.md", "gestalts/Noun@1.yml", "gestalts/noun@01.yml", "data/../x.yml", "data/a/b.yml", "node_modules/x.ts"] {
-            assert!(!is_draft_file(bad), "{bad}");
+        for bad in ["notes.md", "SPEC.md", "gestalts/Noun@1.yml", "gestalts/noun@01.yml", "data/../x.yml", "data/a/b.yml", "node_modules/x.ts", "viz.ts"] {
+            assert!(!view.is_draft_file(bad), "{bad}");
         }
+        let viz = r.kind("viz").unwrap();
+        assert!(viz.is_draft_file("viz.ts") && viz.is_draft_file("package.json"));
+        for bad in ["SPEC.md", "files/a.csv", "view.tsx", "viz-sources/marks.ts"] {
+            assert!(!viz.is_draft_file(bad), "{bad}");
+        }
+        assert!(r.kind("sequence").is_none());
     }
 
     #[test]
@@ -837,11 +1025,16 @@ mod tests {
 
     #[test]
     fn the_reference_stays_in_its_roots() {
-        let r = Reference::new(PathBuf::from("/t"));
-        assert!(r.resolve("examples/noun-gender/view.tsx").is_some());
-        assert!(r.resolve("node_modules/@gestalts/kit/src/index.ts").is_some());
-        for bad in ["node_modules/react/index.js", "examples/../check.ts", "/etc/passwd", "node_modules/@gestalts/kit/package.json", "CLAUDE.md"] {
-            assert!(r.resolve(bad).is_none(), "{bad}");
+        let r = Reference::new(PathBuf::from("/t/packages/workshop/agent-template"));
+        let view = r.kind("view").unwrap();
+        assert!(view.resolve("examples/noun-gender/view.tsx").is_some());
+        assert!(view.resolve("node_modules/@gestalts/kit/src/index.ts").is_some());
+        for bad in ["node_modules/react/index.js", "examples/../check.ts", "/etc/passwd", "node_modules/@gestalts/kit/package.json", "CLAUDE.md", "viz-sources/marks.ts"] {
+            assert!(view.resolve(bad).is_none(), "{bad}");
         }
+        let viz = r.kind("viz").unwrap();
+        assert_eq!(viz.resolve("viz-sources/marks.ts"), Some(PathBuf::from("/t/packages/workshop/agent-template/../../viz/src/marks.ts")));
+        assert!(viz.resolve("examples/bezier/viz.ts").is_some());
+        assert!(viz.resolve("node_modules/@gestalts/kit/src/index.ts").is_none());
     }
 }

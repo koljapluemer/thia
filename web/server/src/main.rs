@@ -46,6 +46,11 @@ enum Command {
         /// it, submissions queue up and can only be rejected here
         #[arg(long, env = "TEACHER_PROMOTE_INTO")]
         promote_into: Option<PathBuf>,
+        /// where a visualization's check renders it for the server's agent: `page` hands it to the workshop page the
+        /// turn came from (which has to stay open), `worker` renders it in headless Chromium here (playwright-core;
+        /// GESTALTS_CHROMIUM names the browser, else playwright's own)
+        #[arg(long, env = "GESTALTS_VIZ_RENDER", default_value = "page")]
+        viz_render: gestalts_teacher::agent::VizRender,
     },
     /// Schools and accounts
     Admin {
@@ -161,7 +166,7 @@ async fn run(cli: Cli) -> Result<(), String> {
             }
             Ok(())
         }
-        Command::Serve { app, lessons, insecure_cookies, repo, node, model, lesson_origin, promote_into } => {
+        Command::Serve { app, lessons, insecure_cookies, repo, node, model, lesson_origin, promote_into, viz_render } => {
             let repo = std::fs::canonicalize(&repo).map_err(|e| format!("{}: {e}", repo.display()))?;
             let services = Services {
                 worker: WorkerConfig {
@@ -177,6 +182,7 @@ async fn run(cli: Cli) -> Result<(), String> {
                 },
                 lesson_origin,
                 promote_into: promote_into.map(|p| std::fs::canonicalize(&p).map_err(|e| format!("{}: {e}", p.display()))).transpose()?,
+                viz_render,
             };
             if services.model.api_key.is_none() {
                 eprintln!("no ANTHROPIC_API_KEY: the agent is off");

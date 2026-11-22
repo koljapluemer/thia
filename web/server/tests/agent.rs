@@ -216,3 +216,60 @@ async fn one_answer_without_tools_at_low_effort_within_the_budget() {
     assert!(s.state.db.tokens_since("a1", "2026-01-01T00:00:00.000Z").unwrap() > 0, "it counts against the budget");
     assert_eq!(s.call("POST", &at, Some(&ada), Some(json!({ "system": "", "prompt": " " }))).await.0, StatusCode::BAD_REQUEST);
 }
+
+#[tokio::test]
+async fn a_visualization_is_built_with_the_check_handed_to_the_page() {
+    let (url, seen) = model(vec![
+        reply(json!([{ "type": "tool_use", "id": "t1", "name": "read_file", "input": { "path": "SPEC.md" } }, { "type": "tool_use", "id": "t2", "name": "write_file", "input": { "path": "viz.ts", "content": "export default 1;\n" } }, { "type": "tool_use", "id": "t3", "name": "write_file", "input": { "path": "view.tsx", "content": "x" } }]), "tool_use"),
+        reply(json!([{ "type": "tool_use", "id": "t4", "name": "check", "input": {} }]), "tool_use"),
+        reply(json!([{ "type": "text", "text": "Fertig." }]), "end_turn"),
+    ]).await;
+    let s = Server::with_model(Limits::default(), Some(url));
+    let ada = s.login("ada@school.example").await;
+    let (_, d, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Wellen", "kind": "viz" }))).await;
+    let id = d["id"].as_str().unwrap().to_owned();
+    let base = format!("/api/drafts/{id}");
+    assert_eq!(s.call("GET", &format!("{base}/agent/status"), Some(&ada), None).await.1["available"], true, "the server's agent builds vizzes too");
+
+    // a view's files aren't a viz's
+    let wrong = json!({ "view": id, "message": "Bau.", "files": { "view.tsx": "x" } });
+    assert_eq!(s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(wrong)).await.0, StatusCode::BAD_REQUEST);
+
+    let turn = json!({ "kind": "viz", "view": id, "message": "Bau, was SPEC.md sagt.", "spec": "# Wellen\n\nEine Welle.", "files": { "package.json": "{}" }, "binary": { "files/data.csv": "YSxiCjEsMgo=" } });
+    let (status, started, _) = s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(turn)).await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{started}");
+    let job = started["job"].as_str().unwrap().to_owned();
+    let mut all: Vec<Value> = Vec::new();
+    loop {
+        let (_, page, _) = s.call("GET", &format!("{base}/agent/events?job={job}&after={}", all.len()), Some(&ada), None).await;
+        for e in page["events"].as_array().unwrap() {
+            if e["type"] == "tool_call" {
+                // the page runs the check on the files as they are, and answers with its report and a screenshot
+                assert_eq!((e["name"].as_str(), e["files"]["viz.ts"].as_str()), (Some("check"), Some("export default 1;\n")), "{e}");
+                let answer = json!({ "job": job, "id": e["id"], "content": [{ "type": "text", "text": "✓ all good" }, { "type": "image", "data": "iVBORw0KGgo=", "mimeType": "image/png" }] });
+                assert_eq!(s.call("POST", &format!("{base}/agent/tool_result"), Some(&ada), Some(answer.clone())).await.0, StatusCode::OK);
+                assert_eq!(s.call("POST", &format!("{base}/agent/tool_result"), Some(&ada), Some(answer)).await.0, StatusCode::NOT_FOUND, "answered once");
+            }
+            all.push(e.clone());
+        }
+        if page["done"] == true {
+            break;
+        }
+    }
+    let kinds: Vec<&str> = all.iter().map(|e| e["type"].as_str().unwrap()).collect();
+    assert_eq!(kinds, ["tool", "tool", "tool", "tool", "tool_call", "text", "files", "done"], "{all:?}");
+    assert_eq!(all[6]["files"], json!({ "viz.ts": "export default 1;\n" }));
+
+    let sent = seen.lock().unwrap().clone();
+    let system = sent[0].1["system"][0]["text"].as_str().unwrap();
+    assert!(system.contains("You build one visualization") && system.contains("viz-sources/") && system.contains("for a teacher and their class"), "{system}");
+    let tools: Vec<&str> = sent[0].1["tools"].as_array().unwrap().iter().map(|t| t["name"].as_str().unwrap()).collect();
+    assert!(!tools.contains(&"delete_file") && tools.contains(&"check"), "{tools:?}");
+    let opening = sent[0].1["messages"][0]["content"][0]["text"].as_str().unwrap();
+    assert!(opening.contains("SPEC.md, files/data.csv"), "{opening}");
+    let first = &sent[1].1["messages"][2]["content"];
+    assert_eq!(first[0]["content"], "# Wellen\n\nEine Welle.\n", "SPEC.md is the brief");
+    assert_eq!(first[2]["is_error"], true, "a view's file can't be written in a viz");
+    let checked = &sent[2].1["messages"][4]["content"][0];
+    assert_eq!((checked["is_error"].as_bool(), checked["content"][1]["type"].as_str(), checked["content"][1]["source"]["media_type"].as_str()), (Some(false), Some("image"), Some("image/png")), "{checked}");
+}

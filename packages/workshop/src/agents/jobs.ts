@@ -1,4 +1,8 @@
+import { contracts } from './kinds';
 import type { AgentBackend, AgentEvent, CompleteRequest, OpenQuestion, TurnRequest } from './types';
+
+/** A tool the job hands to this page (a viz's check, where the server doesn't render): answered with `POST tool_result`. */
+type ToolCall = { type: 'tool_call'; id: string; name: string; input: unknown; files: Record<string, string> };
 
 /** One request to wherever the agent runs, by path relative to it (`turn`, `events?…`, `cancel`). */
 export type Call = (path: string, init?: RequestInit) => Promise<Response>;
@@ -6,7 +10,8 @@ export type Call = (path: string, init?: RequestInit) => Promise<Response>;
 /**
  * An agent run as a job: `POST turn` starts it and answers `{job}`, `GET events?job=&after=` long-polls what it did
  * (`{events, next, done}`), `POST cancel {job}` stops it. A turn has no request-sized deadline: it's read through short
- * polls, each independently proxied, and a dropped poll is retried.
+ * polls, each independently proxied, and a dropped poll is retried. A `tool_call` event is one of the kind's tools the
+ * job hands to this page, as the Claude bridge hands all of them: the page runs it and posts `tool_result {job, id, …}`.
  */
 export function jobBackend(opts: { id: string; label: string; available: () => Promise<true | string>; open?: AgentBackend['open']; call: Call }): AgentBackend {
   const { call } = opts;
@@ -42,7 +47,12 @@ export function jobBackend(opts: { id: string; label: string; available: () => P
           }
           const page = (await r.json().catch(() => ({}))) as { events?: AgentEvent[]; next?: number; done?: boolean; error?: string };
           if (!r.ok) { yield { type: 'error', message: page.error ?? `the agent answered ${r.status}` }; return; }
-          for (const e of page.events ?? []) yield e;
+          for (const e of (page.events ?? []) as (AgentEvent | ToolCall)[]) {
+            if (e.type !== 'tool_call') { yield e; continue; }
+            const tool = contracts[req.kind ?? 'view'].tools(req).find((t) => t.name === e.name);
+            const r = tool ? await tool.run(e.input, e.files) : { content: [{ type: 'text' as const, text: `no tool ${e.name} here` }], isError: true };
+            await call('tool_result', json({ job, id: e.id, ...r })).catch(() => {});
+          }
           after = page.next ?? after;
           if (page.done) return;
         }

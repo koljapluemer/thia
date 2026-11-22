@@ -10,6 +10,7 @@
     "@gestalts/npm-bundle": "workspace:*",
     "@gestalts/view": "workspace:*",
     "@gestalts/workshop": "workspace:*",
+    "playwright-core": "1.65.0",
     "yaml": "2.8.1"
   },
   "devDependencies": {
