@@ -1,7 +1,7 @@
 # One workshop, and lessons of several views
 
-Decided on 2026-11-22. Three steps, in this order: the workshops become one (built, 2026-11-22), the agent can ask,
-then lessons made of several views (sequences). Prior art is at the end.
+Decided on 2026-11-22. Three steps, in this order: the workshops become one (built, 2026-11-22), the agent can ask
+(built, 2026-11-22), then lessons made of several views (sequences). Prior art is at the end.
 
 ## 1. One workshop
 
@@ -43,6 +43,10 @@ Costs and what to watch:
 - `/review` and the submission sources (`make:`, `make-viz:`, `teach:`) map onto the one workshop.
 
 ## 2. The agent asks
+
+Built. The tool is `packages/workshop/agent-template/ask.json`, shared by both agents; the server keeps a draft's
+conversation on disk with its open question. With the bridge the question lives while the run does (the bridge waits
+ten minutes on a tool).
 
 An `ask` tool for the agent, as Claude Code's `AskUserQuestion`: 1–4 questions, each with a short header, 2–4
 options (label, description, an optional preview) and multi-select, and always free text besides.

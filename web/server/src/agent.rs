@@ -1,8 +1,8 @@
 //! The agent, run here on our API key: a tool loop over a draft's files, held in memory, never a filesystem or a shell.
 //! It speaks the workshop's job protocol (`@gestalts/workshop`'s `httpBackend`) under `/api/drafts/<id>/agent/`:
 //!
-//! - `GET status` → `{available, reason?}`
-//! - `POST turn` `{view, session?, message, files, gestalts, diagnostics}` → 202 `{job}`
+//! - `GET status` → `{available, reason?, ask?}`: `ask` is the question the conversation waits on, if it does
+//! - `POST turn` `{view, session?, message, files, gestalts, diagnostics, answer?}` → 202 `{job}`
 //! - `GET events?job=&after=n` → `{events, next, done}`, waiting up to 20 s for events after the n-th
 //! - `POST cancel` `{job}`
 //!
@@ -10,6 +10,10 @@
 //! validates. Its tools read and write the draft's files, read the kit's sources and the examples (the agent
 //! template's, read-only), search them, and run the check (the worker). One turn at a time per teacher, each within
 //! their monthly token budget.
+//!
+//! It may also `ask` (`packages/workshop/agent-template/ask.json`): the turn ends with that call open, and the
+//! person's answer, whenever and from wherever it comes, is its result at the start of the next turn. So a draft's
+//! conversation is kept on disk (`agent/<draft>.json`), open question and all.
 
 use std::collections::{BTreeMap, HashMap};
 use std::path::{Path as FsPath, PathBuf};
@@ -21,7 +25,7 @@ use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tokio::sync::Notify;
 
@@ -36,7 +40,10 @@ const MAX_TOKENS: u32 = 16_000;
 const MAX_STEPS: usize = 40;
 const EVENT_POLL: Duration = Duration::from_secs(20);
 const FINISHED_KEEP: Duration = Duration::from_secs(600);
-const SESSION_KEEP: Duration = Duration::from_secs(24 * 3600);
+/// how long a conversation is kept after its last turn: an open question may wait that long for its answer
+const SESSION_KEEP: Duration = Duration::from_secs(7 * 24 * 3600);
+/// the `ask` tool, as the bridge's agent has it too
+const ASK: &str = include_str!("../../../packages/workshop/agent-template/ask.json");
 const MAX_FILE_BYTES: usize = 512 * 1024;
 const MAX_READ_BYTES: usize = 200 * 1024;
 
@@ -157,7 +164,8 @@ fn tools() -> Value {
         { "name": "search", "description": "Finds lines containing `text` (case-insensitive) in the draft, the kit's sources and the examples; `path` limits it to a folder or file.",
           "input_schema": { "type": "object", "properties": { "text": { "type": "string" }, "path": path }, "required": ["text"], "additionalProperties": false } },
         { "name": "check", "description": "Compiles and typechecks view.tsx as the workshop does, checks view.json, gestalts/ and data/, and that each npm import is pinned in view.json and bundles. Run it before you finish.",
-          "input_schema": { "type": "object", "properties": {}, "additionalProperties": false } }
+          "input_schema": { "type": "object", "properties": {}, "additionalProperties": false } },
+        serde_json::from_str::<Value>(ASK).expect("ask.json is JSON")
     ])
 }
 
@@ -288,13 +296,85 @@ impl Job {
     }
 }
 
-/// A conversation, kept between turns: its messages and the files as it last left them.
+/// A draft's conversation, kept between turns: its messages, the files as it last left them, and the question it
+/// waits on.
+#[derive(Serialize, Deserialize)]
 struct Session {
+    session: String,
     account: String,
     draft: String,
     messages: Vec<Value>,
     files: BTreeMap<String, String>,
-    touched: Instant,
+    ask: Option<Ask>,
+    /// the last turn's end, in ms
+    touched: i64,
+}
+
+/// An open question: the `ask` call the conversation ends with, and the results of the calls beside it, which go
+/// back with its answer.
+#[derive(Serialize, Deserialize, Clone)]
+struct Ask {
+    id: String,
+    questions: Value,
+    results: Vec<Value>,
+}
+
+/// An answer to an open question, by question: the options picked, or what was written instead.
+#[derive(Deserialize)]
+pub struct Answer {
+    id: String,
+    answers: BTreeMap<String, String>,
+}
+
+impl AppState {
+    fn session_path(&self, draft: &str) -> PathBuf {
+        self.data.join("agent").join(format!("{draft}.json"))
+    }
+
+    /// The draft's conversation, if it's recent enough to go on.
+    fn load_session(&self, draft: &str) -> Option<Session> {
+        let s: Session = serde_json::from_slice(&std::fs::read(self.session_path(draft)).ok()?).ok()?;
+        (crate::now_ms() - s.touched < SESSION_KEEP.as_millis() as i64).then_some(s)
+    }
+
+    fn save_session(&self, s: &Session) -> Result<(), String> {
+        let path = self.session_path(&s.draft);
+        let dir = path.parent().expect("agent/");
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+        let tmp = dir.join(format!(".{}.tmp", s.draft));
+        std::fs::write(&tmp, serde_json::to_vec(s).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+        std::fs::rename(&tmp, &path).map_err(|e| e.to_string())
+    }
+
+    /// A deleted draft's conversation goes with it.
+    pub fn drop_session(&self, draft: &str) {
+        let _ = std::fs::remove_file(self.session_path(draft));
+    }
+}
+
+/// The questions of an `ask` call, as the card shows them, or what's wrong with them.
+fn questions(input: &Value) -> Result<Value, String> {
+    let qs = input["questions"].as_array().filter(|q| (1..=4).contains(&q.len())).ok_or("ask: one to four questions")?;
+    for q in qs {
+        let text = q["question"].as_str().unwrap_or_default();
+        if text.trim().is_empty() || q["header"].as_str().is_none_or(|h| h.trim().is_empty()) {
+            return Err("ask: each question has `question` and `header`".into());
+        }
+        let options = q["options"].as_array().filter(|o| (2..=4).contains(&o.len())).ok_or_else(|| format!("ask: “{text}” needs two to four options"))?;
+        if options.iter().any(|o| o["label"].as_str().is_none_or(|l| l.trim().is_empty())) {
+            return Err(format!("ask: every option of “{text}” has a `label`"));
+        }
+    }
+    Ok(Value::Array(qs.clone()))
+}
+
+/// The answer as the agent reads it.
+fn answer_text(a: &Answer) -> String {
+    let mut out = String::from("They answered:");
+    for (q, answer) in &a.answers {
+        out.push_str(&format!("\n- {q} → {}", if answer.trim().is_empty() { "(no answer)" } else { answer.trim() }));
+    }
+    out
 }
 
 /// How the agent reaches the model.
@@ -307,7 +387,6 @@ pub struct Model {
 
 pub struct Agents {
     jobs: Mutex<HashMap<String, Arc<Job>>>,
-    sessions: Mutex<HashMap<String, Session>>,
     http: reqwest::Client,
     pub model: Model,
     pub reference: Reference,
@@ -318,14 +397,13 @@ impl Agents {
     pub fn new(model: Model, reference: Reference) -> Self {
         let system = reference.system();
         let http = reqwest::Client::builder().timeout(Duration::from_secs(600)).build().expect("an HTTP client");
-        Agents { jobs: Mutex::default(), sessions: Mutex::default(), http, model, reference, system }
+        Agents { jobs: Mutex::default(), http, model, reference, system }
     }
 
     fn prune(&self) {
         self.jobs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).retain(|_, j| {
             j.finished.lock().unwrap_or_else(std::sync::PoisonError::into_inner).is_none_or(|t| t.elapsed() < FINISHED_KEEP)
         });
-        self.sessions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).retain(|_, s| s.touched.elapsed() < SESSION_KEEP);
     }
 
     /// Why the agent can't take a turn now, if it can't.
@@ -407,6 +485,9 @@ pub struct TurnRequest {
     gestalts: Vec<String>,
     #[serde(default)]
     diagnostics: Vec<Value>,
+    /// to the question the conversation waits on
+    #[serde(default)]
+    answer: Option<Answer>,
 }
 
 /// The first instant of this calendar month, as the budget counts.
@@ -427,10 +508,17 @@ async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<
         None if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget => Some("this month's budget for the agent is used up".into()),
         None => None,
     };
-    Ok(Json(match reason {
+    let mut out = match reason {
         Some(r) => json!({ "available": false, "reason": r }),
         None => json!({ "available": true }),
-    }))
+    };
+    // an open question is the draft's, whichever device asks
+    if let Some(s) = state.load_session(&draft.id).filter(|s| s.account == teacher.0.id)
+        && let Some(a) = s.ask
+    {
+        out["ask"] = json!({ "session": s.session, "id": a.id, "questions": a.questions });
+    }
+    Ok(Json(out))
 }
 
 async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<TurnRequest>) -> ApiResult<(StatusCode, Json<Value>)> {
@@ -441,8 +529,14 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
     if req.view != draft.id {
         return Err(ApiError::BadRequest("view: not this draft".into()));
     }
-    if req.message.trim().is_empty() {
+    if req.message.trim().is_empty() && req.answer.is_none() {
         return Err(ApiError::BadRequest("message is empty".into()));
+    }
+    if let Some(a) = &req.answer {
+        let open = state.load_session(&draft.id).filter(|s| s.account == teacher.0.id && req.session.as_deref() == Some(&s.session)).and_then(|s| s.ask);
+        if open.is_none_or(|o| o.id != a.id) {
+            return Err(ApiError::Conflict("that question isn't open any more".into()));
+        }
     }
     if let Some(p) = req.files.keys().find(|p| !is_draft_file(p)) {
         return Err(ApiError::BadRequest(format!("files: {p} isn't part of a draft")));
@@ -502,18 +596,29 @@ fn opening(req: &TurnRequest, last: Option<&BTreeMap<String, String>>) -> String
 
 async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
     let agents = &state.agents;
-    let session_id = req.session.clone().filter(|s| {
-        agents.sessions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(s).is_some_and(|s| s.account == job.account && s.draft == job.draft)
-    });
-    let (session_id, mut messages, last) = match session_id {
-        Some(id) => {
-            let s = agents.sessions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&id).expect("just seen");
-            (id, s.messages, Some(s.files))
-        }
-        None => (random_hex(16), Vec::new(), None),
+    let stored = state.load_session(&job.draft).filter(|s| s.account == job.account && req.session.as_deref() == Some(&s.session));
+    let (session_id, mut messages, last, open) = match stored {
+        Some(s) => (s.session, s.messages, Some(s.files), s.ask),
+        None => (random_hex(16), Vec::new(), None, None),
     };
     let before = messages.len();
-    messages.push(json!({ "role": "user", "content": [{ "type": "text", "text": opening(&req, last.as_ref()) }] }));
+    let mut first = Vec::new();
+    // the question it waits on is answered first: with what was picked, or with what was written instead
+    if let Some(a) = &open {
+        first.extend(a.results.iter().cloned());
+        let text = match &req.answer {
+            Some(answer) if answer.id == a.id => answer_text(answer),
+            _ => "They didn't pick an option, and wrote the message below instead.".into(),
+        };
+        job.emit(json!({ "type": "tool", "name": "ask", "summary": "answered" }));
+        first.push(json!({ "type": "tool_result", "tool_use_id": a.id, "content": text }));
+    }
+    let opening = opening(&req, last.as_ref());
+    if !opening.trim().is_empty() {
+        first.push(json!({ "type": "text", "text": opening.trim() }));
+    }
+    messages.push(json!({ "role": "user", "content": first }));
+    let mut asked: Option<Ask> = None;
     let mut ws = Workspace { files: req.files.clone(), gestalts: &req.gestalts, reference: &agents.reference };
     let system = agents.system.clone().unwrap_or_default();
 
@@ -545,12 +650,28 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
             match stop.as_str() {
                 "tool_use" => {
                     let mut results = Vec::new();
+                    let mut question: Option<(String, Value)> = None;
                     for b in content.iter().filter(|b| b["type"] == "tool_use") {
                         let name = b["name"].as_str().unwrap_or_default();
+                        if name == "ask" {
+                            let id = b["id"].as_str().unwrap_or_default().to_owned();
+                            match (&question, questions(&b["input"])) {
+                                (None, Ok(q)) => question = Some((id, q)),
+                                (Some(_), _) => results.push(json!({ "type": "tool_result", "tool_use_id": id, "content": "ask: one card per turn; this one wasn't shown", "is_error": true })),
+                                (None, Err(e)) => results.push(json!({ "type": "tool_result", "tool_use_id": id, "content": e, "is_error": true })),
+                            }
+                            continue;
+                        }
                         job.emit(json!({ "type": "tool", "name": name, "summary": summary(name, &b["input"]) }));
                         let r = ws.run(name, &b["input"], &state.worker).await;
                         let (text, is_error) = match r { Ok(t) => (t, false), Err(t) => (t, true) };
                         results.push(json!({ "type": "tool_result", "tool_use_id": b["id"], "content": text, "is_error": is_error }));
+                    }
+                    if let Some((id, questions)) = question {
+                        // the turn ends here, with the call open, until the person answers
+                        job.emit(json!({ "type": "ask", "id": id, "questions": questions }));
+                        asked = Some(Ask { id, questions, results });
+                        return Ok(());
                     }
                     messages.push(json!({ "role": "user", "content": results }));
                 }
@@ -571,23 +692,22 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
     if !changed.is_empty() {
         job.emit(json!({ "type": "files", "files": changed }));
     }
-    match outcome {
-        Ok(()) => {}
+    let ask = match outcome {
+        Ok(()) => asked,
         Err(e) => {
-            // the conversation goes on from before this turn: what's left of it may not be a valid one
+            // the conversation goes on from before this turn, waiting on what it waited on: what's left of it may not
+            // be a valid one
             messages.truncate(before);
             job.emit(json!({ "type": "error", "message": e }));
+            open
         }
+    };
+    let waiting = ask.is_some();
+    let session = Session { session: session_id.clone(), account: job.account.clone(), draft: job.draft.clone(), messages, files: ws.files, ask, touched: crate::now_ms() };
+    if let Err(e) = state.save_session(&session) {
+        eprintln!("agent: keeping the conversation of {}: {e}", job.draft);
     }
-    let files = ws.files;
-    agents.sessions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).insert(session_id.clone(), Session {
-        account: job.account.clone(),
-        draft: job.draft.clone(),
-        messages,
-        files,
-        touched: Instant::now(),
-    });
-    job.emit(json!({ "type": "done", "session": session_id }));
+    job.emit(json!({ "type": "done", "session": session_id, "waiting": waiting }));
     job.finish();
 }
 

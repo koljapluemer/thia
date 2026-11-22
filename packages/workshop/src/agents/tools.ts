@@ -1,4 +1,6 @@
 import type { CheckResult, Files } from '@gestalts/check';
+import ask from '../../agent-template/ask.json';
+import type { Answers, Question } from './types';
 
 /**
  * What an agent may do besides thinking: the app's tools, the same whichever model runs the loop. The claude CLI gets
@@ -11,8 +13,8 @@ export type AgentTool = {
   name: string;
   description: string;
   inputSchema: Record<string, unknown>;
-  /** runs on the draft's files as they are now */
-  run(input: unknown, files: Record<string, string>): Promise<ToolResult>;
+  /** runs on the draft's files as they are now; `ask` hands the person a question while it runs */
+  run(input: unknown, files: Record<string, string>, ask?: (questions: Question[], reply: (answers: Answers) => void) => void): Promise<ToolResult>;
 };
 
 const NO_INPUT = { type: 'object', properties: {}, additionalProperties: false };
@@ -103,4 +105,41 @@ export function fileTools(files: Record<string, string>, writable: RegExp): Agen
       },
     },
   ];
+}
+
+/** The questions of an `ask` call, or what's wrong with them (as the server checks them, `web/server/src/agent.rs`). */
+export function questionsOf(input: unknown): Question[] | string {
+  const qs = (input as { questions?: unknown } | null)?.questions;
+  if (!Array.isArray(qs) || qs.length < 1 || qs.length > 4) return 'ask: one to four questions';
+  for (const q of qs as Question[]) {
+    if (!q?.question?.trim() || !q.header?.trim()) return 'ask: each question has `question` and `header`';
+    if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 4) return `ask: “${q.question}” needs two to four options`;
+    if (q.options.some((o) => !o?.label?.trim())) return `ask: every option of “${q.question}” has a \`label\``;
+  }
+  return qs as Question[];
+}
+
+/** An answer as the agent reads it. */
+export function answerText(answers: Answers): string {
+  return ['They answered:', ...Object.entries(answers).map(([q, a]) => `- ${q} → ${a.trim() || '(no answer)'}`)].join('\n');
+}
+
+/**
+ * Asking the person, for an agent whose run stays open meanwhile (the Claude bridge): the card is shown, and its
+ * answer is the result. The server's agent has the same tool, and ends its turn on it instead.
+ */
+export function askTool(): AgentTool {
+  return {
+    name: ask.name,
+    description: ask.description,
+    inputSchema: ask.input_schema,
+    run: (input, _files, show) => new Promise((resolve) => {
+      const questions = questionsOf(input);
+      if (typeof questions === 'string' || !show) {
+        resolve({ content: [{ type: 'text', text: typeof questions === 'string' ? questions : 'ask: no one to ask here' }], isError: true });
+        return;
+      }
+      show(questions, (answers) => resolve({ content: [{ type: 'text', text: answerText(answers) }] }));
+    }),
+  };
 }

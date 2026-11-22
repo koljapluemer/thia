@@ -1,4 +1,4 @@
-import type { AgentBackend, AgentEvent, TurnRequest } from './types';
+import type { AgentBackend, AgentEvent, OpenQuestion, TurnRequest } from './types';
 
 /** One request to wherever the agent runs, by path relative to it (`turn`, `events?…`, `cancel`). */
 export type Call = (path: string, init?: RequestInit) => Promise<Response>;
@@ -8,13 +8,14 @@ export type Call = (path: string, init?: RequestInit) => Promise<Response>;
  * (`{events, next, done}`), `POST cancel {job}` stops it. A turn has no request-sized deadline: it's read through short
  * polls, each independently proxied, and a dropped poll is retried.
  */
-export function jobBackend(opts: { id: string; label: string; available: () => Promise<true | string>; call: Call }): AgentBackend {
+export function jobBackend(opts: { id: string; label: string; available: () => Promise<true | string>; open?: AgentBackend['open']; call: Call }): AgentBackend {
   const { call } = opts;
   const json = (body: unknown): RequestInit => ({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   return {
     id: opts.id,
     label: opts.label,
     available: opts.available,
+    open: opts.open,
     async *turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent> {
       const started = await call('turn', json(req));
       const body = (await started.json().catch(() => ({}))) as { job?: string; error?: string };
@@ -48,7 +49,7 @@ export function jobBackend(opts: { id: string; label: string; available: () => P
 
 /**
  * A job backend at `base` over plain HTTP, with the page's cookies. `GET status` says whether it takes a turn now:
- * `{available: true}` or `{available: false, reason}`.
+ * `{available: true}` or `{available: false, reason}`, and `ask`: the question the conversation waits on.
  */
 export function httpBackend(base: string, opts: { id: string; label: string }): AgentBackend {
   const call: Call = (path, init) => fetch(`${base.replace(/\/$/, '')}/${path}`, { credentials: 'same-origin', ...init });
@@ -62,6 +63,14 @@ export function httpBackend(base: string, opts: { id: string; label: string }): 
         return s.available ? true : (s.reason ?? `the agent answered ${r.status}`);
       } catch (e) {
         return e instanceof Error ? e.message : String(e);
+      }
+    },
+    async open() {
+      try {
+        const r = await call('status');
+        return r.ok ? ((await r.json()) as { ask?: OpenQuestion }).ask : undefined;
+      } catch {
+        return undefined;
       }
     },
   });

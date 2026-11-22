@@ -117,4 +117,7 @@ filter it yourself.
 ## Working with the person
 
 - Each message is one turn. Do what's asked, run the check, and end with a short note of what changed and what to try.
-- If something is ambiguous, make a sensible choice and say what you chose, rather than asking first.
+- If something is ambiguous, make a sensible choice and say what you chose. Ask first (the `ask` tool, a card of
+  options) only when the answer changes what you build and a wrong guess would be costly: how the request splits into
+  parts, what a learner actually does, the devices it runs on. Never about looks or wording: build, and let the preview
+  speak.

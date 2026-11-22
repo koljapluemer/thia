@@ -43,7 +43,15 @@ write `view.tsx`, `view.json`, `gestalts/` and `data/`, read and search the kit'
 template, and run the check (the worker: the template's `check.ts` plus npm pinning). No filesystem, no shell. The
 contract is the template's `CLAUDE.md` with a preface, cached. Turns use the workshop's job protocol, so `Chat` is the
 same as learning-workshop's; the browser writes the files a turn hands back. One turn at a time per teacher, within a
-monthly token budget (`turns` in the database). Conversations live in the server's memory for a day.
+monthly token budget (`turns` in the database). A draft's conversation is kept on disk (`agent/<draft>.json`) for a
+week after its last turn.
+
+It may **ask** (`packages/workshop/agent-template/ask.json`, the tool's description carrying when to): one to four
+questions with two to four options each, shown as a card in `Chat` (`AskCard.tsx`). The turn ends with that call open
+(`done` says `waiting`), and the question is kept with the conversation: `GET status` returns it (`ask`), so it shows
+on any device and after a restart. The answer comes as the next turn's `answer`, the open call's result, with the
+results of the calls beside it; a message written instead answers it too. One card per turn: a second is refused to
+the agent.
 
 ### Or the claude CLI on the teacher's computer
 

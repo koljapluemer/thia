@@ -57,7 +57,8 @@ export async function* build(req: BuildRequest, signal: AbortSignal): AsyncItera
         if (t === null) delete made[p];
         else made[p] = t;
       }
-    } else if (e.type !== 'done') {
+    } else if (e.type !== 'done' && e.type !== 'ask') {
+      // a build is from its spec, with no one to ask: it has no `ask` tool
       yield e;
     }
   }

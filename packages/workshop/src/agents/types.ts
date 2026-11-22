@@ -19,7 +19,24 @@ export type TurnRequest = {
   diagnostics: Diagnostic[];
   /** what the app tells the agent about who it makes views for, before the contract (the local CLI's; a server has its own) */
   brief?: string;
+  /** the answer to the question the conversation waits on (`message` may be empty then) */
+  answer?: Answer;
 };
+
+/** One question of an `ask` card (`agent-template/ask.json`). */
+export type Question = {
+  question: string;
+  header: string;
+  multiSelect?: boolean;
+  options: { label: string; description: string; recommended?: boolean; preview?: string }[];
+};
+
+/** By question: the options picked, and what was written besides or instead. */
+export type Answers = Record<string, string>;
+export type Answer = { id: string; answers: Answers };
+
+/** A question a conversation waits on, kept with the draft: answered with a turn of that session. */
+export type OpenQuestion = { session: string; id: string; questions: Question[] };
 
 /** An error from the preview, or a file of the last turn the repo refused (`save`). */
 export type Diagnostic = { kind: ViewError['kind'] | 'save'; message: string; stack?: string; at: string };
@@ -29,7 +46,13 @@ export type AgentEvent =
   | { type: 'tool'; name: string; summary: string }
   /** the files the turn changed; `null`: deleted */
   | { type: 'files'; files: Record<string, string | null> }
-  | { type: 'done'; session?: string }
+  /**
+   * The agent asks. With `reply`, the turn waits for it (the Claude bridge, while the run lasts); without, the turn
+   * ends here and the answer is the next turn's (`TurnRequest.answer`).
+   */
+  | { type: 'ask'; id: string; questions: Question[]; reply?: (answers: Answers) => void }
+  /** `waiting`: the turn ended on a question */
+  | { type: 'done'; session?: string; waiting?: boolean }
   | { type: 'error'; message: string };
 
 export interface AgentBackend {
@@ -41,4 +64,6 @@ export interface AgentBackend {
   /** when it isn't available until the person allows this site (the Claude bridge): asks, true when allowed */
   connect?(): Promise<true | string>;
   turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent>;
+  /** the question the draft's conversation waits on, if any: kept where the agent runs, so it's there on any device */
+  open?(view: string): Promise<OpenQuestion | undefined>;
 }

@@ -69,6 +69,11 @@ At the end the bridge hands back the files that changed; the browser turns those
 definitions first. What the repo refuses goes with the next message. The agent never touches any data, and the check
 is the app's, whichever model runs the turn.
 
+The agent may ask (the `ask` tool, `agent-template/ask.json`): a card of options in `Chat`, always with a field for
+an answer of one's own. With the bridge, it's a tool of the page like `check`: the run waits for the answer, for as
+long as the bridge waits on a tool (ten minutes), and the card closes with the run. The server's agent ends its turn
+on it instead and keeps the question with the draft, so it can be answered later, from another device.
+
 A turn has no deadline: it lasts as long as its socket. Stop (or leaving the page) closes the socket, which stops
 claude; what it changed until then still comes back. The CLI's session is resumed in the same workspace, and the
 bridge tells it which files changed outside the conversation.

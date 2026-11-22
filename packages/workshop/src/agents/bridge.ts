@@ -1,7 +1,7 @@
 import type { AgentTool } from './tools';
-import { viewCheckTool } from './tools';
+import { askTool, viewCheckTool } from './tools';
 import { viewTemplate } from './template';
-import type { AgentBackend, AgentEvent, TurnRequest } from './types';
+import type { AgentBackend, AgentEvent, Answers, Question, TurnRequest } from './types';
 
 /**
  * The claude CLI on this computer, through the Claude bridge (`installables/claude-bridge`): a site the person allowed
@@ -32,6 +32,8 @@ export type BridgeEvent =
   | { type: 'tool'; name: string; summary: string }
   /** the draft's files the turn changed; `null`: deleted */
   | { type: 'files'; files: Record<string, string | null> }
+  /** a tool asks the person; `reply` is the answer, while the run lasts */
+  | { type: 'ask'; id: string; questions: Question[]; reply: (answers: Answers) => void }
   | { type: 'done'; session?: string }
   | { type: 'error'; message: string };
 
@@ -99,8 +101,9 @@ export async function* runOnBridge(url: string, start: BridgeStart, tools: Agent
     try { e = JSON.parse(String(m.data)); } catch { return; }
     if (e.type === 'tool_call') {
       const tool = byName.get(e.name ?? '');
+      const show = (questions: Question[], reply: (answers: Answers) => void) => push({ type: 'ask', id: e.id ?? '', questions, reply });
       const answer = tool
-        ? tool.run(e.input, e.files ?? {})
+        ? tool.run(e.input, e.files ?? {}, show)
         : Promise.resolve({ content: [{ type: 'text' as const, text: `no tool ${e.name}` }], isError: true });
       void answer.then((r) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'tool_result', id: e.id, ...r })); });
     } else {
@@ -165,7 +168,7 @@ export function bridgeBackend(url: string, opts: { brief?: string } = {}): Agent
         workspace: req.view, session: req.session, prompt, files, keep: VIEW_FILES,
         system: brief ? `${brief}\n\n${SYSTEM}` : SYSTEM,
       };
-      yield* runOnBridge(url, start, [viewCheckTool(req.gestalts)], signal);
+      yield* runOnBridge(url, start, [viewCheckTool(req.gestalts), askTool()], signal);
     },
   };
 }

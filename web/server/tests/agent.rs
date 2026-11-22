@@ -144,3 +144,59 @@ async fn without_a_key_the_agent_is_off_and_says_so() {
     assert_eq!(st["available"], false);
     assert!(st["reason"].as_str().unwrap().contains("API key"));
 }
+
+#[tokio::test]
+async fn a_question_ends_the_turn_and_its_answer_starts_the_next() {
+    let card = json!({ "questions": [{ "question": "Wer übt damit?", "header": "Lernende", "options": [
+        { "label": "Klasse 2", "description": "Zahlen bis 20" }, { "label": "Klasse 4", "description": "Zahlen bis 1000" }] }] });
+    let (url, seen) = model(vec![
+        reply(json!([
+            { "type": "text", "text": "Eine Frage zuerst." },
+            { "type": "tool_use", "id": "q1", "name": "ask", "input": card },
+            { "type": "tool_use", "id": "q2", "name": "ask", "input": card },
+            { "type": "tool_use", "id": "t1", "name": "write_file", "input": { "path": "view.tsx", "content": VIEW } },
+        ]), "tool_use"),
+        reply(json!([{ "type": "text", "text": "Gut, für Klasse 2." }]), "end_turn"),
+    ]).await;
+    let s = Server::with_model(Limits::default(), Some(url));
+    let ada = s.login("ada@school.example").await;
+    let (_, d, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Rechnen" }))).await;
+    let id = d["id"].as_str().unwrap().to_owned();
+    let base = format!("/api/drafts/{id}");
+    let turn = json!({ "view": id, "message": "Ein Rechenspiel.", "files": { "view.tsx": "x" }, "gestalts": [] });
+    let (_, started, _) = s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(turn)).await;
+    let all = events(&s, &ada, &base, started["job"].as_str().unwrap()).await;
+    assert_eq!(all.iter().map(|e| e["type"].as_str().unwrap()).collect::<Vec<_>>(), ["text", "tool", "ask", "files", "done"], "{all:?}");
+    assert_eq!((all[2]["id"].as_str(), all[2]["questions"][0]["header"].as_str()), (Some("q1"), Some("Lernende")));
+    assert_eq!(all[4]["waiting"], true);
+    let session = all[4]["session"].as_str().unwrap().to_owned();
+
+    // the question is the draft's, kept on disk: any device sees it, also after a restart
+    assert!(s.state.data.join("agent").join(format!("{id}.json")).is_file());
+    let (_, status, _) = s.call("GET", &format!("{base}/agent/status"), Some(&ada), None).await;
+    assert_eq!((status["ask"]["id"].as_str(), status["ask"]["session"].as_str()), (Some("q1"), Some(session.as_str())), "{status}");
+    let bea = s.login("bea@school.example").await;
+    assert_eq!(s.call("GET", &format!("{base}/agent/status"), Some(&bea), None).await.0, StatusCode::NOT_FOUND);
+
+    // answered: the open call's result, with the other calls' results beside it
+    let wrong = json!({ "view": id, "session": session, "message": "", "files": { "view.tsx": VIEW }, "gestalts": [], "answer": { "id": "q9", "answers": {} } });
+    assert_eq!(s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(wrong)).await.0, StatusCode::CONFLICT);
+    let answer = json!({ "view": id, "session": session, "message": "", "files": { "view.tsx": VIEW }, "gestalts": [], "answer": { "id": "q1", "answers": { "Wer übt damit?": "Klasse 2" } } });
+    let (status, started, _) = s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(answer.clone())).await;
+    assert_eq!(status, StatusCode::ACCEPTED, "{started}");
+    let all = events(&s, &ada, &base, started["job"].as_str().unwrap()).await;
+    assert_eq!(all.iter().map(|e| e["type"].as_str().unwrap()).collect::<Vec<_>>(), ["tool", "text", "done"], "{all:?}");
+    assert_eq!(all[2]["waiting"], false);
+    let sent = seen.lock().unwrap()[1].1.clone();
+    let last = sent["messages"].as_array().unwrap().last().unwrap()["content"].as_array().unwrap().clone();
+    let by_id = |id: &str| last.iter().find(|b| b["tool_use_id"] == id).cloned().unwrap_or_else(|| panic!("{id}: {last:?}"));
+    assert_eq!(by_id("q2")["is_error"], true, "one card per turn");
+    assert_eq!(by_id("t1")["is_error"], false);
+    assert!(by_id("q1")["content"].as_str().unwrap().contains("Wer übt damit? → Klasse 2"));
+    assert_eq!(last.len(), 3, "no empty text with an answer alone: {last:?}");
+
+    // answered once
+    let (_, status, _) = s.call("GET", &format!("{base}/agent/status"), Some(&ada), None).await;
+    assert!(status.get("ask").is_none(), "{status}");
+    assert_eq!(s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(answer)).await.0, StatusCode::CONFLICT);
+}

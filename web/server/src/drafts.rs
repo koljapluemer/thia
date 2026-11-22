@@ -138,6 +138,7 @@ async fn create(State(state): State<AppState>, teacher: Teacher, Json(req): Json
 async fn delete(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<StatusCode> {
     let (d, _) = state.own_draft(&teacher, &id)?;
     state.db.delete_draft(&d.id, &now_iso())?;
+    state.drop_session(&d.id);
     let dir = state.draft_dir(&d.id);
     let _ = blocking(move || std::fs::remove_dir_all(dir).map_err(|e| ApiError::Internal(e.to_string()))).await;
     Ok(StatusCode::NO_CONTENT)
