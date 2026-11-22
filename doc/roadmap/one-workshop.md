@@ -1,7 +1,8 @@
 # One workshop, and lessons of several views
 
 Decided on 2026-11-22. Three steps, in this order: the workshops become one (built, 2026-11-22), the agent can ask
-(built, 2026-11-22), then lessons made of several views (sequences; the MVP built 2026-11-22). Prior art is at the end.
+(built, 2026-11-22), then lessons made of several views (sequences; the MVP built 2026-11-22). Then views and vizzes
+on one stack (built, 2026-11-22, section 4). Prior art is at the end.
 
 ## 1. One workshop
 
@@ -35,8 +36,7 @@ Costs and what to watch:
 
 - Distribution ids are for good. Local drafts are under `learning-workshop`; offer once to move them to the account,
   and keep the id until nobody has any.
-- Vizzes need the bridge agent until the server renders headless (its check is a render with screenshots); the
-  workshop says so for that kind rather than failing.
+- ~~Vizzes need the bridge agent until the server renders headless.~~ Either agent makes them now (section 4).
 - Folder sync of drafts goes away (drafts are the server's); export instead.
 - The workshop needs the server up.
 - Scripts and agents that exercise the workshop need a session from the dev login.
@@ -121,6 +121,35 @@ done. *Struggling* is practised and `p` below a half.
 - Steps on different runtimes.
 - A cheaper model for the split, if an eval says it holds.
 - Results for teachers ([[teacher-app]]: student accounts, a separate project).
+
+## 4. One stack for views and vizzes
+
+Built, 2026-11-22. Views and vizzes had grown two stacks: a viz was built by a call of its own straight to the bridge,
+with its own events, template, prompt and editor, no chat, no ask and no server agent; a view had all of those and no
+brief it kept. Now:
+
+- **Each kind is a contract, once.** `agent-template/brief.md` (who for) and `agent-template/kinds/<kind>.json` (what
+  the agent is told, which paths are the draft, the check's description) are read by the page for the Claude bridge
+  and by the server for its agent. The templates are `packages/workshop`'s.
+- **One turn path.** `Chat` over a `Work` per kind, through `AgentBackend` with either agent. A viz's *Build* is a
+  chat message; the page's own check after a turn (`settle`, from the viz) keeps a viz's page only when it passes.
+- **A brief on every draft** (`spec`, sent as `SPEC.md`; `view@2` gained the field), and one layout (`Shell`).
+- **The bridge knows nothing of kinds.** Its run log records the last result of each page tool by name, not of a tool
+  named `check`. It stays the optional, local way to try any kind on one's own plan, at no API cost; the server makes
+  the same things on API calls.
+- **Vizzes go out to a class**, alone or as steps of a lesson, played in the vizint view (`params` in a `lesson@1`).
+
+What has to stay apart, and why:
+
+1. The agent loop: the server's own (API key, budget, survives the tab, questions kept on disk) and Claude Code's.
+2. File tools: the server's over files it holds, Claude Code's in a workspace; so contracts never name file tools.
+3. Asking: the bridge keeps the run open, the server ends the turn and keeps the question. `AgentEvent.ask.reply`.
+4. Where the check runs: the page (esbuild-wasm, frames) and the server's worker (Node; a viz's render in Chromium
+   or handed to the page, `GESTALTS_VIZ_RENDER`). One `@gestalts/check`, `Platform` is the seam.
+5. Sessions and auth: a CLI session and a pairing token per site; a server session file, the account and its budget.
+6. Preview: a view compiled in a frame; a viz's built page in the vizint view; a lesson's play-through.
+7. Draft format and kept paths: `view@2` and members; `viz@1` and blobs.
+8. What goes out: a view's own `lesson@1`; the vizint view on a viz; a sequence of those.
 
 ## Prior art
 

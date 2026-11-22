@@ -1,8 +1,10 @@
 # The workshop (`/workshop`)
 
 Everything made with an agent, behind the account: one list of drafts, each of a kind, kept on the server
-([`web/server`](../../../server)), which checks every write and holds each account to its quota. *New* makes a view or a
-visualization; lessons of several views come next ([`doc/roadmap/one-workshop.md`](../../../../doc/roadmap/one-workshop.md)).
+([`web/server`](../../../server)), which checks every write and holds each account to its quota. *New* makes a view, a
+visualization or a lesson of several of them ([`doc/roadmap/one-workshop.md`](../../../../doc/roadmap/one-workshop.md)).
+Views and vizzes are made the same way, with either agent: one layout, one chat, one brief, one call path; what
+differs is each kind's contract, preview and what it goes out as (below).
 There is no mode without an account: on a dev machine it's `dev@localhost`, which `scripts/setup.sh` makes
 (`teacher-data/dev-login.txt`); everyone else gets one from the admins (`gestalts-teacher admin add-teacher`).
 
@@ -10,22 +12,29 @@ There is no mode without an account: on a dev machine it's `dev@localhost`, whic
 web/app/src/workshop/
   Workshop.tsx               the sign-in; the list of drafts, New, the one open
   open.tsx                   a draft as its own store in this browser (OPFS), synced with the server's copy
-  DraftPane.tsx              a view's draft: the preview beside the chat; publishing, export, delete
-  VizPane.tsx                a viz's draft: the editor beside the vizint view showing it (viz.md)
-  viz/                       the viz's editor, its build, the agent's template, `viz@1` as a yml
+  DraftPane.tsx              a view's draft; `Shell`, every draft's layout (header, preview, brief and chat beside it);
+                             publishing, export, delete
+  VizPane.tsx                a viz's draft: the vizint view showing it, its brief, texts and files, the chat (viz.md)
+  Brief.tsx                  a draft's brief (`spec`), whatever its kind, saved as typed and before a turn reads it
+  viz/Editor.tsx             a viz's title, texts before and after it, and files
+  SequencePane.tsx           a lesson of several views and vizzes: its steps, the planner, the play-through
   submit.tsx                 offering a draft for the public site
   move.tsx                   moving drafts this browser kept before the workshop moved to accounts
   agent.ts, Settings.tsx     which agent makes views: the server's, or Claude Code through the Claude bridge
   api.ts                     the server's API
 
 packages/workshop/           shared by the panes:
-  draft.ts                   a draft as ymls (`view@2` and its members) and as the files the agent sees
+  draft.ts, viz.ts           a view's draft as ymls (`view@2` and its members), a viz as its `viz@1` yml
+  work.ts                    a draft as a conversation works on it, per kind (`Work`): what the agent is sent, where
+                             what comes back goes, and the page's own check after a turn (`settle`)
   Preview.tsx                compiles a draft's view in the browser and runs it in a frame, as any view runs
-  Chat.tsx                   one conversation about one draft
+  Chat.tsx                   one conversation about one draft of any kind
   agents/                    what an agent backend is; the teacher server's (a job over HTTP, jobs.ts); Claude Code
-                             through the Claude bridge (bridge.ts); the agents' tools (tools.ts); the template sent
-                             with each turn (template.ts)
-  agent-template/            what the agent works against: its contract (CLAUDE.md), examples
+                             through the Claude bridge (bridge.ts); each kind's contract (kinds.ts); the agents'
+                             tools (tools.ts); the templates sent with each turn (template.ts)
+  agent-template/            what the agents work against: `brief.md` (who for), `kinds/<kind>.json` (what each kind's
+                             agent is told, which paths are the draft, the check's description: read by the server's
+                             agent too), a view's contract (CLAUDE.md) and examples, the lesson planner's instructions
 packages/check/              the `check` tool, run in the page (and in Node, by the tests)
 installables/claude-bridge/  runs `claude -p` on this computer for a site the person allowed
 ```
@@ -34,9 +43,9 @@ installables/claude-bridge/  runs `claude -p` on this computer for a site the pe
 
 | kind | what it holds | agent | goes out |
 |---|---|---|---|
-| `view` | a `view@2` yml and its members | the server's, or the bridge's | to a class, as a lesson; to the public site, reviewed |
-| `viz` | one `viz@1` yml and its blobs | the bridge's only, until the server renders | to the public site, reviewed |
-| `sequence` | one `sequence@1` yml: steps, each another view draft with at most one rule | either, to plan the split; then each step's view as any view | to a class, as a lesson of several views |
+| `view` | a `view@2` yml and its members | either | to a class, as a lesson; to the public site, reviewed |
+| `viz` | one `viz@1` yml and its blobs | either | to a class, as a lesson (the vizint view on it); to the public site, reviewed |
+| `sequence` | one `sequence@1` yml: steps, each another view or viz draft, with at most one rule | either, to plan the split; then each step as its kind | to a class, as a lesson of several views |
 
 A draft's id is its view's or viz's. The server checks each kind ([`web/server/src/validate.rs`](../../../server/src/validate.rs)):
 a viz's draft holds its viz and nothing else.
@@ -50,13 +59,13 @@ the vizint view, as the public site shows it.
 
 A lesson of several views is checked as a whole by the server (`GET /api/drafts/<id>/sequence`, `web/server/src/sequence.rs`):
 every step's view is there, every rule's concept is one a step's view practises, and a warning when no earlier step
-practises a rule's concept (on a new device such a rule never applies, so a short check step comes first). The agent **plans** it, whichever is picked in Settings: one answer at low effort (`AgentBackend.complete`: the
+practises a rule's concept (on a new device such a rule never applies, so a short check step comes first). A viz step practises nothing, so no rule depends on it; it plays in the vizint view. The agent **plans** it, whichever is picked in Settings: one answer at low effort (`AgentBackend.complete`: the
 server's `POST …/agent/complete`, or a Claude Code run through the bridge with no tools and nothing kept), its
 instructions in `agent-template/plan-lesson.md`. `planLesson` (`packages/workshop/src/plan.ts`) checks what comes back
-the same for both: one view instead, or the steps with their briefs and rules; it drops a rule no earlier step can
+the same for both: one view instead, or the steps (each a view or a viz) with their briefs and rules; it drops a rule no earlier step can
 feed, and appends to each brief what ties the view to the rules (its concepts as
-`concept@2` data, practice logged on them, `done()`). Taking the plan makes each view a draft with its brief waiting in
-its chat, built when the teacher sends it, one at a time. The steps can be edited in the form besides. Its
+`concept@2` data, practice logged on them, `done()`). Taking the plan makes each step a draft of its kind with its brief as
+the draft's, built when the teacher asks its chat to, one at a time. The steps can be edited in the form besides. Its
 **play-through** walks it for a pretend student who is new, knows a concept, or struggles with it
 (`packages/workshop/src/sequence.ts`, `walk`, the same decisions the player makes).
 
@@ -66,6 +75,18 @@ Drafts were kept in this browser before the workshop moved to accounts (the `dra
 distribution, from `/make` and `/make-viz`). The workshop offers once to move them; each keeps its id and package, and
 the copy here stays.
 
+## Every draft: brief, chat, check
+
+A draft keeps its **brief** (`spec`): what it should be, in the teacher's words. It's edited above the chat, kept with
+the draft, and every turn sends it, as `SPEC.md`, which the agent reads and can't change. Once there is one, the chat
+offers *Build from the brief* as a message of one click.
+
+A turn is the same for every kind and either agent (`Chat` over `Work`): the draft as files and the brief go out, the
+files the turn changed come back and are written, what couldn't be saved goes with the next message. Then the kind
+may check what's there itself (`settle`): a viz is built and rendered in the page, and its page kept only when that
+passes. Which agent runs the turn is Settings': the server's (API calls, within the account's budget) or Claude Code
+through the Claude bridge (the teacher's own plan, no API tokens), which is how anything is tried locally for free.
+
 ## A view's draft
 
 A draft is a `view@2` yml and its `members`: `gestalt@1` definitions of its own gestalts (named in the draft's
@@ -73,7 +94,7 @@ A draft is a `view@2` yml and its `members`: `gestalt@1` definitions of its own 
 a draft without members.
 
 A turn with the bridge: the browser sends the bridge the draft as files (`view.tsx`, `view.json`, `gestalts/<name>@<N>.yml`,
-`data/<id>.yml`), the template (the contract, the examples, and the sources of what a view may import, under
+`data/<id>.yml`), its brief (`SPEC.md`), the template (the contract, the examples, and the sources of what a view may import, under
 `node_modules/@gestalts/*/src`), and any errors the preview reported or the last save refused (`runtime-errors.md`).
 Claude reads and edits them in the bridge's workspace for this draft. Its `check` tool comes back to this page, which
 runs `@gestalts/check` on the draft as it is then: the compile the preview does, a typecheck (TypeScript in a worker,
@@ -106,7 +127,8 @@ A view goes out as a lesson for a class (**Publish**), or is offered for the pub
 
 The Claude bridge records every turn locally under its data folder's `runs/` (on Linux
 `~/.local/share/gestalts-claude-bridge/runs`). Daily `workshop-agent-run@2` JSONL files distinguish the
-turn's process outcome (`completed`, `failed` or `cancelled`), its final check result and permission warnings. Wall and
+turn's process outcome (`completed`, `failed` or `cancelled`), how each page tool's last call came out (`verification`,
+by tool: the bridge knows none of them) and permission warnings. Wall and
 provider timings, token/cache usage and tools belong to that run. Claude's API time, cost and model usage are cumulative
 for a resumed session, so they live under `session_totals`; reports count only the latest totals for each session.
 `raw/<date>/<run>.jsonl` contains the complete Claude stream with receipt timing, including assistant and tool content;

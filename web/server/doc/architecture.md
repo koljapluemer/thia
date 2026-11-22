@@ -2,13 +2,13 @@
 
 ```
 web/app/src/workshop/      the app (/workshop): sign-in, drafts of each kind, the panes, publishing, settings
-web/server/worker/         Node beside the server: compile and check a view, bundle npm packages
+web/server/worker/         Node beside the server: compile and check a view or a viz (render.ts: headless Chromium), bundle npm
 web/site/                  the public site, whose build also runs a published lesson from its link
 web/app/src/review/        the review queue (/review): admins accept or reject submissions
 web/server/                gestalts-teacher: the API, the agent, publishing, the lesson domain, submissions
 packages/workshop/         drafts, Preview, Chat, the job protocol, the agent template, the Claude
                            bridge's client and the agents' tools (agents/), the lesson format (lesson.ts)
-packages/check/            the check the local agent runs, in the page
+packages/check/            the check every agent runs: in the page, and in the worker
 installables/claude-bridge/  the CLI agent on a teacher's own computer
 packages/npm-bundle/       npm packages bundled and pinned, without a CDN
 web/server/deploy/         the box: Caddy, systemd, backups
@@ -21,8 +21,8 @@ Each draft has a kind (`drafts.kind`), set when it's made:
 - `view`: a `view@2` yml and its `members` (`packages/workshop/src/draft.ts`): `gestalt@1` definitions named in the
   draft's `package`, which the server hands out, and the ymls it ships with
 - `viz`: one `viz@1` yml and the blobs it names
-- `sequence`: one `sequence@1` yml, whose steps are the account's view drafts (`sequence.rs`: checked as a whole,
-  published as `lesson@2`, each view a `lesson@1` folder under `views/<n>/`)
+- `sequence`: one `sequence@1` yml, whose steps are the account's view and viz drafts (`sequence.rs`: checked as a
+  whole, published as `lesson@2`, each step a `lesson@1` folder under `views/<n>/`)
 
 Each draft is its own folder, in the browser (OPFS, `teacher-draft-<id>`) and on the server (`drafts/<id>/`), synced
 over the node's `/sync` and `/blobs` shapes under `/api/drafts/<id>/`. The browser is untrusted: the server validates
@@ -43,13 +43,19 @@ Besides turns, `POST /api/drafts/<id>/agent/complete` `{system, prompt}` gives o
 within the budget: the transport for features built on any agent (`AgentBackend.complete`; planning a lesson), which
 the Claude bridge gives as well. What the answer is for is the page's.
 
-It makes views; a viz's draft is built by the CLI agent only, whose check renders it in the page. On the server, on our
-API key (`agent.rs`): a tool loop over the draft's files held in memory. Its tools read and
-write `view.tsx`, `view.json`, `gestalts/` and `data/`, read and search the kit's sources and the examples of the agent
-template, and run the check (the worker: `@gestalts/check`'s `checkView`, as the page runs it for the CLI agent, plus
-whether each pinned package bundles). No filesystem, no shell. The
-contract is the template's `CLAUDE.md` with a preface, cached. Turns use the workshop's job protocol, so `Chat` is the
-same as learning-workshop's; the browser writes the files a turn hands back. One turn at a time per teacher, within a
+It makes views and vizzes, on our API key (`agent.rs`): a tool loop over the draft's files held in memory. What it's
+told about each kind, which paths are the draft and the check's description are `packages/workshop/agent-template/kinds/<kind>.json`
+after `brief.md`, the same the Claude bridge's agent gets; then how its own tools work (the one part that is the
+server's: the CLI has its own), then the kind's contract (the template's `CLAUDE.md`, or `packages/viz/agent/CLAUDE.md`),
+cached. Its tools read and write the draft's files (a view's `view.tsx`, `view.json`, `gestalts/`, `data/`; a viz's
+`viz.ts`, `package.json`), read `SPEC.md` (the draft's brief) and a viz's `files/`, read and search the kind's
+sources and examples, and run the check. No filesystem, no shell. A view's check is the worker's (`@gestalts/check`'s
+`checkView`, as the page runs it for the CLI agent, plus whether each pinned package bundles). A viz's is rendered
+where `GESTALTS_VIZ_RENDER` says: `page` (the default) hands it to the workshop page the turn came from, as a
+`tool_call` event it answers with `POST …/agent/tool_result` (as the bridge hands its tools to the page; the page has
+to stay open), `worker` renders it in headless Chromium in the worker (`worker/render.ts`, playwright-core;
+`GESTALTS_CHROMIUM` names the browser). Either way the agent gets the screenshots. Turns use the workshop's job
+protocol, so `Chat` is the same for both agents; the browser writes the files a turn hands back. One turn at a time per teacher, within a
 monthly token budget (`turns` in the database). A draft's conversation is kept on disk (`agent/<draft>.json`) for a
 week after its last turn.
 
@@ -65,9 +71,8 @@ the agent.
 Settings (kept in the browser, `teacher:agent`) can switch a teacher to the CLI instead: Claude Code on their own
 computer through the Claude bridge (`installables/claude-bridge`, :7737) (`bridgeBackend` in
 `packages/workshop/src/agents/bridge.ts`). The bridge asks the teacher once, in a dialog on their computer, whether
-the site may use it. A turn sends the draft and the template; the check runs in the teacher's page
-(`@gestalts/check`). Each turn carries a `brief` (`src/agent.ts`, the server's preface less its tools) that goes
-before the template's contract. The draft, its sync and its validation are
+the site may use it. A turn sends the draft and the kind's template, told the same `brief.md` and kind as the server's
+agent; the check runs in the teacher's page (`@gestalts/check`). The draft, its sync and its validation are
 the same as with the server's agent: the browser writes what a turn hands back, and the server checks it. CLI turns
 use the teacher's own Claude plan, not the school's budget; the npm bundling check runs only at publishing. Chat
 sessions are kept per backend, so switching starts a new conversation.
@@ -80,7 +85,9 @@ the preview first.
 
 ## Publishing
 
-`publish.rs`: a view's draft as the server has it is checked with the same check the agents run (the worker's
+`publish.rs`: a viz goes out as the vizint view (`plugins/vizint`, compiled here) started on it by the manifest's
+`params`, with the viz and its page, still and files as the deck; only once built, and checked and rendered again
+when `GESTALTS_VIZ_RENDER=worker`. A view's draft as the server has it is checked with the same check the agents run (the worker's
 `check-draft`: it compiles and typechecks, reads and writes gestalts a lesson has, imports npm pinned in view.json and
 loads nothing from other servers; each package bundles), and here: every member valid, published gestalts keep their
 structure. A problem goes back as the check says it, for the teacher to hand to the agent. Then it is written as a version folder named by its content:
@@ -111,5 +118,5 @@ and kept as an immutable snapshot (`submissions/<id>/`). Admins (`accounts.admin
 
 ## Not yet
 
-Headless screenshots for the agent, QR and short codes, rotating a link, an offline player, schools and sharing in
+QR and short codes, rotating a link, an offline player, schools and sharing in
 the UI, gates and an AI review before a submission's human review, OIDC sign-in, results for teachers. See [[../../../doc/roadmap/teacher-app|the roadmap]].

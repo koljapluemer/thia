@@ -8,6 +8,9 @@ On the box (Debian/Ubuntu), as root:
 1. Caddy, Node 26 with pnpm (`corepack enable`), `sqlite3` and `restic`.
 2. A user and folders: `useradd --system --home /var/lib/gestalts-teacher teacher`, `mkdir -p /opt/gestalts-teacher/releases /var/lib/gestalts-teacher`, `chown -R teacher: /opt/gestalts-teacher /var/lib/gestalts-teacher`.
 3. `/etc/gestalts-teacher.env` (mode 600): `ANTHROPIC_API_KEY=…` and `TEACHER_LESSON_ORIGIN=https://<lesson domain>`.
+   Optionally `GESTALTS_VIZ_RENDER=worker`, for the server to render vizzes itself (the agent's check, and again before
+   publishing) instead of the teacher's open page: it needs Chromium (`npx playwright-core install --with-deps
+   chromium` as the `teacher` user, or `GESTALTS_CHROMIUM=/path/to/chromium`).
 4. `Caddyfile` here to `/etc/caddy/Caddyfile`, with the two domains, and both domains' DNS at the box.
 5. `gestalts-teacher.service` to `/etc/systemd/system/`, then `systemctl enable gestalts-teacher`.
 6. Backups: `backup.sh` to `/usr/local/bin/`, `/etc/gestalts-teacher-backup.env` with the restic repository, and a

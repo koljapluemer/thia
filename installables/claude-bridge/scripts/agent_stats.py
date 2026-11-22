@@ -60,7 +60,7 @@ def selected(records: list[dict], view: str | None, days: int | None) -> list[di
 
 def summarize(records: list[dict], limit: int) -> dict:
     outcomes = Counter(str(r.get("outcome", "unknown")) for r in records)
-    checks = Counter(str((r.get("verification") or {}).get("check", "unknown")) for r in records)
+    checks = Counter(str((r.get("verification") or {}).get("check", "not_run")) for r in records)
     tools: Counter[str] = Counter()
     usage: Counter[str] = Counter()
     permission_denials = 0

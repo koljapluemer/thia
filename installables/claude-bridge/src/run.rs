@@ -372,8 +372,10 @@ pub struct RunLog {
     first_output_ms: Option<u128>,
     result: Value,
     tools: BTreeMap<String, u64>,
-    check_ids: BTreeSet<String>,
-    check: &'static str,
+    /// the page's tool calls this run, by id: their tool's name
+    page_calls: BTreeMap<String, String>,
+    /// by page tool, how its last call came out: whatever the page's tools are, the bridge knows none of them
+    verification: BTreeMap<String, &'static str>,
     request: Value,
     raw: PathBuf,
 }
@@ -394,8 +396,8 @@ impl RunLog {
             first_output_ms: None,
             result: Value::Null,
             tools: BTreeMap::new(),
-            check_ids: BTreeSet::new(),
-            check: "not_run",
+            page_calls: BTreeMap::new(),
+            verification: BTreeMap::new(),
             request: json!({
                 "message_chars": start.prompt.chars().count(),
                 "files": input.len(),
@@ -420,17 +422,17 @@ impl RunLog {
                     if c.get("type").and_then(Value::as_str) != Some("tool_use") { continue; }
                     let name = c.get("name").and_then(Value::as_str).unwrap_or("unknown");
                     *self.tools.entry(name.to_owned()).or_default() += 1;
-                    if name == format!("mcp__{MCP_SERVER}__check") && let Some(id) = c.get("id").and_then(Value::as_str) {
-                        self.check_ids.insert(id.to_owned());
-                        self.check = "failed";
+                    if let Some(tool) = name.strip_prefix(&format!("mcp__{MCP_SERVER}__")) && let Some(id) = c.get("id").and_then(Value::as_str) {
+                        self.page_calls.insert(id.to_owned(), tool.to_owned());
+                        self.verification.insert(tool.to_owned(), "failed");
                     }
                 }
             }
             Some("user") => {
                 for c in e.pointer("/message/content").and_then(Value::as_array).into_iter().flatten() {
                     if c.get("type").and_then(Value::as_str) == Some("tool_result")
-                        && c.get("tool_use_id").and_then(Value::as_str).is_some_and(|id| self.check_ids.contains(id)) {
-                        self.check = if c.get("is_error").and_then(Value::as_bool) == Some(true) { "failed" } else { "passed" };
+                        && let Some(tool) = c.get("tool_use_id").and_then(Value::as_str).and_then(|id| self.page_calls.get(id)) {
+                        self.verification.insert(tool.clone(), if c.get("is_error").and_then(Value::as_bool) == Some(true) { "failed" } else { "passed" });
                     }
                 }
             }
@@ -470,7 +472,7 @@ impl RunLog {
             "tools": self.tools,
             "request": self.request,
             "result": { "exit_code": exit_code, "changed_files": changed_files, "error": error },
-            "verification": { "check": self.check },
+            "verification": self.verification,
             "warnings": { "permission_denials": r.get("permission_denials").and_then(Value::as_array).map_or(0, Vec::len) },
             "raw": raw,
         });
