@@ -77,11 +77,15 @@ how many items), `one_of: [..]`.
 | `@gestalts/kit` | `Markdown`, `MarkdownEditor`, `Modal`, `NoteCard`, `NoteEditor`, `storeFile`; `usePanZoom` (drag, wheel and pinch, d3-zoom) |
 | `@gestalts/learning` | FSRS: `fsrsStates`, `useLocalReviews`, `getScheduler`, `rate`, `saveReview`, `nextItem`, `facetOf`, `Rating`, `usePracticeSession`; logging answers: `logPractice`, `ratingOf`; picking with what's known: `lessonPlan`, `rankNew`, `variantGroups` |
 | `@gestalts/sources` | sources: `FIELDS`, `ENTRY_TYPES`, `normalise`, `bibOf`, `parseBibtex`, `renderBibtex`, `match`, `mergeSource` |
-| any npm package | loaded at run time (`d3`, `three`, ...); list it in `view.json`'s `npm` with its version. No types here, so type what you use |
+| any npm package | loaded at run time (`d3`, `three`, ...): import it by name (`'d3'`, never `'d3@7.9.0'` or a URL) and list it in `view.json`'s `npm` with its exact version. No types here, so type what you use. It comes without its stylesheets |
 
 The sources are in `node_modules/@gestalts/*/src` (read-only). Read them when unsure; don't guess signatures.
 
 Style with Tailwind classes and daisyUI components. Keep it responsive: the frame can be narrow.
+
+A published view reaches no other server: no stylesheets, scripts, fonts or images from a URL (a CDN's KaTeX CSS,
+Google Fonts), which the `check` refuses. For maths, the kit's `Markdown` renders `$…$` and `$$…$$` (MathML, its
+styles included): don't bring KaTeX or MathJax.
 
 ## Reading and writing
 

@@ -5,7 +5,7 @@
  */
 import { compile } from '@gestalts/view/compile';
 import { parse } from 'yaml';
-import { packageName, result, type CheckItem, type CheckResult, type Files, type Platform } from './index.ts';
+import { packageName, remoteLoads, result, versionedImport, versionedMessage, type CheckItem, type CheckResult, type Files, type Platform } from './index.ts';
 
 export type ViewContext = {
   /** the gestalts the app has (`name@N`), which the view may read and write besides its own */
@@ -99,8 +99,18 @@ export async function checkView(files: Files, ctx: ViewContext, platform: Platfo
     return result(items);
   }
   items.push({ ok: true, name: `view.tsx compiles${compiled.npm.length ? ` (from npm: ${compiled.npm.join(', ')})` : ''}` });
-  const unpinned = [...new Set(compiled.npm.map(packageName))].filter((n) => typeof npmPinned[n] !== 'string');
-  if (unpinned.length) items.push({ ok: false, name: 'npm imports are pinned', message: unpinned.map((n) => `view.json: add "${n}" to \`npm\` with an exact version, like {"${n}": "1.2.3"}`).join('\n') });
+  const versioned = compiled.npm.flatMap((spec) => { const v = versionedImport(spec); return v ? [versionedMessage(spec, v)] : []; });
+  const unpinned = [...new Set(compiled.npm.filter((s) => !versionedImport(s)).map(packageName))].filter((n) => typeof npmPinned[n] !== 'string');
+  const npmProblems = [...versioned, ...unpinned.map((n) => `view.json: add "${n}" to \`npm\` with an exact version, like {"${n}": "1.2.3"}`)];
+  if (npmProblems.length) items.push({ ok: false, name: 'npm imports are pinned', message: npmProblems.join('\n') });
+  const remote = remoteLoads(source);
+  if (remote.length) {
+    items.push({
+      ok: false, name: 'loads nothing from other servers',
+      message: remote.map((u) => `view.tsx: loads ${u}, which a published view can't reach: no stylesheets, scripts, fonts or images from other servers`).join('\n')
+        + '\n    Style with Tailwind and daisyUI; for maths, the kit\'s `Markdown` renders $…$ and $$…$$; npm packages are bundled, but without their stylesheets.',
+    });
+  }
 
   // npm packages arrive at run time: their types can't be here
   const npm = compiled.npm;

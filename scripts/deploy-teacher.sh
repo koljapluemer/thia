@@ -20,6 +20,8 @@ pnpm --dir web/site build
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 git archive --format=tar HEAD web/server/worker web/server/package.json packages gestalts package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json | tar -x -C "$tmp"
+# what the check records about the runtime's types (packages/check/pack, made by `mise run setup`), not in git
+cp -r packages/check/pack "$tmp/packages/check/"
 mkdir -p "$tmp/bin" "$tmp/player"
 cp target/release/gestalts-teacher "$tmp/bin/"
 cp -r web/app/dist "$tmp/app"

@@ -6,8 +6,11 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@gestalts/check": "workspace:*",
     "@gestalts/npm-bundle": "workspace:*",
-    "@gestalts/view": "workspace:*"
+    "@gestalts/view": "workspace:*",
+    "@gestalts/workshop": "workspace:*",
+    "yaml": "2.8.1"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

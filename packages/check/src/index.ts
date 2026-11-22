@@ -1,7 +1,9 @@
 /**
  * @gestalts/check: what a draft view (`checkView`) or a viz (`checkViz`) is checked with, by whatever agent made it
  * and by the app itself. The same code in the page (`@gestalts/check/browser`) and in Node (`@gestalts/check/node`);
- * only the platform differs: where TypeScript runs, how images decode, where a viz's code runs.
+ * only the platform differs: where TypeScript runs, how images decode, where a viz's code runs. It is the one check:
+ * the CLI agent's tool in the page, the server's agent and publishing and submissions through the server's worker
+ * (`web/server/worker/worker.ts`, which adds only whether each pinned package bundles). A rule goes here, once.
  */
 import type { Pixels } from '@gestalts/viz/page';
 import type { VizRuntime } from './pack.ts';
@@ -56,3 +58,22 @@ export function result(items: CheckItem[], extra: Partial<CheckResult> = {}): Ch
 
 /** `@scope/name/sub` -> `@scope/name`, `name/sub` -> `name`. */
 export const packageName = (spec: string) => spec.split('/').slice(0, spec.startsWith('@') ? 2 : 1).join('/');
+
+/**
+ * An import with the version in it, as a CDN takes them (`katex@0.16.11`, `@scope/name@1/sub`): its package and
+ * version, or null. A view imports by name; the version goes in view.json's `npm`.
+ */
+export function versionedImport(spec: string): { name: string; version: string } | null {
+  const m = /^((?:@[^/@]+\/)?[^/@]+)@([^/]+)/.exec(spec);
+  return m ? { name: m[1], version: m[2] } : null;
+}
+
+/** What to say about an import with its version in it. */
+export const versionedMessage = (spec: string, v: { name: string; version: string }) =>
+  `view.tsx: import from '${spec.replace(`${v.name}@${v.version}`, v.name)}', not '${spec}': the version goes in view.json, as "npm": {"${v.name}": "${v.version}"}`;
+
+/** Stylesheets, scripts, fonts and images from other servers, which a published view can't reach. */
+const REMOTE = /\bhttps?:\/\/[^\s'"`)]+?\.(?:css|m?js|woff2?|ttf|otf|png|jpe?g|gif|webp|svg)(?:[?#][^\s'"`)]*)?(?=[\s'"`)])|\bhttps?:\/\/(?:cdn\.jsdelivr\.net|unpkg\.com|esm\.sh|cdnjs\.cloudflare\.com|fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.skypack\.dev)\/[^\s'"`)]*/g;
+
+/** Each file a view's source loads from another server. */
+export const remoteLoads = (source: string): string[] => [...new Set(source.match(REMOTE) ?? [])];

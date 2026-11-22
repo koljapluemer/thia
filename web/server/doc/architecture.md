@@ -42,7 +42,8 @@ within `MODELS`.
 It makes views; a viz's draft is built by the CLI agent only, whose check renders it in the page. On the server, on our
 API key (`agent.rs`): a tool loop over the draft's files held in memory. Its tools read and
 write `view.tsx`, `view.json`, `gestalts/` and `data/`, read and search the kit's sources and the examples of the agent
-template, and run the check (the worker: the template's `check.ts` plus npm pinning). No filesystem, no shell. The
+template, and run the check (the worker: `@gestalts/check`'s `checkView`, as the page runs it for the CLI agent, plus
+whether each pinned package bundles). No filesystem, no shell. The
 contract is the template's `CLAUDE.md` with a preface, cached. Turns use the workshop's job protocol, so `Chat` is the
 same as learning-workshop's; the browser writes the files a turn hands back. One turn at a time per teacher, within a
 monthly token budget (`turns` in the database). A draft's conversation is kept on disk (`agent/<draft>.json`) for a
@@ -75,8 +76,10 @@ the preview first.
 
 ## Publishing
 
-`publish.rs`: a view's draft as the server has it is checked (compiles, npm pinned and bundling, gestalts a lesson has,
-every member valid, published gestalts keep their structure), then written as a version folder named by its content:
+`publish.rs`: a view's draft as the server has it is checked with the same check the agents run (the worker's
+`check-draft`: it compiles and typechecks, reads and writes gestalts a lesson has, imports npm pinned in view.json and
+loads nothing from other servers; each package bundles), and here: every member valid, published gestalts keep their
+structure. A problem goes back as the check says it, for the teacher to hand to the agent. Then it is written as a version folder named by its content:
 `lessons/<lesson>/<version>/` with `manifest.json`, the compiled view, and its ymls as a published deck. It is
 published for the frame runtime of the page publishing it, which is what its preview runs, and the player its link
 serves from then on (`admin install-player` puts each runtime's player here, as deploying does). Without that player,

@@ -119,6 +119,12 @@ async fn what_may_not_go_out() {
     assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
     assert!(body.to_string().contains("exact version"), "{body}");
 
+    // an import with its version in it: said where the version goes
+    d.write(&s, WORD, "import katex from 'katex@0.16.11';\nexport default function View() { return <p>{String(katex)}</p>; }\n").await;
+    let (status, body) = d.publish(&s).await;
+    assert_eq!(status, StatusCode::UNPROCESSABLE_ENTITY);
+    assert!(body.to_string().contains(r#"import from 'katex', not 'katex@0.16.11'"#), "{body}");
+
     // a page whose runtime has no player here (an old one, or the site updated before its player was installed)
     for body in [None, Some(json!({ "runtime": "fedcba9876543210" })), Some(json!({ "runtime": "../../x" }))] {
         let (status, body, _) = s.call("POST", &format!("{}/publish", d.base), Some(&d.cookie), body).await;

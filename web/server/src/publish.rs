@@ -3,8 +3,10 @@
 //! one. A draft has one publication, so its link stays the same across versions; unpublishing switches the link off.
 //!
 //! Before anything is written:
-//! - the view compiles, and each npm import is pinned in view.json and bundles
-//! - it reads and writes only gestalts the player has or the draft defines, and every member is valid
+//! - the check passes, the same the agents run (`@gestalts/check`, through the worker): it compiles and typechecks,
+//!   reads and writes gestalts the player has or the draft defines, imports npm pinned in view.json, loads nothing
+//!   from other servers; and each package bundles
+//! - every member is valid, here
 //! - the player for the runtime of the page publishing it is deployed here: what the teacher's preview runs, and what
 //!   the lesson's link serves it with from then on
 //! - a gestalt published before keeps its structure (a change is a new version); a lesson whose gestalts changed since
@@ -18,7 +20,7 @@ use axum::http::StatusCode;
 use axum::routing::post;
 use axum::{Json, Router};
 use gestalts_core::gestalt::GESTALT;
-use gestalts_core::{Yml, YmlState, blobs_of};
+use gestalts_core::{Gestalts, Yml, YmlState, blobs_of};
 use serde::Serialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
@@ -74,6 +76,8 @@ pub struct Check<'a> {
     pub view: &'a str,
     /// what its own gestalts are named in
     pub package: &'a str,
+    /// what it's judged beside: a lesson's gestalts, or the submitter's
+    pub gestalts: &'a Gestalts,
     /// as a lesson, for the frame runtime of the page publishing it (`FrameRuntime.version`), whose player must be
     /// here; none for a submission, which the public site's build runs
     pub lesson: Option<&'a str>,
@@ -89,7 +93,7 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     let s = gestalts_fs::FsStorage::new(&dir);
     let view_text = s.read_yml_sync(c.view)?.ok_or_else(|| ApiError::BadRequest("the draft has no view yet".into()))?;
     let view = Yml::parse(c.view.to_owned(), view_text);
-    if !matches!(state.gestalts.classify(&view), YmlState::Valid(ref g) if is_view(g)) {
+    if !matches!(c.gestalts.classify(&view), YmlState::Valid(ref g) if is_view(g)) {
         return Err(ApiError::BadRequest("the draft's view isn't valid".into()));
     }
     let m = view.map().ok_or_else(|| ApiError::BadRequest("the draft's view isn't valid".into()))?;
@@ -112,7 +116,7 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
             None => problems.push(format!("{id}: a member that isn't there")),
         }
     }
-    let gestalts = draft_gestalts(&state.gestalts, c.package, texts.iter().filter(|(_, t)| t.contains(GESTALT)).map(|(i, t)| (i.clone(), t.clone())));
+    let gestalts = draft_gestalts(c.gestalts, c.package, texts.iter().filter(|(_, t)| t.contains(GESTALT)).map(|(i, t)| (i.clone(), t.clone())));
     let mut definitions = BTreeMap::new();
     let mut blobs = BTreeMap::new();
     for (id, text) in &texts {
@@ -132,30 +136,20 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
             if p.is_file() { blobs.insert(b, p); } else { problems.push(format!("{id}: its file {b} isn't there")); }
         }
     }
-    for g in reads.iter().chain(&writes) {
-        if gestalts.get(g).is_none() {
-            problems.push(format!("view.json: no gestalt {g} in a lesson (a lesson may use the core's, its own, and the models {})", crate::MODELS.join(", ")));
-        }
-    }
-    for g in &writes {
-        if !reads.contains(g) { problems.push(format!("view.json: it writes {g} without reading it")); }
-    }
-
-    // the view, compiled as the frame loads it
-    let compiled = state.worker.call("compile", json!({ "source": source })).await.map_err(ApiError::Internal)?;
-    if compiled["ok"] != true {
-        let errs: Vec<String> = compiled["errors"].as_array().into_iter().flatten().map(|e| e["message"].as_str().unwrap_or_default().to_owned()).collect();
-        problems.push(format!("view.tsx doesn't compile: {}", errs.join("; ")));
-    }
-    let imports: Vec<String> = compiled["npm"].as_array().into_iter().flatten().filter_map(|s| s.as_str().map(str::to_owned)).collect();
-    for spec in &imports {
-        if !npm.get(package_of(spec)).is_some_and(|v| v.split('.').count() == 3) {
-            problems.push(format!("view.json: npm: {} needs an exact version", package_of(spec)));
-        }
-    }
+    // the check, as the agents run it, on the view and its members; the gestalts the app has besides the draft's own
+    let mut all = texts.clone();
+    all.insert(c.view.to_owned(), view.raw.clone());
+    let known: Vec<String> = c.gestalts.defs().iter().map(|d| d.id()).collect();
+    problems.extend(state.worker.check_draft(&all, c.view, &known).await.map_err(ApiError::Internal)?);
     if !problems.is_empty() {
         return Err(ApiError::Invalid(problems));
     }
+    // the view, compiled as the frame loads it (the check compiled it the same)
+    let compiled = state.worker.call("compile", json!({ "source": source })).await.map_err(ApiError::Internal)?;
+    if compiled["ok"] != true {
+        return Err(ApiError::Internal("the view compiled in the check, but not after it".into()));
+    }
+    let imports: Vec<String> = compiled["npm"].as_array().into_iter().flatten().filter_map(|s| s.as_str().map(str::to_owned)).collect();
     let bundled = ensure(state, &Ensure { npm: npm.clone(), imports }).await.map_err(|e| ApiError::Invalid(vec![e]))?;
     let mut npm_files = BTreeMap::new();
     for (spec, b) in bundled {
@@ -261,7 +255,7 @@ async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path
     let runtime = body.map(|Json(b)| b).unwrap_or_default().runtime.ok_or_else(|| ApiError::Conflict(UPDATED.into()))?;
     let _guard = state.writes.lock().await;
     let version = match draft.kind.as_str() {
-        "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, lesson: Some(&runtime) }).await?,
+        "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, gestalts: &state.gestalts, lesson: Some(&runtime) }).await?,
         "sequence" => crate::sequence::build(&state, &teacher.0, &draft, &runtime).await?,
         k => return Err(ApiError::Internal(format!("{}: a draft of kind {k}", draft.id))),
     };

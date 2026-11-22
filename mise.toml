@@ -24,7 +24,7 @@ run = "bash scripts/{{usage.what}}.sh"
 
 [tasks.setup]
 hide = true
-description = "JS dependencies, the core compiled to wasm (after cloning, and after changing crates/core, crates/peer or crates/wasm), the agent template (for the teacher server's check) and what @gestalts/check records (packages/check/pack)"
+description = "JS dependencies, the core compiled to wasm (after cloning, and after changing crates/core, crates/peer or crates/wasm), the agent template (whose links the server's agent reads the kit's sources through) and what @gestalts/check records (packages/check/pack)"
 run = [
   "pnpm install",
   "wasm-pack --log-level warn build crates/wasm --target web --out-dir ../../packages/client/wasm --out-name gestalts",

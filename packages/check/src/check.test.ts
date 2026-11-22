@@ -34,6 +34,17 @@ describe('a view', () => {
     expect(r.report).toContain('add "canvas-confetti" to `npm`');
     expect(r.report).toContain('✓ types check');
   }, 60_000);
+  it('says where an import\'s version goes, and that nothing loads from other servers', async () => {
+    const source = `import katex from 'katex@0.16.11';\nimport x from '@scope/pkg@1.2.3/sub';\nconst css = 'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';\nconst img = "https://example.org/a.png";\nconst page = 'https://en.wikipedia.org/wiki/Matrix';\n${good['view.tsx'] as string}\nvoid katex; void x; void css; void img; void page;\n`;
+    const r = await checkView({ ...good, 'view.tsx': source }, { gestalts: GESTALTS }, nodePlatform);
+    expect(r.ok).toBe(false);
+    expect(r.report).toContain(`import from 'katex', not 'katex@0.16.11': the version goes in view.json, as "npm": {"katex": "0.16.11"}`);
+    expect(r.report).toContain(`import from '@scope/pkg/sub', not '@scope/pkg@1.2.3/sub'`);
+    expect(r.report).not.toContain('add "katex@0.16.11"');
+    expect(r.report).toContain('loads https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css');
+    expect(r.report).toContain('loads https://example.org/a.png');
+    expect(r.report).not.toContain('wikipedia');
+  }, 60_000);
   it('knows only the gestalts here', async () => {
     const json = JSON.parse(good['view.json'] as string) as { reads: string[] };
     const r = await checkView({ ...good, 'view.json': JSON.stringify({ ...json, reads: [...json.reads, 'nope@1'] }) }, { gestalts: GESTALTS }, nodePlatform);

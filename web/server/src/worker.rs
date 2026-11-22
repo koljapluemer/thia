@@ -19,7 +19,7 @@ use tokio::sync::oneshot;
 pub struct WorkerConfig {
     pub node: String,
     pub script: PathBuf,
-    /// the agent template, with its node_modules
+    /// the agent template, with its node_modules: what the server's agent reads besides the draft
     pub template: PathBuf,
     pub npm_cache: PathBuf,
 }
@@ -54,7 +54,6 @@ impl Worker {
         let mut child = Command::new(&self.config.node)
             .arg(&self.config.script)
             .current_dir(self.config.script.parent().unwrap_or(std::path::Path::new(".")))
-            .env("TEACHER_TEMPLATE", &self.config.template)
             .env("TEACHER_NPM_CACHE", &self.config.npm_cache)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -112,9 +111,20 @@ impl Worker {
         }
     }
 
-    /// `node check.ts` on a draft's files, with the npm check: whether it passed, and what it printed.
+    /// The check (`@gestalts/check`'s `checkView`, and whether what the view pins bundles) on a draft's files, as the
+    /// agent sees them: whether it passed, and its report.
     pub async fn check(&self, files: &std::collections::BTreeMap<String, String>, gestalts: &[String]) -> Result<(bool, String), String> {
         let r = self.call("check", json!({ "files": files, "gestalts": gestalts })).await?;
         Ok((r["ok"].as_bool().unwrap_or(false), r["output"].as_str().unwrap_or_default().to_owned()))
+    }
+
+    /// The same check on a draft as ymls (its view `view` among them): each problem, none when it passed.
+    pub async fn check_draft(&self, ymls: &std::collections::BTreeMap<String, String>, view: &str, gestalts: &[String]) -> Result<Vec<String>, String> {
+        let ymls: Vec<_> = ymls.iter().map(|(id, text)| json!({ "id": id, "text": text })).collect();
+        let r = self.call("check-draft", json!({ "ymls": ymls, "view": view, "gestalts": gestalts })).await?;
+        if r["ok"] == true {
+            return Ok(vec![]);
+        }
+        Ok(r["problems"].as_array().into_iter().flatten().filter_map(|p| p.as_str().map(str::to_owned)).collect())
     }
 }

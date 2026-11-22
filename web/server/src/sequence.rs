@@ -156,7 +156,7 @@ pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft, runtim
     let mut out = Version { files: BTreeMap::new(), blobs: BTreeMap::new(), npm: BTreeMap::new(), definitions: BTreeMap::new() };
     for (i, v) in views.iter().enumerate() {
         let vd = state.db.draft(v, &account.id)?.ok_or_else(|| ApiError::Invalid(vec![format!("step view {v} isn't there")]))?;
-        let one = build_view(state, &Check { dir: &state.draft_dir(&vd.id), view: &vd.id, package: &vd.package, lesson: Some(runtime) }).await.map_err(|e| match e {
+        let one = build_view(state, &Check { dir: &state.draft_dir(&vd.id), view: &vd.id, package: &vd.package, gestalts: &state.gestalts, lesson: Some(runtime) }).await.map_err(|e| match e {
             ApiError::Invalid(p) => ApiError::Invalid(p.into_iter().map(|p| format!("{}: {p}", vd.title)).collect()),
             ApiError::BadRequest(m) => ApiError::BadRequest(format!("{}: {m}", vd.title)),
             e => e,

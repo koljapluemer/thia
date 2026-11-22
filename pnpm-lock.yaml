@@ -553,12 +553,21 @@ importers:
 
   web/server:
     dependencies:
+      '@gestalts/check':
+        specifier: workspace:*
+        version: link:../../packages/check
       '@gestalts/npm-bundle':
         specifier: workspace:*
         version: link:../../packages/npm-bundle
       '@gestalts/view':
         specifier: workspace:*
         version: link:../../packages/view
+      '@gestalts/workshop':
+        specifier: workspace:*
+        version: link:../../packages/workshop
+      yaml:
+        specifier: 2.8.1
+        version: 2.8.1
     devDependencies:
       '@types/node':
         specifier: 26.6.6
