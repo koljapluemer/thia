@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@gestalts/client": "workspace:*",
-    "@gestalts/kit": "workspace:*",
     "@gestalts/vite": "workspace:*",
     "@tauri-apps/api": "2.12.4",
     "@tauri-apps/plugin-barcode-scanner": "2.5.3",

@@ -13,7 +13,7 @@ crates/device     a phone's folder and sync thread
 crates/node       the local server, watcher, backends, LAN pairing
 web/server        the teacher app's server: accounts, drafts synced and validated, the agent, publishing, the lesson domain
 packages/view     @gestalts/view: everything a view gets from the app
-packages/kit      @gestalts/kit: the UI kit views import (primitives < components < widgets < perspectives); on view and sources
+packages/kit      @gestalts/kit: the UI kit, for views only (apps and the host use tailwind + daisyUI; primitives < components < widgets < perspectives); on view and sources
 packages/learning @gestalts/learning: FSRS, practice sessions
 packages/sources  @gestalts/sources: bibliographic sources, BibTeX in and out
 packages/client   the wasm-backed repo, its core in a worker; host side only

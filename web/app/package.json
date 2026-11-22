@@ -12,7 +12,6 @@
     "@gestalts/check": "workspace:*",
     "@gestalts/client": "workspace:*",
     "@gestalts/host": "workspace:*",
-    "@gestalts/kit": "workspace:*",
     "@gestalts/learning": "workspace:*",
     "@gestalts/npm-bundle": "workspace:*",
     "@gestalts/sources": "workspace:*",

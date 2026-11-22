@@ -8,15 +8,17 @@ import { defineConfig } from 'oxlint';
  * - `@gestalts/kit` imports only the view and sources packages, in layers: primitives < components < widgets < perspectives.
  * - a plugin's `view.tsx` imports only the view package, the kit (its index), learning and sources, never another plugin, the
  *   client or the host.
- * - `@gestalts/client` (the core in the browser) builds on the view package; the host on client, view, kit, learning and
- *   sources (learning, sources and the kit only for the runtime frames load).
+ * - the kit is for views only: the frame runtime (`packages/host/src/frame/runtime.tsx`, everything a frame loads) is the one
+ *   thing besides views that imports it, to hand it to them. Hosts and apps are shells and get by with tailwind + daisyUI.
+ * - `@gestalts/client` (the core in the browser) builds on the view package; the host on client, view, learning and sources;
+ *   the frame runtime also on the kit's index.
  * - `@gestalts/vite` (the build preset, run by Node) imports the view package's compiler, and npm-bundle for pinned
  *   distributions.
  * - `@gestalts/check` (what an agent's work is checked with, in the page and in Node) imports the view and viz packages.
  * - `@gestalts/workshop` (making a view with an agent) builds on client, host, view and check.
  * - `@gestalts/npm-bundle` (npm packages for views, bundled by a server, run by Node) imports only the view package.
  * - an app (`web/<app>/src`, folder-sync's settings page) imports only the packages
- *   (client, host, view, the kit's index, learning, sources, workshop, check) and its own files, never another app or a plugin;
+ *   (client, host, view, learning, sources, workshop, check) and its own files, never another app or a plugin;
  *   nothing imports an app.
  * External packages are always fine.
  */
@@ -39,11 +41,11 @@ const allowed: Record<string, string[]> = {
   ...Object.fromEntries(Object.entries(kitBelow).map(([t, below]) => [t, ['view', 'sources', ...below]])),
   plugin: ['view', 'kit-index', 'learning', 'sources'],
   debug: ['client', 'view'],
-  host: ['client', 'view', 'kit-index', 'learning', 'sources', 'debug'],
+  host: ['client', 'view', 'learning', 'sources', 'debug'],
   workshop: ['client', 'host', 'view', 'check'],
   check: ['view', 'viz'],
   'npm-bundle': ['view'],
-  app: ['client', 'host', 'view', 'kit-index', 'learning', 'sources', 'workshop', 'check'],
+  app: ['client', 'host', 'view', 'learning', 'sources', 'workshop', 'check'],
 };
 
 export default defineConfig({
@@ -76,6 +78,7 @@ export default defineConfig({
       { type: 'app', pattern: 'installables/folder-sync/*/src', capture: ['app'] },
       { type: 'app', pattern: 'web/*/src', capture: ['app'] },
     ],
+    'boundaries/files': [{ category: 'runtime', pattern: `**/${host}/frame/runtime.tsx` }],
   },
   rules: {
     'react/rules-of-hooks': 'error',
@@ -96,6 +99,7 @@ export default defineConfig({
             from: { element: { type } },
             allow: { to: { element: { types: { anyOf: to.length ? to : ['none'] } } } },
           })),
+          { from: { file: { categories: 'runtime' } }, allow: { to: { element: { type: 'kit-index' } } } },
         ],
       }],
     },

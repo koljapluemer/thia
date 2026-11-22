@@ -404,9 +404,6 @@ importers:
       '@gestalts/host':
         specifier: workspace:*
         version: link:../../packages/host
-      '@gestalts/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
       '@gestalts/learning':
         specifier: workspace:*
         version: link:../../packages/learning
@@ -483,9 +480,6 @@ importers:
       '@gestalts/host':
         specifier: workspace:*
         version: link:../../packages/host
-      '@gestalts/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
       '@gestalts/learning':
         specifier: workspace:*
         version: link:../../packages/learning
@@ -581,9 +575,6 @@ importers:
       '@gestalts/host':
         specifier: workspace:*
         version: link:../../packages/host
-      '@gestalts/kit':
-        specifier: workspace:*
-        version: link:../../packages/kit
       '@gestalts/learning':
         specifier: workspace:*
         version: link:../../packages/learning
