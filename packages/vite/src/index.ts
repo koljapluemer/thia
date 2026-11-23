@@ -120,11 +120,14 @@ function readDecks(pluginId: string, root: string) {
   return readdirSync(dir).filter((id) => statSync(join(dir, id)).isDirectory()).map((id) => {
     const deck = join(dir, id);
     if (!existsSync(join(deck, 'index.json'))) throw new Error(`${pluginId}: its deck ${id} has no index.json; run \`mise run publish-data ${relative(process.cwd(), deck)}\``);
-    const ymls = readdirSync(join(deck, 'notes')).map((f) => parse(readFileSync(join(deck, 'notes', f), 'utf8')) as { gestalt?: string; title?: string; name?: string });
+    const ymls = readdirSync(join(deck, 'notes')).map((f) => parse(readFileSync(join(deck, 'notes', f), 'utf8')) as { id?: string; gestalt?: string; title?: string; name?: string; concepts?: Record<string, number> });
     const meta = ymls.find((y) => y.gestalt === 'deck@1' || y.gestalt === 'deck@2' || y.gestalt === 'deck@3');
     if (!meta) throw new Error(`${pluginId}: its deck ${id} has no deck yml`);
     const gestalts = [...new Set(ymls.flatMap((y) => (typeof y.gestalt === 'string' ? [y.gestalt] : [])))];
-    return { id, title: meta.title ?? meta.name ?? id, dir: deck, gestalts };
+    // what a view opened on it practises (deck@3), by the names of the concepts it ships, most weight first
+    const names = new Map(ymls.flatMap((y) => (y.id && typeof y.name === 'string' && y.gestalt?.startsWith('concept@') ? [[y.id, y.name] as const] : [])));
+    const practises = Object.entries(meta.gestalt === 'deck@3' ? meta.concepts ?? {} : {}).sort((a, b) => b[1] - a[1]).flatMap(([c]) => names.get(c) ?? []);
+    return { id, title: meta.title ?? meta.name ?? id, dir: deck, gestalts, practises };
   });
 }
 
@@ -281,6 +284,8 @@ async function buildRuntime(appRoot: string): Promise<{ js: string; css: string;
 
 export function gestaltsPlugins(): PluginOption[] {
   let appRoot = process.cwd();
+  /** a build for Node (a prerenderer's): no frames run there, and the client build ships the files */
+  let ssr = false;
   let runtime: Promise<{ js: string; css: string; version: string }> | undefined;
   /** npm bundles of pinned distributions: their cache files, by their file in the build */
   const npmFiles = new Map<string, string>();
@@ -308,13 +313,14 @@ export function gestaltsPlugins(): PluginOption[] {
       // the core runs in a module worker (`@gestalts/client`'s core.worker.ts), which imports the wasm
       return { resolve: { dedupe: ['react', 'react-dom', 'lucide-react'] }, server: { fs: { allow } }, worker: { format: 'es' } };
     },
-    configResolved(config) { appRoot = config.root; },
+    configResolved(config) { appRoot = config.root; ssr = !!config.build.ssr; },
     resolveId(id) {
       if (id === RUNTIME) return `\0${RUNTIME}`;
       return id === VIRTUAL || id.startsWith(`${VIRTUAL}/`) ? `\0${id}` : undefined;
     },
     async load(id) {
       if (id === `\0${RUNTIME}`) {
+        if (ssr) return `export const runtime = ${JSON.stringify({ js: '', css: '', version: 'ssr' })};\n`;
         runtime ??= buildRuntime(appRoot);
         return `export const runtime = ${JSON.stringify(await runtime)};\n`;
       }
@@ -331,7 +337,7 @@ export function gestaltsPlugins(): PluginOption[] {
       const entries = plugins.map((p) => {
         this.addWatchFile(join(p.root, 'plugin.yml'));
         this.addWatchFile(join(p.root, 'view.tsx'));
-        const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}` }));
+        const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}`, practises: d.practises }));
         return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);
@@ -365,6 +371,7 @@ export function gestaltsPlugins(): PluginOption[] {
       });
     },
     async generateBundle() {
+      if (ssr) return;
       // the frame runtime this build carries, by version, for whatever serves builds by it (the lesson player)
       if (runtime) this.emitFile({ type: 'asset', fileName: 'gestalts-runtime.json', source: `${JSON.stringify({ version: (await runtime).version })}\n` });
       for (const [file, from] of npmFiles) this.emitFile({ type: 'asset', fileName: file, source: readFileSync(from) });

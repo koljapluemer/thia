@@ -169,7 +169,7 @@ async fn run(cli: Cli) -> Result<(), String> {
                     let meta = std::fs::read_to_string(dist.join("gestalts-runtime.json")).map_err(|e| format!("{}: {e}: build the player first", dist.display()))?;
                     let version = serde_json::from_str::<serde_json::Value>(&meta).ok().and_then(|v| v["version"].as_str().map(str::to_owned)).ok_or("gestalts-runtime.json has no version")?;
                     let to = cli.data.join("runtime").join(&version);
-                    copy_dir(&dist, &to).map_err(|e| format!("{}: {e}", to.display()))?;
+                    copy_dir(&dist, &to, PLAYER_SKIPS).map_err(|e| format!("{}: {e}", to.display()))?;
                     println!("{version}");
                 }
                 Admin::ReindexRuns => {
@@ -224,12 +224,20 @@ async fn run(cli: Cli) -> Result<(), String> {
     }
 }
 
-fn copy_dir(from: &std::path::Path, to: &std::path::Path) -> std::io::Result<()> {
+/// What of the site's build a player doesn't need: its prerendered pages, sitemap and the like (each version is kept
+/// for good, so these would add up).
+const PLAYER_SKIPS: &[&str] = &["o", "v", "404.html", "sitemap.xml", "robots.txt"];
+
+/// `from` into `to`, but for the top-level entries named in `skip`.
+fn copy_dir(from: &std::path::Path, to: &std::path::Path, skip: &[&str]) -> std::io::Result<()> {
     std::fs::create_dir_all(to)?;
     for e in std::fs::read_dir(from)? {
         let e = e?;
+        if e.file_name().to_str().is_some_and(|n| skip.contains(&n)) {
+            continue;
+        }
         if e.file_type()?.is_dir() {
-            copy_dir(&e.path(), &to.join(e.file_name()))?;
+            copy_dir(&e.path(), &to.join(e.file_name()), &[])?;
         } else {
             std::fs::copy(e.path(), to.join(e.file_name()))?;
         }

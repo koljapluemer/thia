@@ -241,7 +241,7 @@ run = "pnpm --dir web/site dev"
 
 [tasks."site:build"]
 hide = true
-description = "The public site as static files in web/site/dist (serve every path as index.html)"
+description = "The use app as static files in web/site/dist: every page prerendered (dist/<path>/index.html), 404.html, player.html for the lesson domain; VITE_PUBLIC_URL adds canonical links and a sitemap"
 depends = ["setup"]
 run = "pnpm --dir web/site build"
 

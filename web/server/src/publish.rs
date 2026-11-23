@@ -105,7 +105,7 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     let npm: BTreeMap<String, String> = field("npm").as_mapping().into_iter().flatten().filter_map(|(k, v)| Some((k.as_str()?.to_owned(), v.as_str()?.to_owned()))).collect();
     let mut problems = Vec::new();
 
-    if c.lesson.is_some() && !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit()) && state.data.join("runtime").join(&runtime).join("index.html").is_file()) {
+    if c.lesson.is_some() && crate::lessons::player_page(state, &runtime).is_none() {
         return Err(ApiError::Conflict(UPDATED.into()));
     }
 
@@ -189,7 +189,7 @@ const VIZ_VIEW: &str = "plugins/vizint/view.tsx";
 /// `GESTALTS_VIZ_RENDER=worker` it's checked and rendered again here, since this server can.
 pub(crate) async fn build_viz(state: &AppState, dir: &std::path::Path, id: &str, runtime: &str) -> ApiResult<Version> {
     use base64::Engine as _;
-    if !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit()) && state.data.join("runtime").join(runtime).join("index.html").is_file()) {
+    if crate::lessons::player_page(state, runtime).is_none() {
         return Err(ApiError::Conflict(UPDATED.into()));
     }
     let s = gestalts_fs::FsStorage::new(dir);

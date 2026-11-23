@@ -140,6 +140,29 @@ async fn what_may_not_go_out() {
     assert_eq!(s.lessons("/lessons/../thia.db").await.0, StatusCode::NOT_FOUND);
 }
 
+/// A player installed from a prerendered site: the link answers with its bare `player.html`, not the catalog its
+/// `index.html` is now; none of the site's pages is served as a file.
+#[tokio::test]
+async fn a_lesson_link_answers_with_the_bare_player_page() {
+    let s = Server::new(Limits::default());
+    let d = draft(&s).await;
+    let player = s.state.data.join("runtime").join(RUNTIME);
+    std::fs::write(player.join("index.html"), "<!doctype html><html><head><title>Everything</title></head><body><div id=\"app\"><main>catalog</main></div></body></html>").unwrap();
+    std::fs::write(player.join("player.html"), "<!doctype html><html><head><title>Player</title></head><body><div id=\"app\"></div></body></html>").unwrap();
+    assert_eq!(d.write(&s, WORD, VIEW).await.0, StatusCode::NO_CONTENT);
+    let (status, p) = d.publish(&s).await;
+    assert_eq!(status, StatusCode::OK, "{p}");
+    let lesson = p["id"].as_str().unwrap().to_owned();
+
+    let (status, _, page) = s.lessons(&format!("/l/{lesson}")).await;
+    let page = String::from_utf8(page).unwrap();
+    assert_eq!(status, StatusCode::OK);
+    assert!(page.contains("<title>Player</title>") && page.contains(&format!("<base href=\"/runtime/{RUNTIME}/\">")), "{page}");
+    for page in ["player.html", "index.html", "404.html", "v/flags-practice/flags/index.html"] {
+        assert_eq!(s.lessons(&format!("/runtime/{RUNTIME}/{page}")).await.0, StatusCode::NOT_FOUND, "{page}");
+    }
+}
+
 #[tokio::test]
 async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
     let s = Server::new(Limits::default());

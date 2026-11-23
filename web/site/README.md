@@ -12,13 +12,21 @@ with folder-sync on this computer (`VITE_GESTALTS_NODE`, default :7717, also ask
 (`pinned_npm`). The header links to the workshop (`VITE_MAKE`, default `/workshop`). See
 [`doc/architecture/publishing.md`](../../doc/architecture/publishing.md).
 
-The same build plays an unlisted published lesson from its link (`/l/<lesson>`). For that, the server installs
+Every page is prerendered at build time (`scripts/prerender.ts`, from `src/entry-server.tsx` built for Node): each view,
+outline and outline entry has its own `dist/<path>/index.html`, with its content, title, description, language and
+schema.org `LearningResource` (what a view practises, and the outline entries it fits, as `educationalAlignment`),
+so it shows without JavaScript and search engines find it; the browser takes the page over (`src/entry-client.tsx`,
+`hydrateRoot`) and from then on goes between pages itself. What's this device's (the store, guest mode, what was
+opened lately) only shows once it has. Serve a path from `<path>/index.html`, else `404.html` with a 404.
+
+The same build plays an unlisted published lesson from its link (`/l/<lesson>`), from the bare `player.html`, never
+indexed. For that, the server installs
 it under `/runtime/<version>/` on the lesson domain (`dist/gestalts-runtime.json` says which version), and answers
 each link with the build its lesson was made against. The lesson format is in `packages/workshop/src/lesson.ts`.
 
 ```sh
 mise run site:dev      # :5177; lesson links from the server on :7741 (VITE_LESSONS)
-mise run site:build    # dist/: static files, every path served as index.html
+mise run site:build    # dist/: static files, every page prerendered; VITE_PUBLIC_URL=https://… adds canonical links, sitemap.xml
 ```
 
 Its `models:` include the lessons' (web/app/distributions/lessons.yml), as lessons need them.

@@ -56,6 +56,22 @@ fn gone(status: StatusCode) -> Response {
     res
 }
 
+/// The page an installed player answers a lesson's link with: the site build's bare `player.html`, or, in a player
+/// installed before the site was prerendered, its `index.html`.
+pub(crate) fn player_page(state: &AppState, runtime: &str) -> Option<std::path::PathBuf> {
+    if !(runtime.len() == 16 && runtime.bytes().all(|b| b.is_ascii_hexdigit())) {
+        return None;
+    }
+    let dir = state.data.join("runtime").join(runtime);
+    ["player.html", "index.html"].into_iter().map(|f| dir.join(f)).find(|f| f.is_file())
+}
+
+/// The site build's own pages, which a player never serves as files: the player page only through /l/<lesson>,
+/// which gives it its <base>; the rest are the site's, not the lessons'.
+fn is_page(rest: &str) -> bool {
+    matches!(rest.rsplit('/').next(), Some("index.html" | "player.html" | "404.html"))
+}
+
 fn valid_lesson(id: &str) -> bool {
     id.len() == 22 && id.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
 }
@@ -91,7 +107,7 @@ async fn lesson(State(state): State<AppState>, Path(id): Path<String>) -> Respon
         .and_then(|m| m["runtime"].as_str().map(str::to_owned))
         .filter(|r| r.len() == 16 && r.bytes().all(|b| b.is_ascii_hexdigit()));
     let Some(runtime) = runtime else { return gone(StatusCode::INTERNAL_SERVER_ERROR) };
-    let Ok(html) = std::fs::read_to_string(state.data.join("runtime").join(&runtime).join("index.html")) else { return gone(StatusCode::SERVICE_UNAVAILABLE) };
+    let Some(html) = player_page(&state, &runtime).and_then(|f| std::fs::read_to_string(f).ok()) else { return gone(StatusCode::SERVICE_UNAVAILABLE) };
     let html = html.replacen("<head>", &format!("<head><base href=\"/runtime/{runtime}/\">"), 1);
     let mut res = Html(html).into_response();
     let h = res.headers_mut();
@@ -159,8 +175,7 @@ async fn npm_file(State(state): State<AppState>, Path(rest): Path<String>) -> Re
 }
 
 async fn runtime_file(State(state): State<AppState>, Path(rest): Path<String>) -> Response {
-    // the page itself only through /l/<lesson>, which gives it its <base>
-    if rest.ends_with("index.html") {
+    if is_page(&rest) {
         return StatusCode::NOT_FOUND.into_response();
     }
     file(&state, "runtime", &rest).await

@@ -6,3 +6,4 @@ packages/client/wasm/
 __pycache__/
 .venv/
 server-data/
+dist-ssr/

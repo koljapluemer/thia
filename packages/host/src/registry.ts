@@ -24,7 +24,8 @@ export type PluginManifest = {
 };
 
 /** One of a plugin's decks, as the build serves it: `source` is `<plugin>/<deck>`, `path` relative to the app. */
-export type DeckEntry = { id: string; title: string; source: string; path: string };
+/** `practises`: the names of the concepts a view opened on it practises as a whole (a deck@3's), most weight first */
+export type DeckEntry = { id: string; title: string; source: string; path: string; practises: string[] };
 
 /** A plugin the app is built with. */
 export type PluginEntry = {

@@ -4,7 +4,7 @@ import { registry } from 'virtual:gestalts-plugins';
 import type { OutlineTree, OutlineTreeEntry } from '@gestalts/host';
 import { BY_SOURCE, follow, ViewCard } from './Catalog';
 import { Notice, Spinner } from './Run';
-import { store } from './store';
+import { store, useStored } from './store';
 import { GuestBanner, Toolbar } from './Toolbar';
 
 /**
@@ -38,42 +38,57 @@ function pathTo(entries: OutlineTreeEntry[], id: string): OutlineTreeEntry[] | u
   return undefined;
 }
 
-export function Outline({ name, entry, open }: { name: string; entry?: string; open: (path: string) => void }) {
+/** The tree of `/o/<name>`: what a page about it needs before it renders. */
+export async function loadTree(name: string): Promise<OutlineTree> {
+  const r = await fetch(`outlines/${name}.json`);
+  if (!r.ok) throw new Error(`${r.status}`);
+  return (await r.json()) as OutlineTree;
+}
+
+/** What's open at first: the tree down to the entry the link names. */
+const trailOf = (tree: OutlineTree | undefined, entry: string | undefined) => new Set(tree && entry ? (pathTo(tree.entries, entry) ?? []).map((e) => e.id) : []);
+
+/**
+ * `tree`, when the page has it already (prerendered, or loaded before hydrating); else it's loaded here and handed
+ * up (`onTree`), so going back to it doesn't load it again.
+ */
+export function Outline({ name, entry, open, tree, onTree }: {
+  name: string; entry?: string; open: (path: string) => void; tree?: OutlineTree; onTree: (tree: OutlineTree) => void;
+}) {
   const summary = registry.outlines?.find((o) => o.name === name);
-  const [tree, setTree] = useState<OutlineTree>();
   const [error, setError] = useState<string>();
-  const [only, setOnly] = useState(() => store.get(ONLY) === '1');
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const only = useStored(ONLY) === '1';
+  const [expanded, setExpanded] = useState(() => trailOf(tree, entry));
   // the entry the link names: from the path, then as the reader picks one (the link changes, the page doesn't)
   const [selected, setSelected] = useState(entry);
   const w = summary?.lang.startsWith('de') ? WORDS.de : WORDS.en;
 
   useEffect(() => {
-    if (!summary) return;
+    if (!summary || tree) return;
     let live = true;
-    fetch(`outlines/${name}.json`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status}`))))
-      .then((t: OutlineTree) => {
+    loadTree(name).then(
+      (t) => {
         if (!live) return;
-        setTree(t);
         // a link to an entry opens the tree down to it
-        const trail = entry ? pathTo(t.entries, entry) : undefined;
-        if (trail) setExpanded(new Set(trail.map((e) => e.id)));
-      })
-      .catch((e: unknown) => { if (live) setError(e instanceof Error ? e.message : String(e)); });
+        setExpanded(trailOf(t, entry));
+        onTree(t);
+      },
+      (e: unknown) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
+    );
     return () => { live = false; };
-  }, [name, summary, entry]);
+  }, [name, summary, entry, tree, onTree]);
   // and scrolls to it
+  const loaded = !!tree;
   useEffect(() => {
-    if (tree && entry) requestAnimationFrame(() => document.getElementById(entry)?.scrollIntoView({ block: 'start' }));
-  }, [tree, entry]);
+    if (loaded && entry) requestAnimationFrame(() => document.getElementById(entry)?.scrollIntoView({ block: 'start' }));
+  }, [loaded, entry]);
   useEffect(() => { document.title = summary?.title ?? 'thia'; }, [summary]);
 
   if (!summary) return <Notice title={WORDS.en.unknown}><a className="link" href="/">See everything there is</a>.</Notice>;
   if (error) return <Notice title={summary.title}>It didn’t load ({error}). Try again in a moment.</Notice>;
   if (!tree) return <Spinner />;
 
-  const toggleOnly = (on: boolean) => { setOnly(on); store.set(ONLY, on ? '1' : '0'); };
+  const toggleOnly = (on: boolean) => store.set(ONLY, on ? '1' : '0');
   const select = (e: OutlineTreeEntry) => {
     const next = new Set(expanded);
     if (next.has(e.id) && e.id === selected) next.delete(e.id);

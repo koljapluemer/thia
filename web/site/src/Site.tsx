@@ -1,20 +1,24 @@
-import { StrictMode, useEffect, useState } from 'react';
-import { createRoot } from 'react-dom/client';
-import { Catalog, ENTRIES, entryAt } from './Catalog';
+import { useEffect, useState } from 'react';
+import type { OutlineTree } from '@gestalts/host';
+import { Catalog, entryAt } from './Catalog';
 import { HomeProvider } from './home';
 import { Lesson, lessonId } from './Lesson';
 import { Outline, outlineAt } from './Outline';
 import { Notice } from './Run';
 import { ViewPage } from './View';
-import './app.css';
+
+/** What a page needs before it renders, so the prerendered page and the hydrated one are the same: an outline's tree. */
+export type PageData = { tree?: OutlineTree };
 
 /**
  * The use app, by path: `/` everything on it, `/v/<view>[/<deck>]` one of them on the user's store, `/o/<outline>[/<entry>]`
  * a curriculum or guide with the views under its entries, `/l/<lesson>` a published lesson (on the lesson domain,
- * from its link, on a store of its own).
+ * from its link, on a store of its own). `path` and `data` are where it starts: the prerendered page's, or the
+ * browser's; from then on it follows the browser's history.
  */
-function Site() {
-  const [path, setPath] = useState(location.pathname);
+export function Site({ path: start, data }: { path: string; data?: PageData }) {
+  const [path, setPath] = useState(start);
+  const [tree, setTree] = useState(data?.tree);
   useEffect(() => {
     const update = () => setPath(location.pathname);
     addEventListener('popstate', update);
@@ -36,21 +40,9 @@ function Site() {
   return (
     <HomeProvider>
       {entry ? <ViewPage key={path} entry={entry} back={back} open={open} />
-        : outline ? <Outline key={outline.name} name={outline.name} entry={outline.entry} open={open} />
+        : outline ? <Outline key={outline.name} name={outline.name} entry={outline.entry} open={open} tree={tree?.name === outline.name ? tree : undefined} onTree={setTree} />
         : path === '/' || path === '' ? <Catalog open={open} />
         : <Notice title="Nothing here"><a className="link" href="/">See everything there is</a>, or open the link you were given again.</Notice>}
     </HomeProvider>
   );
 }
-
-// an `?open=<view>&<params>` link, as the gestalter made them: that view's page, there
-const asked = new URLSearchParams(location.search);
-const view = asked.get('open');
-if (view) {
-  asked.delete('open');
-  const hash = asked.toString();
-  const to = ENTRIES.find((e) => e.plugin.manifest.id === view)?.path ?? '/';
-  history.replaceState(null, '', `${to}${hash ? `#${hash}` : ''}`);
-}
-
-createRoot(document.getElementById('app')!).render(<StrictMode><Site /></StrictMode>);

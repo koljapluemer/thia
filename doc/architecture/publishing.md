@@ -1,7 +1,7 @@
 # Publishing to the public site
 
 What the workshop (`/workshop`) makes, a learning view or a visualization, can be offered for the public site. An admin reviews it, and accepting it makes it part of the repo. The site is built
-from the repo. Built for the dev machine; nothing of it is deployed yet.
+from the repo, prerendered page by page, and deployed with the server (`mise run server:deploy`), on the app's domain.
 
 ```
 workshop ──submit──▶ server: submissions/<id>/ + a row ──review (/review)──▶ accept
@@ -20,9 +20,13 @@ or a visualization:
 - an accepted visualization is a deck of `vizint`
 
 The catalog (`/`) lists every `(plugin, deck)` in `web/site/distribution.yml`, titled by the deck, described by the
-plugin, with a text search. A plugin without a deck isn't listed. Each entry keeps what a learner does on their device,
-in a folder of its own (OPFS `view-<plugin>-<deck>`), with only its deck mounted read-only, and has "Start fresh". A
-view's params are in the URL's hash.
+plugin and what the deck practises (its `deck@3` concepts' names), with a text search; a plugin without a deck is
+listed on its own (`/v/<plugin>`: notes, flashcards, sources), on the user's data alone. What a learner does is kept
+on their device in one store for every view (OPFS `home`), with each deck opened so far mounted read-only, so beliefs
+about concepts come from everything they practised; a shared device has "Guest", a store of its own, deleted when the
+guest ends it. A view's params are in the URL's hash. Every page is prerendered at build time
+([`web/site/README.md`](../../web/site/README.md)): its content and head, schema.org `LearningResource` with the
+outline entries it fits.
 
 ### Curricula and guides
 
@@ -39,7 +43,8 @@ and what's missing as `outlines/<name>.gaps.json` (entries no view practises, le
 counts.
 
 The same build also plays unlisted lesson links (`/l/<lesson>`), served by the server's lesson domain
-(`web/server`, `lessons.rs`), which installs it per frame runtime (`admin install-player`).
+(`web/server`, `lessons.rs`), which installs it per frame runtime (`admin install-player`, without the site's
+prerendered pages) and answers each link with its bare `player.html` (an older install's `index.html`), `noindex`.
 
 ### Allowances
 
@@ -98,8 +103,8 @@ any other.
 
 ## Not yet
 
-- deploying the site and the queue
+- deploying the queue
 - automated gates before review (bundle size, network use, performance) and an advisory AI review
 - mapping a lesson's gestalts onto the repo's own instead of keeping its package
-- a description per deck for the catalog
+- a description per deck of its own, beyond its concepts' names
 - a still for each card

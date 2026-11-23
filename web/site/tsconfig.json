@@ -20,10 +20,12 @@
       "vite/client",
       "node",
       "@gestalts/vite/client"
-    ]
+    ],
+    "allowImportingTsExtensions": true
   },
   "include": [
     "src",
+    "scripts",
     "vite.config.ts"
   ]
 }
