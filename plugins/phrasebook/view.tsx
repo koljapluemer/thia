@@ -70,7 +70,7 @@ type Graph = {
 
 function useGraph(): { graph: Graph; loading: boolean; error?: string } {
   const cardQuery = useAll(useQuery({ gestalt: 'flashcard@1', tags: { all: ['phrasebook'] }, fields: ['tags', 'concepts', 'sources'], limit: 500 }));
-  const deckQuery = useAll(useQuery({ gestalt: 'deck@1', fields: ['name', 'title', 'members'], limit: 100 }));
+  const deckQuery = useAll(useQuery({ gestalt: ['deck@1', 'deck@3'], fields: ['name', 'title', 'members'], limit: 100 }));
   const cards = useMemo(() => cardQuery.items.flatMap((i) => cardOf(i) ?? []), [cardQuery.items]);
   const decks = useMemo(() => {
     const ids = new Set(cards.map((c) => c.id));

@@ -92,8 +92,12 @@ async fn an_accepted_view_becomes_a_plugin_with_its_own_package_and_deck() {
     let (id, package, ada) = draft(&s, "ada@school.example", "Artikel").await;
     let (_, sub) = submit(&s, &id, &ada).await;
     let bea = s.login("bea@school.example").await;
-    let target = json!({ "plugin": "artikel", "package": "artikel", "deck": "nomen" });
-    let (status, p, _) = s.call("POST", &format!("/api/admin/submissions/{}/accept", sub["id"].as_str().unwrap()), Some(&bea), Some(target.clone())).await;
+    let accept_first = format!("/api/admin/submissions/{}/accept", sub["id"].as_str().unwrap());
+    // its deck says what it practises
+    let (status, p, _) = s.call("POST", &accept_first, Some(&bea), Some(json!({ "plugin": "artikel", "package": "artikel", "deck": "nomen" }))).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST, "{p}");
+    let target = json!({ "plugin": "artikel", "package": "artikel", "deck": "nomen", "concepts": { "grammatical gender": 1.0 } });
+    let (status, p, _) = s.call("POST", &accept_first, Some(&bea), Some(target.clone())).await;
     assert_eq!(status, StatusCode::OK, "{p}");
     assert_eq!(p["at"], "plugins/artikel");
 
@@ -104,7 +108,11 @@ async fn an_accepted_view_becomes_a_plugin_with_its_own_package_and_deck() {
     let def = read(r, "gestalts/artikel/noun/v1.yml");
     assert!(def.starts_with("name: artikel/noun\nversion: 1\nfields:") && !def.contains("gestalt:") && !def.contains("id:"), "as a definition in gestalts/ reads: {def}");
     assert!(read(r, "plugins/artikel/decks/nomen/notes/haus.yml").contains("gestalt: artikel/noun@1"));
-    assert!(read(r, "plugins/artikel/decks/nomen/notes/deck-artikel-nomen.yml").contains("- haus"));
+    let deck = read(r, "plugins/artikel/decks/nomen/notes/deck-artikel-nomen.yml");
+    assert!(deck.contains("gestalt: deck@3") && deck.contains("- haus"), "{deck}");
+    let concept = gestalts_core::sha16("grammatical gender");
+    assert!(deck.contains(&format!("concept-{concept}: 1")), "{deck}");
+    assert!(read(r, &format!("plugins/artikel/decks/nomen/notes/concept-{concept}.yml")).contains("name: grammatical gender"));
     assert!(read(r, "plugins/artikel/decks/nomen/index.json").contains("haus"));
     assert!(read(r, "plugins/artikel/origin.yml").contains("credit: Ada L."));
     let site = read(r, "web/site/distribution.yml");
@@ -122,9 +130,9 @@ async fn an_accepted_view_becomes_a_plugin_with_its_own_package_and_deck() {
     let (_, sub) = submit(&s, &other, &ada).await;
     let accept = format!("/api/admin/submissions/{}/accept", sub["id"].as_str().unwrap());
     assert_eq!(s.call("POST", &accept, Some(&bea), Some(target)).await.0, StatusCode::CONFLICT);
-    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "plugin": "artikel-2", "package": "artikel", "deck": "x" }))).await.0, StatusCode::CONFLICT);
-    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "plugin": "../x", "package": "a", "deck": "x" }))).await.0, StatusCode::BAD_REQUEST);
-    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "plugin": "artikel-2", "package": "artikel-2", "deck": "x" }))).await.0, StatusCode::OK);
+    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "plugin": "artikel-2", "package": "artikel", "deck": "x", "concepts": { "grammatical gender": 1 } }))).await.0, StatusCode::CONFLICT);
+    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "plugin": "../x", "package": "a", "deck": "x", "concepts": { "grammatical gender": 1 } }))).await.0, StatusCode::BAD_REQUEST);
+    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "plugin": "artikel-2", "package": "artikel-2", "deck": "x", "concepts": { "grammatical gender": 1 } }))).await.0, StatusCode::OK);
 }
 
 #[tokio::test]
@@ -148,8 +156,8 @@ async fn a_visualization_draft_becomes_a_vizint_deck() {
 
     let bea = s.login("bea@school.example").await;
     let accept = format!("/api/admin/submissions/{}/accept", sub["id"].as_str().unwrap());
-    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "examples" }))).await.0, StatusCode::CONFLICT);
-    let (status, p, _) = s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "wellen" }))).await;
+    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "examples", "concepts": { "waves": 1 } }))).await.0, StatusCode::CONFLICT);
+    let (status, p, _) = s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "wellen", "concepts": { "waves": 1 } }))).await;
     assert_eq!((status, p["at"].as_str()), (StatusCode::OK, Some("plugins/vizint/decks/wellen")), "{p}");
 
     let r = repo.path();
@@ -157,9 +165,10 @@ async fn a_visualization_draft_becomes_a_vizint_deck() {
     let blob = yml.lines().find_map(|l| l.strip_prefix("built: ")).unwrap().to_owned();
     assert!(blob.ends_with(".html") && blob.len() == 21, "named by content: {blob}");
     assert_eq!(std::fs::read(r.join("plugins/vizint/decks/wellen/blobs").join(&blob)).unwrap(), html);
-    assert!(read(r, "plugins/vizint/decks/wellen/notes/deck-vizint-wellen.yml").contains("title: Wellen"));
+    let deck = read(r, "plugins/vizint/decks/wellen/notes/deck-vizint-wellen.yml");
+    assert!(deck.contains("title: Wellen") && deck.contains("gestalt: deck@3") && deck.contains(&format!("concept-{}: 1", gestalts_core::sha16("waves"))), "{deck}");
     assert!(read(r, "plugins/vizint/decks/wellen/origin.yml").contains("licence: CC BY-SA 4.0"));
-    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "wellen" }))).await.0, StatusCode::CONFLICT, "decided already");
+    assert_eq!(s.call("POST", &accept, Some(&bea), Some(json!({ "deck": "wellen", "concepts": { "waves": 1 } }))).await.0, StatusCode::CONFLICT, "decided already");
 
     // drafts are submitted from the server's copy only
     assert_eq!(s.call("POST", "/api/submissions", Some(&ada), Some(json!({}))).await.0, StatusCode::METHOD_NOT_ALLOWED);

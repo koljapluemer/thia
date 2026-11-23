@@ -49,7 +49,8 @@ export type Offer = { about: string; credit?: string; rights: boolean };
 /** Ymls as sync writes them, and the blobs they use (base64). */
 export type Snapshot = { ymls: { id: string; text: string }[]; blobs: Record<string, string> };
 /** Where accepting puts it: `plugin` and `package` for a view, `deck` for both. */
-export type Target = { plugin?: string; package?: string; deck: string };
+/** `concepts`: what its deck practises as a whole, concept name (canonical English) to weight */
+export type Target = { plugin?: string; package?: string; deck: string; concepts?: Record<string, number> };
 export type Promoted = { at: string; written: string[]; next: string[]; warnings: string[] };
 
 export const submissionsOf = (source: string) => api<Submission[]>(`/submissions?source=${encodeURIComponent(source)}`);

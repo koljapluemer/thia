@@ -26,8 +26,9 @@ unfiled list rather than storing them.
   Frequency bands and other evidence remain links, and so do abstraction links (intents → `social: *`, math-drills).
 - Set state derived in the core: a set's belief carries `members: {known}` (members with `p` ≥ 0.8). Every set is
   open (*k known* only) until `closed` exists. Direct evidence for the set stays separate from the count.
-- `deck@2` with a `concepts` ref map, for content not made of items. Nothing writes it yet. An entry point's concepts
-  are the deck's own plus its items'.
+- `deck@2` with a `concepts` ref map, for content not made of items. Superseded by `deck@3` (2026-11-23): `concepts`
+  required, what a view practises as a whole, kept apart from its members' evidence. An entry point's concepts are
+  its deck's alone; every deck on the site is a `deck@3`.
 - Queries take several gestalts, so views read `concept@2` and `concept@3` alike.
 - Documented: deck members may be generators, and scheduling item traces versus concept state is the view's call.
 

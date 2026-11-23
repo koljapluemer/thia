@@ -10,6 +10,7 @@ conflict@1: 86a003895da88d8f
 country-group@1: a02f582336633431
 deck@1: f8ac9d504bda21cc
 deck@2: c24c2763d87c0459
+deck@3: 7d9f2c27102ae271
 flag@1: 10c3b54326483ff7
 flashcard@1: 4b1641c0bab1c9f9
 fsrs-data@1: 33f894db4d9b866c
@@ -21,6 +22,8 @@ map@1: 1fb56cae115ccd0d
 media-source@1: 97b0468b457501ad
 multiple-choice@1: 18a62b0f9f4fca2e
 note@1: 99021a40379e6354
+outline-entry@1: 5cc9fb02347610d2
+outline@1: 42008485a23a5ba4
 plugin-install@1: fcff6201e95cfe4d
 practice-event@1: 4f5ff45443fb7fd2
 practice-event@2: 786c6df8400c5fe7

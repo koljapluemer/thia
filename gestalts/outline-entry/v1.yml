@@ -1,0 +1,19 @@
+name: outline-entry
+version: 1
+description: >-
+  One node of an outline: a stage, an area, a unit, an expectation. `label` is in its outline's `lang`, as the issuer
+  wrote it. `notation` is the issuer's own code (5.NBT.A.4), never one we make up. `level` is in the issuer's terms
+  ("Doppelschuljahrgang 5/6"); `grades` and `isced` only where they apply, for filters across outlines; all three
+  hold for the entries below unless they say otherwise. `kind` is a hint for people ("Lernbereich", "cluster").
+  `concepts` (concept ids, 0..1: 1 it is about it, 0.5 needed or practised, 0.2 it comes up) is what the entry is
+  about, matched against what decks (`deck@3`) say they practise. `entries` are its children, in order. An entry is in
+  one outline, under one parent.
+fields:
+  label: { type: string, required: true }
+  notation: { type: string }
+  kind: { type: string }
+  level: { type: string }
+  grades: { type: list, items: { type: integer } }
+  isced: { type: integer }
+  concepts: { type: ref_map, min: 0, max: 1, targets: [concept] }
+  entries: { type: ref_list, targets: [outline-entry] }

@@ -213,9 +213,11 @@ pub fn serve(opts: &Opts, embedded: Embedded, data: Option<PathBuf>) -> Result<(
     Ok(())
 }
 
-/// Prints every yml that can't be used; returns how many there are.
+/// Prints every yml that can't be used, and what's wrong across them (a deck's or outline's); returns how many
+/// problems there are.
 fn health(store: &FsStorage, gestalts: &gestalts_core::Gestalts) -> usize {
     let mut count = 0;
+    let mut ymls = Vec::new();
     for id in store.list_ymls_sync().expect("can list ymls") {
         let yml = gestalts_core::Yml::parse(id.clone(), store.read_yml_sync(&id).ok().flatten().unwrap_or_default());
         if let gestalts_core::YmlState::Invalid(problems) = gestalts.classify(&yml) {
@@ -223,9 +225,12 @@ fn health(store: &FsStorage, gestalts: &gestalts_core::Gestalts) -> usize {
             println!("{id}");
             problems.iter().for_each(|p| println!("  ! {} {}", p.path, p.message));
         }
+        ymls.push(yml);
     }
     eprintln!("{count} invalid yml(s)");
-    count
+    let across = gestalts_core::folder_problems(&ymls);
+    across.iter().for_each(|p| println!("! {p}"));
+    count + across.len()
 }
 
 fn publish(dir: &std::path::Path, gestalts: &gestalts_core::Gestalts) -> usize {

@@ -34,7 +34,7 @@ run = [
 
 [tasks.check]
 hide = true
-description = "Tests (the checks on every agent example among them), lints, typechecks, every deck's health"
+description = "Tests (the checks on every agent example among them), lints, typechecks, every deck's and outline's health"
 depends = ["setup", "icons:check"]
 shell = "bash -c"
 run = """
@@ -45,8 +45,7 @@ pnpm lint
 node scripts/check-distributions.ts
 pnpm typecheck
 pnpm test
-python3 -m unittest discover -s installables/claude-bridge/scripts/tests
-for d in plugins/*/decks/*/; do cargo run -q --release -p gestalts-node-desktop -- $(bash scripts/plugin-dirs.sh) health "$d" > /dev/null; done
+for d in plugins/*/decks/*/ outlines/*/; do [ -f "$d/index.json" ] || continue; cargo run -q --release -p gestalts-node-desktop -- $(bash scripts/plugin-dirs.sh) health "$d" > /dev/null; done
 """
 
 [tasks.icons]

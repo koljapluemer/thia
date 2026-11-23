@@ -1,5 +1,5 @@
 id: deck-italian-for-english-speakers
-gestalt: deck@1
+gestalt: deck@3
 name: italian-for-english-speakers
 title: Essential Italian phrases for English speakers
 members:
@@ -123,3 +123,5 @@ members:
 - link-9ac1e33a3a68ecb1
 - link-b7c09c13f543a46d
 - link-26918c4a479acc67
+concepts:
+  concept-ee9fb4fb825957ae: 1

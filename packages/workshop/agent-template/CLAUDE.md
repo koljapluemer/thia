@@ -40,6 +40,7 @@ write is refused with the reason. Keep ymls small and link them.
 | `practice-event@2` | the same, saying more: written by `logPractice` when given `{ response, instance, ms }` (what kind of answer, a key of the item's `responses`; which item; how long) |
 | `deck@1` | `name`, `title?`, `members[]` |
 | `deck@2` | the same, plus `concepts?: {<concept id>: 0..1}`: what it practises beyond its members' own |
+| `deck@3` | `name`, `title`, `members[]`, `concepts: {<concept id>: 0..1}` (at least one): what a view on it practises as a whole. The reviewer writes it on accepting; you don't |
 | `fsrs-data@1` | written by `saveReview` |
 | `practice-session@1` | written by `usePracticeSession` |
 

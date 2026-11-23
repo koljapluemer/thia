@@ -1,5 +1,5 @@
 id: deck-stembridge-recurring-decimals
-gestalt: deck@1
+gestalt: deck@3
 name: stembridge-recurring-decimals
 title: Recurring decimals
 members:
@@ -23,3 +23,5 @@ members:
 - link-753797a10db39384
 - link-a98a32e68458a541
 - link-cf7c15b21efd49ad
+concepts:
+  concept-c17d3666cb6590e3: 1

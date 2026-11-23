@@ -109,5 +109,6 @@ for (const [intent, word] of pairs) {
   await link(wordConcept.get(word)!, from, WORD_TO_INTENT, 'says');
 }
 
-await put({ id: 'deck-vietnamese-typing', gestalt: 'deck@1', name: 'vietnamese-typing', title: 'Vietnamese typing', members: [...members] });
+// what the deck practises as a whole: writing Vietnamese, in the language; words and marks are the evidence
+await put({ id: 'deck-vietnamese-typing', gestalt: 'deck@3', name: 'vietnamese-typing', title: 'Vietnamese typing', members: [...members], concepts: { [script]: 1, [conceptId(LANGUAGE)]: 0.5 } });
 console.log(`${Object.keys(words).length} words, ${MARK_KEYS.length} script concepts, ${pairs.length} phrasebook pairs`);

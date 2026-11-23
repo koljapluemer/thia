@@ -8,6 +8,9 @@
 //!   and the package are added to the site's `distribution.yml`.
 //! - **A visualization** becomes the deck `plugins/vizint/decks/<deck>/`, holding the one `viz@1`.
 //!
+//! Either deck is a `deck@3` saying what it practises as a whole: the reviewer names its concepts, each one of the
+//! draft's by name or a new one, so that outlines find it.
+//!
 //! Each target gets an `origin.yml`: the submission it came from, the credit asked for, and the licence. A later
 //! submission from the same draft (and account) replaces what the earlier one put there; anything else already at a
 //! target is refused, as is a package that is already there.
@@ -30,7 +33,8 @@ pub const LICENCE: &str = "CC BY-SA 4.0";
 const SITE: &str = "web/site/distribution.yml";
 const VIZINT: &str = "plugins/vizint";
 
-/// Where accepting puts it: `plugin` and `package` for a view, `deck` for both.
+/// Where accepting puts it: `plugin` and `package` for a view, `deck` for both; `concepts`, what its deck practises
+/// as a whole, by concept name (canonical English), each with its weight (0..1).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Target {
     #[serde(default)]
@@ -38,6 +42,8 @@ pub struct Target {
     #[serde(default)]
     pub package: Option<String>,
     pub deck: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub concepts: BTreeMap<String, f64>,
 }
 
 #[derive(Serialize)]
@@ -91,12 +97,14 @@ pub fn proposed(state: &AppState, s: &Submission) -> ApiResult<Target> {
         let at = e.promoted.unwrap_or_default();
         if let Some(o) = read_origin(&repo.join(&at)) {
             let plugin = (s.kind == "view").then(|| at.trim_start_matches("plugins/").to_owned());
-            return Ok(Target { plugin, package: o.package, deck: o.deck.unwrap_or(name) });
+            let deck = o.deck.unwrap_or(name);
+            let dir = if s.kind == "view" { repo.join(&at).join("decks").join(&deck) } else { repo.join(&at) };
+            return Ok(Target { plugin, package: o.package, deck, concepts: deck_concepts_in(&dir) });
         }
     }
     Ok(match s.kind.as_str() {
-        "view" => Target { plugin: Some(name.clone()), package: Some(name.clone()), deck: name },
-        _ => Target { plugin: None, package: None, deck: name },
+        "view" => Target { plugin: Some(name.clone()), package: Some(name.clone()), deck: name, concepts: BTreeMap::new() },
+        _ => Target { plugin: None, package: None, deck: name, concepts: BTreeMap::new() },
     })
 }
 
@@ -114,6 +122,12 @@ pub async fn promote(state: &AppState, s: &Submission, t: &Target) -> ApiResult<
     let repo = state.promote_into.clone().ok_or_else(|| ApiError::Conflict("this server doesn't accept into a checkout (start it with --promote-into <repo>): only rejecting works here".into()))?;
     if !name_ok(&t.deck) {
         return Err(ApiError::BadRequest("deck: lowercase letters, digits and -".into()));
+    }
+    if t.concepts.is_empty() {
+        return Err(ApiError::BadRequest("concepts: name at least one thing its deck practises".into()));
+    }
+    if t.concepts.iter().any(|(n, w)| n.trim().is_empty() || n.trim() != n || !(*w > 0.0 && *w <= 1.0)) {
+        return Err(ApiError::BadRequest("concepts: names without surrounding spaces, each weighted above 0 and at most 1".into()));
     }
     let (st, s, t) = (state.clone(), s.clone(), t.clone());
     tokio::task::spawn_blocking(move || match s.kind.as_str() {
@@ -196,14 +210,45 @@ fn walk(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-fn deck_yml(id: &str, name: &str, title: &str, members: &[&String]) -> String {
+/// The deck `id` of `data`, as a `deck@3` practising `concepts` (by name): each is the concept of `data` so named, or
+/// a new `concept@2`, added to the deck.
+fn add_deck(data: &mut BTreeMap<String, String>, id: &str, name: &str, title: &str, concepts: &BTreeMap<String, f64>) {
+    let named: BTreeMap<String, String> = data
+        .iter()
+        .map(|(i, t)| Yml::parse(i.clone(), t.clone()))
+        .filter(|y| y.gestalt().is_some_and(|g| g.starts_with("concept@")))
+        .filter_map(|y| Some((y.str_field("name")?.to_owned(), y.id.clone())))
+        .collect();
+    let mut ids = Mapping::new();
+    for (c, w) in concepts {
+        let cid = named.get(c).cloned().unwrap_or_else(|| {
+            let cid = format!("concept-{}", gestalts_core::sha16(c));
+            let mut m = Mapping::new();
+            m.insert("id".into(), cid.as_str().into());
+            m.insert("gestalt".into(), "concept@2".into());
+            m.insert("name".into(), c.as_str().into());
+            data.insert(cid.clone(), serde_yaml_ng::to_string(&m).expect("yaml"));
+            cid
+        });
+        ids.insert(cid.into(), (*w).into());
+    }
     let mut m = Mapping::new();
     m.insert("id".into(), id.into());
-    m.insert("gestalt".into(), "deck@1".into());
+    m.insert("gestalt".into(), "deck@3".into());
     m.insert("name".into(), name.into());
     m.insert("title".into(), title.into());
-    m.insert("members".into(), Value::Sequence(members.iter().map(|s| Value::from(s.as_str())).collect()));
-    serde_yaml_ng::to_string(&m).expect("yaml")
+    m.insert("members".into(), Value::Sequence(data.keys().map(|s| Value::from(s.as_str())).collect()));
+    m.insert("concepts".into(), Value::Mapping(ids));
+    data.insert(id.to_owned(), serde_yaml_ng::to_string(&m).expect("yaml"));
+}
+
+/// What a deck accepted earlier practises, by name, for the review form to start from.
+fn deck_concepts_in(dir: &Path) -> BTreeMap<String, f64> {
+    let store = FsStorage::new(dir);
+    let ymls: Vec<Yml> = store.list_ymls_sync().unwrap_or_default().into_iter().filter_map(|id| Some(Yml::parse(id.clone(), store.read_yml_sync(&id).ok()??))).collect();
+    let Some(deck) = ymls.iter().find(|y| y.gestalt() == Some("deck@3")) else { return BTreeMap::new() };
+    let name = |id: &str| ymls.iter().find(|y| y.id == id).and_then(|y| y.str_field("name")).unwrap_or(id).to_owned();
+    deck.get("concepts").and_then(Value::as_mapping).into_iter().flatten().filter_map(|(k, w)| Some((name(k.as_str()?), w.as_f64()?))).collect()
 }
 
 fn strings(m: &Mapping, k: &str) -> Vec<String> {
@@ -266,7 +311,7 @@ fn promote_view(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Ap
     let data: BTreeMap<String, String> = ymls.iter().filter(|(id, _)| !id.starts_with(DEFINITION_PREFIX) && *id != &view.id).map(|(id, t)| (id.clone(), rename(t))).collect();
     let mut deck = data.clone();
     let deck_id = format!("deck-{plugin}-{}", t.deck);
-    deck.insert(deck_id.clone(), deck_yml(&deck_id, &t.deck, &s.title, &data.keys().collect::<Vec<_>>()));
+    add_deck(&mut deck, &deck_id, &t.deck, &s.title, &t.concepts);
     let gestalts = draft_gestalts(&state.gestalts, package, definitions);
     let deck_dir = PathBuf::from(&at).join("decks").join(&t.deck);
     if let Some(d) = previous.as_ref().and_then(|o| o.deck.as_deref()).filter(|d| *d != t.deck) {
@@ -328,7 +373,7 @@ fn promote_viz(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Api
     let mut w = Writer { repo, written: Vec::new() };
     let mut deck = ymls.clone();
     let deck_id = format!("deck-vizint-{}", t.deck);
-    deck.insert(deck_id.clone(), deck_yml(&deck_id, &t.deck, &s.title, &ymls.keys().collect::<Vec<_>>()));
+    add_deck(&mut deck, &deck_id, &t.deck, &s.title, &t.concepts);
     let warnings = w.deck(Path::new(&at), &deck, &store, &state.gestalts)?.into_iter().map(|p| format!("deck: {p}")).collect();
     w.write(format!("{at}/origin.yml"), serde_yaml_ng::to_string(&origin(s, None, &t.deck)).expect("yaml").as_bytes())?;
     let next = vec!["mise run check".to_owned(), format!("git add {at} && git commit"), "mise run site:build".to_owned()];

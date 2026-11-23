@@ -126,7 +126,9 @@ def build(path: Path) -> None:
     for value in links.values():
         members.append(write(notes, value))
     deck_id = f"deck-{d['deck']}"
-    write(notes, {"id": deck_id, "gestalt": "deck@1", "name": d["deck"], "title": d["title"], "members": members})
+    # what the deck practises as a whole: the language; its cards' concepts are the evidence
+    write(notes, {"id": deck_id, "gestalt": "deck@3", "name": d["deck"], "title": d["title"], "members": members,
+                  "concepts": {concept_id(language): 1}})
     (deck_dir / "LICENSE.md").write_text(license_text(d, src), encoding="utf-8")
     cards = sum(len(p["variants"]) for p in d["phrases"])
     print(f"{d['deck']}: {cards} cards, {len(names)} concepts, {len(links)} links")

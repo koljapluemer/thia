@@ -104,6 +104,9 @@ fields:
 | `source@1` | a citable source: `key` (its BibTeX key, apart from the id), `entrytype`, `title` and biblatex fields (`author`, `date`, `doi`, …); optional `license` (SPDX), `aliases`, `tags`, `extra`, `blobs`, `concepts` (`{concept id: 0..1}`, how strongly each comes up in it) |
 | `deck@1` | `name`, `title`, `members`: ymls that ship together |
 | `deck@2` | the same, plus `concepts` (`{concept id: 0..1}`): what it practises beyond its members' own, for content not made of items |
+| `deck@3` | `name`, `title`, `members`, and `concepts` (at least one): what a view opened on it practises as a whole, which outlines find it by. Every deck on the public site is one |
+| `outline@1` | a curriculum or guide: `name`, `title`, `lang`, the top-level `entries` in order; optional `issuer`, `region`, `subject`, `school_type`, `edition`, `valid_from`, `replaces`, `source` (see Outlines) |
+| `outline-entry@1` | one node of an outline: `label`, its children as `entries`; optional `notation`, `kind`, `level`, `grades`, `isced`, `concepts` |
 | `fsrs-data@1` | spaced-repetition state for a `target` |
 | `practice-session@1` | one session's timing and trials |
 | `plugin-install@1` | whether a plugin is on here |
@@ -139,7 +142,16 @@ further ("Greek: 43%"): show sets side by side, or write an explicit concept wit
 
 A version is written only when it's needed (like `practice-event`): a concept in a set is `concept@3`, any other
 `concept@2`. Both are read alike, so a view reading concepts reads both: its manifest lists both, and its queries ask
-for both (`gestalt: ['concept@2', 'concept@3']`). The same goes for `deck@2`, written only with `concepts`.
+for both (`gestalt: ['concept@2', 'concept@3']`).
+
+What a deck is *about* and what its members are *evidence* of are kept apart. A `deck@3`'s `concepts` say what a view
+opened on it practises as a whole, at the grain a curriculum or a catalog would use (`math: rounding`, `lang: ita`,
+`geography: countries`); its members' `concepts` say what one answer tells about a learner (one country, one mark).
+Mastery reads only the members'; outlines read only the deck's. So that the two can't drift apart, where members name
+concepts, each of the deck's is one they name (directly, through their model, or in `responses`) or a set theirs are
+`in`; a deck whose members name none (visualizations) may name anything. It ships the concept ymls it names.
+`publish-data` and `health` check this (`crates/core/src/checks.rs`), and accepting a submission asks the reviewer
+for them. `deck@1` and `deck@2` stay valid for decks nobody finds by what they're about.
 
 A deck's members may be listed items (facts) or `item-model`s (generators of items). Whether practice of a generated
 item is traced per item (scheduling it) or only feeds its concepts is the view's call, not the deck's.

@@ -15,7 +15,7 @@ const concept = (name: string) => concepts.find((c) => c.name === name);
 describe('the Greek deck', () => {
   it('has every yml named after its id and listed in the deck', () => {
     for (const f of readdirSync(dir)) expect((parse(readFileSync(join(dir, f), 'utf8')) as Yml).id).toBe(f.replace(/\.yml$/, ''));
-    const deck = ymls.find((y) => y.gestalt === 'deck@1')!;
+    const deck = ymls.find((y) => y.gestalt === 'deck@3')!;
     expect(new Set(deck.members)).toEqual(new Set(ymls.filter((y) => y !== deck).map((y) => y.id)));
   });
 

@@ -371,6 +371,13 @@ pub fn content_hash(text: &str) -> String {
     gestalts_core::content_hash(text.as_bytes())
 }
 
+/// The views under each entry of each outline (`gestalts_core::outline_index`), from `IndexInput` as JSON, as JSON.
+#[wasm_bindgen(js_name = outlineIndex)]
+pub fn outline_index(input: &str) -> Result<String, JsError> {
+    let input: gestalts_core::IndexInput = parse_json(input)?;
+    serde_json::to_string(&gestalts_core::outline_index(&input)).map_err(|e| JsError::new(&e.to_string()))
+}
+
 /// As JSON text, so a number in a query stays the integer or float it is.
 fn parse_query(json: &str) -> Result<Query, JsError> {
     parse_json(json)

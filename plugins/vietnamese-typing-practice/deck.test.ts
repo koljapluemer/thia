@@ -32,7 +32,7 @@ const linked = (from: string, to: string) => links.find((l) => l.from === from &
 describe('the vietnamese-typing deck', () => {
   it('lists everything in its deck yml, each named after its id', () => {
     for (const [f, t] of files) expect((parse(t) as Yml).id).toBe(f.replace(/\.yml$/, ''));
-    const d = of('deck@1')[0];
+    const d = of('deck@3')[0];
     expect(new Set(d.members)).toEqual(new Set(ymls.filter((y) => y !== d).map((y) => y.id)));
   });
 

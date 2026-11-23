@@ -6,7 +6,7 @@ A plugin is a folder:
 my-plugin/
   plugin.yml      # id, version, title; optional description, reads, writes, tags, requires
   view.tsx        # one React file; its default export is the view
-  decks/<id>/              # optional: ymls it ships, one `deck@1` among them
+  decks/<id>/              # optional: ymls it ships, one deck yml among them (`deck@3` on the public site)
   backend.py               # optional; see Backends
 ```
 

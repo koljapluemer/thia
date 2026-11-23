@@ -1,0 +1,14 @@
+name: deck
+version: 3
+description: >-
+  A named list of ymls, of any gestalt, that ship together with a plugin, as in `deck@1`, and what a view opened on it
+  practises as a whole. `concepts` (concept id to 0..1, at least one) is that, at the grain a curriculum, a catalog or a
+  search would use (`rounding`, `lang: ita`, `geography: countries`), and what outlines find views by. It is not
+  evidence: what a learner's answer says is in its members' own `concepts`, which aren't repeated here. Where members
+  have concepts, each of the deck's is one they practise or a set theirs are `in`. The deck ships the concept ymls it
+  names. Write `deck@1` for a deck nobody finds by what it is about.
+fields:
+  name: { type: string, required: true }
+  title: { type: string, required: true }
+  members: { type: ref_list, required: true }
+  concepts: { type: ref_map, required: true, min: 0, max: 1, targets: [concept] }

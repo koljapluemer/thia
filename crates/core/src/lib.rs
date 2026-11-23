@@ -2,12 +2,14 @@
 //! No IO here; adapters live in `gestalts-fs` (disk) and `gestalts-wasm` (browser).
 
 pub mod blobs;
+pub mod checks;
 pub mod decks;
 pub mod gestalt;
 pub mod index;
 pub mod mastery;
 pub mod merge;
 pub mod outline;
+pub mod outline_index;
 pub mod repo;
 pub mod storage;
 pub mod sync;
@@ -19,6 +21,8 @@ pub use gestalt::{Edge, GestaltDef, Gestalts, Problem, YmlState, valid_gestalt_i
 pub use gestalts_merge::{Conflict, Policy, Segment};
 pub use index::{Item, LinkFilter, LinkMatch, Order, Page, Query, RefFilter, Shape, TagFilter};
 pub use mastery::{Belief, Mastery, MasteryParams};
+pub use checks::folder_problems;
+pub use outline_index::{IndexInput, OutlineIndex, outline_index, sha16};
 pub use outline::{Ask, Mark, MarkKind, Outline, OutlineEntry, OutlinePage, OutlineQuery, OutlineSpec, Status};
 pub use merge::{YmlMerge, conflict_yml, is_tombstone, iso_datetime, parse_iso_datetime, is_tombstone_text, merge_yml, tombstone};
 pub use repo::{BeliefDelta, Delta, OutlineDelta, Health, Repo, SubId, new_id, stable_id, state_id};

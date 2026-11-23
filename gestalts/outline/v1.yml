@@ -1,0 +1,21 @@
+name: outline
+version: 1
+description: >-
+  An ordered tree of `outline-entry`s for finding views, never evidence about what someone knows: a curriculum as its
+  issuer published it, or a guide someone wrote. `lang` (BCP 47) is the language of its own text, labels included.
+  `region` is ISO 3166-2 (DE-NI, US) when an authority issued it, empty for a guide. `edition` names this version of
+  it, `replaces` the outline it supersedes. `entries` are the top level, in order. Its id is `outline-` and the first
+  16 hex digits of the sha256 of its `name`.
+fields:
+  name: { type: string, required: true }
+  title: { type: string, required: true }
+  lang: { type: string, required: true }
+  issuer: { type: string }
+  region: { type: string }
+  subject: { type: string }
+  school_type: { type: string }
+  edition: { type: string }
+  valid_from: { type: partial_date }
+  replaces: { type: ref, targets: [outline] }
+  source: { type: ref, targets: [source] }
+  entries: { type: ref_list, required: true, targets: [outline-entry] }

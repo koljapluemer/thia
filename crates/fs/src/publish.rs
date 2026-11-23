@@ -60,6 +60,7 @@ pub fn publish(root: &Path, gestalts: &Gestalts) -> Result<PublishReport> {
     }
 
     let mut referenced = Vec::new();
+    let mut parsed = Vec::new();
     for id in &ids {
         let raw = store.read_yml_sync(id)?.unwrap_or_default();
         let mut text = raw.clone();
@@ -69,6 +70,7 @@ pub fn publish(root: &Path, gestalts: &Gestalts) -> Result<PublishReport> {
         if text != raw {
             store.write_yml_sync(id, &text)?;
         }
+        parsed.push(Yml::parse(id, text.clone()));
         let (state, blobs) = used(id, text);
         match state {
             YmlState::Valid(_) => {}
@@ -83,6 +85,8 @@ pub fn publish(root: &Path, gestalts: &Gestalts) -> Result<PublishReport> {
             referenced.push(b);
         }
     }
+
+    report.problems.extend(gestalts_core::folder_problems(&parsed));
 
     for name in store.list_blobs_sync()? {
         if !referenced.contains(&name) {

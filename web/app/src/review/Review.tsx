@@ -148,6 +148,15 @@ const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 function Decide({ s, repo, onDecided }: { s: Detailed; repo: string | null; onDecided: () => void }) {
   const [t, setT] = useState<api.Target>(s.proposed);
+  const [about, setAbout] = useState(Object.keys(s.proposed.concepts ?? {}).join(', '));
+  const names = about.split(',').map((n) => n.trim()).filter(Boolean);
+  // what an earlier acceptance weighted stays; a new name counts fully
+  const concepts = Object.fromEntries(names.map((n) => [n, s.proposed.concepts?.[n] ?? 1]));
+  const drafted = useMemo(() => s.ymls.flatMap((y) => {
+    if (!/^gestalt:\s*concept@/m.test(y.text)) return [];
+    const name = /^name:\s*['"]?(.*?)['"]?\s*$/m.exec(y.text)?.[1];
+    return name ? [name] : [];
+  }).sort(), [s.ymls]);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [problems, setProblems] = useState<string[]>([]);
@@ -159,13 +168,13 @@ function Decide({ s, repo, onDecided }: { s: Detailed; repo: string | null; onDe
       setProblems(e instanceof api.ApiError && e.problems.length ? e.problems : [e instanceof Error ? e.message : String(e)]);
     } finally { setBusy(false); }
   };
-  const field = (k: keyof api.Target, label: string) => (
+  const field = (k: 'plugin' | 'package' | 'deck', label: string) => (
     <label className="flex flex-col gap-1">
       <span className="text-xs text-base-content/70">{label}</span>
       <input className={`input input-sm font-mono ${NAME.test(t[k] ?? '') ? '' : 'input-error'}`} value={t[k] ?? ''} onChange={(e) => setT({ ...t, [k]: e.target.value })} />
     </label>
   );
-  const valid = [t.deck, ...(s.kind === 'view' ? [t.plugin, t.package] : [])].every((x) => NAME.test(x ?? ''));
+  const valid = [t.deck, ...(s.kind === 'view' ? [t.plugin, t.package] : [])].every((x) => NAME.test(x ?? '')) && names.length > 0;
 
   if (done === 'rejected') return <p className="text-sm">Rejected; the sender sees your note.</p>;
   if (done) {
@@ -185,10 +194,15 @@ function Decide({ s, repo, onDecided }: { s: Detailed; repo: string | null; onDe
         {s.kind === 'view'
           ? <>{field('plugin', 'As the plugin plugins/…')}{field('package', 'Its gestalts in the package gestalts/…')}{field('deck', 'Its data as the deck …')}</>
           : field('deck', 'As the deck plugins/vizint/decks/…')}
+        <label className="flex flex-col gap-1">
+          <span className="text-xs text-base-content/70">What it practises as a whole: concept names in English, comma-separated (outlines find it by these)</span>
+          <input className={`input input-sm ${names.length ? '' : 'input-error'}`} placeholder="rounding, place value" value={about} onChange={(e) => setAbout(e.target.value)} />
+          {drafted.length > 0 && <span className="text-xs text-base-content/60">Its own concepts: {drafted.join(', ')}</span>}
+        </label>
         {repo
           ? <p className="text-xs text-base-content/60">Into <code>{repo}</code>, to be checked and committed there.</p>
           : <p className="text-xs text-warning">This server accepts into no checkout (start it with <code>--promote-into</code>): only rejecting works here.</p>}
-        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !repo || !valid} onClick={() => void run(async () => setDone(await api.accept(s.id, t)))}>Accept</button>
+        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !repo || !valid} onClick={() => void run(async () => setDone(await api.accept(s.id, { ...t, concepts })))}>Accept</button>
       </div>
       <div className="flex flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 text-sm">
         <h2 className="font-medium">Reject</h2>

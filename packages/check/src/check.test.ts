@@ -12,7 +12,7 @@ const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => {
 const filesOf = (dir: string, binary = /\.(png|jpe?g)$/): Files =>
   Object.fromEntries(walk(dir).map((p) => [relative(dir, p), binary.test(p) ? new Uint8Array(readFileSync(p)) : readFileSync(p, 'utf8')]));
 /** what the workshop sends as the app's gestalts */
-const GESTALTS = ['note@1', 'source@1', 'concept@2', 'concept@3', 'concept-link@1', 'practice-event@1', 'practice-event@2', 'flashcard@1', 'multiple-choice@1', 'item-model@1', 'deck@2', 'fsrs-data@1', 'practice-session@1'];
+const GESTALTS = ['note@1', 'source@1', 'concept@2', 'concept@3', 'concept-link@1', 'practice-event@1', 'practice-event@2', 'flashcard@1', 'multiple-choice@1', 'item-model@1', 'deck@2', 'deck@3', 'fsrs-data@1', 'practice-session@1'];
 
 describe('a view', () => {
   const examples = join(root, 'packages/workshop/agent-template/examples');

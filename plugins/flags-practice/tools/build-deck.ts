@@ -122,7 +122,8 @@ for (const code of asked) {
   });
 }
 
-await put({ id: 'deck-flags', gestalt: 'deck@1', name: 'flags', title: 'Flags', members: [...members] });
+// what the deck practises as a whole: the flags; each flag's concept is the evidence
+await put({ id: 'deck-flags', gestalt: 'deck@3', name: 'flags', title: 'Flags', members: [...members], concepts: { [FLAGS.id]: 1 } });
 await writeFile(join(deck, 'LICENSE.md'), `# Flags
 
 The flags are [iso-country-flags-svg-collection](https://github.com/joielechong/iso-country-flags-svg-collection)'s,

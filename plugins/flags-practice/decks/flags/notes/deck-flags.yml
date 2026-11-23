@@ -1,5 +1,5 @@
 id: deck-flags
-gestalt: deck@1
+gestalt: deck@3
 name: flags
 title: Flags
 members:
@@ -1152,3 +1152,5 @@ members:
   - link-6a783c77acfa3285
   - link-ac1d1b4aa86d11d2
   - flag-zw
+concepts:
+  concept-060e4a343bd58d18: 1

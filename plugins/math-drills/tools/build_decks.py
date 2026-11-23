@@ -38,6 +38,17 @@ SOURCE = {
 }
 
 
+# what each topic's deck practises as a whole (`deck@3.concepts`), by stembridge's concept names; its exercises'
+# concepts stay the evidence
+ABOUT = {
+    "bodmas": {"order of operations": 1},
+    "recurring_decimals": {"recurring decimals": 1},
+    "round_sig_figs": {"significant figures": 1, "rounding": 0.5},
+    "round_tenth": {"rounding to decimal places": 1, "rounding": 0.5},
+    "simplify_fraction": {"simplifying fractions": 1},
+}
+
+
 def sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
@@ -141,7 +152,10 @@ def build(topic: dict, curriculum: dict, decks: Path) -> str:
             members.append(write(notes, {"id": "link-" + sha(f"{a}|{b}|{CLAIM}"), "gestalt": "concept-link@1",
                                          "from": a, "to": b, "weight": weight, "kind": "part-of", "source": CLAIM}))
             links += 1
-    write(notes, {"id": f"deck-{deck}", "gestalt": "deck@1", "name": deck, "title": topic["title"], "members": members})
+    if slug not in ABOUT:
+        raise SystemExit(f"{slug}: say what its deck practises in ABOUT")
+    write(notes, {"id": f"deck-{deck}", "gestalt": "deck@3", "name": deck, "title": topic["title"], "members": members,
+                  "concepts": ids(ABOUT[slug])})
     (deck_dir / "LICENSE.md").write_text(license_text(topic["title"]), encoding="utf-8")
     print(f"{deck}: {len(items)} exercises, {len(touched)} concepts, {links} links")
     return deck
