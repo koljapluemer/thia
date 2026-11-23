@@ -4,7 +4,7 @@ import { registry } from 'virtual:gestalts-plugins/teacher';
 import { useHostQuery, type Repo } from '@gestalts/client';
 import type { Belief } from '@gestalts/view';
 import { SEQUENCE, asSequence, planLesson, ruleConcepts, sequenceYml, walk, type AgentBackend, type Plan, type Sequence, type Step } from '@gestalts/workshop';
-import { backendFor, type AgentChoice } from './agent';
+import { usePickedBackend, type AgentChoice } from './agent';
 import * as api from './api';
 import { DeleteButton, ExportButton, PublishMenu, SyncState } from './DraftPane';
 import { OpenDraft } from './open';
@@ -18,7 +18,7 @@ const SAVE_AFTER_MS = 500;
  * one rule, checked as a whole by the server, and played through for a pretend student before it goes out.
  */
 export function SequencePane({ info, agent, onChanged, onDeleted }: { info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
-  const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
+  const backend = usePickedBackend(agent, info.id);
   const init = useCallback(async (repo: Repo) => { await repo.put(sequenceYml({ id: info.id, title: info.title, steps: [] })); }, [info]);
   return (
     <OpenDraft info={info} source={SOURCE} init={init}>

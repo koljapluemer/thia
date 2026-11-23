@@ -9,7 +9,7 @@ import type { ViewError } from '@gestalts/view';
 import { Chat, Preview, VIEWS, asDraft, buildActions, createDraft, flushing, isStarter, viewWork } from '@gestalts/workshop';
 import tailwind from '@tailwindcss/browser?raw';
 import css from '../app.css?inline';
-import { backendFor, type AgentChoice } from './agent';
+import { usePickedBackend, type AgentChoice } from './agent';
 import { Brief, useDebounced } from './Brief';
 import * as api from './api';
 import { OpenDraft } from './open';
@@ -45,7 +45,7 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const draft = useMemo(() => (items[0] ? asDraft(items[0]) : undefined), [items]);
   const [errors, setErrors] = useState<ViewError[]>([]);
   const onError = useCallback((e: ViewError) => setErrors((es) => [...es, e].slice(-20)), []);
-  const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
+  const backend = usePickedBackend(agent, info.id);
   const runtime = registry.runtime.version;
   const base = useMemo(() => viewWork(repo, info.id, runtime), [repo, info.id, runtime]);
   const { edit, flush } = useDebounced((spec) => base.setSpec(spec));

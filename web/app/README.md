@@ -12,7 +12,8 @@ browser (OPFS). The learning views and visualizations, for anyone, are the publi
   :7740), previewed in the context it goes out in (`distributions/teacher.yml` for a lesson,
   `distributions/workshop.yml` for the public site). The agent is the server's, or Claude Code through the Claude
   bridge (`VITE_AGENT_NODE`, default :7737, `mise run claude-bridge`), or, experimental, a local Ollama model through
-  the Ollama bridge (`VITE_OLLAMA_NODE`, default :7738, `mise run ollama-bridge`), with the page's tools: the `check` is
+  the Ollama bridge (`VITE_OLLAMA_NODE`, default :7738, `mise run ollama-bridge`), or Gemini's free tier on the
+  teacher's own key, from the page; tried in the order Settings gives them, with the page's tools: the `check` is
   `@gestalts/check`, run here. See [`doc/workshop`](doc/workshop)
 - a draft is published to a class, or offered for the public site (`src/workshop/submit.tsx`) and reviewed in
   `/review`: see [`doc/architecture/publishing.md`](../../doc/architecture/publishing.md)

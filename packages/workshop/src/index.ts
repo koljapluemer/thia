@@ -8,6 +8,7 @@ export { BRIEF, contracts, systemOf, type AgentKind, type KindContract } from '.
 export { Preview, type ResolveNpm } from './Preview';
 export { httpBackend, jobBackend, type Call } from './agents/jobs';
 export { INSTALL_BRIDGE, VIEW_FILES, bridgeAvailable, bridgeBackend, bridgeStatus, onBridge, pairBridge, runOnBridge, type BridgeEvent, type BridgeStart, type BridgeStatus, type OnBridge } from './agents/bridge';
+export { GEMINI_CHAIN, GEMINI_KEY_PAGE, geminiBackend, pauseMs, type GeminiEnv } from './agents/gemini';
 export { INSTALL_OLLAMA_BRIDGE, ollamaAvailable, ollamaBackend, type OllamaStatus } from './agents/ollama';
 export { answerText, askTool, checkResult, questionsOf, viewCheckTool, vizCheckTool, type AgentTool, type ToolContent, type ToolResult } from './agents/tools';
 export type { AgentBackend, AgentEvent, Answer, Answers, Diagnostic, OpenQuestion, Question, TurnRequest } from './agents/types';

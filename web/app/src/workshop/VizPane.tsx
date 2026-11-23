@@ -4,7 +4,7 @@ import { useHostQuery, type Repo } from '@gestalts/client';
 import { SingleView } from '@gestalts/host';
 import { Chat, VIZ, asViz, buildActions, createViz, flushing, vizWork } from '@gestalts/workshop';
 import css from '../app.css?inline';
-import { backendFor, type AgentChoice } from './agent';
+import { usePickedBackend, type AgentChoice } from './agent';
 import * as api from './api';
 import { Brief, useDebounced } from './Brief';
 import { DeleteButton, ExportButton, PublishMenu, Shell, SyncState } from './DraftPane';
@@ -39,7 +39,7 @@ function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; in
   const current = useHostQuery({ gestalt: VIZ, ids: [info.id], limit: 1 })[0];
   const viz = useMemo(() => (current ? asViz(current) : null), [current]);
   const params = useMemo(() => ({ viz: info.id }), [info.id]);
-  const backend = useMemo(() => backendFor(agent, info.id), [agent, info.id]);
+  const backend = usePickedBackend(agent, info.id);
   const base = useMemo(() => vizWork(repo, info.id), [repo, info.id]);
   const { edit, flush } = useDebounced((spec) => base.setSpec(spec));
   const work = useMemo(() => flushing(base, flush), [base, flush]);

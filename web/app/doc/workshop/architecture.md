@@ -20,8 +20,8 @@ web/app/src/workshop/
   SequencePane.tsx           a lesson of several views and vizzes: its steps, the planner, the play-through
   submit.tsx                 offering a draft for the public site
   move.tsx                   moving drafts this browser kept before the workshop moved to accounts
-  agent.ts, Settings.tsx     which agent makes views: the server's, Claude Code through the Claude bridge, or Ollama
-                             through the Ollama bridge (experimental)
+  agent.ts, Settings.tsx     which agents make views, tried in the teacher's order: the server's, Claude Code through
+                             the Claude bridge, Ollama through the Ollama bridge (experimental), Gemini's free tier
   api.ts                     the server's API
 
 packages/workshop/           shared by the panes:
@@ -32,7 +32,8 @@ packages/workshop/           shared by the panes:
   Chat.tsx                   one conversation about one draft of any kind
   agents/                    what an agent backend is; the teacher server's (a job over HTTP, jobs.ts); Claude Code
                              through the Claude bridge (bridge.ts); a local model through the Ollama bridge, on the same
-                             protocol (ollama.ts); each kind's contract (kinds.ts); the agents'
+                             protocol (ollama.ts); Gemini's free models from the page (gemini.ts); each kind's
+                             contract (kinds.ts); the agents'
                              tools (tools.ts); the templates sent with each turn (template.ts)
   agent-template/            what the agents work against: `brief.md` (who for), `kinds/<kind>.json` (what each kind's
                              agent is told, which paths are the draft, the check's description: read by the server's
@@ -91,6 +92,20 @@ passes. Which agent runs the turn is Settings': the server's (API calls, within 
 through the Claude bridge (the teacher's own plan, no API tokens), which is how anything is tried locally for free.
 Experimental: a local Ollama model through the Ollama bridge. The page sends it the same as the Claude bridge, and
 it runs its own file tools on the files in memory ([its README](../../../../installables/ollama-bridge/README.md)).
+
+Settings lists the agents in an order the teacher sets, each switched on or off: a turn goes to the first one
+switched on that's available (`usePickedBackend`, asked again when a turn ends and when the window comes back). Each
+keeps its own conversation of a draft, so when another takes over, the chat shows that one's.
+
+Gemini runs in the page, on the teacher's own AI Studio key, which stays in this browser and goes only to Google
+(`agents/gemini.ts`). Its loop is the Ollama bridge's in TS: the same file tools on the files in memory, then the
+kind's page tools (`check`, whose screenshots go along as images, and `ask`, which waits while the turn runs, as on
+the bridge). Free-tier quotas are per model, so the models are a chain fixed in code (`GEMINI_CHAIN`, after theadoc's):
+each request goes to the first one not paused. A 429 pauses that model (an hour for a daily quota, else its
+`retryDelay` or a minute; a 503 for 30 s), remembered in this browser, and the same request goes to the next. When
+all are paused, a pause up to a minute is waited out; a longer one ends the turn, and the agent is unavailable until
+then, so the next one in Settings takes over. The conversation lives in the tab: a reload starts a new one. None of
+it touches the server or its budget.
 
 ## A view's draft
 

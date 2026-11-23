@@ -140,7 +140,7 @@ export async function* runOnBridge(url: string, start: BridgeStart, tools: Agent
 /** What a view's draft is, as files; everything else in a workspace is the template's or scratch. */
 export const VIEW_FILES = contracts.view.keep;
 
-function errorsFile(diagnostics: TurnRequest['diagnostics']): string {
+export function errorsFile(diagnostics: TurnRequest['diagnostics']): string {
   const lines = ['# Errors the preview reported since the last turn', ''];
   for (const d of diagnostics) lines.push(`## ${d.kind}: ${d.message}`, '', '```', (d.stack ?? '').trim(), '```', '');
   return lines.join('\n');

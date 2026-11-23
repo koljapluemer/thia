@@ -1,28 +1,46 @@
-import { INSTALL_BRIDGE, bridgeBackend, httpBackend, ollamaBackend, type AgentBackend } from '@gestalts/workshop';
+import { useEffect, useMemo, useState } from 'react';
+import { INSTALL_BRIDGE, bridgeBackend, geminiBackend, httpBackend, ollamaBackend, useRunning, type AgentBackend } from '@gestalts/workshop';
 import { AGENT_NODE, OLLAMA_NODE } from '../nodes';
 
 /**
  * Who works on a draft with the teacher, whatever its kind: the server's agent (on our API key, within the school's
- * budget), or the claude CLI on this computer, through the claude bridge (`mise run claude-bridge`), which costs no API
- * tokens; or, experimental, a local Ollama model through the Ollama bridge (`mise run ollama-bridge`). Kept in this
- * browser, since the bridges are this computer's.
+ * budget); the claude CLI on this computer, through the claude bridge (`mise run claude-bridge`), which costs no API
+ * tokens; experimental, a local Ollama model through the Ollama bridge (`mise run ollama-bridge`); or Google's free
+ * Gemini models on the teacher's own key, from this page. They're tried in the teacher's order: a turn goes to the
+ * first one switched on that's available. Kept in this browser, since the bridges and the key are this computer's.
  */
-export type AgentChoice = { agent: 'server' | 'cli' | 'ollama'; node: string; ollamaNode: string };
+export type AgentId = 'server' | 'cli' | 'ollama' | 'gemini';
+export const AGENTS: AgentId[] = ['server', 'cli', 'ollama', 'gemini'];
+export type AgentChoice = { order: { id: AgentId; on: boolean }[]; node: string; ollamaNode: string; geminiKey: string };
 
 const KEY = 'teacher:agent';
 export const DEFAULT_NODE: string = AGENT_NODE;
 export const DEFAULT_OLLAMA_NODE: string = OLLAMA_NODE;
 export const START = INSTALL_BRIDGE;
 
+const isAgent = (a: unknown): a is AgentId => AGENTS.includes(a as AgentId);
+
+/** Every agent once, in the order given, those missing after them, switched off; the server's on if none is. */
+function complete(order: { id: AgentId; on: boolean }[]): { id: AgentId; on: boolean }[] {
+  const seen = order.filter((o, i) => order.findIndex((p) => p.id === o.id) === i);
+  const all = [...seen, ...AGENTS.filter((a) => !seen.some((o) => o.id === a)).map((id) => ({ id, on: false }))];
+  return all.some((o) => o.on) ? all : all.map((o) => (o.id === 'server' ? { ...o, on: true } : o));
+}
+
 export function loadChoice(): AgentChoice {
+  const choice: AgentChoice = { order: complete([]), node: DEFAULT_NODE, ollamaNode: DEFAULT_OLLAMA_NODE, geminiKey: '' };
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as Partial<AgentChoice> | null;
-    const address = (a: unknown, fallback: string) => (typeof a === 'string' && a ? a : fallback);
-    if (v && (v.agent === 'server' || v.agent === 'cli' || v.agent === 'ollama')) {
-      return { agent: v.agent, node: address(v.node, DEFAULT_NODE), ollamaNode: address(v.ollamaNode, DEFAULT_OLLAMA_NODE) };
-    }
-  } catch { /* the default */ }
-  return { agent: 'server', node: DEFAULT_NODE, ollamaNode: DEFAULT_OLLAMA_NODE };
+    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as (Partial<AgentChoice> & { agent?: unknown }) | null;
+    if (!v) return choice;
+    const text = (a: unknown, fallback: string) => (typeof a === 'string' && a ? a : fallback);
+    const order = Array.isArray(v.order)
+      ? v.order.filter((o) => isAgent(o?.id)).map((o) => ({ id: o.id, on: o.on === true }))
+      // before the list: one agent, picked
+      : isAgent(v.agent) ? [{ id: v.agent, on: true }] : [];
+    return { order: complete(order), node: text(v.node, DEFAULT_NODE), ollamaNode: text(v.ollamaNode, DEFAULT_OLLAMA_NODE), geminiKey: text(v.geminiKey, '') };
+  } catch {
+    return choice;
+  }
 }
 
 export function saveChoice(c: AgentChoice) {
@@ -45,8 +63,46 @@ export function cliAgent(node: string): ReturnType<typeof bridgeBackend> {
   return bridgeBackend(node);
 }
 
-export function backendFor(choice: AgentChoice, draft: string): AgentBackend {
-  if (choice.agent === 'cli') return cliAgent(choice.node);
-  if (choice.agent === 'ollama') return ollamaBackend(choice.ollamaNode);
+// one per key: it keeps the conversations and which models are paused, for every draft
+const geminis = new Map<string, AgentBackend>();
+export function geminiAgent(key: string): AgentBackend {
+  let b = geminis.get(key);
+  if (!b) geminis.set(key, (b = geminiBackend(key)));
+  return b;
+}
+
+export function backendOf(id: AgentId, choice: AgentChoice, draft: string): AgentBackend {
+  if (id === 'cli') return cliAgent(choice.node);
+  if (id === 'ollama') return ollamaBackend(choice.ollamaNode);
+  if (id === 'gemini') return geminiAgent(choice.geminiKey);
   return httpBackend(`/api/drafts/${draft}/agent`, { id: 'teacher-server', label: 'Claude' });
+}
+
+/**
+ * The agent for a draft: the first switched on that's available, asked again when a turn ends and when the window
+ * comes back; while a turn runs, the one running it. None available: the first switched on, which says why not.
+ */
+export function usePickedBackend(choice: AgentChoice, draft: string): AgentBackend {
+  const list = useMemo(() => choice.order.filter((o) => o.on).map((o) => backendOf(o.id, choice, draft)), [choice, draft]);
+  const [picked, setPicked] = useState<string>();
+  const running = useRunning(draft);
+  const [asked, setAsked] = useState(0);
+  useEffect(() => {
+    const again = () => setAsked((n) => n + 1);
+    window.addEventListener('focus', again);
+    return () => window.removeEventListener('focus', again);
+  }, []);
+  useEffect(() => {
+    if (running) return;
+    let live = true;
+    void (async () => {
+      for (const b of list) {
+        if ((await b.available()) === true) { if (live) setPicked(b.id); return; }
+        if (!live) return;
+      }
+      if (live) setPicked(list[0]?.id);
+    })();
+    return () => { live = false; };
+  }, [list, running, asked]);
+  return list.find((b) => b.id === picked) ?? list[0] ?? backendOf('server', choice, draft);
 }
