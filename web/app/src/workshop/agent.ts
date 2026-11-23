@@ -3,17 +3,19 @@ import { INSTALL_BRIDGE, bridgeBackend, geminiBackend, httpBackend, ollamaBacken
 import { AGENT_NODE, OLLAMA_NODE } from '../nodes';
 
 /**
- * Who works on a draft with the teacher, whatever its kind: the server's agent (on our API key, within the school's
- * budget); the claude CLI on this computer, through the claude bridge (`mise run claude-bridge`), which costs no API
- * tokens; experimental, a local Ollama model through the Ollama bridge (`mise run ollama-bridge`); or Google's free
- * Gemini models on the teacher's own key, from this page. They're tried in the teacher's order: a turn goes to the
+ * Who works on a draft, whatever its kind: the server's agent (on our API key, within the account's budget); the
+ * claude CLI on this computer, through the claude bridge (`mise run claude-bridge`), which costs no API tokens;
+ * experimental, a local Ollama model through the Ollama bridge (`mise run ollama-bridge`); or Google's free Gemini
+ * models on the person's own key, from this page. They're tried in the order set in Settings: a turn goes to the
  * first one switched on that's available. Kept in this browser, since the bridges and the key are this computer's.
  */
 export type AgentId = 'server' | 'cli' | 'ollama' | 'gemini';
 export const AGENTS: AgentId[] = ['server', 'cli', 'ollama', 'gemini'];
 export type AgentChoice = { order: { id: AgentId; on: boolean }[]; node: string; ollamaNode: string; geminiKey: string };
 
-const KEY = 'teacher:agent';
+const KEY = 'workshop:agent';
+/** where it was kept before, read once when there's nothing under `KEY` */
+const OLD_KEY = 'teacher:agent';
 export const DEFAULT_NODE: string = AGENT_NODE;
 export const DEFAULT_OLLAMA_NODE: string = OLLAMA_NODE;
 export const START = INSTALL_BRIDGE;
@@ -30,7 +32,7 @@ function complete(order: { id: AgentId; on: boolean }[]): { id: AgentId; on: boo
 export function loadChoice(): AgentChoice {
   const choice: AgentChoice = { order: complete([]), node: DEFAULT_NODE, ollamaNode: DEFAULT_OLLAMA_NODE, geminiKey: '' };
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) ?? 'null') as (Partial<AgentChoice> & { agent?: unknown }) | null;
+    const v = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY) ?? 'null') as (Partial<AgentChoice> & { agent?: unknown }) | null;
     if (!v) return choice;
     const text = (a: unknown, fallback: string) => (typeof a === 'string' && a ? a : fallback);
     const order = Array.isArray(v.order)
@@ -44,7 +46,7 @@ export function loadChoice(): AgentChoice {
 }
 
 export function saveChoice(c: AgentChoice) {
-  try { localStorage.setItem(KEY, JSON.stringify(c)); } catch { /* for this visit only */ }
+  try { localStorage.setItem(KEY, JSON.stringify(c)); localStorage.removeItem(OLD_KEY); } catch { /* for this visit only */ }
 }
 
 /** An http(s) address without a path, or why not. */
@@ -75,7 +77,7 @@ export function backendOf(id: AgentId, choice: AgentChoice, draft: string): Agen
   if (id === 'cli') return cliAgent(choice.node);
   if (id === 'ollama') return ollamaBackend(choice.ollamaNode);
   if (id === 'gemini') return geminiAgent(choice.geminiKey);
-  return httpBackend(`/api/drafts/${draft}/agent`, { id: 'teacher-server', label: 'Claude' });
+  return httpBackend(`/api/drafts/${draft}/agent`, { id: 'server', label: 'Claude' });
 }
 
 /**

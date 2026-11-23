@@ -3,8 +3,8 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { gestaltsPlugins } from '@gestalts/vite';
 
-// The workshop and its API share an origin (cookies, no CORS): in dev, /api goes to `gestalts-teacher serve`.
-const api = process.env.VITE_TEACHER_API ?? 'http://127.0.0.1:7740';
+// The workshop and its API share an origin (cookies, no CORS): in dev, /api goes to `thia-server serve`.
+const api = process.env.VITE_THIA_API ?? 'http://127.0.0.1:7740';
 
 export default defineConfig({
   server: { port: 5173, proxy: { '/api': api } },

@@ -4,12 +4,12 @@ mod common;
 
 use axum::http::StatusCode;
 use common::Server;
-use gestalts_teacher::Limits;
+use thia_server::Limits;
 use serde_json::{Value, json};
 
 const VIEW: &str = "export default function View() { return <div className=\"h-full\">Hallo</div>; }\n";
 
-/// A teacher's draft with its own gestalt and one yml of it; its id and the cookie of its owner.
+/// An account's draft with its own gestalt and one yml of it; its id and the cookie of its owner.
 async fn draft(s: &Server, email: &str, title: &str) -> (String, String, String) {
     let cookie = s.login(email).await;
     let (_, d, _) = s.call("POST", "/api/drafts", Some(&cookie), Some(json!({ "title": title }))).await;
@@ -41,7 +41,7 @@ fn read(repo: &std::path::Path, f: &str) -> String {
 }
 
 #[tokio::test]
-async fn a_teachers_draft_is_queued_as_a_snapshot_for_admins_only() {
+async fn an_accounts_draft_is_queued_as_a_snapshot_for_admins_only() {
     let s = Server::new(Limits::default());
     let (id, _, ada) = draft(&s, "ada@school.example", "Artikel").await;
 

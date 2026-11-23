@@ -1,6 +1,6 @@
 [package]
-name = "gestalts-teacher"
-description = "The teacher app's server: accounts, drafts synced and validated, the agent, publishing lessons"
+name = "thia-server"
+description = "thia's server: accounts, drafts synced and validated, the agent, publishing lessons"
 edition.workspace = true
 version.workspace = true
 

@@ -5,7 +5,7 @@ mod common;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
 use common::Server;
-use gestalts_teacher::Limits;
+use thia_server::Limits;
 use serde_json::json;
 use tower::ServiceExt;
 
@@ -96,7 +96,7 @@ async fn quotas_hold() {
 
     let put = |name: &str, n: usize| {
         let req = Request::builder().method("PUT").uri(format!("{base}/blobs/{name}")).header(header::COOKIE, &ada).body(Body::from(vec![1u8; n])).unwrap();
-        gestalts_teacher::app(s.state.clone()).oneshot(req)
+        thia_server::app(s.state.clone()).oneshot(req)
     };
     assert_eq!(put("a.png", 11).await.unwrap().status(), StatusCode::PAYLOAD_TOO_LARGE);
     assert_eq!(put("a.png", 10).await.unwrap().status(), StatusCode::NO_CONTENT);

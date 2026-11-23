@@ -11,7 +11,7 @@ crates/peer       another node over HTTP, a published deck, pairing
 crates/wasm       the core in the browser
 crates/device     a phone's folder and sync thread
 crates/node       the local server, watcher, backends, LAN pairing
-web/server        the teacher app's server: accounts, drafts synced and validated, the agent, publishing, the lesson domain
+web/server        thia's server: accounts, drafts synced and validated, the agent, publishing, the lesson domain
 packages/view     @gestalts/view: everything a view gets from the app
 packages/kit      @gestalts/kit: the UI kit, for views only (primitives < components < widgets < perspectives); on view and sources. Apps and the host use tailwind + daisyUI
 packages/learning @gestalts/learning: FSRS, practice sessions
@@ -44,7 +44,7 @@ through the Claude bridge (`installables/claude-bridge`), whose tool calls come 
 `@gestalts/check`, run there). A conversation belongs to its draft, not to the chat that shows it
 (`packages/workshop/src/turns.ts`): a turn runs on while another draft is open, and shows again, still going, when its
 draft is opened again. `web/site` is the public site: every learning view and visualization, workshop results
-accepted in review among them ([[publishing]]); its build also plays teachers' lessons on the lesson domain. The
+accepted in review among them ([[publishing]]); its build also plays published lessons on the lesson domain. The
 Android app wraps `web/android`.
 
 ## Data
@@ -94,7 +94,7 @@ compiled module. `packages/host/src/frame/boot.ts` turns those into `blob:` modu
 resolve to the URLs the host gives (`RunnableView.npmUrls`: bundled and pinned on our own server by
 `@gestalts/npm-bundle`), else through esm.sh, unpinned.
 
-A frame may also get a Content-Security-Policy (`csp`). Views nobody vetted (a teacher's lesson, a draft) run under
+A frame may also get a Content-Security-Policy (`csp`). Views nobody vetted (a published lesson, a draft) run under
 `closedCsp`: no `fetch`, WebSocket or form to anywhere, scripts only from the frame's own blobs and the npm origin,
 images and media only from blobs, data URLs and the lesson's own files. Without one, an opaque-origin frame could still
 send what it reads to any CORS-enabled server.

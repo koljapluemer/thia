@@ -1394,34 +1394,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gestalts-teacher"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "axum",
- "base64 0.22.1",
- "clap",
- "gestalts-core",
- "gestalts-fs",
- "getrandom 0.3.4",
- "http-body-util",
- "include_dir",
- "mime_guess",
- "regex",
- "reqwest",
- "rusqlite",
- "serde",
- "serde_json",
- "serde_yaml_ng",
- "sha2",
- "tempfile",
- "thiserror 2.0.21",
- "tokio",
- "tower",
- "zip",
-]
-
-[[package]]
 name = "gestalts-wasm"
 version = "0.1.0"
 dependencies = [
@@ -3728,6 +3700,34 @@ dependencies = [
  "once_cell",
  "rustix",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "thia-server"
+version = "0.1.0"
+dependencies = [
+ "argon2",
+ "axum",
+ "base64 0.22.1",
+ "clap",
+ "gestalts-core",
+ "gestalts-fs",
+ "getrandom 0.3.4",
+ "http-body-util",
+ "include_dir",
+ "mime_guess",
+ "regex",
+ "reqwest",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "serde_yaml_ng",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tower",
+ "zip",
 ]
 
 [[package]]

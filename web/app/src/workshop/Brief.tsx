@@ -28,7 +28,7 @@ export function useDebounced(save: (text: string) => Promise<void>) {
 }
 
 /**
- * A draft's brief (`spec`): what it should be, in the teacher's words, kept with the draft and sent with every turn
+ * A draft's brief (`spec`): what it should be, in its author's words, kept with the draft and sent with every turn
  * as SPEC.md. The same for every kind.
  */
 export function Brief({ work, spec, flush, edit, placeholder }: {

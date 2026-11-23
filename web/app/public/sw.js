@@ -1,7 +1,7 @@
 // Opens the app offline: the user's data is in this browser, only the page comes from the web. The page (index.html,
 // for every area's path) comes from the network when it can, so a new version shows on the next load; the hashed
 // build files never change, so they come from the cache once fetched. Only this site's own files are kept, and never
-// the teacher server's answers (/api).
+// the server's answers (/api).
 const CACHE = 'gestalts-v1';
 const PAGE = '/';
 

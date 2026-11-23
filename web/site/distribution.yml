@@ -1,6 +1,6 @@
 # The public site: every view in it, each opened on one of its decks, for anyone, without signing in. Workshop results
-# accepted in review are added here (web/server, promote.rs). Its models are also what teachers' lessons, played under
-# /l/<lesson>, may read besides the core's and their own: a superset of the teacher app's (checked).
+# accepted in review are added here (web/server, promote.rs). Its models are also what published lessons, played under
+# /l/<lesson>, may read besides the core's and their own: a superset of the lessons' (web/app/distributions/lessons.yml, checked).
 id: site
 # every view loads only what the build bundled: nothing from elsewhere at run time
 pinned_npm: true

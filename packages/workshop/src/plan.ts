@@ -68,7 +68,7 @@ export function checkPlan(answer: string): Plan {
   return { title: str(raw.title, 'the lesson\'s title'), steps };
 }
 
-/** The agent's plan for `request`, for the lesson draft `view`. Throws with a message for the teacher. */
+/** The agent's plan for `request`, for the lesson draft `view`. Throws with a message to show. */
 export async function planLesson(backend: AgentBackend, view: string, request: string, signal: AbortSignal): Promise<Plan> {
   const answer = await backend.complete({ view, system: instructions, prompt: request.trim() }, signal);
   try {

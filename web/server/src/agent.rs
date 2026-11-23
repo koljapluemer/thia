@@ -10,7 +10,7 @@
 //!
 //! Like the local CLI agent, it hands back the files it changed; the browser writes the ymls, which the sync
 //! validates. Its tools read and write the draft's files, read the kit's sources and the examples (the agent
-//! template's, read-only), search them, and run the check (the worker). One turn at a time per teacher, each within
+//! template's, read-only), search them, and run the check (the worker). One turn at a time per account, each within
 //! their monthly token budget.
 //!
 //! It may also `ask` (`packages/workshop/agent-template/ask.json`): the turn ends with that call open, and the
@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tokio::sync::Notify;
 
-use crate::auth::Teacher;
+use crate::auth::SignedIn;
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
 pub const MODEL: &str = "claude-opus-5-5";
@@ -604,11 +604,11 @@ pub(crate) fn month_start() -> String {
     format!("{}-01T00:00:00.000Z", &now_iso()[..7])
 }
 
-async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Value>> {
-    let (draft, _) = state.own_draft(&teacher, &id)?;
+async fn status(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Value>> {
+    let (draft, _) = state.own_draft(&me, &id)?;
     let reason = match state.agents.unavailable(Some(&draft.kind)) {
         Some(r) => Some(r),
-        None if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget => Some("this month's budget for the agent is used up".into()),
+        None if state.db.tokens_since(&me.0.id, &month_start())? >= me.0.token_budget => Some("this month's budget for the agent is used up".into()),
         None => None,
     };
     let mut out = match reason {
@@ -616,7 +616,7 @@ async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<
         None => json!({ "available": true }),
     };
     // an open question is the draft's, whichever device asks
-    if let Some(s) = state.load_session(&draft.id).filter(|s| s.account == teacher.0.id)
+    if let Some(s) = state.load_session(&draft.id).filter(|s| s.account == me.0.id)
         && let Some(a) = s.ask
     {
         out["ask"] = json!({ "session": s.session, "id": a.id, "questions": a.questions });
@@ -624,8 +624,8 @@ async fn status(State(state): State<AppState>, teacher: Teacher, Path(id): Path<
     Ok(Json(out))
 }
 
-async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<TurnRequest>) -> ApiResult<(StatusCode, Json<Value>)> {
-    let (draft, _) = state.own_draft(&teacher, &id)?;
+async fn turn(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(req): Json<TurnRequest>) -> ApiResult<(StatusCode, Json<Value>)> {
+    let (draft, _) = state.own_draft(&me, &id)?;
     let kind = state.agents.reference.kind(&draft.kind).ok_or_else(|| ApiError::Conflict(format!("the agent doesn't work on a draft of kind {}", draft.kind)))?;
     if req.view != draft.id {
         return Err(ApiError::BadRequest("view: not this draft".into()));
@@ -634,7 +634,7 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
         return Err(ApiError::BadRequest("message is empty".into()));
     }
     if let Some(a) = &req.answer {
-        let open = state.load_session(&draft.id).filter(|s| s.account == teacher.0.id && req.session.as_deref() == Some(&s.session)).and_then(|s| s.ask);
+        let open = state.load_session(&draft.id).filter(|s| s.account == me.0.id && req.session.as_deref() == Some(&s.session)).and_then(|s| s.ask);
         if open.is_none_or(|o| o.id != a.id) {
             return Err(ApiError::Conflict("that question isn't open any more".into()));
         }
@@ -648,18 +648,18 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
     if let Some(r) = state.agents.unavailable(Some(&draft.kind)) {
         return Err(ApiError::Conflict(r));
     }
-    if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget {
+    if state.db.tokens_since(&me.0.id, &month_start())? >= me.0.token_budget {
         return Err(ApiError::TooMany("this month's budget for the agent is used up".into()));
     }
     state.agents.prune();
     let job = {
         let mut jobs = state.agents.jobs.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-        if jobs.values().any(|j| j.account == teacher.0.id && !j.done.load(Ordering::SeqCst)) {
+        if jobs.values().any(|j| j.account == me.0.id && !j.done.load(Ordering::SeqCst)) {
             return Err(ApiError::Conflict("a turn is already running: wait for it, or stop it".into()));
         }
         let job = Arc::new(Job {
             id: random_hex(16),
-            account: teacher.0.id.clone(),
+            account: me.0.id.clone(),
             draft: draft.id.clone(),
             kind: draft.kind.clone(),
             waiting: Mutex::default(),
@@ -673,7 +673,7 @@ async fn turn(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
         jobs.insert(job.id.clone(), job.clone());
         job
     };
-    state.db.add_turn(&job.id, &teacher.0.id, &draft.id, &now_iso())?;
+    state.db.add_turn(&job.id, &me.0.id, &draft.id, &now_iso())?;
     let id = job.id.clone();
     tokio::spawn(run_turn(state.clone(), job, req));
     Ok((StatusCode::ACCEPTED, Json(json!({ "job": id }))))
@@ -899,19 +899,19 @@ struct Complete {
 }
 
 /// One answer for a feature built on the agent (`AgentBackend.complete`): what it's for is the page's, not this.
-async fn complete(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<Complete>) -> ApiResult<Json<Value>> {
-    let (draft, _) = state.own_draft(&teacher, &id)?;
+async fn complete(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(req): Json<Complete>) -> ApiResult<Json<Value>> {
+    let (draft, _) = state.own_draft(&me, &id)?;
     if req.prompt.trim().is_empty() || req.prompt.chars().count() > 8_000 || req.system.chars().count() > 20_000 {
         return Err(ApiError::BadRequest("a prompt of up to 8000 characters, instructions of up to 20000".into()));
     }
     if let Some(r) = state.agents.unavailable(None) {
         return Err(ApiError::Conflict(r));
     }
-    if state.db.tokens_since(&teacher.0.id, &month_start())? >= teacher.0.token_budget {
+    if state.db.tokens_since(&me.0.id, &month_start())? >= me.0.token_budget {
         return Err(ApiError::TooMany("this month's budget for the agent is used up".into()));
     }
     let turn = random_hex(16);
-    state.db.add_turn(&turn, &teacher.0.id, &draft.id, &now_iso())?;
+    state.db.add_turn(&turn, &me.0.id, &draft.id, &now_iso())?;
     let resp = state.agents.call_once(&req.system, req.prompt.trim()).await.map_err(ApiError::Conflict)?;
     let u = &resp["usage"];
     let n = |k: &str| u[k].as_i64().unwrap_or(0);
@@ -930,12 +930,12 @@ struct EventsQuery {
     after: usize,
 }
 
-fn own_job(state: &AppState, teacher: &Teacher, job: &str) -> ApiResult<Arc<Job>> {
-    state.agents.jobs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(job).filter(|j| j.account == teacher.0.id).cloned().ok_or(ApiError::NotFound)
+fn own_job(state: &AppState, me: &SignedIn, job: &str) -> ApiResult<Arc<Job>> {
+    state.agents.jobs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).get(job).filter(|j| j.account == me.0.id).cloned().ok_or(ApiError::NotFound)
 }
 
-async fn events(State(state): State<AppState>, teacher: Teacher, Path(_id): Path<String>, Query(q): Query<EventsQuery>) -> ApiResult<Json<Value>> {
-    let job = own_job(&state, &teacher, &q.job)?;
+async fn events(State(state): State<AppState>, me: SignedIn, Path(_id): Path<String>, Query(q): Query<EventsQuery>) -> ApiResult<Json<Value>> {
+    let job = own_job(&state, &me, &q.job)?;
     let deadline = Instant::now() + EVENT_POLL;
     loop {
         let changed = job.changed.notified();
@@ -969,15 +969,15 @@ struct PageResult {
     is_error: bool,
 }
 
-async fn tool_result(State(state): State<AppState>, teacher: Teacher, Path(_id): Path<String>, Json(req): Json<PageResult>) -> ApiResult<Json<Value>> {
-    let job = own_job(&state, &teacher, &req.job)?;
+async fn tool_result(State(state): State<AppState>, me: SignedIn, Path(_id): Path<String>, Json(req): Json<PageResult>) -> ApiResult<Json<Value>> {
+    let job = own_job(&state, &me, &req.job)?;
     let tx = job.waiting.lock().unwrap_or_else(std::sync::PoisonError::into_inner).remove(&req.id).ok_or(ApiError::NotFound)?;
     let _ = tx.send((api_content(&req.content), req.is_error));
     Ok(Json(json!({})))
 }
 
-async fn cancel(State(state): State<AppState>, teacher: Teacher, Path(_id): Path<String>, Json(req): Json<Cancel>) -> ApiResult<Json<Value>> {
-    let job = own_job(&state, &teacher, &req.job)?;
+async fn cancel(State(state): State<AppState>, me: SignedIn, Path(_id): Path<String>, Json(req): Json<Cancel>) -> ApiResult<Json<Value>> {
+    let job = own_job(&state, &me, &req.job)?;
     job.cancelled.store(true, Ordering::SeqCst);
     job.cancel.notify_waiters();
     Ok(Json(json!({})))

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Sparkles, X } from 'lucide-react';
-import { registry } from 'virtual:gestalts-plugins/teacher';
+import { registry } from 'virtual:gestalts-plugins/lessons';
 import { useHostQuery, type Repo } from '@gestalts/client';
 import type { Belief } from '@gestalts/view';
 import { SEQUENCE, asSequence, planLesson, ruleConcepts, sequenceYml, walk, type AgentBackend, type Plan, type Sequence, type Step } from '@gestalts/workshop';
@@ -108,7 +108,7 @@ function Editor({ repo, info, backend, onChanged, onDeleted }: { repo: Repo; inf
 /**
  * The agent proposes how the lesson splits into views and visualizations: whichever agent is picked in Settings, one
  * answer at low effort (`planLesson`). Taking it makes each step a draft of its kind, with its brief kept as the
- * draft's: they're built one at a time, when the teacher asks each one's chat to.
+ * draft's: they're built one at a time, when each one's chat is asked to.
  */
 function Planner({ id, seq, backend, onTake }: { id: string; seq: Sequence; backend: AgentBackend; onTake: (s: Sequence) => void }) {
   const [request, setRequest] = useState('');

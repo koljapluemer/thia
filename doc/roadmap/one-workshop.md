@@ -20,7 +20,7 @@ sequences exist would mean moving them too.
 What it becomes:
 
 - **One area, behind the login.** No mode without an account and no mocked login: on a dev machine it is the account
-  `scripts/setup.sh` makes (`teacher-data/dev-login.txt`). Everyone using it gets an account from the admins.
+  `scripts/setup.sh` makes (`server-data/dev-login.txt`). Everyone using it gets an account from the admins.
 - **One list of drafts**, with *New: view · visualization · lesson*. Each kind brings its own format, editor, agent
   contract, check and template, as today: `view@2` with its members, `viz@1` (not folded into `view@2`), and
   `sequence@1` (below).

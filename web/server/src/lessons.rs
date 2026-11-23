@@ -1,5 +1,5 @@
 //! The lesson domain: another registrable domain than the app's, so nothing published shares cookies or storage with
-//! a teacher's session.
+//! an account's session.
 //!
 //! - `/l/<lesson>`: the player its current version was made for, from `runtime/<version>/` (with a `<base>` there)
 //! - `/l/<lesson>/current`: `{manifest}`, the one answer that changes; 410 once switched off

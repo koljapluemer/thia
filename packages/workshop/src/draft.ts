@@ -16,7 +16,7 @@ export const DEFINITION = 'gestalt@1';
 export type Draft = {
   id: string;
   title: string;
-  /** the brief kept with it: what it should be, in the teacher's words (the agent's SPEC.md) */
+  /** the brief kept with it: what it should be, in its author's words (the agent's SPEC.md) */
   spec: string;
   source: string;
   reads: string[];

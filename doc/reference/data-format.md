@@ -65,7 +65,7 @@ may be deleted by hand only for a definition that has never gone out (not deploy
 
 ### Definitions as ymls
 
-A gestalt made outside the repo (a teacher's lesson, a workshop draft) is defined by a yml of `gestalt@1`, travelling in
+A gestalt made outside the repo (a published lesson, a workshop draft) is defined by a yml of `gestalt@1`, travelling in
 the folder or deck like any other:
 
 ```yaml
@@ -86,7 +86,7 @@ fields:
   (compiled in or from a model package), or it's over the limits: 32 KiB, 200 field rules, rules nested 6 deep.
 - Two copies that differ in `name`, `version`, `fields` or `merge` don't merge: that's a sync conflict, one side kept
   whole, never a union of both sides' fields. A `description` merges like any value.
-- Who may use which package is up to whoever hands out folders (the teacher app gives each teacher one); the core only
+- Who may use which package is up to whoever hands out folders (the server gives each account one); the core only
   insists there is one.
 
 ## The core gestalts

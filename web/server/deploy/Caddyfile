@@ -1,5 +1,5 @@
-# The teacher app and the lesson domain on one box. Two registrable domains, so nothing published shares cookies or
-# storage with teachers' sessions. Replace the two names; Caddy gets their certificates.
+# The app and the lesson domain on one box. Two registrable domains, so nothing published shares cookies or
+# storage with the app's sessions. Replace the two names; Caddy gets their certificates.
 
 lehrer.example.de {
 	encode zstd gzip
@@ -7,7 +7,7 @@ lehrer.example.de {
 		reverse_proxy 127.0.0.1:7740
 	}
 	handle {
-		root * /opt/gestalts-teacher/current/app
+		root * /opt/thia-server/current/app
 		try_files {path} /index.html
 		file_server
 	}

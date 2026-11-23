@@ -86,7 +86,7 @@ run = "cargo run -q --release -p gestalts-node-desktop -- $(bash scripts/plugin-
 
 [tasks."web:dev"]
 hide = true
-description = "The web app on the first free port from :5173 with hot reload, without the node or the teacher server (mise run just dev starts all three)"
+description = "The web app on the first free port from :5173 with hot reload, without the node or the server (mise run just dev starts all three)"
 depends = ["setup"]
 shell = "bash -c"
 run = 'pnpm --dir web/app dev --port "$(scripts/free-port.sh 5173)" --strictPort'
@@ -268,7 +268,7 @@ run = ["node plugins/vietnamese-typing-practice/tools/build-deck.ts", "mise run 
 
 [tasks."site:dev"]
 hide = true
-description = "The public site (web/site) on :5177 with hot reload; lessons' links from the teacher server on :7741"
+description = "The public site (web/site) on :5177 with hot reload; lessons' links from the server on :7741"
 depends = ["setup"]
 run = "pnpm --dir web/site dev"
 
@@ -286,27 +286,27 @@ description = "Summarize the Claude bridge's turns: time, token use, cost and to
 run = "python3 installables/claude-bridge/scripts/agent_stats.py"
 
 
-# --- teacher ---
+# --- server ---
 
-[tasks."teacher:serve"]
+[tasks."server:serve"]
 hide = true
-description = "The teacher server on :7740 (API) and :7741 (lessons), data in teacher-data/, after installing the site's build as the lessons' player; accepts submissions into this checkout (needs ANTHROPIC_API_KEY for the agent)"
+description = "The server (web/server) on :7740 (API) and :7741 (lessons), data in server-data/, after installing the site's build as the lessons' player; accepts submissions into this checkout (needs ANTHROPIC_API_KEY for the agent)"
 depends = ["setup"]
 shell = "bash -c"
 run = """
 set -euo pipefail
 pnpm --dir web/site build
-cargo run -q -p gestalts-teacher -- --data teacher-data admin install-player --dist web/site/dist
-cargo run -q -p gestalts-teacher -- --data teacher-data serve --insecure-cookies --promote-into .
+cargo run -q -p thia-server -- --data server-data admin install-player --dist web/site/dist
+cargo run -q -p thia-server -- --data server-data serve --insecure-cookies --promote-into .
 """
 
-[tasks."teacher:admin"]
+[tasks."server:admin"]
 hide = true
-description = "Schools and teachers on the local teacher server: mise run teacher:admin add-school NAME, add-teacher --school ID --email E [--admin], grant-admin E"
-run = "cargo run -q -p gestalts-teacher -- --data teacher-data admin"
+description = "Schools and accounts on the local server: mise run server:admin add-school NAME, add-account --school ID --email E [--admin], grant-admin E"
+run = "cargo run -q -p thia-server -- --data server-data admin"
 
-[tasks."teacher:deploy"]
+[tasks."server:deploy"]
 hide = true
-description = "Build the teacher server, app and player and ship them to TEACHER_HOST (web/server/deploy/README.md; needs a committed tree)"
+description = "Build the server, app and player and ship them to THIA_HOST (web/server/deploy/README.md; needs a committed tree)"
 depends = ["setup"]
-run = "bash scripts/deploy-teacher.sh"
+run = "bash scripts/deploy-server.sh"

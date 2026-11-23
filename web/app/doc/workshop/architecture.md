@@ -6,7 +6,7 @@ visualization or a lesson of several of them ([`doc/roadmap/one-workshop.md`](..
 Views and vizzes are made the same way, with either agent: one layout, one chat, one brief, one call path; what
 differs is each kind's contract, preview and what it goes out as (below).
 There is no mode without an account: on a dev machine it's `dev@localhost`, which `scripts/setup.sh` makes
-(`teacher-data/dev-login.txt`); everyone else gets one from the admins (`gestalts-teacher admin add-teacher`).
+(`server-data/dev-login.txt`); everyone else gets one from the admins (`thia-server admin add-account`).
 
 ```
 web/app/src/workshop/
@@ -20,7 +20,7 @@ web/app/src/workshop/
   SequencePane.tsx           a lesson of several views and vizzes: its steps, the planner, the play-through
   submit.tsx                 offering a draft for the public site
   move.tsx                   moving drafts this browser kept before the workshop moved to accounts
-  agent.ts, Settings.tsx     which agents make views, tried in the teacher's order: the server's, Claude Code through
+  agent.ts, Settings.tsx     which agents make views, tried in the order set there: the server's, Claude Code through
                              the Claude bridge, Ollama through the Ollama bridge (experimental), Gemini's free tier
   api.ts                     the server's API
 
@@ -30,7 +30,7 @@ packages/workshop/           shared by the panes:
                              what comes back goes, and the page's own check after a turn (`settle`)
   Preview.tsx                compiles a draft's view in the browser and runs it in a frame, as any view runs
   Chat.tsx                   one conversation about one draft of any kind
-  agents/                    what an agent backend is; the teacher server's (a job over HTTP, jobs.ts); Claude Code
+  agents/                    what an agent backend is; the server's (a job over HTTP, jobs.ts); Claude Code
                              through the Claude bridge (bridge.ts); a local model through the Ollama bridge, on the same
                              protocol (ollama.ts); Gemini's free models from the page (gemini.ts); each kind's
                              contract (kinds.ts); the agents'
@@ -54,9 +54,9 @@ installables/ollama-bridge/  the same protocol, with an Ollama model asked with 
 A draft's id is its view's or viz's. The server checks each kind ([`web/server/src/validate.rs`](../../../server/src/validate.rs)):
 a viz's draft holds its viz and nothing else.
 
-A draft is previewed in the context it would go out in. A teacher's view runs as a lesson does: the core's gestalts
-and the lesson models (`distributions/teacher.yml`, the server's `MODELS`). A **maintainer**'s (a role on the account,
-`gestalts-teacher admin grant-maintainer`) runs as the public site's learning views do: every model package in the repo
+A draft is previewed in the context it would go out in. An account's view runs as a lesson does: the core's gestalts
+and the lesson models (`distributions/lessons.yml`, the server's `MODELS`). A **maintainer**'s (a role on the account,
+`thia-server admin grant-maintainer`) runs as the public site's learning views do: every model package in the repo
 and the plugins' decks beside it (`distributions/workshop.yml`), with more room. The server judges a maintainer's
 drafts by every model package, and still publishes one to a class only within the lesson models. A viz is shown by
 the vizint view, as the public site shows it.
@@ -69,7 +69,7 @@ instructions in `agent-template/plan-lesson.md`. `planLesson` (`packages/worksho
 the same for both: one view instead, or the steps (each a view or a viz) with their briefs and rules; it drops a rule no earlier step can
 feed, and appends to each brief what ties the view to the rules (its concepts as
 `concept@2` data, practice logged on them, `done()`). Taking the plan makes each step a draft of its kind with its brief as
-the draft's, built when the teacher asks its chat to, one at a time. The steps can be edited in the form besides. Its
+the draft's, built when its chat is asked to, one at a time. The steps can be edited in the form besides. Its
 **play-through** walks it for a pretend student who is new, knows a concept, or struggles with it
 (`packages/workshop/src/sequence.ts`, `walk`, the same decisions the player makes).
 
@@ -81,7 +81,7 @@ the copy here stays.
 
 ## Every draft: brief, chat, check
 
-A draft keeps its **brief** (`spec`): what it should be, in the teacher's words. It's edited above the chat, kept with
+A draft keeps its **brief** (`spec`): what it should be, in its author's words. It's edited above the chat, kept with
 the draft, and every turn sends it, as `SPEC.md`, which the agent reads and can't change. Once there is one, the chat
 offers *Build from the brief* as a message of one click.
 
@@ -89,15 +89,15 @@ A turn is the same for every kind and either agent (`Chat` over `Work`): the dra
 files the turn changed come back and are written, what couldn't be saved goes with the next message. Then the kind
 may check what's there itself (`settle`): a viz is built and rendered in the page, and its page kept only when that
 passes. Which agent runs the turn is Settings': the server's (API calls, within the account's budget) or Claude Code
-through the Claude bridge (the teacher's own plan, no API tokens), which is how anything is tried locally for free.
+through the Claude bridge (your own plan, no API tokens), which is how anything is tried locally for free.
 Experimental: a local Ollama model through the Ollama bridge. The page sends it the same as the Claude bridge, and
 it runs its own file tools on the files in memory ([its README](../../../../installables/ollama-bridge/README.md)).
 
-Settings lists the agents in an order the teacher sets, each switched on or off: a turn goes to the first one
+Settings lists the agents in the order you set, each switched on or off: a turn goes to the first one
 switched on that's available (`usePickedBackend`, asked again when a turn ends and when the window comes back). Each
 keeps its own conversation of a draft, so when another takes over, the chat shows that one's.
 
-Gemini runs in the page, on the teacher's own AI Studio key, which stays in this browser and goes only to Google
+Gemini runs in the page, on your own AI Studio key, which stays in this browser and goes only to Google
 (`agents/gemini.ts`). Its loop is the Ollama bridge's in TS: the same file tools on the files in memory, then the
 kind's page tools (`check`, whose screenshots go along as images, and `ask`, which waits while the turn runs, as on
 the bridge). Free-tier quotas are per model, so the models are a chain fixed in code (`GEMINI_CHAIN`, after theadoc's):

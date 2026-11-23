@@ -1,10 +1,10 @@
-//! The teacher app's server: a sync peer for teachers' drafts, an agent runner, and publishing.
+//! thia's server: a sync peer for the accounts' drafts, an agent runner, and publishing.
 //!
 //! - **The app** (`app`): accounts behind a session cookie; each draft a folder of ymls, synced by the browser's wasm
 //!   repo over the node's `/sync/*` shapes, with every write validated by the core against the draft's own package
 //!   and the quotas. The browser is untrusted here.
 //! - **The lesson domain** (`lessons`): another registrable domain, so nothing published shares cookies or storage
-//!   with a teacher's session. It serves the player and lessons as static files, and one dynamic answer per lesson:
+//!   with an account's session. It serves the player and lessons as static files, and one dynamic answer per lesson:
 //!   which version is current.
 
 use std::collections::HashMap;
@@ -36,7 +36,7 @@ pub mod worker;
 /// The repo's `gestalts/`, for the model packages a draft may use besides the core's.
 static GESTALTS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../../gestalts");
 
-/// The model packages teachers' views may read, and submissions are checked against: the teacher app's `models:`,
+/// The model packages lessons' views may read, and submissions are checked against: the lessons' `models:`,
 /// always the same, and all of them on the public site.
 pub const MODELS: &[&str] = &["geography", "typing", "viz"];
 
@@ -65,7 +65,7 @@ pub fn model_texts(packages: &[&str]) -> Result<Vec<String>, String> {
     Ok(out)
 }
 
-/// How much one teacher may store and use.
+/// How much one account may store and use.
 #[derive(Debug, Clone)]
 pub struct Limits {
     pub drafts_per_account: i64,

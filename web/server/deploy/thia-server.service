@@ -1,0 +1,23 @@
+[Unit]
+Description=thia's server (thia-server)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=thia
+Group=thia
+WorkingDirectory=/opt/thia-server/current
+# ANTHROPIC_API_KEY=…, THIA_LESSON_ORIGIN=https://lektion.example.net
+EnvironmentFile=/etc/thia-server.env
+Environment=THIA_DATA=/var/lib/thia-server
+Environment=THIA_REPO=/opt/thia-server/current
+ExecStart=/opt/thia-server/current/bin/thia-server serve
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/thia-server
+
+[Install]
+WantedBy=multi-user.target

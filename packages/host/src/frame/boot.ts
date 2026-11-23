@@ -56,7 +56,7 @@ export function bootHtml(csp?: string): string {
 export const BOOT_HTML = bootHtml();
 
 /**
- * The policy for a view nobody vetted (a teacher's lesson, a draft): it reaches no server. Nothing it reads or is told
+ * The policy for a view nobody vetted (a published lesson, a draft): it reaches no server. Nothing it reads or is told
  * can leave by `fetch`, a WebSocket, a form or an image URL; scripts come only from the runtime, the frame's own blobs
  * and `scripts` (where its npm packages are); images, media and fonts only from blobs, data URLs and `media`. A
  * request it isn't allowed shows as an error in the console, so the preview shows it while it's being made.

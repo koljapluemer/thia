@@ -7,7 +7,7 @@ Settings as "Ollama on this computer".
 
 Inside, it's naive. It keeps the files the page sent in memory and asks Ollama's `/api/chat` with tools in a loop
 (at most 40 rounds). The tools are its own file tools (`list_files`, `read_file`, `write_file`, `edit_file`,
-`delete_file`, `search`, ported from the teacher server's agent) and the page's (`check`, `ask`, handed to the page).
+`delete_file`, `search`, ported from the server's agent) and the page's (`check`, `ask`, handed to the page).
 Writes go only to paths matching `keep`. The model is told the page's `system`, how the tools work, and the
 template's `CLAUDE.md`. When it answers without a tool, the changed draft files go back. Conversations are kept in
 memory, so a restart forgets them and the next turn starts a new one.

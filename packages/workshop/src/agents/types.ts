@@ -2,7 +2,7 @@ import type { ViewError } from '@gestalts/view';
 import type { AgentKind } from './kinds';
 
 /**
- * What a workshop asks of an agent, whatever runs it (the claude CLI through the Claude bridge, the teacher app's server).
+ * What a workshop asks of an agent, whatever runs it (the claude CLI through the Claude bridge, the server).
  * The agent sees a draft as files ([`filesOf`](../draft.ts)) and returns the files it changed; the browser turns them
  * into ymls and writes them, so no agent needs access to any.
  */

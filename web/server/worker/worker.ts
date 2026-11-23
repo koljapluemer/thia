@@ -1,5 +1,5 @@
-// The teacher server's helper for what only Node does well: checking a draft's view the way the workshop does, and
-// bundling npm packages. `gestalts-teacher` runs it as a child and speaks JSON lines with it on stdin/stdout:
+// The server's helper for what only Node does well: checking a draft's view the way the workshop does, and
+// bundling npm packages. `thia-server` runs it as a child and speaks JSON lines with it on stdin/stdout:
 // `{id, op, ...}` in, `{id, ok: true, result}` or `{id, ok: false, error}` out, in any order.
 //
 // - `check {files, gestalts}`: `@gestalts/check`'s `checkView` on the draft as the agent sees it (the one check the
@@ -11,7 +11,7 @@
 // - `compile {source}`: the view as the frame loads it
 // - `npm {specifier, version}`: one bundle, from the cache when it was made before
 //
-// Env: TEACHER_NPM_CACHE.
+// Env: THIA_NPM_CACHE.
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline';
@@ -24,7 +24,7 @@ import { asDraft, filesOf } from '@gestalts/workshop/draft';
 import { parse } from 'yaml';
 import { render } from './render.ts';
 
-const CACHE = resolve(process.env.TEACHER_NPM_CACHE ?? join(tmpdir(), 'gestalts-npm-cache'));
+const CACHE = resolve(process.env.THIA_NPM_CACHE ?? join(tmpdir(), 'gestalts-npm-cache'));
 
 type Request = { id: number; op: string; [k: string]: unknown };
 

@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 use common::Server;
 use axum::Json;
 use axum::http::{HeaderMap, StatusCode};
-use gestalts_teacher::Limits;
+use thia_server::Limits;
 use serde_json::{Value, json};
 
 type Seen = Arc<Mutex<Vec<(HeaderMap, Value)>>>;
@@ -128,7 +128,7 @@ async fn a_turn_needs_a_budget_left_and_waits_for_the_last_one() {
     let (_, d, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "x" }))).await;
     let base = format!("/api/drafts/{}", d["id"].as_str().unwrap());
     // a1's budget is a million tokens: one turn of two million uses it up
-    s.state.db.add_turn("t0", "a1", "x", &gestalts_teacher::now_iso()).unwrap();
+    s.state.db.add_turn("t0", "a1", "x", &thia_server::now_iso()).unwrap();
     s.state.db.add_usage("t0", 2_000_000, 0, 0, 0).unwrap();
     let turn = json!({ "view": d["id"], "message": "hi", "files": {}, "gestalts": [] });
     assert_eq!(s.call("POST", &format!("{base}/agent/turn"), Some(&ada), Some(turn)).await.0, StatusCode::TOO_MANY_REQUESTS);

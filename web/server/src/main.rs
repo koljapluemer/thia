@@ -1,18 +1,18 @@
-//! `gestalts-teacher serve` runs the teacher app's server; `gestalts-teacher admin …` makes schools and accounts.
+//! `thia-server serve` runs thia's server; `thia-server admin …` makes schools and accounts.
 
 use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use gestalts_teacher::agent::{MODEL, Model};
-use gestalts_teacher::worker::WorkerConfig;
-use gestalts_teacher::{AppState, Limits, Services, auth, db, now_iso, random_hex, random_token};
+use thia_server::agent::{MODEL, Model};
+use thia_server::worker::WorkerConfig;
+use thia_server::{AppState, Limits, Services, auth, db, now_iso, random_hex, random_token};
 
 #[derive(Parser)]
-#[command(about = "The teacher app's server")]
+#[command(about = "thia's server: accounts, drafts, the agent, publishing, lessons")]
 struct Cli {
-    /// where everything lives: teacher.db, drafts/, lessons/, npm/, runtime/
-    #[arg(long, env = "TEACHER_DATA", default_value = "teacher-data")]
+    /// where everything lives: thia.db, drafts/, lessons/, npm/, runtime/
+    #[arg(long, env = "THIA_DATA", default_value = "server-data")]
     data: PathBuf,
     #[command(subcommand)]
     command: Command,
@@ -32,25 +32,25 @@ enum Command {
         #[arg(long)]
         insecure_cookies: bool,
         /// the repo checkout: the worker (web/server/worker) and the agent template (packages/workshop) are in it
-        #[arg(long, env = "TEACHER_REPO", default_value = ".")]
+        #[arg(long, env = "THIA_REPO", default_value = ".")]
         repo: PathBuf,
-        #[arg(long, env = "TEACHER_NODE", default_value = "node")]
+        #[arg(long, env = "THIA_NODE", default_value = "node")]
         node: String,
         /// the agent's model
         #[arg(long, default_value = MODEL)]
         model: String,
         /// the lesson domain as students reach it, for links
-        #[arg(long, env = "TEACHER_LESSON_ORIGIN", default_value = "http://127.0.0.1:7741")]
+        #[arg(long, env = "THIA_LESSON_ORIGIN", default_value = "http://127.0.0.1:7741")]
         lesson_origin: String,
         /// a repo checkout to write accepted submissions into (plugins/, gestalts/, the site's distribution); without
         /// it, submissions queue up and can only be rejected here
-        #[arg(long, env = "TEACHER_PROMOTE_INTO")]
+        #[arg(long, env = "THIA_PROMOTE_INTO")]
         promote_into: Option<PathBuf>,
         /// where a visualization's check renders it for the server's agent: `page` hands it to the workshop page the
         /// turn came from (which has to stay open), `worker` renders it in headless Chromium here (playwright-core;
         /// GESTALTS_CHROMIUM names the browser, else playwright's own)
         #[arg(long, env = "GESTALTS_VIZ_RENDER", default_value = "page")]
-        viz_render: gestalts_teacher::agent::VizRender,
+        viz_render: thia_server::agent::VizRender,
     },
     /// Schools and accounts
     Admin {
@@ -63,8 +63,8 @@ enum Command {
 enum Admin {
     /// A school; prints its id
     AddSchool { name: String },
-    /// A teacher at a school; prints a password to hand over
-    AddTeacher {
+    /// An account at a school; prints a password to hand over
+    AddAccount {
         #[arg(long)]
         school: String,
         #[arg(long)]
@@ -90,7 +90,7 @@ enum Admin {
         #[arg(long)]
         revoke: bool,
     },
-    /// A new password for a teacher, signing them out everywhere; prints it
+    /// A new password for an account, signing it out everywhere; prints it
     ResetPassword {
         #[arg(long)]
         email: String,
@@ -113,7 +113,7 @@ async fn main() {
 
 async fn run(cli: Cli) -> Result<(), String> {
     std::fs::create_dir_all(&cli.data).map_err(|e| format!("{}: {e}", cli.data.display()))?;
-    let db = db::Db::open(&cli.data.join("teacher.db")).map_err(|e| e.to_string())?;
+    let db = db::Db::open(&cli.data.join("thia.db")).map_err(|e| e.to_string())?;
     let limits = Limits::default();
     match cli.command {
         Command::Admin { command } => {
@@ -124,7 +124,7 @@ async fn run(cli: Cli) -> Result<(), String> {
                     db.add_school(&id, &name, &now).map_err(|e| e.to_string())?;
                     println!("{id}");
                 }
-                Admin::AddTeacher { school, email, admin, maintainer } => {
+                Admin::AddAccount { school, email, admin, maintainer } => {
                     if !db.school_exists(&school).map_err(|e| e.to_string())? {
                         return Err(format!("no school {school}"));
                     }
@@ -191,8 +191,8 @@ async fn run(cli: Cli) -> Result<(), String> {
             let app_listener = tokio::net::TcpListener::bind(app).await.map_err(|e| format!("{app}: {e}"))?;
             let lesson_listener = tokio::net::TcpListener::bind(lessons).await.map_err(|e| format!("{lessons}: {e}"))?;
             eprintln!("app API on http://{app}/api, lessons on http://{lessons}");
-            let a = axum::serve(app_listener, gestalts_teacher::app(state.clone()));
-            let l = axum::serve(lesson_listener, gestalts_teacher::lessons(state));
+            let a = axum::serve(app_listener, thia_server::app(state.clone()));
+            let l = axum::serve(lesson_listener, thia_server::lessons(state));
             tokio::select! {
                 r = a => r.map_err(|e| e.to_string()),
                 r = l => r.map_err(|e| e.to_string()),

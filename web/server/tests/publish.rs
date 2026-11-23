@@ -4,7 +4,7 @@ mod common;
 
 use axum::http::StatusCode;
 use common::Server;
-use gestalts_teacher::Limits;
+use thia_server::Limits;
 use serde_json::{Value, json};
 
 const RUNTIME: &str = "0123456789abcdef";
@@ -137,7 +137,7 @@ async fn what_may_not_go_out() {
         s.lessons("/l/AAAAAAAAAAAAAAAAAAAAAA/current").await;
     }
     assert_eq!(s.lessons("/l/AAAAAAAAAAAAAAAAAAAAAA/current").await.0, StatusCode::TOO_MANY_REQUESTS);
-    assert_eq!(s.lessons("/lessons/../teacher.db").await.0, StatusCode::NOT_FOUND);
+    assert_eq!(s.lessons("/lessons/../thia.db").await.0, StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]

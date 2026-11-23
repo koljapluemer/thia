@@ -12,9 +12,9 @@ sdk/python/   what plugin workers import
 web/
   app/                  the one web app: notes, the workshops, lessons, the review; data in the browser
   site/                 the public site: every view on its decks, accepted workshop results among them; also plays
-                        teachers' lesson links on the lesson domain
+                        published lessons' links on the lesson domain
   android/              the page the Android app wraps
-  server/               the teacher server (gestalts-teacher), its worker, docs and deploy/
+  server/               the server (thia-server), its worker, docs and deploy/
 installables/           optional, on the user's computer
   folder-sync/          gestalts-node: a folder synced with the app and paired devices; desktop/ (tray), settings/, android/
   claude-bridge/        lets a site you allow run Claude Code here, with the site's tools (the web app's agents)
@@ -31,9 +31,9 @@ packaging tools as pinned in `mise.toml`; rustup picks up the Rust version (and 
 `rust-toolchain.toml`.
 
 ```sh
-mise run just setup   # a new machine: the pinned tools and Rust, dependencies, the core in wasm, a local teacher
+mise run just setup   # a new machine: the pinned tools and Rust, dependencies, the core in wasm, a local
                       # account; again after pulling
-mise run just dev     # the web app, the public site, the claude and ollama bridges, folder-sync and the teacher server with hot reload:
+mise run just dev     # the web app, the public site, the claude and ollama bridges, folder-sync and the server with hot reload:
                       # where each is, their output in target/dev/<name>.log
 ```
 
@@ -51,6 +51,6 @@ mise run android:dev                              # the Android app on a phone o
 mise run publish-data plugins/<id>/decks/<deck>   # after editing a plugin's deck
 mise run health-data ~/some-folder                # which ymls can't be used, and why
 mise run serve ~/some-folder                      # the node headless with the repo's plugins
-mise run teacher:deploy                           # the teacher app to its box (web/server/deploy/README.md)
+mise run server:deploy                           # the server and app to its box (web/server/deploy/README.md)
 mise run claude-bridge:install                    # the Claude bridge installed here, as a user gets it
 ```

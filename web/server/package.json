@@ -1,5 +1,5 @@
 {
-  "name": "teacher",
+  "name": "server",
   "private": true,
   "type": "module",
   "scripts": {

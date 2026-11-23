@@ -6,7 +6,7 @@ import { Notice, RunPage, Spinner, type Run } from './Run';
 import { SequencePage, type LoadedSequence } from './Sequence';
 
 /**
- * A teacher's lesson, from its link `/l/<lesson>` on the lesson domain: its current version's manifest, its view, and
+ * A published lesson, from its link `/l/<lesson>` on the lesson domain: its current version's manifest, its view, and
  * its ymls as the deck it opens on. Unlisted: only who has the link finds it. The view runs under the closed CSP. A
  * lesson of several views (`lesson@2`) is each of its views so, played as a sequence.
  */

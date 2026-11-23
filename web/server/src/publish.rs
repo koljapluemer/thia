@@ -8,7 +8,7 @@
 //!   reads and writes gestalts the player has or the draft defines, imports npm pinned in view.json, loads nothing
 //!   from other servers; and each package bundles
 //! - every member is valid, here
-//! - the player for the runtime of the page publishing it is deployed here: what the teacher's preview runs, and what
+//! - the player for the runtime of the page publishing it is deployed here: what the draft's preview runs, and what
 //!   the lesson's link serves it with from then on
 //! - a gestalt published before keeps its structure (a change is a new version); a lesson whose gestalts changed since
 //!   its last version is published with a warning, since students' data stays on their devices
@@ -26,7 +26,7 @@ use serde::Serialize;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
-use crate::auth::Teacher;
+use crate::auth::SignedIn;
 use crate::npm::{Ensure, ensure, package_of};
 use crate::validate::{draft_gestalts, is_view};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_token};
@@ -38,7 +38,7 @@ pub struct Published {
     pub manifest: String,
     pub updated: String,
     pub revoked: Option<String>,
-    /// what the teacher should know, though it went out
+    /// what its author should know, though it went out
     pub warnings: Vec<String>,
 }
 
@@ -84,7 +84,7 @@ pub struct Check<'a> {
     pub lesson: Option<&'a str>,
 }
 
-/// What a teacher is told when the page publishing has no player here (an old page, or the site updated but its
+/// What's said when the page publishing has no player here (an old page, or the site updated but its
 /// player not installed yet): nothing they can fix but by reloading, or by telling who runs the site.
 const UPDATED: &str = "This site was just updated and can't publish yet. Reload the page and try again; if it keeps happening, tell your admin.";
 
@@ -324,14 +324,14 @@ struct PublishRequest {
     runtime: Option<String>,
 }
 
-async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, body: Option<Json<PublishRequest>>) -> ApiResult<Json<Published>> {
-    let (draft, _) = state.own_draft(&teacher, &id)?;
+async fn publish(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, body: Option<Json<PublishRequest>>) -> ApiResult<Json<Published>> {
+    let (draft, _) = state.own_draft(&me, &id)?;
     let runtime = body.map(|Json(b)| b).unwrap_or_default().runtime.ok_or_else(|| ApiError::Conflict(UPDATED.into()))?;
     let _guard = state.writes.lock().await;
     let version = match draft.kind.as_str() {
         "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, gestalts: &state.gestalts, lesson: Some(&runtime) }).await?,
         "viz" => build_viz(&state, &state.draft_dir(&draft.id), &draft.id, &runtime).await?,
-        "sequence" => crate::sequence::build(&state, &teacher.0, &draft, &runtime).await?,
+        "sequence" => crate::sequence::build(&state, &me.0, &draft, &runtime).await?,
         k => return Err(ApiError::Internal(format!("{}: a draft of kind {k}", draft.id))),
     };
     let previous = state.db.publication_of(&draft.id)?;
@@ -368,13 +368,13 @@ async fn publish(State(state): State<AppState>, teacher: Teacher, Path(id): Path
     Ok(Json(state.published(p, warnings)))
 }
 
-async fn get_publication(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Option<Published>>> {
-    let (draft, _) = state.own_draft(&teacher, &id)?;
+async fn get_publication(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Option<Published>>> {
+    let (draft, _) = state.own_draft(&me, &id)?;
     Ok(Json(state.db.publication_of(&draft.id)?.map(|p| state.published(p, vec![]))))
 }
 
-async fn unpublish(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<StatusCode> {
-    let (draft, _) = state.own_draft(&teacher, &id)?;
+async fn unpublish(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<StatusCode> {
+    let (draft, _) = state.own_draft(&me, &id)?;
     let p = state.db.publication_of(&draft.id)?.ok_or(ApiError::NotFound)?;
     state.db.revoke_publication(&p.id, &now_iso())?;
     Ok(StatusCode::NO_CONTENT)

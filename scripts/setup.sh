@@ -4,7 +4,7 @@
 #   - the tools mise pins (Node, pnpm, uv, wasm-pack, packaging tools) and the Rust toolchain rust-toolchain.toml pins
 #   - JS dependencies, the core compiled to wasm, the agent template (mise run setup)
 #   - the Rust binaries `just dev` runs, built once so its first start isn't a long wait
-#   - a local teacher account, the first time (teacher-data/, kept out of git), which is an admin (reviews submissions)
+#   - a local account, the first time (server-data/, kept out of git), which is an admin (reviews submissions)
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
@@ -31,21 +31,21 @@ step "dependencies, the core in wasm, the agent template"
 mise run setup
 
 step "the Rust binaries"
-cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-teacher
+cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p thia-server
 
-teacher() { cargo run -q -p gestalts-teacher -- --data teacher-data admin "$@"; }
-if [[ ! -e teacher-data/dev-login.txt ]]; then
+admin() { cargo run -q -p thia-server -- --data server-data admin "$@"; }
+if [[ ! -e server-data/dev-login.txt ]]; then
   # the workshop is behind a login: on a dev machine, this account's
   step "the local account (dev@localhost)"
-  if ! password="$(teacher reset-password --email dev@localhost 2> /dev/null)"; then
-    school="$(teacher add-school "Dev school")"
-    password="$(teacher add-teacher --school "$school" --email dev@localhost --admin --maintainer)"
+  if ! password="$(admin reset-password --email dev@localhost 2> /dev/null)"; then
+    school="$(admin add-school "Dev school")"
+    password="$(admin add-account --school "$school" --email dev@localhost --admin --maintainer)"
   fi
-  printf 'email: dev@localhost\npassword: %s\n' "$password" > teacher-data/dev-login.txt
-  echo "sign in to the workshop with dev@localhost, password in teacher-data/dev-login.txt"
+  printf 'email: dev@localhost\npassword: %s\n' "$password" > server-data/dev-login.txt
+  echo "sign in to the workshop with dev@localhost, password in server-data/dev-login.txt"
 fi
 # the local account reviews submissions for the public site (/review) and makes what it ships, also one made before
-if [[ -e teacher-data/dev-login.txt ]]; then teacher grant-admin dev@localhost && teacher grant-maintainer dev@localhost; fi
+if [[ -e server-data/dev-login.txt ]]; then admin grant-admin dev@localhost && admin grant-maintainer dev@localhost; fi
 
 step "optional"
 command -v claude > /dev/null || echo "no claude CLI: the workshop's local agent needs it, and it's the only one that builds visualizations (https://claude.com/claude-code)"

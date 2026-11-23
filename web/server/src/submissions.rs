@@ -4,7 +4,7 @@
 //!
 //! - **Sending**: a draft is copied from the server's own folder (`POST /drafts/<id>/submit`), as
 //!   `workshop:<draft id>`, by its signed-in owner, who affirms they may share it. Older submissions came from the
-//!   workshops that kept drafts in the browser (`make:`, `make-viz:`) or the teacher area (`teach:`).
+//!   workshops that kept drafts in the browser (`make:`, `make-viz:`) or the old lesson area (`teach:`).
 //! - **What it is** follows from what it holds: one `view@3` (or `view@2`) and its members (`view`), or one `viz@1` (`viz`). A view
 //!   is checked as publishing checks it: it compiles, and its npm packages are pinned and bundle.
 //! - **Review** (admins): the queue, each submission as a read-only deck for a live preview, and accepting
@@ -24,7 +24,7 @@ use gestalts_fs::FsStorage;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::auth::{Admin, Teacher};
+use crate::auth::{Admin, SignedIn};
 use crate::db::Submission;
 use crate::publish::{Check, build};
 use crate::db::Account;
@@ -229,10 +229,10 @@ fn rights(o: &Offer) -> ApiResult<()> {
     if o.rights { Ok(()) } else { Err(ApiError::BadRequest("only what you may share, and agree to publish, can be submitted".into())) }
 }
 
-/// A teacher's draft, from the server's own copy.
-async fn submit_draft(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(o): Json<Offer>) -> ApiResult<(StatusCode, Json<Submission>)> {
+/// An account's draft, from the server's own copy.
+async fn submit_draft(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(o): Json<Offer>) -> ApiResult<(StatusCode, Json<Submission>)> {
     rights(&o)?;
-    let (draft, store) = state.own_draft(&teacher, &id)?;
+    let (draft, store) = state.own_draft(&me, &id)?;
     let (ymls, blobs) = tokio::task::spawn_blocking(move || -> ApiResult<_> {
         let mut ymls = BTreeMap::new();
         for y in store.list_ymls_sync()? {
@@ -251,7 +251,7 @@ async fn submit_draft(State(state): State<AppState>, teacher: Teacher, Path(id):
     .await
     .map_err(io)??;
     let sent = Sent { source: format!("workshop:{}", draft.id), about: o.about, credit: o.credit, ymls, blobs };
-    Ok((StatusCode::CREATED, Json(create(&state, &teacher.0, sent).await?)))
+    Ok((StatusCode::CREATED, Json(create(&state, &me.0, sent).await?)))
 }
 
 #[derive(Deserialize)]
@@ -260,8 +260,8 @@ struct Of {
 }
 
 /// The signed-in account's own submissions of one draft, and what became of them.
-async fn mine(State(state): State<AppState>, teacher: Teacher, Query(q): Query<Of>) -> ApiResult<Json<Vec<Submission>>> {
-    Ok(Json(state.db.submissions_of(&teacher.0.id, &q.source)?))
+async fn mine(State(state): State<AppState>, me: SignedIn, Query(q): Query<Of>) -> ApiResult<Json<Vec<Submission>>> {
+    Ok(Json(state.db.submissions_of(&me.0.id, &q.source)?))
 }
 
 // review

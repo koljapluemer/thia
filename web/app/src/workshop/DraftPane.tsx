@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Check, Copy, Download, Link2Off, Send, Trash2 } from 'lucide-react';
-import { registry as teacher } from 'virtual:gestalts-plugins/teacher';
+import { registry as lessons } from 'virtual:gestalts-plugins/lessons';
 import { registry as workshop } from 'virtual:gestalts-plugins/workshop';
 import { useConnector, useHostQuery, type Repo } from '@gestalts/client';
 import { closedCsp, deckSources, type Registry } from '@gestalts/host';
@@ -16,14 +16,14 @@ import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
 
 /**
- * Where a view's draft is tried out: what it would go out in. A teacher's is a lesson's (the `teacher` distribution:
+ * Where a view's draft is tried out: what it would go out in. An account's is a lesson's (the `lessons` distribution:
  * the core's gestalts and the lesson models, nothing else). A maintainer's is the public site's learning views'
  * (the workshop distribution, with the plugins' decks beside it); what they make can still only be published as a
  * lesson within the lesson models, which the server checks.
  */
 const contextOf = (me: api.Me): { registry: Registry; source: { gestalts: string[]; decks?: DeckSource[] } } => (me.maintainer
   ? { registry: workshop, source: { gestalts: workshop.gestalts, decks: deckSources(workshop.plugins.flatMap((p) => p.decks)) } }
-  : { registry: teacher, source: { gestalts: teacher.gestalts } });
+  : { registry: lessons, source: { gestalts: lessons.gestalts } });
 
 /** A view's draft: the preview beside the chat that edits it. */
 export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
@@ -100,7 +100,7 @@ export function SyncState() {
   return <span className="text-xs text-base-content/50">Saved</span>;
 }
 
-/** Publishing a draft to a class. `agent`: the draft is the agent's to fix (a view), not only the teacher's. */
+/** Publishing a draft to a class. `agent`: the draft is the agent's to fix (a view), not only its author's. */
 export function PublishMenu({ repo, id, agent = true }: { repo: Repo; id: string; agent?: boolean }) {
   const [p, setP] = useState<api.Publication | null>();
   const [busy, setBusy] = useState(false);
@@ -116,7 +116,7 @@ export function PublishMenu({ repo, id, agent = true }: { repo: Repo; id: string
     } finally { setBusy(false); }
   };
   // what the server publishes is its copy: everything here goes there first
-  const publish = () => run(async () => { await repo.connect(api.draftUrl(id)); setP(await api.publish(id, teacher.runtime.version)); });
+  const publish = () => run(async () => { await repo.connect(api.draftUrl(id)); setP(await api.publish(id, lessons.runtime.version)); });
   const off = () => run(async () => {
     if (!confirm('Switch the link off? Students who open it see that it isn’t available. Publishing again switches it back on.')) return;
     await api.unpublish(id);

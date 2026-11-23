@@ -1,4 +1,4 @@
-//! Signing in: accounts an admin makes (`gestalts-teacher admin`), a password, and a session cookie. The account table
+//! Signing in: accounts an admin makes (`thia-server admin`), a password, and a session cookie. The account table
 //! has room for an OIDC subject, so school logins can take the password's place later.
 
 use std::time::{Duration, Instant};
@@ -17,7 +17,7 @@ use sha2::{Digest, Sha256};
 use crate::db::Account;
 use crate::{ApiError, ApiResult, AppState, now_iso, now_ms, random_token};
 
-pub const COOKIE: &str = "gestalts_teacher";
+pub const COOKIE: &str = "thia_server";
 const SESSION_DAYS: i64 = 30;
 /// After this many failed sign-ins for one email, it waits.
 const MAX_FAILURES: u32 = 5;
@@ -47,26 +47,26 @@ fn session_token(headers: &HeaderMap) -> Option<&str> {
         .find_map(|c| c.trim().strip_prefix(COOKIE)?.strip_prefix('='))
 }
 
-/// The signed-in teacher, or 401.
-pub struct Teacher(pub Account);
+/// The signed-in account, or 401.
+pub struct SignedIn(pub Account);
 
-impl FromRequestParts<AppState> for Teacher {
+impl FromRequestParts<AppState> for SignedIn {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
         let token = session_token(&parts.headers).ok_or(ApiError::Unauthorized)?;
-        state.db.session(&token_hash(token), &now_iso())?.map(Teacher).ok_or(ApiError::Unauthorized)
+        state.db.session(&token_hash(token), &now_iso())?.map(SignedIn).ok_or(ApiError::Unauthorized)
     }
 }
 
-/// The signed-in admin, who reviews submissions; 403 for any other teacher.
+/// The signed-in admin, who reviews submissions; 403 for any other account.
 pub struct Admin(pub Account);
 
 impl FromRequestParts<AppState> for Admin {
     type Rejection = ApiError;
 
     async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
-        let Teacher(a) = Teacher::from_request_parts(parts, state).await?;
+        let SignedIn(a) = SignedIn::from_request_parts(parts, state).await?;
         if a.admin { Ok(Admin(a)) } else { Err(ApiError::Forbidden) }
     }
 }
@@ -131,7 +131,7 @@ async fn logout(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<
     Ok(res)
 }
 
-async fn me(Teacher(a): Teacher) -> Json<Me> {
+async fn me(SignedIn(a): SignedIn) -> Json<Me> {
     Json(Me { email: a.email, school: a.school, admin: a.admin, maintainer: a.maintainer })
 }
 

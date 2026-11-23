@@ -1,7 +1,7 @@
-# A lesson's context, which a teacher's view draft is previewed in (/workshop; `id` is its for good): no plugins, a
+# A lesson's context, which a view's draft is previewed in (/workshop; `id` is its for good): no plugins, a
 # draft's view is the only one. Its models are what a lesson may read besides the core's and its own, and must be the
 # server's (web/server, MODELS); the site, which plays lessons, has them too (web/site/distribution.yml).
-id: teacher
+id: lessons
 plugins: []
 models:
   - ../../../gestalts/geography

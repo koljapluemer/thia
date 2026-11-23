@@ -16,7 +16,7 @@ use gestalts_core::{Hashes, Yml, YmlState};
 use gestalts_fs::FsStorage;
 use serde::{Deserialize, Serialize};
 
-use crate::auth::Teacher;
+use crate::auth::SignedIn;
 use crate::db::Draft;
 use crate::validate::{Batch, Kind, check};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
@@ -34,12 +34,12 @@ impl AppState {
         self.data.join("drafts").join(id)
     }
 
-    /// The signed-in teacher's draft and its folder, or 404 for anyone else's.
-    pub fn own_draft(&self, teacher: &Teacher, id: &str) -> ApiResult<(Draft, FsStorage)> {
+    /// The signed-in account's draft and its folder, or 404 for anyone else's.
+    pub fn own_draft(&self, me: &SignedIn, id: &str) -> ApiResult<(Draft, FsStorage)> {
         if !valid_draft_id(id) {
             return Err(ApiError::NotFound);
         }
-        let d = self.db.draft(id, &teacher.0.id)?.ok_or(ApiError::NotFound)?;
+        let d = self.db.draft(id, &me.0.id)?.ok_or(ApiError::NotFound)?;
         let s = FsStorage::new(self.draft_dir(id));
         Ok((d, s))
     }
@@ -96,20 +96,20 @@ pub fn kind_of(d: &Draft) -> ApiResult<Kind> {
     Kind::parse(&d.kind).ok_or_else(|| ApiError::Internal(format!("{}: a draft of kind {}", d.id, d.kind)))
 }
 
-async fn list(State(state): State<AppState>, teacher: Teacher) -> ApiResult<Json<Vec<Draft>>> {
-    Ok(Json(state.db.drafts(&teacher.0.id)?))
+async fn list(State(state): State<AppState>, me: SignedIn) -> ApiResult<Json<Vec<Draft>>> {
+    Ok(Json(state.db.drafts(&me.0.id)?))
 }
 
 /// A new, empty draft: its id (its view's or viz's), and the package its own gestalts are named in. The browser
 /// writes the view or viz yml through sync.
-async fn create(State(state): State<AppState>, teacher: Teacher, Json(req): Json<NewDraft>) -> ApiResult<(StatusCode, Json<Draft>)> {
+async fn create(State(state): State<AppState>, me: SignedIn, Json(req): Json<NewDraft>) -> ApiResult<(StatusCode, Json<Draft>)> {
     let title = req.title.trim();
     if title.is_empty() || title.chars().count() > 200 || title.contains('\n') {
         return Err(ApiError::BadRequest("a title is one line, up to 200 characters".into()));
     }
     let kind = Kind::parse(&req.kind).ok_or_else(|| ApiError::BadRequest("kind: view, viz or sequence".into()))?;
-    let limits = state.limits_for(&teacher.0);
-    if state.db.count_drafts(&teacher.0.id)? >= limits.drafts_per_account {
+    let limits = state.limits_for(&me.0);
+    if state.db.count_drafts(&me.0.id)? >= limits.drafts_per_account {
         return Err(ApiError::TooMany(format!("at most {} drafts: delete one first", limits.drafts_per_account)));
     }
     let (id, package) = match req.moved {
@@ -122,8 +122,8 @@ async fn create(State(state): State<AppState>, teacher: Teacher, Json(req): Json
     }
     let draft = Draft {
         id,
-        owner: teacher.0.id.clone(),
-        school: teacher.0.school.clone(),
+        owner: me.0.id.clone(),
+        school: me.0.school.clone(),
         package,
         kind: kind.as_str().into(),
         title: title.into(),
@@ -135,8 +135,8 @@ async fn create(State(state): State<AppState>, teacher: Teacher, Json(req): Json
 }
 
 /// Gone for its owner. Its folder goes; a lesson published from it stays until revoked.
-async fn delete(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<StatusCode> {
-    let (d, _) = state.own_draft(&teacher, &id)?;
+async fn delete(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<StatusCode> {
+    let (d, _) = state.own_draft(&me, &id)?;
     state.db.delete_draft(&d.id, &now_iso())?;
     state.drop_session(&d.id);
     let dir = state.draft_dir(&d.id);
@@ -158,13 +158,13 @@ struct Health {
     folder: Folder,
 }
 
-async fn health(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Health>> {
-    let (d, _) = state.own_draft(&teacher, &id)?;
-    Ok(Json(Health { app: "gestalts-teacher", version: env!("CARGO_PKG_VERSION"), api: API_VERSION, folder: Folder { path: format!("draft “{}”", d.title), id: d.id } }))
+async fn health(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Health>> {
+    let (d, _) = state.own_draft(&me, &id)?;
+    Ok(Json(Health { app: "thia-server", version: env!("CARGO_PKG_VERSION"), api: API_VERSION, folder: Folder { path: format!("draft “{}”", d.title), id: d.id } }))
 }
 
-async fn hashes(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Hashes>> {
-    let (_, s) = state.own_draft(&teacher, &id)?;
+async fn hashes(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Hashes>> {
+    let (_, s) = state.own_draft(&me, &id)?;
     Ok(Json(blocking(move || Ok(s.yml_hashes_sync()?)).await?))
 }
 
@@ -179,8 +179,8 @@ pub struct YmlEntry {
     pub text: String,
 }
 
-async fn read(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(req): Json<Ids>) -> ApiResult<Json<Vec<YmlEntry>>> {
-    let (_, s) = state.own_draft(&teacher, &id)?;
+async fn read(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(req): Json<Ids>) -> ApiResult<Json<Vec<YmlEntry>>> {
+    let (_, s) = state.own_draft(&me, &id)?;
     Ok(Json(blocking(move || {
         let mut out = Vec::new();
         for id in req.ids {
@@ -194,13 +194,13 @@ async fn read(State(state): State<AppState>, teacher: Teacher, Path(id): Path<St
 }
 
 /// Writes ymls once all of them are fine, or none (422 with each problem).
-async fn write(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>, Json(ymls): Json<Vec<YmlEntry>>) -> ApiResult<StatusCode> {
-    let (d, s) = state.own_draft(&teacher, &id)?;
+async fn write(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(ymls): Json<Vec<YmlEntry>>) -> ApiResult<StatusCode> {
+    let (d, s) = state.own_draft(&me, &id)?;
     let kind = kind_of(&d)?;
     // one write at a time, so what's checked is what's there when it lands
     let _guard = state.writes.lock().await;
     let st = state.clone();
-    let account = teacher.0;
+    let account = me.0;
     let title = blocking(move || {
         let gestalts = st.gestalts_for(&account);
         let incoming: BTreeMap<String, String> = ymls.into_iter().map(|y| (y.id, y.text)).collect();
@@ -229,13 +229,13 @@ async fn write(State(state): State<AppState>, teacher: Teacher, Path(id): Path<S
     Ok(StatusCode::NO_CONTENT)
 }
 
-async fn list_blobs(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Vec<String>>> {
-    let (_, s) = state.own_draft(&teacher, &id)?;
+async fn list_blobs(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Vec<String>>> {
+    let (_, s) = state.own_draft(&me, &id)?;
     Ok(Json(blocking(move || Ok(s.list_blobs_sync()?)).await?))
 }
 
-async fn read_blob(State(state): State<AppState>, teacher: Teacher, Path((id, name)): Path<(String, String)>) -> ApiResult<Response> {
-    let (_, s) = state.own_draft(&teacher, &id)?;
+async fn read_blob(State(state): State<AppState>, me: SignedIn, Path((id, name)): Path<(String, String)>) -> ApiResult<Response> {
+    let (_, s) = state.own_draft(&me, &id)?;
     let bytes = blocking(move || Ok(s.read_blob_sync(&name)?)).await?;
     Ok(match bytes {
         Some(b) => ([(header::CONTENT_TYPE, "application/octet-stream")], b).into_response(),
@@ -253,15 +253,15 @@ fn blob_usage(state: &AppState, owner: &str) -> ApiResult<u64> {
     Ok(total)
 }
 
-async fn write_blob(State(state): State<AppState>, teacher: Teacher, Path((id, name)): Path<(String, String)>, body: Bytes) -> ApiResult<StatusCode> {
-    let (_, s) = state.own_draft(&teacher, &id)?;
-    let limits = state.limits_for(&teacher.0);
+async fn write_blob(State(state): State<AppState>, me: SignedIn, Path((id, name)): Path<(String, String)>, body: Bytes) -> ApiResult<StatusCode> {
+    let (_, s) = state.own_draft(&me, &id)?;
+    let limits = state.limits_for(&me.0);
     if body.len() > limits.blob_bytes {
         return Err(ApiError::TooLarge(format!("a file may be up to {} MB", limits.blob_bytes / 1024 / 1024)));
     }
     let _guard = state.writes.lock().await;
     let st = state.clone();
-    let owner = teacher.0.id.clone();
+    let owner = me.0.id.clone();
     blocking(move || {
         if blob_usage(&st, &owner)? + body.len() as u64 > limits.account_blob_bytes {
             return Err(ApiError::TooLarge(format!("your files take up more than {} MB: delete some first", limits.account_blob_bytes / 1024 / 1024)));
@@ -272,8 +272,8 @@ async fn write_blob(State(state): State<AppState>, teacher: Teacher, Path((id, n
     Ok(StatusCode::NO_CONTENT)
 }
 
-async fn delete_blob(State(state): State<AppState>, teacher: Teacher, Path((id, name)): Path<(String, String)>) -> ApiResult<StatusCode> {
-    let (_, s) = state.own_draft(&teacher, &id)?;
+async fn delete_blob(State(state): State<AppState>, me: SignedIn, Path((id, name)): Path<(String, String)>) -> ApiResult<StatusCode> {
+    let (_, s) = state.own_draft(&me, &id)?;
     blocking(move || Ok(s.delete_blob_sync(&name)?)).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -283,9 +283,9 @@ struct Collected {
     deleted: Vec<String>,
 }
 
-/// Blobs no yml uses are kept here: a teacher's files count against their quota until they delete them.
-async fn collect_blobs(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Collected>> {
-    state.own_draft(&teacher, &id)?;
+/// Blobs no yml uses are kept here: an account's files count against its quota until they delete them.
+async fn collect_blobs(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Collected>> {
+    state.own_draft(&me, &id)?;
     Ok(Json(Collected { deleted: vec![] }))
 }
 
@@ -309,8 +309,8 @@ fn files_below(dir: &std::path::Path) -> std::io::Result<Vec<PathBuf>> {
 }
 
 /// The draft's folder as a zip, as the server keeps it (a folder a gestalts node opens): what folder sync was for.
-async fn export(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Response> {
-    let (d, _) = state.own_draft(&teacher, &id)?;
+async fn export(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Response> {
+    let (d, _) = state.own_draft(&me, &id)?;
     let dir = state.draft_dir(&d.id);
     let name = d.id.clone();
     let bytes = blocking(move || {

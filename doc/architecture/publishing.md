@@ -4,7 +4,7 @@ What the workshop (`/workshop`) makes, a learning view or a visualization, can b
 from the repo. Built for the dev machine; nothing of it is deployed yet.
 
 ```
-workshop ──submit──▶ teacher server: submissions/<id>/ + a row ──review (/review)──▶ accept
+workshop ──submit──▶ server: submissions/<id>/ + a row ──review (/review)──▶ accept
                                                                                       │
                      web/site (static) ◀──mise run site:build── git commit ◀── plugins/, gestalts/, web/site/distribution.yml
 ```
@@ -24,7 +24,7 @@ plugin, with a text search. A plugin without a deck isn't listed. Each entry kee
 in a folder of its own (OPFS `view-<plugin>-<deck>`), with only its deck mounted read-only, and has "Start fresh". A
 view's params are in the URL's hash.
 
-The same build also plays teachers' unlisted class links (`/l/<lesson>`), served by the teacher server's lesson domain
+The same build also plays unlisted lesson links (`/l/<lesson>`), served by the server's lesson domain
 (`web/server`, `lessons.rs`), which installs it per frame runtime (`admin install-player`).
 
 ### Allowances
@@ -56,13 +56,13 @@ can see what became of each version.
 
 ## Reviewing
 
-`/review` is shown only to admins (`accounts.admin`; `mise run teacher:admin grant-admin <email>`; the local dev
+`/review` is shown only to admins (`accounts.admin`; `mise run server:admin grant-admin <email>`; the local dev
 account is one). It shows the queue. For each submission it shows what it is and who sent it, its files, and the
 result running from its snapshot mounted read-only, so trying it changes nothing. Rejecting needs a note, which the
 sender sees.
 
 Accepting (`web/server/src/promote.rs`) writes into the checkout the server was started with (`--promote-into`, set by
-`teacher:serve` and `just dev`). Without one, the server only queues and rejects.
+`server:serve` and `just dev`). Without one, the server only queues and rejects.
 
 - **A view** becomes `plugins/<plugin>/`:
   - `view.tsx`;

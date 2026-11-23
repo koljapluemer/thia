@@ -1,7 +1,7 @@
 //! npm packages for a draft's preview, bundled here (`@gestalts/npm-bundle` in the worker) and served from the app's
-//! origin, so a teacher's preview loads what a student's player will: the same bundles, pinned.
+//! origin, so a draft's preview loads what a student's player will: the same bundles, pinned.
 //!
-//! Bundling only happens for a signed-in teacher (`POST /api/npm`). The bundles themselves are served to anyone
+//! Bundling only happens for a signed-in account (`POST /api/npm`). The bundles themselves are served to anyone
 //! (`GET /api/npm/<file>`): a sandboxed frame's module requests carry no cookies and come from origin `null`.
 
 use std::collections::BTreeMap;
@@ -14,7 +14,7 @@ use axum::{Json, Router};
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::Teacher;
+use crate::auth::SignedIn;
 use crate::{ApiError, ApiResult, AppState};
 
 /// The package of an import: `three` of `three/addons/x.js`, `@scope/pkg` of `@scope/pkg/x`.
@@ -61,7 +61,7 @@ pub struct BundledFile {
     pub hash: String,
 }
 
-async fn post_ensure(State(state): State<AppState>, _teacher: Teacher, Json(req): Json<Ensure>) -> ApiResult<Json<BTreeMap<String, String>>> {
+async fn post_ensure(State(state): State<AppState>, _me: SignedIn, Json(req): Json<Ensure>) -> ApiResult<Json<BTreeMap<String, String>>> {
     let bundled = ensure(&state, &req).await.map_err(ApiError::BadRequest)?;
     Ok(Json(bundled.into_iter().map(|(spec, b)| (spec, format!("/api/npm/{}", b.file.file_name().and_then(|f| f.to_str()).unwrap_or_default()))).collect()))
 }

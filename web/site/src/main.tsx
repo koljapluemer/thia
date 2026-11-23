@@ -6,7 +6,7 @@ import { Notice, RunPage } from './Run';
 import './app.css';
 
 /**
- * The public site, by path: `/` everything on it, `/v/<view>/<deck>` one of them, `/l/<lesson>` a teacher's lesson
+ * The public site, by path: `/` everything on it, `/v/<view>/<deck>` one of them, `/l/<lesson>` a published lesson
  * (on the lesson domain, from its link).
  */
 function Site() {

@@ -59,7 +59,7 @@ impl Worker {
         let mut child = Command::new(&self.config.node)
             .arg(&self.config.script)
             .current_dir(self.config.script.parent().unwrap_or(std::path::Path::new(".")))
-            .env("TEACHER_NPM_CACHE", &self.config.npm_cache)
+            .env("THIA_NPM_CACHE", &self.config.npm_cache)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())

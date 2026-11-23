@@ -1,0 +1,1 @@
+starting to write the brief in agent chat in workshop is interrupted when first auto-save hits, which defocuses the textarea and auto-collapses the brief section. Define solid UX and model state cleanly

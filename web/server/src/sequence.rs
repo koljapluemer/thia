@@ -14,7 +14,7 @@ use gestalts_fs::FsStorage;
 use serde::Serialize;
 use serde_json::json;
 
-use crate::auth::Teacher;
+use crate::auth::SignedIn;
 use crate::db::{Account, Draft};
 use crate::publish::{Check, Version, build as build_view, build_viz};
 use crate::{ApiError, ApiResult, AppState, now_iso};
@@ -188,13 +188,13 @@ pub(crate) async fn build(state: &AppState, account: &Account, d: &Draft, runtim
 }
 
 /// The sequence's check, and what its editor picks from.
-async fn report(State(state): State<AppState>, teacher: Teacher, Path(id): Path<String>) -> ApiResult<Json<Report>> {
-    let (d, _) = state.own_draft(&teacher, &id)?;
+async fn report(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<Json<Report>> {
+    let (d, _) = state.own_draft(&me, &id)?;
     if d.kind != "sequence" {
         return Err(ApiError::NotFound);
     }
     let steps = read(&state, &d).map(|(_, s)| s).unwrap_or_default();
-    Ok(Json(check(&state, &teacher.0, &steps)?))
+    Ok(Json(check(&state, &me.0, &steps)?))
 }
 
 pub fn routes() -> Router<AppState> {

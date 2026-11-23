@@ -1,11 +1,11 @@
-//! A server on a temporary folder, with two teachers and a maintainer at one school, called as the browser calls it.
+//! A server on a temporary folder, with two accounts and a maintainer at one school, called as the browser calls it.
 #![allow(dead_code)]
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
-use gestalts_teacher::agent::Model;
-use gestalts_teacher::worker::WorkerConfig;
-use gestalts_teacher::{AppState, Limits, Services, auth, db::Db};
+use thia_server::agent::Model;
+use thia_server::worker::WorkerConfig;
+use thia_server::{AppState, Limits, Services, auth, db::Db};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
@@ -23,7 +23,7 @@ pub fn services(model: Option<String>, cache: &std::path::Path) -> Services {
         model: Model { api_key: model.as_ref().map(|_| "test-key".into()), base_url: model.unwrap_or_default(), model: "claude-opus-5-5".into() },
         lesson_origin: "https://lessons.example".into(),
         promote_into: None,
-        viz_render: gestalts_teacher::agent::VizRender::Page,
+        viz_render: thia_server::agent::VizRender::Page,
     }
 }
 
@@ -66,7 +66,7 @@ impl Server {
             Some(b) => req.header(header::CONTENT_TYPE, "application/json").body(Body::from(b.to_string())).unwrap(),
             None => req.body(Body::empty()).unwrap(),
         };
-        let res = gestalts_teacher::app(self.state.clone()).oneshot(req).await.unwrap();
+        let res = thia_server::app(self.state.clone()).oneshot(req).await.unwrap();
         let status = res.status();
         let set_cookie = res.headers().get(header::SET_COOKIE).map(|v| v.to_str().unwrap().split(';').next().unwrap().to_owned());
         let bytes = res.into_body().collect().await.unwrap().to_bytes();
@@ -76,7 +76,7 @@ impl Server {
     /// A request with a body of bytes, answered with bytes: blobs, exports.
     pub async fn bytes(&self, method: &str, path: &str, cookie: &str, body: Vec<u8>) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
         let req = Request::builder().method(method).uri(path).header(header::COOKIE, cookie).body(Body::from(body)).unwrap();
-        let res = gestalts_teacher::app(self.state.clone()).oneshot(req).await.unwrap();
+        let res = thia_server::app(self.state.clone()).oneshot(req).await.unwrap();
         let (status, headers) = (res.status(), res.headers().clone());
         (status, headers, res.into_body().collect().await.unwrap().to_bytes().to_vec())
     }
@@ -84,7 +84,7 @@ impl Server {
     /// A GET on the lesson domain: status, headers, body.
     pub async fn lessons(&self, path: &str) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
         let req = Request::builder().uri(path).body(Body::empty()).unwrap();
-        let res = gestalts_teacher::lessons(self.state.clone()).oneshot(req).await.unwrap();
+        let res = thia_server::lessons(self.state.clone()).oneshot(req).await.unwrap();
         let (status, headers) = (res.status(), res.headers().clone());
         (status, headers, res.into_body().collect().await.unwrap().to_bytes().to_vec())
     }

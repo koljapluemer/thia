@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import tailwind from '@tailwindcss/browser?raw';
 import { registry } from 'virtual:gestalts-plugins/workshop';
-import { registry as teacher } from 'virtual:gestalts-plugins/teacher';
+import { registry as lessons } from 'virtual:gestalts-plugins/lessons';
 import { RepoProvider, useHostQuery, useOpenRepo, type Repo } from '@gestalts/client';
 import { SingleView, closedCsp } from '@gestalts/host';
 import type { ViewError } from '@gestalts/view';
@@ -12,7 +12,7 @@ import * as api from '../workshop/api';
 
 /**
  * The review queue: what the workshops offered for the public site. Each submission shows what it is, its files, and
- * itself running, from a read-only copy; accepting writes it into the repo checkout the teacher server was started
+ * itself running, from a read-only copy; accepting writes it into the repo checkout the server was started
  * with (as a plugin, or a vizint deck), to be checked and committed; rejecting sends the sender a note.
  */
 export function Review() {
@@ -113,7 +113,7 @@ function Live({ s }: { s: Detailed }) {
   const source = useMemo(() => ({
     dir: `review-${s.id}`,
     decks: [{ source: `submission/${s.id}`, url: api.submissionDeck(s.id) }],
-    gestalts: [...registry.gestalts, ...teacher.gestalts],
+    gestalts: [...registry.gestalts, ...lessons.gestalts],
   }), [s.id]);
   const { repo, error } = useOpenRepo(source);
   if (error) return <div role="alert" className="alert alert-error m-4">{error}</div>;

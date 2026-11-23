@@ -1,4 +1,4 @@
-//! What isn't a teacher's own plain-text data: schools, accounts, sessions, drafts, publications and the agent's usage.
+//! What isn't an account's own plain-text data: schools, accounts, sessions, drafts, publications and the agent's usage.
 //! Every draft and publication has an owner and a school from the start, whether or not anything shows it yet.
 
 use std::path::Path;
