@@ -1,7 +1,7 @@
 # Concept modelling: grain, structure, navigation
 
 Theoretical background from a design discussion on 2026-11-16. Concrete proposals are in
-[[../roadmap/concept-model|Concept model roadmap]]. Starting point: `concept@2` is deliberately wide, which
+[[../roadmap/04_concept-model|Concept model roadmap]]. Starting point: `concept@2` is deliberately wide, which
 works well for exercises tagged with a few abstractions (vizint, math-drills) but stretches with inventory apps
 (alphabet-pronunciation-trainer, transparent-input: a concept per letter or flemma). Two symptoms: no sensible "recently
 learned" graph, and nothing above the leaves ("this is language practice", "this is 8th grade math"). A top-down topic

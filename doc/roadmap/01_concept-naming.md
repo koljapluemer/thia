@@ -16,7 +16,7 @@ prefix in it is part of the identity. Prefixes do two different jobs:
   neuroscience, medicine? significant figures: maths or physics?), so decks split one concept into two, and moving
   one changes its id and strands practice history.
 
-Grouping by field is navigation and belongs in [[outlines]], or in `in` where it is a real set.
+Grouping by field is navigation and belongs in outlines ([[../architecture/publishing#Curricula and guides|Publishing]]), or in `in` where it is a real set.
 
 **Test: if two careful authors could choose different prefixes, the prefix is a classification and doesn't belong in
 the name.**
@@ -35,9 +35,11 @@ the name.**
 
 ## Open
 
-- **Migrate the ~20 `math: …` concepts now**, while there are no users, or leave them? A migration needs an old id →
+- **Migrate the ~20 `math: …` concepts now**, before the first test users have practice history on them, or leave them? A migration needs an old id →
   new id mapping in the core so practice history follows.
 - **Ids independent of names** (as Wikidata's): an opaque id, name and aliases only as labels. Fixes renames and
   classification at the root. Decks then can't compute a shared id and need a lookup ("is there a concept for X?"),
-  which is the "find concepts" tool from [[outlines#Getting views to have concepts]]. Inventory concepts with natural
+  which is the "find concepts" tool from [[04_concept-model#Views getting their concepts|Concept model]]. Inventory concepts with natural
   keys (words, letters, countries) could keep ids from their key. Decide together with that tool.
+- **Aliases carry no language.** Other languages go in `aliases`, but a translation glossary needs a label per
+  language (`{lang: label}`, [[00_i18n#Concept labels as a glossary|Languages]]). Decide with ids independent of names.

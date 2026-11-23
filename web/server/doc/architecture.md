@@ -130,4 +130,4 @@ tool results and responses as job events, which reach the record through the pag
 ## Not yet
 
 QR and short codes, rotating a link, an offline player, schools and sharing in
-the UI, gates and an AI review before a submission's human review, OIDC sign-in, results for whoever published a lesson. See [[../../../doc/roadmap/teacher-app|the roadmap]].
+the UI, gates and an AI review before a submission's human review, OIDC sign-in, results for whoever published a lesson. See [[../../../doc/roadmap/02_teacher-app|the roadmap]].

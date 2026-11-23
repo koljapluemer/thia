@@ -58,35 +58,10 @@ from the events it comes from keeps the learning model free to change.
 
 ## Built
 
-Step 1, on 2026-11-21: one web app to run and test, locally (`web/app`, see
-[[../architecture/system-overview|Architecture]]). The separate frontends of gestalter, loops-for-learning, vizint,
-both workshops and the teacher app are its areas (paths); notes, learning and visualizations share one home store in
-the browser; `mise run just dev` starts the app, one node (the agents, plugin backends, the workshops' drafts; split in step 2)
-and the teacher server. Item 7 is taken as a single-page app for now. Deploying it is not done: the old sites keep their last
-deploy, and `scripts/deploy.sh` is gone.
-
-Step 2, on 2026-11-21: the repo split by where things run. `web/` is the web app (`app/`), the lesson player, the page
-the Android app wraps and the server; `installables/` the two desktop tools of item 9 as separate binaries on
-`crates/node`: `folder-sync` (gestalts-node as it was: tray, settings, pairing, the Android app; plugin backends,
-`/net`, `/llm`) and `claude-bridge`. `mise run just dev` starts both.
-
-Step 3, the same day: the Claude bridge of item 9, built. It is a small native relay that knows nothing about gestalts.
-A site the person allowed (in a dialog, once) sends a turn's files, instructions and tools over a WebSocket. The bridge
-runs `claude -p` on them and relays every tool call back to the page (its own MCP server). The agents' tools are the
-app's: `check` is `@gestalts/check`, one TypeScript module run in the page (TypeScript in a worker, esbuild-wasm,
-renders in sandboxed frames) and in Node. So the check is the same whichever model runs the loop, and the bridge needs
-no Node, templates or Chromium: it installs on its own (`mise run claude-bridge:package`). The workshops' drafts no
-longer sync with it. An agent loop in the page (a model behind an API) would use the same tools, plus simple file
-tools on the draft (`fileTools`); none is built yet.
-
-Step 4, on 2026-11-23: two apps by what they're for, on one origin. The gestalter and the public site did the same job
-from two ends, so they are one now: the **use app** (`web/site`), every view at its own URL on one store in the
-browser (OPFS `home`, the gestalter's, so nothing moves), with the decks opened on it mounted read-only, a recent bar
-instead of tabs, "Guest" for shared devices, and the catalog's search and outlines. The **make app** (`web/app`), the
-workshop, review and runs behind an account, is served under `/make/` beside it. Item 7 decided: a single-page app
-with a prerender script (React's, `web/site/scripts/prerender.ts`), every page its own HTML with its head for search
-engines, hydrated in the browser; the lesson domain plays lessons from a bare `noindex` page of the same build.
-Pairing devices and the Android app are gone; phones use the use app in the browser.
+Steps 1 to 4 (2026-11-21 to 2026-11-23): one repo split by where things run (`web/`, `installables/`), the Claude
+bridge, and two apps on one origin, the prerendered use app (`web/site`, on the browser's home store) and the make
+app (`web/app`) under `/make/`; pairing devices and the Android app are gone. See
+[[../architecture/system-overview|Architecture]]. Item 7 below is decided by them.
 
 ## Open, in order
 

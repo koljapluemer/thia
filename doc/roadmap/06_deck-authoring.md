@@ -1,7 +1,9 @@
 # Authoring decks (a CMS): discussion
 
-Not built. Where the thinking stands, from a discussion on 2026-11-15. Gestalt placement, which this depends on, is in
-[[gestalt-definitions-as-data|Gestalt definitions as data]]: model packages are built.
+Not built. Where the thinking stands, from a discussion on 2026-11-15, before [[03_web-first|Web first]] made the
+browser the home of a user's data: "a node" below may become the browser plus a desktop tool. Its layering and
+generic editor are also what a view's text and its translations would use ([[00_i18n#A view's text as data|Languages]]). Gestalt placement, which this depends on, is in
+[[05_gestalt-definitions-as-data|Gestalt definitions as data]]: model packages are built.
 
 ## Who it's for
 
@@ -50,7 +52,7 @@ What doesn't:
 Previews come from the plugin's own view, opened at an `item` param (a convention every learning view would take).
 The hints can be edited after a definition ships if they're presentational: add them to `PRESENTATIONAL`
 (`crates/core/src/gestalt.rs`), so `gestalts/published.yml` doesn't count them as structure
-([[gestalt-definitions-as-data|Gestalt definitions as data]]).
+([[05_gestalt-definitions-as-data|Gestalt definitions as data]]).
 
 ## Where it sits
 
@@ -144,12 +146,12 @@ gestalts are many to many: `flashcards`, `flashcard-manager`, `phrasebook` and o
 With the model and content out of the view's plugin, an editing view is a peer like `flashcard-manager`, named for what
 it does, and authoring is the same views pointed at a deck folder instead of the user's. Which decks a distribution
 mounts would then be listed in its `distribution.yml`, not implied by an installed plugin. Gestalts are in model
-packages ([[gestalt-definitions-as-data|Gestalt definitions as data]]); where decks and their pipelines go (top-level `decks/`, or with their
+packages ([[05_gestalt-definitions-as-data|Gestalt definitions as data]]); where decks and their pipelines go (top-level `decks/`, or with their
 gestalts per domain) is open.
 
 ## Order
 
-1. Settle where gestalts live.
+1. ~~Settle where gestalts live.~~ Done: model packages.
 2. Pipeline declaration, runner, cache and source fetching; world-map ported onto it with a real `reduce`.
 3. The three-way merge of generated output into the curated deck, and its conflicts.
 4. The generic editor and table.

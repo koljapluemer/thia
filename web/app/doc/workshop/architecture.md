@@ -2,7 +2,7 @@
 
 Everything made with an agent, behind the account: one list of drafts, each of a kind, kept on the server
 ([`web/server`](../../../server)), which checks every write and holds each account to its quota. *New* makes a view, a
-visualization or a lesson of several of them ([`doc/roadmap/one-workshop.md`](../../../../doc/roadmap/one-workshop.md)).
+visualization or a lesson of several of them.
 Views and vizzes are made the same way, with either agent: one layout, one chat, one brief, one call path; what
 differs is each kind's contract, preview and what it goes out as (below).
 There is no mode without an account: on a dev machine it's `dev@localhost`, which `scripts/setup.sh` makes
@@ -144,6 +144,20 @@ A view goes out as a lesson for a class (**Publish**), or is offered for the pub
 `workshop:<draft id>`, for review. Accepted, it becomes a plugin in `plugins/`
 ([`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md)). Its `reads` and `writes` come from what the agent declared in
 `view.json`, and there is no prompt when they widen. Chat history isn't kept across reloads; the CLI's session is.
+
+## What stays apart between the agents
+
+One contract per kind, one turn path and one check, but these differ by agent, and why:
+
+1. The agent loop: the server's own (API key, budget, survives the tab, questions kept on disk) and Claude Code's.
+2. File tools: the server's over files it holds, Claude Code's in a workspace; so contracts never name file tools.
+3. Asking: the bridge keeps the run open, the server ends the turn and keeps the question. `AgentEvent.ask.reply`.
+4. Where the check runs: the page (esbuild-wasm, frames) and the server's worker (Node; a viz's render in Chromium
+   or handed to the page, `GESTALTS_VIZ_RENDER`). One `@gestalts/check`, `Platform` is the seam.
+5. Sessions and auth: a CLI session and a pairing token per site; a server session file, the account and its budget.
+6. Preview: a view compiled in a frame; a viz's built page in the vizint view; a lesson's play-through.
+7. Draft format and kept paths: `view@3` and members; `viz@1` and blobs.
+8. What goes out: a view's own `lesson@1`; the vizint view on a viz; a sequence of those.
 
 ## Agent runs
 
