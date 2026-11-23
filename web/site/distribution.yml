@@ -9,6 +9,7 @@ plugins:
   - ../../plugins/quick-note
   - ../../plugins/note-crud
   - ../../plugins/note-queue
+  - ../../plugins/note-inbox
   - ../../plugins/flashcards
   - ../../plugins/flashcard-manager
   - ../../plugins/source-manager
@@ -27,6 +28,7 @@ models:
   - ../../gestalts/geography
   - ../../gestalts/typing
   - ../../gestalts/viz
+  - ../../gestalts/inbox
 # curricula and guides, each a tree whose entries list the views above that practise what they're about (the build
 # works it out from the decks' deck@3 concepts)
 outlines:

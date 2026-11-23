@@ -26,8 +26,8 @@ writes: [note@1]
 
 A plugin doesn't define gestalts: a view would then depend on another view to read its data. The gestalts beyond the
 core's are in model packages, `gestalts/<package>/<name>/v<N>.yml`: `geography` (map, map-exercise, country-group,
-flag), `typing` (typing-word), `media` (media-source, glossed-track), `viz` (viz). Views and decks depend on models,
-models on nothing.
+flag), `typing` (typing-word), `media` (media-source, glossed-track), `viz` (viz), `inbox` (inbox/text: uploaded
+plaintext files waiting to become notes). Views and decks depend on models, models on nothing.
 
 An app names the packages it needs in `distribution.yml`:
 

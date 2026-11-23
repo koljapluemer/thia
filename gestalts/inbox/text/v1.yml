@@ -1,0 +1,10 @@
+name: inbox/text
+version: 1
+description: >-
+  A plaintext file brought in to be turned into notes: `name` is its file name, `text` its content. `notes` are the
+  notes made from it so far. It is deleted once nothing more is to be taken from it; the notes stay. Id:
+  `stableId("inbox-text", "<name>\n<content hash of the file>")`, so the same file brought in twice is one yml.
+fields:
+  name: { type: string, required: true }
+  text: { type: text }
+  notes: { type: ref_list, targets: [note] }
