@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Compare two numbers between 1 and 10 presented as written numerals.
 notation: K.CC.C.7
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Represent addition, subtraction, multiplication, and conjugation of complex numbers geometrically on the complex plane; use properties of this representation for computation. For example, (-1 + √3 i)³ = 8 because (-1 + √3 i) has modulus 2 and argument 120°.
 notation: HSN-CN.B.5
 kind: standard
+concepts:
+  concept-fdd7d985e0c68c6c: 1
+  concept-3e6da67f28cee3dd: 1

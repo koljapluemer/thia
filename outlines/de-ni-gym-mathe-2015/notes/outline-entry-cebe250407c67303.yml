@@ -1,3 +1,7 @@
 id: outline-entry-cebe250407c67303
 gestalt: outline-entry@1
 label: vergleichen, schätzen, berechnen
+concepts:
+  concept-04c56071c6e237ee: 1
+  concept-b6dfe33841f2f8dc: 0.5
+  concept-6dc449e2bfbd53f4: 1

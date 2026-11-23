@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Analyze and solve pairs of simultaneous linear equations.
 notation: 8.EE.C.8
 kind: standard
+concepts:
+  concept-58f80e904467155c: 1
 entries:
   - outline-entry-dd095f4526947fe3
   - outline-entry-42c4da3ad282ad2c

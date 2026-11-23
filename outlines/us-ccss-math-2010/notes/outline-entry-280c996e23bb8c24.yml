@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: (+) Work with 2 × 2 matrices as transformations of the plane, and interpret the absolute value of the determinant in terms of area.
 notation: HSN-VM.C.12
 kind: standard
+concepts:
+  concept-ed6cea7c96d0a8e0: 0.5
+  concept-92a534a187f4d6dc: 1
+  concept-3b095cb6d8b6dffd: 1

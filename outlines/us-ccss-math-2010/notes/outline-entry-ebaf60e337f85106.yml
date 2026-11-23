@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Interpret whole-number quotients of whole numbers, e.g., interpret 56 ÷ 8 as the number of objects in each share when 56 objects are partitioned equally into 8 shares, or as a number of shares when 56 objects are partitioned into equal shares of 8 objects each. For example, describe a context in which a number of shares or a number of groups can be expressed as 56 ÷ 8.
 notation: 3.OA.A.2
 kind: standard
+concepts:
+  concept-990b23e81455c981: 1

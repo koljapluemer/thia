@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Recognize and explain the concepts of conditional probability and independence in everyday language and everyday situations. For example, compare the chance of having lung cancer if you are a smoker with the chance of being a smoker if you have lung cancer.
 notation: HSS-CP.A.5
 kind: standard
+concepts:
+  concept-6e67f84d8254f593: 1
+  concept-7a405b2c7bf29d23: 1

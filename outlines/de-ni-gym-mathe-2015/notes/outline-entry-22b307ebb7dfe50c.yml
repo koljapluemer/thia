@@ -2,6 +2,8 @@ id: outline-entry-22b307ebb7dfe50c
 gestalt: outline-entry@1
 label: Lineare Zusammenhänge
 kind: Lernbereich
+concepts:
+  concept-915347f3163caf9d: 1
 entries:
   - outline-entry-cd674f1384cf5001
   - outline-entry-0c51540afaf7c8f5

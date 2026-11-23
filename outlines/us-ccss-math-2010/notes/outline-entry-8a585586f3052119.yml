@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand statistics as a process for making inferences about population parameters based on a random sample from that population.
 notation: HSS-IC.A.1
 kind: standard
+concepts:
+  concept-52630e4131f9862e: 0.5
+  concept-ca0a36939caa71c6: 1

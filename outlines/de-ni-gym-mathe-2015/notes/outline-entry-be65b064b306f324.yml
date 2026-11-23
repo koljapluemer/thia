@@ -2,3 +2,7 @@ id: outline-entry-be65b064b306f324
 gestalt: outline-entry@1
 label: runden und schätzen
 kind: Kern
+concepts:
+  concept-b6dfe33841f2f8dc: 1
+  concept-174cb6d234329d96: 0.5
+  concept-9a6aefb4a7505ff2: 1

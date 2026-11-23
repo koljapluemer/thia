@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Graph square root, cube root, and piecewise-defined functions, including step functions and absolute value functions.
 notation: HSF-IF.C.7.b
 kind: component
+concepts:
+  concept-c8dc8f2ece7eccac: 1
+  concept-8f6fe0f902f07912: 1

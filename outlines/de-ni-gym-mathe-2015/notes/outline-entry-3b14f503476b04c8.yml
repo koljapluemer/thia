@@ -2,6 +2,8 @@ id: outline-entry-3b14f503476b04c8
 gestalt: outline-entry@1
 label: Umgang mit Dezimalzahlen
 kind: Lernbereich
+concepts:
+  concept-174cb6d234329d96: 1
 entries:
   - outline-entry-bb1566171e9dfba9
   - outline-entry-a4876079b11dca5d

@@ -3,6 +3,11 @@ gestalt: outline-entry@1
 label: Use ratio and rate reasoning to solve real-world and mathematical problems, e.g., by reasoning about tables of equivalent ratios, tape diagrams, double number line diagrams, or equations.
 notation: 6.RP.A.3
 kind: standard
+concepts:
+  concept-26255177ed23bc85: 1
+  concept-a57fa114a36ae2d3: 1
+  concept-ae813998fce12dbf: 0.5
+  concept-e3b833e7d263b2c8: 1
 entries:
   - outline-entry-2386dbf3630cd1b1
   - outline-entry-d60067e52609a2e6

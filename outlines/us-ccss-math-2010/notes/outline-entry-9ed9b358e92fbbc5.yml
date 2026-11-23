@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Interpret the parameters in a linear or exponential function in terms of a context.
 notation: HSF-LE.B.5
 kind: standard
+concepts:
+  concept-aa2c5163cb8653d6: 1
+  concept-915347f3163caf9d: 1
+  concept-77ece9b508c7afdc: 0.5

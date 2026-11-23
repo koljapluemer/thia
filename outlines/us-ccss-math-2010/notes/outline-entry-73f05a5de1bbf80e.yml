@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Use variables to represent quantities in a real-world or mathematical problem, and construct simple equations and inequalities to solve problems by reasoning about the quantities.
 notation: 7.EE.B.4
 kind: standard
+concepts:
+  concept-29e52ee0bb9d8b36: 1
+  concept-af1a8417d45e0d76: 1
 entries:
   - outline-entry-deeff977963591e9
   - outline-entry-060a98f8af1df3d4

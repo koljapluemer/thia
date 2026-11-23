@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Read and write numbers to 1000 using base-ten numerals, number names, and expanded form.
 notation: 2.NBT.A.3
 kind: standard
+concepts:
+  concept-fd20763623221f88: 1
+  concept-4d17ad85cc8ef71e: 0.5
+  concept-7f8ebd176bae5141: 1

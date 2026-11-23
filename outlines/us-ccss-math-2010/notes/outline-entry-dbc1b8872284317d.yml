@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Interpret differences in shape, center, and spread in the context of the data sets, accounting for possible effects of extreme data points (outliers).
 notation: HSS-ID.A.3
 kind: standard
+concepts:
+  concept-e5a26ff1f077b014: 1
+  concept-81e2d3c92e49b42a: 1

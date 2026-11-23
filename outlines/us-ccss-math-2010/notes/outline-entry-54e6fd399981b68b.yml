@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand the concept of a unit rate a/b associated with a ratio a:b with b ≠ 0, and use rate language in the context of a ratio relationship.
 notation: 6.RP.A.2
 kind: standard
+concepts:
+  concept-a57fa114a36ae2d3: 0.5
+  concept-e3b833e7d263b2c8: 1

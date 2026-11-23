@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Use parentheses, brackets, or braces in numerical expressions, and evaluate expressions with these symbols.
 notation: 5.OA.A.1
 kind: standard
+concepts:
+  concept-547f4a7a793bef9e: 1

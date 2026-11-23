@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Apply geometric methods to solve design problems (e.g., designing an object or structure to satisfy physical constraints or minimize cost; working with typographic grid systems based on ratios).
 notation: HSG-MG.A.3
 kind: standard
+concepts:
+  concept-77ece9b508c7afdc: 1
+  concept-be92e94aba0be148: 0.5

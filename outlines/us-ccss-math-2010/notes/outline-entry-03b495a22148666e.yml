@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Multiply or divide to solve word problems involving multiplicative comparison, e.g., by using drawings and equations with a symbol for the unknown number to represent the problem, distinguishing multiplicative comparison from additive comparison.
 notation: 4.OA.A.2
 kind: standard
+concepts:
+  concept-c77d868f739155d6: 1
+  concept-7b26a7ad5a57a420: 1

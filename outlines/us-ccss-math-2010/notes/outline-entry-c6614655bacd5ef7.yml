@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: (+) Weigh the possible outcomes of a decision by assigning probabilities to payoff values and finding expected values.
 notation: HSS-MD.B.5
 kind: standard
+concepts:
+  concept-eab7180c26835102: 1
+  concept-ff4fd5320f6ef2fd: 1
 entries:
   - outline-entry-95974dd55b476a8d
   - outline-entry-5fbe13f49b6743a6

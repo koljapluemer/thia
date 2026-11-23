@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Express a fraction with denominator 10 as an equivalent fraction with denominator 100, and use this technique to add two fractions with respective denominators 10 and 100.
 notation: 4.NF.C.5
 kind: standard
+concepts:
+  concept-b0581a2bae10b7a8: 1
+  concept-174cb6d234329d96: 0.5

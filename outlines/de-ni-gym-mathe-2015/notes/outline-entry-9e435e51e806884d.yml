@@ -2,6 +2,9 @@ id: outline-entry-9e435e51e806884d
 gestalt: outline-entry@1
 label: Häufigkeitsverteilungen grafisch darstellen
 kind: Kern
+concepts:
+  concept-397af1ce93afb004: 1
+  concept-033fa4cbd9752a09: 1
 entries:
   - outline-entry-22afbe4ca3452068
   - outline-entry-bfc17ef3ccc56cec

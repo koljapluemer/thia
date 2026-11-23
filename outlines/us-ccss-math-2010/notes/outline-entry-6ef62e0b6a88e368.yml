@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand radian measure of an angle as the length of the arc on the unit circle subtended by the angle.
 notation: HSF-TF.A.1
 kind: standard
+concepts:
+  concept-12ecd66d69e5e1ea: 1
+  concept-c8648574227bb895: 1

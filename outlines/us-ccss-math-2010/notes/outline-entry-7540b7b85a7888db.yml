@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Graph functions expressed symbolically and show key features of the graph, by hand in simple cases and using technology for more complicated cases.
 notation: HSF-IF.C.7
 kind: standard
+concepts:
+  concept-6aea99b808bd6d90: 1
 entries:
   - outline-entry-6bd4ea4e7fcffcbd
   - outline-entry-e0adddde5926fce3

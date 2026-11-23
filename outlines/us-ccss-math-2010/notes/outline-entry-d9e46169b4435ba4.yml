@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use proportional relationships to solve multistep ratio and percent problems.
 notation: 7.RP.A.3
 kind: standard
+concepts:
+  concept-828408e40d4fe651: 0.5
+  concept-26255177ed23bc85: 1
+  concept-0bcc05514e9c0b32: 0.5

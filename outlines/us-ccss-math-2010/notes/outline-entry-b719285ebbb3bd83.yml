@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Choose trigonometric functions to model periodic phenomena with specified amplitude, frequency, and midline.
 notation: HSF-TF.B.5
 kind: standard
+concepts:
+  concept-77ece9b508c7afdc: 1
+  concept-0bb8334069a6e3d0: 1
+  concept-72c1d3f4f18f947e: 1

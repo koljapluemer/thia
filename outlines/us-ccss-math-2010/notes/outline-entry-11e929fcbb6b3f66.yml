@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use the structure of an expression to identify ways to rewrite it. For example, see x⁴ — y⁴ as (x²)² — (y²)², thus recognizing it as a difference of squares that can be factored as (x² — y²)(x² + y²).
 notation: HSA-SSE.A.2
 kind: standard
+concepts:
+  concept-63f90848624c269a: 1
+  concept-d912f91778e74eb4: 0.5
+  concept-96595fd359e7ed27: 0.5

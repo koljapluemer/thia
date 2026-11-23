@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Recognize and represent proportional relationships between quantities.
 notation: 7.RP.A.2
 kind: standard
+concepts:
+  concept-0bcc05514e9c0b32: 1
 entries:
   - outline-entry-bfe3b2a151471bd6
   - outline-entry-f574bcb3061f04f9

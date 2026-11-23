@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use the definition of congruence in terms of rigid motions to show that two triangles are congruent if and only if corresponding pairs of sides and corresponding pairs of angles are congruent.
 notation: HSG-CO.B.7
 kind: standard
+concepts:
+  concept-401d74d48a90c97d: 1
+  concept-7a64116cb16a7c4b: 1

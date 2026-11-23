@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Fluently multiply multi-digit whole numbers using the standard algorithm.
 notation: 5.NBT.B.5
 kind: standard
+concepts:
+  concept-cc708ca6ea6a9efd: 1

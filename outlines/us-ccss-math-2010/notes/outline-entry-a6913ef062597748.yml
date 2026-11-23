@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Identify whether the number of objects in one group is greater than, less than, or equal to the number of objects in another group, e.g., by using matching and counting strategies.
 notation: K.CC.C.6
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-d7dcbffafdb8ebc6: 0.5

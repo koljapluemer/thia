@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand that by similarity, side ratios in right triangles are properties of the angles in the triangle, leading to definitions of trigonometric ratios for acute angles.
 notation: HSG-SRT.C.6
 kind: standard
+concepts:
+  concept-8cc0e56b16368984: 0.5
+  concept-9a8cb59c53c785be: 1

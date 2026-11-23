@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Apply properties of operations as strategies to add, subtract, factor, and expand linear expressions with rational coefficients.
 notation: 7.EE.A.1
 kind: standard
+concepts:
+  concept-63f90848624c269a: 1
+  concept-07abbc4172269b35: 0.5
+  concept-d912f91778e74eb4: 0.5

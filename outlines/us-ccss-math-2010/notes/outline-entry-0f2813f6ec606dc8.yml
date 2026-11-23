@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: Represent data on two quantitative variables on a scatter plot, and describe how the variables are related.
 notation: HSS-ID.B.6
 kind: standard
+concepts:
+  concept-823b87a20af4896a: 1
+  concept-a00f8f623c6cb0f0: 1
+  concept-15166e85871d71b5: 1
 entries:
   - outline-entry-725ecadfdef61c3f
   - outline-entry-b57e232800602d65

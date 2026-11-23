@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Compare properties of two functions each represented in a different way (algebraically, graphically, numerically in tables, or by verbal descriptions). For example, given a graph of one quadratic function and an algebraic expression for another, say which has the larger maximum.
 notation: HSF-IF.C.9
 kind: standard
+concepts:
+  concept-ef7d009c7e812da1: 1
+  concept-dbebdbc232ed964d: 1

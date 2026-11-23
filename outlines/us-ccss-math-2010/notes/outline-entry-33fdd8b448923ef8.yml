@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Compare two two-digit numbers based on meanings of the tens and ones digits, recording the results of comparisons with the symbols >, =, and <.
 notation: 1.NBT.B.3
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-4d17ad85cc8ef71e: 0.5

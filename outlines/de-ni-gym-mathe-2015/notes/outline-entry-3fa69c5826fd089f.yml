@@ -2,6 +2,9 @@ id: outline-entry-3fa69c5826fd089f
 gestalt: outline-entry@1
 label: Exponentielle Zusammenhänge
 kind: Lernbereich
+concepts:
+  concept-aa2c5163cb8653d6: 1
+  concept-5782248c5dfb6763: 1
 entries:
   - outline-entry-360fe7160cae8505
   - outline-entry-f52a1504f527effd

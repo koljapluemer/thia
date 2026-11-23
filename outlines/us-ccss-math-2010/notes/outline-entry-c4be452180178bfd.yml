@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: For a function that models a relationship between two quantities, interpret key features of graphs and tables in terms of the quantities, and sketch graphs showing key features given a verbal description of the relationship.
 notation: HSF-IF.B.4
 kind: standard
+concepts:
+  concept-6aea99b808bd6d90: 1
+  concept-a12a73b207f12911: 0.5

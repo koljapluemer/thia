@@ -2,6 +2,9 @@ id: outline-entry-ea312cde04ed9d7c
 gestalt: outline-entry@1
 label: zwei Häufigkeitsverteilungen vergleichen
 kind: Kern
+concepts:
+  concept-033fa4cbd9752a09: 1
+  concept-9adfc75d141ff0f1: 0.5
 entries:
   - outline-entry-5b3af6f2882e04b4
   - outline-entry-277762020532668a

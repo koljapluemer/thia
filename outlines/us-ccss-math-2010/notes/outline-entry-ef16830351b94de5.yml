@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: (+) Multiply a vector by a scalar.
 notation: HSN-VM.B.5
 kind: standard
+concepts:
+  concept-2e74d357a05c0c49: 1
 entries:
   - outline-entry-3060e4b16cab4a0f
   - outline-entry-f998387568c114cf

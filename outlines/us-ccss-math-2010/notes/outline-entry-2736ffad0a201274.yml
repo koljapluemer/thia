@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: (+) Add and subtract vectors.
 notation: HSN-VM.B.4
 kind: standard
+concepts:
+  concept-e1923b22a4655f3d: 1
 entries:
   - outline-entry-778ca310144bab06
   - outline-entry-52b5665c557749b7

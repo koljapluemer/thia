@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Know and apply the properties of integer exponents to generate equivalent numerical expressions. For example, 3² × 3⁻⁵ = 3⁻³ = 1/3³ = 1/27.
 notation: 8.EE.A.1
 kind: standard
+concepts:
+  concept-5abbdebf60ee7730: 1

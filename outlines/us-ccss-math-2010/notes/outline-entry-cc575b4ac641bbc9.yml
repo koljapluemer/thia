@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Write numbers from 0 to 20. Represent a number of objects with a written numeral 0-20 (with 0 representing a count of no objects).
 notation: K.CC.A.3
 kind: standard
+concepts:
+  concept-d7dcbffafdb8ebc6: 0.5
+  concept-7f8ebd176bae5141: 1

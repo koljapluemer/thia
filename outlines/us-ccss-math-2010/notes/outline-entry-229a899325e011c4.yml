@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Solve quadratic equations with real coefficients that have complex solutions.
 notation: HSN-CN.C.7
 kind: standard
+concepts:
+  concept-a5ff3ef3600de34b: 1
+  concept-cf556713a0182443: 1

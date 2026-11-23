@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Create equations in two or more variables to represent relationships between quantities; graph equations on coordinate axes with labels and scales.
 notation: HSA-CED.A.2
 kind: standard
+concepts:
+  concept-f4efb312bdfb0689: 1
+  concept-6aea99b808bd6d90: 0.5

@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: (+) Give an informal argument using Cavalieri's principle for the formulas for the volume of a sphere and other solid figures.
 notation: HSG-GMD.A.2
 kind: standard
+concepts:
+  concept-4fc3ba2754411fd2: 1
+  concept-5a033573f153df4e: 1
+  concept-025e30da3a051e48: 1

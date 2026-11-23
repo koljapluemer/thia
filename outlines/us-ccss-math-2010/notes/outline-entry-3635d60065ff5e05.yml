@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Interpret the slope (rate of change) and the intercept (constant term) of a linear model in the context of the data.
 notation: HSS-ID.C.7
 kind: standard
+concepts:
+  concept-9f6183312a353732: 1
+  concept-fb1acd44962209a6: 0.5
+  concept-e24930af3a114dc3: 0.5

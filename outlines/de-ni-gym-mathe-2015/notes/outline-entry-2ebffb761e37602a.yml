@@ -2,6 +2,8 @@ id: outline-entry-2ebffb761e37602a
 gestalt: outline-entry@1
 label: trigonometrische Beziehungen identifizieren und nutzen
 kind: Kern
+concepts:
+  concept-9a8cb59c53c785be: 1
 entries:
   - outline-entry-52caa979fd8f1564
   - outline-entry-ced2a37cdfe60080

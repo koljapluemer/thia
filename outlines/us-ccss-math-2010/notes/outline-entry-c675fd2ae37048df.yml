@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use units as a way to understand problems and to guide the solution of multi-step problems; choose and interpret units consistently in formulas; choose and interpret the scale and the origin in graphs and data displays.
 notation: HSN-Q.A.1
 kind: standard
+concepts:
+  concept-509a20dc178e339f: 1
+  concept-3517c9af36344840: 1

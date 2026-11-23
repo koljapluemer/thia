@@ -2,6 +2,9 @@ id: outline-entry-0a1aa4cd770bc9ac
 gestalt: outline-entry@1
 label: Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen
 kind: Lernbereich
+concepts:
+  concept-8a46fd6fc3d79d41: 1
+  concept-07f9869efcc39c2b: 1
 entries:
   - outline-entry-31e9f13b9070298e
   - outline-entry-439bfec8c91f3c5c

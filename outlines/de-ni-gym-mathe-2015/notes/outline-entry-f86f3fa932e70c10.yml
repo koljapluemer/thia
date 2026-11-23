@@ -2,6 +2,8 @@ id: outline-entry-f86f3fa932e70c10
 gestalt: outline-entry@1
 label: lineare Gleichungssysteme mit zwei Variablen aufstellen und lösen
 kind: Kern
+concepts:
+  concept-58f80e904467155c: 1
 entries:
   - outline-entry-be0f4976f2330796
   - outline-entry-56a241b73f903c86

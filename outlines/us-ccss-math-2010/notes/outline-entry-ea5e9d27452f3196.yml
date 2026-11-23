@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Apply and extend previous understandings of multiplication to multiply a fraction by a whole number.
 notation: 4.NF.B.4
 kind: standard
+concepts:
+  concept-1347ac189dae80e2: 1
 entries:
   - outline-entry-36e3e238bbc56301
   - outline-entry-44f52dfb8bb67092

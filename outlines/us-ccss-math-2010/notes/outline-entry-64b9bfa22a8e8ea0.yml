@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Describe objects in the environment using names of shapes, and describe the relative positions of these objects using terms such as above, below, beside, in front of, behind, and next to.
 notation: K.G.A.1
 kind: standard
+concepts:
+  concept-ab0f16ec93dcea05: 1
+  concept-3a59f4e57ca86f1b: 1
+  concept-dd1b94e8ea10e508: 0.5

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Prove the Pythagorean identity sin²(θ) + cos²(θ) = 1 and use it to find sin(θ), cos(θ), or tan(θ) given sin(θ), cos(θ), or tan(θ) and the quadrant of the angle.
 notation: HSF-TF.C.8
 kind: standard
+concepts:
+  concept-bc18bbf18b6ec2e3: 1

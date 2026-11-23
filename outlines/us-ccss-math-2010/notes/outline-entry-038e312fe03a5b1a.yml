@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Find the volume of a right rectangular prism with fractional edge lengths by packing it with unit cubes of the appropriate unit fraction edge lengths, and show that the volume is the same as would be found by multiplying the edge lengths of the prism. Apply the formulas V = l w h and V = b h to find volumes of right rectangular prisms with fractional edge lengths in the context of solving real-world and mathematical problems.
 notation: 6.G.A.2
 kind: standard
+concepts:
+  concept-025e30da3a051e48: 1
+  concept-62d7a6b1211d6276: 1

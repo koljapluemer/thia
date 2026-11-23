@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Explain why the sum or product of two rational numbers is rational; that the sum of a rational number and an irrational number is irrational; and that the product of a nonzero rational number and an irrational number is irrational.
 notation: HSN-RN.B.3
 kind: standard
+concepts:
+  concept-9d11981ea7ad94ab: 1
+  concept-6f72712503b12365: 1

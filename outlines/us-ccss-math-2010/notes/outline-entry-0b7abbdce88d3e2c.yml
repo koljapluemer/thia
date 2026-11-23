@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use measures of center and measures of variability for numerical data from random samples to draw informal comparative inferences about two populations. For example, decide whether the words in a chapter of a seventh-grade science book are generally longer than the words in a chapter of a fourth-grade science book.
 notation: 7.SP.B.4
 kind: standard
+concepts:
+  concept-e5a26ff1f077b014: 1
+  concept-9adfc75d141ff0f1: 0.5

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use the relation i² = -1 and the commutative, associative, and distributive properties to add, subtract, and multiply complex numbers.
 notation: HSN-CN.A.2
 kind: standard
+concepts:
+  concept-fdd7d985e0c68c6c: 1
+  concept-a5ff3ef3600de34b: 1

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Interpret a multiplication equation as a comparison, e.g., interpret 35 = 5 × 7 as a statement that 35 is 5 times as many as 7 and 7 times as many as 5. Represent verbal statements of multiplicative comparisons as multiplication equations.
 notation: 4.OA.A.1
 kind: standard
+concepts:
+  concept-c77d868f739155d6: 1

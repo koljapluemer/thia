@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Compare two fractions with different numerators and different denominators, e.g., by creating common denominators or numerators, or by comparing to a benchmark fraction such as 1/2. Recognize that comparisons are valid only when the two fractions refer to the same whole. Record the results of comparisons with symbols >, =, or <, and justify the conclusions, e.g., by using a visual fraction model.
 notation: 4.NF.A.2
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-00cbd63c561c05da: 1

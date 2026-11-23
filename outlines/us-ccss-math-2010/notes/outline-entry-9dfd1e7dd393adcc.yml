@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Extend polynomial identities to the complex numbers. For example, rewrite x² + 4 as (x + 2i)(x - 2i).
 notation: HSN-CN.C.8
 kind: standard
+concepts:
+  concept-a5ff3ef3600de34b: 1
+  concept-74a2d88d86cd65c4: 1

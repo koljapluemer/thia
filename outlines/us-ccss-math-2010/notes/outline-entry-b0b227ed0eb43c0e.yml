@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Use probabilities to make fair decisions (e.g., drawing by lots, using a random number generator).
 notation: HSS-MD.B.6
 kind: standard
+concepts:
+  concept-eab7180c26835102: 1
+  concept-3955f8fd92cda2c1: 1

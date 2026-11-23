@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Recognize that in a multi-digit whole number, a digit in one place represents ten times what it represents in the place to its right. For example, recognize that 700 ÷ 70 = 10 by applying concepts of place value and division.
 notation: 4.NBT.A.1
 kind: standard
+concepts:
+  concept-4d17ad85cc8ef71e: 1

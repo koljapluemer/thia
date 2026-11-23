@@ -2,6 +2,8 @@ id: outline-entry-fb26cb6959cc37ff
 gestalt: outline-entry@1
 label: quadratische Gleichungen
 kind: Kern
+concepts:
+  concept-cf556713a0182443: 1
 entries:
   - outline-entry-7f7f2a1b9be25dc2
   - outline-entry-47872643a91c915f

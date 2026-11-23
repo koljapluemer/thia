@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Compose simple shapes to form larger shapes. For example, "Can you join these two triangles with full sides touching to make a rectangle?"
 notation: K.G.B.6
 kind: standard
+concepts:
+  concept-878c45c14da7e4b8: 1

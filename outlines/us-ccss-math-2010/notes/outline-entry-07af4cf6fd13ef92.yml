@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Recognize and draw shapes having specified attributes, such as a given number of angles or a given number of equal faces. Identify triangles, quadrilaterals, pentagons, hexagons, and cubes.
 notation: 2.G.A.1
 kind: standard
+concepts:
+  concept-ab0f16ec93dcea05: 0.5
+  concept-3a59f4e57ca86f1b: 1

@@ -2,6 +2,9 @@ id: outline-entry-7ce067d4ad71941a
 gestalt: outline-entry@1
 label: eine Befragung oder eine Beobachtung planen und durchführen
 kind: Kern
+concepts:
+  concept-944ac43cb914c15e: 1
+  concept-8a2d2ef3d5ef4047: 1
 entries:
   - outline-entry-195ef76860d584c2
   - outline-entry-9953e2bb243985a2

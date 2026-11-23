@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Explain patterns in the number of zeros of the product when multiplying a number by powers of 10, and explain patterns in the placement of the decimal point when a decimal is multiplied or divided by a power of 10. Use whole-number exponents to denote powers of 10.
 notation: 5.NBT.A.2
 kind: standard
+concepts:
+  concept-174cb6d234329d96: 0.5
+  concept-4d17ad85cc8ef71e: 0.5
+  concept-2e56c97b89725c08: 1

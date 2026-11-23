@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Complete the square in a quadratic expression to reveal the maximum or minimum value of the function it defines.
 notation: HSA-SSE.B.3.b
 kind: component
+concepts:
+  concept-332984e3acf05bf1: 1
+  concept-28716e8284b8e9d2: 1

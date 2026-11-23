@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Order three objects by length; compare the lengths of two objects indirectly by using a third object.
 notation: 1.MD.A.1
 kind: standard
+concepts:
+  concept-5a1524707c40786c: 0.5
+  concept-37241ef273bbe64d: 1

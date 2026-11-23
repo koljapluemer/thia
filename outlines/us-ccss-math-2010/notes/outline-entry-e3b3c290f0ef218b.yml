@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Interpret products of whole numbers, e.g., interpret 5 × 7 as the total number of objects in 5 groups of 7 objects each. For example, describe a context in which a total number of objects can be expressed as 5 × 7.
 notation: 3.OA.A.1
 kind: standard
+concepts:
+  concept-6b8370563d27b789: 1

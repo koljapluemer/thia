@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Graph rational functions, identifying zeros and asymptotes when suitable factorizations are available, and showing end behavior.
 notation: HSF-IF.C.7.d
 kind: component
+concepts:
+  concept-5a7d7e4234ff3a91: 1
+  concept-2467e7060823325d: 1

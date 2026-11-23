@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Describe the effect of dilations, translations, rotations, and reflections on two-dimensional figures using coordinates.
 notation: 8.G.A.3
 kind: standard
+concepts:
+  concept-8aa6e6c4a2ece627: 0.5
+  concept-c84781f2113775ec: 1
+  concept-92a534a187f4d6dc: 1

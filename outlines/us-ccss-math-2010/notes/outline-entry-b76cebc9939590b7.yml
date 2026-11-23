@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Use inverse functions to solve trigonometric equations that arise in modeling contexts; evaluate the solutions using technology, and interpret them in terms of the context.
 notation: HSF-TF.B.7
 kind: standard
+concepts:
+  concept-32ea69426ba3c221: 1
+  concept-0dda6e11df2847cc: 1

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Represent complex numbers on the complex plane in rectangular and polar form (including real and imaginary numbers), and explain why the rectangular and polar forms of a given complex number represent the same number.
 notation: HSN-CN.B.4
 kind: standard
+concepts:
+  concept-3e6da67f28cee3dd: 1
+  concept-07d35b5f99181829: 1

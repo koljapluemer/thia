@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Read and write multi-digit whole numbers using base-ten numerals, number names, and expanded form. Compare two multi-digit numbers based on meanings of the digits in each place, using >, =, and < symbols to record the results of comparisons.
 notation: 4.NBT.A.2
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-fd20763623221f88: 1
+  concept-7f8ebd176bae5141: 1

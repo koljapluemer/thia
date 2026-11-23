@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Recognize angle measure as additive. When an angle is decomposed into non-overlapping parts, the angle measure of the whole is the sum of the angle measures of the parts. Solve addition and subtraction problems to find unknown angles on a diagram in real world and mathematical problems, e.g., by using an equation with a symbol for the unknown angle measure.
 notation: 4.MD.C.7
 kind: standard
+concepts:
+  concept-6e1402e9f589d210: 1

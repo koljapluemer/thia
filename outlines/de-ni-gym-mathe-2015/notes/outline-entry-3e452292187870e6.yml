@@ -2,6 +2,9 @@ id: outline-entry-3e452292187870e6
 gestalt: outline-entry@1
 label: Proportionale und antiproportionale Zusammenhänge
 kind: Lernbereich
+concepts:
+  concept-992158f4bbb15d69: 1
+  concept-0bcc05514e9c0b32: 1
 entries:
   - outline-entry-4624efee4431e67e
   - outline-entry-d1464972805fb18c

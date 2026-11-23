@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Mentally add 10 or 100 to a given number 100—900, and mentally subtract 10 or 100 from a given number 100—900.
 notation: 2.NBT.B.8
 kind: standard
+concepts:
+  concept-4d17ad85cc8ef71e: 0.5
+  concept-08127ac111faee2f: 1

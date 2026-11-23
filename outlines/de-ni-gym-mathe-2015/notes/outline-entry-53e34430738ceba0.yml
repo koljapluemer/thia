@@ -2,6 +2,8 @@ id: outline-entry-53e34430738ceba0
 gestalt: outline-entry@1
 label: Umgang mit natürlichen Zahlen
 kind: Lernbereich
+concepts:
+  concept-acdfc8fea87ef392: 1
 entries:
   - outline-entry-e37ef6cd0726f8eb
   - outline-entry-4087a1aa3b6b7e2b

@@ -2,6 +2,9 @@ id: outline-entry-f991baf700e05a44
 gestalt: outline-entry@1
 label: ein Experiment planen und durchführen
 kind: Kern
+concepts:
+  concept-944ac43cb914c15e: 1
+  concept-e91b7152a45b698e: 1
 entries:
   - outline-entry-a32ab2f4905e3d15
   - outline-entry-0558137f41c930f4

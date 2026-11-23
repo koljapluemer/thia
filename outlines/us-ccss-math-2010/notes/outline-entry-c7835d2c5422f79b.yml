@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Fluently multiply and divide within 100, using strategies such as the relationship between multiplication and division (e.g., knowing that 8 × 5 = 40, one knows 40 ÷ 5 = 8) or properties of operations. By the end of Grade 3, know from memory all products of two one-digit numbers.
 notation: 3.OA.C.7
 kind: standard
+concepts:
+  concept-990b23e81455c981: 1
+  concept-6fa419eccdde7621: 1
+  concept-6b8370563d27b789: 1

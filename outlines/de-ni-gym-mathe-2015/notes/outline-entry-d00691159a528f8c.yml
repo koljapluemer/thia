@@ -2,6 +2,8 @@ id: outline-entry-d00691159a528f8c
 gestalt: outline-entry@1
 label: einfache Termumformungen durchführen
 kind: Kern
+concepts:
+  concept-6306a35147f24b2a: 1
 entries:
   - outline-entry-f81ba13296cd86c5
   - outline-entry-c119969f6934027a

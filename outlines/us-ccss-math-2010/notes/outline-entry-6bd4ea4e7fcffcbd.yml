@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Graph linear and quadratic functions and show intercepts, maxima, and minima.
 notation: HSF-IF.C.7.a
 kind: component
+concepts:
+  concept-915347f3163caf9d: 1
+  concept-1853393cbcdcdb7c: 1

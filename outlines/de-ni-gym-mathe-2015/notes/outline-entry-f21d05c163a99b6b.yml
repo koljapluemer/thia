@@ -2,6 +2,8 @@ id: outline-entry-f21d05c163a99b6b
 gestalt: outline-entry@1
 label: Dreiecke konstruieren
 kind: Kern
+concepts:
+  concept-91b799365d798b84: 1
 entries:
   - outline-entry-84e97f1ca25d7ee4
   - outline-entry-cf857863befabced

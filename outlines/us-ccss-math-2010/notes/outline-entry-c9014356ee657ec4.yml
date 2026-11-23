@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use statistics appropriate to the shape of the data distribution to compare center (median, mean) and spread (interquartile range, standard deviation) of two or more different data sets.
 notation: HSS-ID.A.2
 kind: standard
+concepts:
+  concept-e5a26ff1f077b014: 1
+  concept-9adfc75d141ff0f1: 1
+  concept-caf0de8155331f00: 1

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Derive the equations of ellipses and hyperbolas given the foci, using the fact that the sum or difference of distances from the foci is constant.
 notation: HSG-GPE.A.3
 kind: standard
+concepts:
+  concept-5b82e9c89824c8a4: 1

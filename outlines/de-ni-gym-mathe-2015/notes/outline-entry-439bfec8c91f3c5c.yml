@@ -2,6 +2,8 @@ id: outline-entry-439bfec8c91f3c5c
 gestalt: outline-entry@1
 label: Zahlbereichserweiterungen erläutern
 kind: Kern
+concepts:
+  concept-a2498c4e3d105389: 1
 entries:
   - outline-entry-f7e6206e16dbee38
   - outline-entry-3778b8a2abf95d4f

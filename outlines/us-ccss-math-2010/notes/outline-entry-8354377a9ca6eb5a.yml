@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Derive the equation of a circle of given center and radius using the Pythagorean Theorem; complete the square to find the center and radius of a circle given by an equation.
 notation: HSG-GPE.A.1
 kind: standard
+concepts:
+  concept-332984e3acf05bf1: 0.5
+  concept-ae94310a468d5f0d: 1

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use geometric descriptions of rigid motions to transform figures and to predict the effect of a given rigid motion on a given figure; given two figures, use the definition of congruence in terms of rigid motions to decide if they are congruent.
 notation: HSG-CO.B.6
 kind: standard
+concepts:
+  concept-401d74d48a90c97d: 1
+  concept-7a64116cb16a7c4b: 1

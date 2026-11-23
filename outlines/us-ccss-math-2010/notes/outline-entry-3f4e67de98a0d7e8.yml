@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Use permutations and combinations to compute probabilities of compound events and solve problems.
 notation: HSS-CP.B.9
 kind: standard
+concepts:
+  concept-4cb329588c534281: 1
+  concept-46b0eacbad0801aa: 1

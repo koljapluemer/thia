@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Classify two-dimensional figures based on the presence or absence of parallel or perpendicular lines, or the presence or absence of angles of a specified size. Recognize right triangles as a category, and identify right triangles.
 notation: 4.G.A.2
 kind: standard
+concepts:
+  concept-31f1fa33d5a3e580: 1
+  concept-1eef26e172062384: 0.5
+  concept-5b72fd8854e740a6: 0.5

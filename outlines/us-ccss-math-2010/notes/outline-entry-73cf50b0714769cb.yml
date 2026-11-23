@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Compute (using technology) and interpret the correlation coefficient of a linear fit.
 notation: HSS-ID.C.8
 kind: standard
+concepts:
+  concept-577bf0c4f4ee4f88: 1

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Classify two-dimensional figures in a hierarchy based on properties.
 notation: 5.G.B.4
 kind: standard
+concepts:
+  concept-31f1fa33d5a3e580: 1
+  concept-66716cb4884e4372: 0.5

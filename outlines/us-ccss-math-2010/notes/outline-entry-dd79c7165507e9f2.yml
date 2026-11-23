@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Write a function defined by an expression in different but equivalent forms to reveal and explain different properties of the function.
 notation: HSF-IF.C.8
 kind: standard
+concepts:
+  concept-63f90848624c269a: 1
+  concept-ef7d009c7e812da1: 1
 entries:
   - outline-entry-8f847f5f0fca0f0a
   - outline-entry-21a18be6024a2ed6

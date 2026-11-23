@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Count to 120, starting at any number less than 120. In this range, read and write numerals and represent a number of objects with a written numeral.
 notation: 1.NBT.A.1
 kind: standard
+concepts:
+  concept-d7dcbffafdb8ebc6: 1
+  concept-7f8ebd176bae5141: 0.5

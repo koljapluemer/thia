@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Compare two three-digit numbers based on meanings of the hundreds, tens, and ones digits, using >, =, and < symbols to record the results of comparisons.
 notation: 2.NBT.A.4
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-4d17ad85cc8ef71e: 0.5

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Derive the formula for the sum of a finite geometric series (when the common ratio is not 1), and use the formula to solve problems. For example, calculate mortgage payments.
 notation: HSA-SSE.B.4
 kind: standard
+concepts:
+  concept-a62405579533686a: 1

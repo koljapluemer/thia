@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Explain why a fraction a/b is equivalent to a fraction (n × a)/(n × b) by using visual fraction models, with attention to how the number and size of the parts differ even though the two fractions themselves are the same size. Use this principle to recognize and generate equivalent fractions.
 notation: 4.NF.A.1
 kind: standard
+concepts:
+  concept-b0581a2bae10b7a8: 1

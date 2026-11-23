@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Find the inverse of a matrix if it exists and use it to solve systems of linear equations (using technology for matrices of dimension 3 × 3 or greater).
 notation: HSA-REI.C.9
 kind: standard
+concepts:
+  concept-52b55ca4a5048513: 1
+  concept-58f80e904467155c: 0.5

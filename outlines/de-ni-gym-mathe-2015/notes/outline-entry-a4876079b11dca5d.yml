@@ -2,6 +2,8 @@ id: outline-entry-a4876079b11dca5d
 gestalt: outline-entry@1
 label: mit Dezimalzahlen rechnen
 kind: Kern
+concepts:
+  concept-0ce44686ad9c297d: 1
 entries:
   - outline-entry-e387e6a8c2d59038
   - outline-entry-250bd152ff6af8da

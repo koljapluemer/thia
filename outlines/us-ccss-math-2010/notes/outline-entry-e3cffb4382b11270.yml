@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Construct an equilateral triangle, a square, and a regular hexagon inscribed in a circle.
 notation: HSG-CO.D.13
 kind: standard
+concepts:
+  concept-5782a3018aa1d4dd: 1
+  concept-8208bdad4d72961e: 1

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Solve real-world and mathematical problems by graphing points in all four quadrants of the coordinate plane. Include use of coordinates and absolute value to find distances between points with the same first coordinate or the same second coordinate.
 notation: 6.NS.C.8
 kind: standard
+concepts:
+  concept-a9c1029adde36d53: 0.5
+  concept-8aa6e6c4a2ece627: 1

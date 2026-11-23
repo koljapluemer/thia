@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Use special triangles to determine geometrically the values of sine, cosine, tangent for π/3, π/4 and π/6, and use the unit circle to express the values of sine, cosine, and tangent for π-x, π+x, and 2π-x in terms of their values for x, where x is any real number.
 notation: HSF-TF.A.3
 kind: standard
+concepts:
+  concept-7007de554cf2d3bd: 1
+  concept-7f4a9d2c6b6024a5: 1

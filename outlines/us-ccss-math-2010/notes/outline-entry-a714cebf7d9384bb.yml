@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use the mean and standard deviation of a data set to fit it to a normal distribution and to estimate population percentages. Recognize that there are data sets for which such a procedure is not appropriate. Use calculators, spreadsheets, and tables to estimate areas under the normal curve.
 notation: HSS-ID.A.4
 kind: standard
+concepts:
+  concept-924895d14b8a43a7: 1
+  concept-366b910bc6d0ee3b: 1

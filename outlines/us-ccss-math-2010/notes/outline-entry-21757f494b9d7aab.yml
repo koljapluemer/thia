@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Know the formulas for the area and circumference of a circle and use them to solve problems; give an informal derivation of the relationship between the circumference and area of a circle.
 notation: 7.G.B.4
 kind: standard
+concepts:
+  concept-cc88623dcdc60afc: 1
+  concept-2d40d47be0f61059: 1

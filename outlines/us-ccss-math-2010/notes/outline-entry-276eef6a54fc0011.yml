@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Find whole-number quotients of whole numbers with up to four-digit dividends and two-digit divisors, using strategies based on place value, the properties of operations, and/or the relationship between multiplication and division. Illustrate and explain the calculation by using equations, rectangular arrays, and/or area models.
 notation: 5.NBT.B.6
 kind: standard
+concepts:
+  concept-0115ddf9efc6659a: 1

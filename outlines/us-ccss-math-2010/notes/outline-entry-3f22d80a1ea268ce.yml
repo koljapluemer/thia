@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Graph polynomial functions, identifying zeros when suitable factorizations are available, and showing end behavior.
 notation: HSF-IF.C.7.c
 kind: component
+concepts:
+  concept-be3fb385ec8e772b: 1
+  concept-a12a73b207f12911: 0.5

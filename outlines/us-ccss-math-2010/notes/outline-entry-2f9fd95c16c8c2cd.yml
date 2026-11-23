@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Construct a tangent line from a point outside a given circle to the circle.
 notation: HSG-C.A.4
 kind: standard
+concepts:
+  concept-11276b3c4600ef35: 1

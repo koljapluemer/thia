@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use multiplication and division within 100 to solve word problems in situations involving equal groups, arrays, and measurement quantities, e.g., by using drawings and equations with a symbol for the unknown number to represent the problem.
 notation: 3.OA.A.3
 kind: standard
+concepts:
+  concept-990b23e81455c981: 1
+  concept-6b8370563d27b789: 1
+  concept-7b26a7ad5a57a420: 1

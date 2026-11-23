@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Partition circles and rectangles into two, three, or four equal shares, describe the shares using the words halves, thirds, half of, a third of, etc., and describe the whole as two halves, three thirds, four fourths. Recognize that equal shares of identical wholes need not have the same shape.
 notation: 2.G.A.3
 kind: standard
+concepts:
+  concept-a2219b7c78a678b4: 1
+  concept-00cbd63c561c05da: 0.5

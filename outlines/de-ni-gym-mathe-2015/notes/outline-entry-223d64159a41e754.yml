@@ -1,3 +1,6 @@
 id: outline-entry-223d64159a41e754
 gestalt: outline-entry@1
 label: Grenzverhalten des Graphen von f mit f(x) = 1/x
+concepts:
+  concept-5a7d7e4234ff3a91: 1
+  concept-8a46fd6fc3d79d41: 0.5

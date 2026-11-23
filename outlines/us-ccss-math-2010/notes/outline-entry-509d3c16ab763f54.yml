@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Graph exponential and logarithmic functions, showing intercepts and end behavior, and trigonometric functions, showing period, midline, and amplitude.
 notation: HSF-IF.C.7.e
 kind: component
+concepts:
+  concept-aa2c5163cb8653d6: 1
+  concept-47f819beb5f3c933: 1
+  concept-72c1d3f4f18f947e: 1

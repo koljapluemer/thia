@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Recognize a line of symmetry for a two-dimensional figure as a line across the figure such that the figure can be folded along the line into matching parts. Identify line-symmetric figures and draw lines of symmetry.
 notation: 4.G.A.3
 kind: standard
+concepts:
+  concept-3781049acb7fd5d7: 1

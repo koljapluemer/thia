@@ -2,6 +2,8 @@ id: outline-entry-f52a1504f527effd
 gestalt: outline-entry@1
 label: Exponentialfunktionen untersuchen – Parametervariation
 kind: Kern
+concepts:
+  concept-aa2c5163cb8653d6: 1
 entries:
   - outline-entry-59a351674f719761
   - outline-entry-f4e2a06a6c9e6df7

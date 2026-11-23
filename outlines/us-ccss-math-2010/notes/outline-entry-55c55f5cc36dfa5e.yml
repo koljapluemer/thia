@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Understand the inverse relationship between exponents and logarithms and use this relationship to solve problems involving logarithms and exponents.
 notation: HSF-BF.B.5
 kind: standard
+concepts:
+  concept-aa2c5163cb8653d6: 0.5
+  concept-808aace97b14c9b0: 1

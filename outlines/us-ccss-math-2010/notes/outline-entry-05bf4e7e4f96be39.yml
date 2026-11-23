@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Explain why addition and subtraction strategies work, using place value and the properties of operations.
 notation: 2.NBT.B.9
 kind: standard
+concepts:
+  concept-4d17ad85cc8ef71e: 0.5
+  concept-811574e795a0c230: 1

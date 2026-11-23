@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Given a rectangle, parallelogram, trapezoid, or regular polygon, describe the rotations and reflections that carry it onto itself.
 notation: HSG-CO.A.3
 kind: standard
+concepts:
+  concept-92a534a187f4d6dc: 0.5
+  concept-3781049acb7fd5d7: 1

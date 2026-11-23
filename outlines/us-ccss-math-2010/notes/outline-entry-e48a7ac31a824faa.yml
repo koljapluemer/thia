@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Draw polygons in the coordinate plane given coordinates for the vertices; use coordinates to find the length of a side joining points with the same first coordinate or the same second coordinate. Apply these techniques in the context of solving real-world and mathematical problems.
 notation: 6.G.A.3
 kind: standard
+concepts:
+  concept-8aa6e6c4a2ece627: 1
+  concept-3a59f4e57ca86f1b: 0.5

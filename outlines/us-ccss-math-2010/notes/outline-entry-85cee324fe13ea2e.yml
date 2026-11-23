@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Understand the relationship between numbers and quantities; connect counting to cardinality.
 notation: K.CC.B.4
 kind: standard
+concepts:
+  concept-ebef8aff69dbf274: 1
+  concept-d7dcbffafdb8ebc6: 1
 entries:
   - outline-entry-e811876059a24412
   - outline-entry-05d41aa7f434b100

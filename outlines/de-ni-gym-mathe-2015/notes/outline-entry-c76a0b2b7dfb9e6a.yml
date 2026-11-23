@@ -2,6 +2,8 @@ id: outline-entry-c76a0b2b7dfb9e6a
 gestalt: outline-entry@1
 label: mit Brüchen rechnen
 kind: Kern
+concepts:
+  concept-1347ac189dae80e2: 1
 entries:
   - outline-entry-b3545a38aac31db2
   - outline-entry-72bd75246bec5d86

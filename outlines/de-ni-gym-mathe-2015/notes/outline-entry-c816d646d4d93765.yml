@@ -2,6 +2,9 @@ id: outline-entry-c816d646d4d93765
 gestalt: outline-entry@1
 label: Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit
 kind: Lernbereich
+concepts:
+  concept-67bc9199a1f31ba3: 1
+  concept-8cc0e56b16368984: 1
 entries:
   - outline-entry-392be2fa9816cc64
   - outline-entry-25cda79ee12c17b2

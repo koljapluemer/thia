@@ -2,6 +2,9 @@ id: outline-entry-cd674f1384cf5001
 gestalt: outline-entry@1
 label: lineare Zusammenhänge identifizieren und darstellen
 kind: Kern
+concepts:
+  concept-915347f3163caf9d: 1
+  concept-dbebdbc232ed964d: 0.5
 entries:
   - outline-entry-dbc3b3a6a44c984e
   - outline-entry-3162ce196c645c65

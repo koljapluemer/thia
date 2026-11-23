@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Prove theorems about parallelograms.
 notation: HSG-CO.C.11
 kind: standard
+concepts:
+  concept-aed6fc7f9e12c20a: 1
+  concept-9dfd83713d3a43a9: 1

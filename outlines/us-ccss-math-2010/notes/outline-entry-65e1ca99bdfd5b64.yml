@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Represent a system of linear equations as a single matrix equation in a vector variable.
 notation: HSA-REI.C.8
 kind: standard
+concepts:
+  concept-3b095cb6d8b6dffd: 1
+  concept-58f80e904467155c: 1

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Rearrange formulas to highlight a quantity of interest, using the same reasoning as in solving equations. For example, rearrange Ohm's law V = IR to highlight resistance R.
 notation: HSA-CED.A.4
 kind: standard
+concepts:
+  concept-c354068c276195a1: 1

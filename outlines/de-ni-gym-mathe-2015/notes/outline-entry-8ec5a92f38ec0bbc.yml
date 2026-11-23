@@ -2,6 +2,8 @@ id: outline-entry-8ec5a92f38ec0bbc
 gestalt: outline-entry@1
 label: Transversalen erkunden
 kind: Kern
+concepts:
+  concept-4a47351afc093259: 1
 entries:
   - outline-entry-18451ddc5567e066
   - outline-entry-ccfcb74c350da4ef

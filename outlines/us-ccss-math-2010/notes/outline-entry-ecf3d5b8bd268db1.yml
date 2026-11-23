@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Solve multistep word problems posed with whole numbers and having whole-number answers using the four operations, including problems in which remainders must be interpreted. Represent these problems using equations with a letter standing for the unknown quantity. Assess the reasonableness of answers using mental computation and estimation strategies including rounding.
 notation: 4.OA.A.3
 kind: standard
+concepts:
+  concept-101e9fa65d4f4266: 1
+  concept-b6dfe33841f2f8dc: 0.5
+  concept-7b26a7ad5a57a420: 1

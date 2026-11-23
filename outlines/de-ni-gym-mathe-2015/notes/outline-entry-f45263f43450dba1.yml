@@ -2,6 +2,8 @@ id: outline-entry-f45263f43450dba1
 gestalt: outline-entry@1
 label: antiproportionale Zusammenhänge erfassen
 kind: Kern
+concepts:
+  concept-992158f4bbb15d69: 1
 entries:
   - outline-entry-4dbbd43a3dc40045
   - outline-entry-f878f497b6d523c5

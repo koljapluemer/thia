@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Derive the equation of a parabola given a focus and directrix.
 notation: HSG-GPE.A.2
 kind: standard
+concepts:
+  concept-5b82e9c89824c8a4: 1
+  concept-e311da45639cf62a: 1

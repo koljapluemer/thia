@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Measure to determine how much longer one object is than another, expressing the length difference in terms of a standard length unit.
 notation: 2.MD.A.4
 kind: standard
+concepts:
+  concept-37241ef273bbe64d: 1
+  concept-63a2798c5fe93c9a: 0.5

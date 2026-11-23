@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Fluently divide multi-digit numbers using the standard algorithm.
 notation: 6.NS.B.2
 kind: standard
+concepts:
+  concept-0115ddf9efc6659a: 1

@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Understand a fraction as a number on the number line; represent fractions on a number line diagram.
 notation: 3.NF.A.2
 kind: standard
+concepts:
+  concept-00cbd63c561c05da: 1
+  concept-4f1860d2eb5f34e4: 1
 entries:
   - outline-entry-40ab30fd3c5cc51b
   - outline-entry-6be79601e14ae505

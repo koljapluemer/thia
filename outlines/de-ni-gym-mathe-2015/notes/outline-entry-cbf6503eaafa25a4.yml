@@ -2,6 +2,8 @@ id: outline-entry-cbf6503eaafa25a4
 gestalt: outline-entry@1
 label: lineare Gleichungen lösen
 kind: Kern
+concepts:
+  concept-af1a8417d45e0d76: 1
 entries:
   - outline-entry-cdbb59c396baac14
   - outline-entry-c7978f271138d664

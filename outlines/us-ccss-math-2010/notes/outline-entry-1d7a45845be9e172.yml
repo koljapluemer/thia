@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Explain equivalence of fractions in special cases, and compare fractions by reasoning about their size.
 notation: 3.NF.A.3
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-b0581a2bae10b7a8: 1
 entries:
   - outline-entry-de1c5989d5856e76
   - outline-entry-e7431048a8ae0730

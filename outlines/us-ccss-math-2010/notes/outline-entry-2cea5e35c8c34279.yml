@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Determine the unknown whole number in an addition or subtraction equation relating three whole numbers. For example, determine the unknown number that makes the equation true in each of the equations 8 + ? = 11, 5 = _ - 3, 6 + 6 = _.
 notation: 1.OA.D.8
 kind: standard
+concepts:
+  concept-77f930e4b1a52703: 0.5
+  concept-5ab6acf08e80e357: 1
+  concept-63a2798c5fe93c9a: 0.5

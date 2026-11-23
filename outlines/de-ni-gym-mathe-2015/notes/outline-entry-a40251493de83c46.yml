@@ -2,6 +2,10 @@ id: outline-entry-a40251493de83c46
 gestalt: outline-entry@1
 label: zweistufige Zufallsexperimente darstellen und analysieren
 kind: Kern
+concepts:
+  concept-5f01a4ee9966ef8b: 1
+  concept-6f561758051dc6b3: 1
+  concept-d652debcf102b9a0: 1
 entries:
   - outline-entry-054fc8143340aa9e
   - outline-entry-c473767d3d35ccc4

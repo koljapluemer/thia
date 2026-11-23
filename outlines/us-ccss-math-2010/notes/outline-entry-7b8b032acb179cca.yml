@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Rewrite expressions involving radicals and rational exponents using the properties of exponents.
 notation: HSN-RN.A.2
 kind: standard
+concepts:
+  concept-e2ce2c2c77151991: 1
+  concept-ba97075d70f601f5: 1

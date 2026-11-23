@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use the properties of exponents to interpret expressions for exponential functions. For example, identify percent rate of change in functions such as y = (1.02)ᵗ, y = (0.97)ᵗ, y = (1.01 ¹²ᵗ, y = (1.2)^(t/10), and classify them as representing exponential growth or decay.
 notation: HSF-IF.C.8.b
 kind: component
+concepts:
+  concept-30bc9265403bfa42: 1
+  concept-5782248c5dfb6763: 1
+  concept-5abbdebf60ee7730: 0.5

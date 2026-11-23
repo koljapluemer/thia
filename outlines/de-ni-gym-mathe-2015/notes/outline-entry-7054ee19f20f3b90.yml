@@ -2,6 +2,9 @@ id: outline-entry-7054ee19f20f3b90
 gestalt: outline-entry@1
 label: Baumdiagramme und Vierfeldertafeln
 kind: Lernbereich
+concepts:
+  concept-6f561758051dc6b3: 1
+  concept-d652debcf102b9a0: 1
 entries:
   - outline-entry-85acd8d5fea658fe
   - outline-entry-a40251493de83c46

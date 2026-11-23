@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Understand that two events A and B are independent if the probability of A and B occurring together is the product of their probabilities, and use this characterization to determine if they are independent.
 notation: HSS-CP.A.2
 kind: standard
+concepts:
+  concept-7a405b2c7bf29d23: 1

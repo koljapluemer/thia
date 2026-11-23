@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Informally assess the degree of visual overlap of two numerical data distributions with similar variabilities, measuring the difference between the centers by expressing it as a multiple of a measure of variability. For example, the mean height of players on the basketball team is 10 cm greater than the mean height of players on the soccer team, about twice the variability (mean absolute deviation) on either team; on a dot plot, the separation between the two distributions of heights is noticeable.
 notation: 7.SP.B.3
 kind: standard
+concepts:
+  concept-e5a26ff1f077b014: 1
+  concept-caf0de8155331f00: 0.5

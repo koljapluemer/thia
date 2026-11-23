@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Draw points, lines, line segments, rays, angles (right, acute, obtuse), and perpendicular and parallel lines. Identify these in two-dimensional figures.
 notation: 4.G.A.1
 kind: standard
+concepts:
+  concept-5dafe3b58e1552ab: 1
+  concept-1eef26e172062384: 1

@@ -1,3 +1,5 @@
 id: outline-entry-a8d1930ebedef8ab
 gestalt: outline-entry@1
 label: x² + p · x + q = 0, a · x² + b · x = 0, a · x² + c = 0 und a · (x − d)² + e = 0 lösen, in einfachen Fällen auch hilfsmittelfrei
+concepts:
+  concept-cf556713a0182443: 1

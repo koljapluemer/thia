@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Represent data with plots on the real number line (dot plots, histograms, and box plots).
 notation: HSS-ID.A.1
 kind: standard
+concepts:
+  concept-388d9abedad40f5f: 1
+  concept-555aa7118ae6adec: 1
+  concept-69c2fe6644d3a99c: 1

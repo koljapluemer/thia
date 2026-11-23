@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Choose a level of accuracy appropriate to limitations on measurement when reporting quantities.
 notation: HSN-Q.A.3
 kind: standard
+concepts:
+  concept-26babc453b0064e7: 1
+  concept-9a6aefb4a7505ff2: 0.2
+  concept-83d283e389f6444d: 0.5

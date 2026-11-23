@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Solve real-world and mathematical problems involving area, volume and surface area of two- and three-dimensional objects composed of triangles, quadrilaterals, polygons, cubes, and right prisms.
 notation: 7.G.B.6
 kind: standard
+concepts:
+  concept-04c56071c6e237ee: 1
+  concept-b32d438ae4caa49b: 1
+  concept-62d7a6b1211d6276: 1

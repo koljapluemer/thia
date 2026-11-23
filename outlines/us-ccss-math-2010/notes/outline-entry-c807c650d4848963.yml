@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Distinguish between correlation and causation.
 notation: HSS-ID.C.9
 kind: standard
+concepts:
+  concept-d280145727b701d1: 1

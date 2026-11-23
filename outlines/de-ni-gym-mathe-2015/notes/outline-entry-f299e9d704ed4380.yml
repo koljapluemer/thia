@@ -2,6 +2,10 @@ id: outline-entry-f299e9d704ed4380
 gestalt: outline-entry@1
 label: Oberflächen- und Rauminhalt des Prismas
 kind: Kern
+concepts:
+  concept-abae7d5ab8eb7470: 1
+  concept-b32d438ae4caa49b: 1
+  concept-62d7a6b1211d6276: 1
 entries:
   - outline-entry-31902f28db38864f
   - outline-entry-78f70f7b563704aa

@@ -2,3 +2,7 @@ id: outline-entry-a7242c75b3cd42f7
 gestalt: outline-entry@1
 label: Prozent- und Zinsrechnung mithilfe des Dreisatzes
 kind: Kern
+concepts:
+  concept-828408e40d4fe651: 1
+  concept-26255177ed23bc85: 1
+  concept-ee2d2300975655b6: 0.5

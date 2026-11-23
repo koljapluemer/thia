@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Determine an explicit expression, a recursive process, or steps for calculation from a context.
 notation: HSF-BF.A.1.a
 kind: component
+concepts:
+  concept-ef7d009c7e812da1: 1
+  concept-8ea1f510bfe2177d: 0.5

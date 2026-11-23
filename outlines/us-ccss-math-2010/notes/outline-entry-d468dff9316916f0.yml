@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand division as an unknown-factor problem. For example, find 32 ÷ 8 by finding the number that makes 32 when multiplied by 8.
 notation: 3.OA.B.6
 kind: standard
+concepts:
+  concept-990b23e81455c981: 1
+  concept-87c1b6677dea6e4a: 1

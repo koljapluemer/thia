@@ -2,6 +2,9 @@ id: outline-entry-c3164f43853c874a
 gestalt: outline-entry@1
 label: Flächeninhalt und Umfang des Kreises ermitteln
 kind: Kern
+concepts:
+  concept-cc88623dcdc60afc: 1
+  concept-2d40d47be0f61059: 1
 entries:
   - outline-entry-a119d4b4a2609d3a
   - outline-entry-29c981abb2ee13b0

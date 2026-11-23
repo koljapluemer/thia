@@ -2,6 +2,9 @@ id: outline-entry-06e02aba87dd0a43
 gestalt: outline-entry@1
 label: Maßzahlen ausgewählter Körper schätzen und berechnen
 kind: Kern
+concepts:
+  concept-b32d438ae4caa49b: 1
+  concept-62d7a6b1211d6276: 1
 entries:
   - outline-entry-f0cee3182398f1a5
   - outline-entry-6559171d957478a1

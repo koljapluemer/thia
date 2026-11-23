@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Understand that a set of data collected to answer a statistical question has a distribution which can be described by its center, spread, and overall shape.
 notation: 6.SP.A.2
 kind: standard
+concepts:
+  concept-033fa4cbd9752a09: 1
+  concept-9adfc75d141ff0f1: 0.5
+  concept-caf0de8155331f00: 0.5

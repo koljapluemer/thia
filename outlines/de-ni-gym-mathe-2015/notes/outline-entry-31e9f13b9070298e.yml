@@ -2,6 +2,8 @@ id: outline-entry-31e9f13b9070298e
 gestalt: outline-entry@1
 label: Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben
 kind: Kern
+concepts:
+  concept-8a46fd6fc3d79d41: 1
 entries:
   - outline-entry-7adbb2f18b85f5d2
   - outline-entry-1827ffc79b54081d

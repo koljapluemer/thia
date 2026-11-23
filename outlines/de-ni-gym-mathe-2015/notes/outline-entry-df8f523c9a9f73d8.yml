@@ -2,6 +2,9 @@ id: outline-entry-df8f523c9a9f73d8
 gestalt: outline-entry@1
 label: Ein- und mehrstufige Zufallsversuche
 kind: Lernbereich
+concepts:
+  concept-5f01a4ee9966ef8b: 1
+  concept-3955f8fd92cda2c1: 1
 entries:
   - outline-entry-84c650fbd366559e
   - outline-entry-7572f1230643de26

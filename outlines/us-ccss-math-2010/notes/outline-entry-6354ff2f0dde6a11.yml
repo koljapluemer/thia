@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use numbers expressed in the form of a single digit times an integer power of 10 to estimate very large or very small quantities, and to express how many times as much one is than the other. For example, estimate the population of the United States as 3 × 10⁸ and the population of the world as 7 × 10⁹, and determine that the world population is more than 20 times larger.
 notation: 8.EE.A.3
 kind: standard
+concepts:
+  concept-2e56c97b89725c08: 0.5
+  concept-e460b7268e9d7b67: 1

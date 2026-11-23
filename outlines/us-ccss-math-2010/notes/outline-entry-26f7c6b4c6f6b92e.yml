@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Fluently add, subtract, multiply, and divide multi-digit decimals using the standard algorithm for each operation.
 notation: 6.NS.B.3
 kind: standard
+concepts:
+  concept-0ce44686ad9c297d: 1
+  concept-a0e449e4b4011fe8: 0.5

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand that statistics can be used to gain information about a population by examining a sample of the population; generalizations about a population from a sample are valid only if the sample is representative of that population. Understand that random sampling tends to produce representative samples and support valid inferences.
 notation: 7.SP.A.1
 kind: standard
+concepts:
+  concept-52630e4131f9862e: 1
+  concept-ca0a36939caa71c6: 1

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Recognize vector quantities as having both magnitude and direction. Represent vector quantities by directed line segments, and use appropriate symbols for vectors and their magnitudes (e.g., v, |v|, ||v||, v).
 notation: HSN-VM.A.1
 kind: standard
+concepts:
+  concept-29a6a5e3c3986276: 1

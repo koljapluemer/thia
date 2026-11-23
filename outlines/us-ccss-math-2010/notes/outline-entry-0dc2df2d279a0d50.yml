@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand a fraction 1/b as the quantity formed by 1 part when a whole is partitioned into b equal parts; understand a fraction a/b as the quantity formed by a parts of size 1/b.
 notation: 3.NF.A.1
 kind: standard
+concepts:
+  concept-00cbd63c561c05da: 1
+  concept-8b3b434dd6ab5899: 1

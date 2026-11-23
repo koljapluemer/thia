@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Apply the Addition Rule, P(A or B) = P(A) + P(B) - P(A and B), and interpret the answer in terms of the model.
 notation: HSS-CP.B.7
 kind: standard
+concepts:
+  concept-4c5291a879f35b7b: 1

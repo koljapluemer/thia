@@ -3,3 +3,8 @@ gestalt: outline-entry@1
 label: Give an informal argument for the formulas for the circumference of a circle, area of a circle, volume of a cylinder, pyramid, and cone.
 notation: HSG-GMD.A.1
 kind: standard
+concepts:
+  concept-cc88623dcdc60afc: 1
+  concept-2d40d47be0f61059: 1
+  concept-8a46fd6fc3d79d41: 0.2
+  concept-025e30da3a051e48: 1

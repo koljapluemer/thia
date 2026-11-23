@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: Understand ordering and absolute value of rational numbers.
 notation: 6.NS.C.7
 kind: standard
+concepts:
+  concept-a9c1029adde36d53: 1
+  concept-bfb0250084efa32a: 1
+  concept-6f72712503b12365: 0.5
 entries:
   - outline-entry-3667e821ac1d4eb1
   - outline-entry-7404670300244076

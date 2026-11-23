@@ -2,3 +2,8 @@ id: outline-entry-bb1566171e9dfba9
 gestalt: outline-entry@1
 label: Dezimalzahlen auf der Zahlengeraden, im Stellenwertsystem und als Bruch darstellen
 kind: Kern
+concepts:
+  concept-174cb6d234329d96: 1
+  concept-00cbd63c561c05da: 0.5
+  concept-4d17ad85cc8ef71e: 0.5
+  concept-4f1860d2eb5f34e4: 0.5

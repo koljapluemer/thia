@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Solve linear equations and inequalities in one variable, including equations with coefficients represented by letters.
 notation: HSA-REI.B.3
 kind: standard
+concepts:
+  concept-29e52ee0bb9d8b36: 1
+  concept-af1a8417d45e0d76: 1

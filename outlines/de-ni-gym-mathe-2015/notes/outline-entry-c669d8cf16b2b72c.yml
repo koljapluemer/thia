@@ -2,6 +2,9 @@ id: outline-entry-c669d8cf16b2b72c
 gestalt: outline-entry@1
 label: eine Versuchsreihe mit unsymmetrischen Objekten durchführen
 kind: Kern
+concepts:
+  concept-3955f8fd92cda2c1: 1
+  concept-dcda1681058e8379: 1
 entries:
   - outline-entry-abbd53fe633cc163
   - outline-entry-04fb9cc5a7972878

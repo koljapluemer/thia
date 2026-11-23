@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Know the Fundamental Theorem of Algebra; show that it is true for quadratic polynomials.
 notation: HSN-CN.C.9
 kind: standard
+concepts:
+  concept-1eb6a3c07c2193e2: 1

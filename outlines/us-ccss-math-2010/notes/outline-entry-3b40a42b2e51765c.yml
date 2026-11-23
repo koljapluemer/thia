@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Apply the Pythagorean Theorem to find the distance between two points in a coordinate system.
 notation: 8.G.B.8
 kind: standard
+concepts:
+  concept-67bc9199a1f31ba3: 1
+  concept-8aa6e6c4a2ece627: 0.5

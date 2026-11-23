@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Describe qualitatively the functional relationship between two quantities by analyzing a graph (e.g., where the function is increasing or decreasing, linear or nonlinear). Sketch a graph that exhibits the qualitative features of a function that has been described verbally.
 notation: 8.F.B.5
 kind: standard
+concepts:
+  concept-ef7d009c7e812da1: 0.5
+  concept-6aea99b808bd6d90: 1

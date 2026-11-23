@@ -2,6 +2,9 @@ id: outline-entry-7fbe77c5f3b5b392
 gestalt: outline-entry@1
 label: Kreis- und Körperberechnungen
 kind: Lernbereich
+concepts:
+  concept-816bb50f07c5d5bf: 1
+  concept-ab0f16ec93dcea05: 1
 entries:
   - outline-entry-c3164f43853c874a
   - outline-entry-06e02aba87dd0a43

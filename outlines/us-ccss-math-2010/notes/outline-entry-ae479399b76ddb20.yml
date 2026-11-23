@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Calculate the distance between numbers in the complex plane as the modulus of the difference, and the midpoint of a segment as the average of the numbers at its endpoints.
 notation: HSN-CN.B.6
 kind: standard
+concepts:
+  concept-a9c1029adde36d53: 0.5
+  concept-3e6da67f28cee3dd: 1

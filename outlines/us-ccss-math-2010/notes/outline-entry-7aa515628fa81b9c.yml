@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: Relate volume to the operations of multiplication and addition and solve real world and mathematical problems involving volume.
 notation: 5.MD.C.5
 kind: standard
+concepts:
+  concept-8ad4f5ff583943c2: 1
+  concept-025e30da3a051e48: 1
+  concept-62d7a6b1211d6276: 1
 entries:
   - outline-entry-7a0890cb07c306c1
   - outline-entry-dd5e6c9c45a01b03

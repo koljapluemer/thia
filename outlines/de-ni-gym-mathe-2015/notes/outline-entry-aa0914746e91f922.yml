@@ -2,6 +2,8 @@ id: outline-entry-aa0914746e91f922
 gestalt: outline-entry@1
 label: Umgang mit negativen Zahlen
 kind: Lernbereich
+concepts:
+  concept-eea49f562055ee89: 1
 entries:
   - outline-entry-c64d76e8b6ab1202
   - outline-entry-20335d73dcdb2a8e

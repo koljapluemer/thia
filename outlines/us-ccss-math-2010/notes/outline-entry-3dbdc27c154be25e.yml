@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Prove theorems about triangles.
 notation: HSG-CO.C.10
 kind: standard
+concepts:
+  concept-98157b7c317f5f4b: 0.5
+  concept-aed6fc7f9e12c20a: 1
+  concept-5b72fd8854e740a6: 1

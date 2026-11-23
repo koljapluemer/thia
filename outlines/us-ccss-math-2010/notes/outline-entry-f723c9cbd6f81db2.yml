@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: "Summarize numerical data sets in relation to their context, such as by:"
 notation: 6.SP.B.5
 kind: standard
+concepts:
+  concept-eb2d22ca7d00a233: 1
+  concept-82523faea1b0f2da: 0.5
+  concept-caf0de8155331f00: 0.5
 entries:
   - outline-entry-ad45699b308fde8c
   - outline-entry-32176d7f6f422ad0

@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use similar triangles to explain why the slope m is the same between any two distinct points on a non-vertical line in the coordinate plane; derive the equation y = mx for a line through the origin and the equation y = mx + b for a line intercepting the vertical axis at b.
 notation: 8.EE.B.6
 kind: standard
+concepts:
+  concept-915347f3163caf9d: 0.5
+  concept-8cc0e56b16368984: 0.5
+  concept-fb1acd44962209a6: 1

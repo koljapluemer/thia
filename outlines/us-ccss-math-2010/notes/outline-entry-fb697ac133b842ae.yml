@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use coordinates to compute perimeters of polygons and areas of triangles and rectangles, e.g., using the distance formula.
 notation: HSG-GPE.B.7
 kind: standard
+concepts:
+  concept-04c56071c6e237ee: 1
+  concept-bc1821efefbeb2a7: 1
+  concept-6dc449e2bfbd53f4: 1

@@ -2,6 +2,8 @@ id: outline-entry-d1464972805fb18c
 gestalt: outline-entry@1
 label: proportionale Zusammenhänge erfassen
 kind: Kern
+concepts:
+  concept-0bcc05514e9c0b32: 1
 entries:
   - outline-entry-ea8b1f4bc2f8b595
   - outline-entry-c94e18514a80ab27

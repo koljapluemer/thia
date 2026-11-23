@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Relate counting to addition and subtraction (e.g., by counting on 2 to add 2).
 notation: 1.OA.C.5
 kind: standard
+concepts:
+  concept-77f930e4b1a52703: 0.5
+  concept-d7dcbffafdb8ebc6: 1
+  concept-63a2798c5fe93c9a: 0.5

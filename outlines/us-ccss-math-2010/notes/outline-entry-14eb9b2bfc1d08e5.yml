@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Solve problems involving scale drawings of geometric figures, including computing actual lengths and areas from a scale drawing and reproducing a scale drawing at a different scale.
 notation: 7.G.A.1
 kind: standard
+concepts:
+  concept-e32762dc3a68749c: 1

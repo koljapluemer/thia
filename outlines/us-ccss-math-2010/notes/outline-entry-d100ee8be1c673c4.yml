@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Find inverse functions.
 notation: HSF-BF.B.4
 kind: standard
+concepts:
+  concept-326d1d9079a0a34b: 1
 entries:
   - outline-entry-42fc12c7a5287185
   - outline-entry-ed4f877c497ff224

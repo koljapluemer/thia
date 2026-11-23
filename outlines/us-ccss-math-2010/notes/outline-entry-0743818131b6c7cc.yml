@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Develop definitions of rotations, reflections, and translations in terms of angles, circles, perpendicular lines, parallel lines, and line segments.
 notation: HSG-CO.A.4
 kind: standard
+concepts:
+  concept-92a534a187f4d6dc: 1

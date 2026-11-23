@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Write a function that describes a relationship between two quantities
 notation: HSF-BF.A.1
 kind: standard
+concepts:
+  concept-ef7d009c7e812da1: 1
+  concept-77ece9b508c7afdc: 1
 entries:
   - outline-entry-d90576c9d841c0ed
   - outline-entry-b7a6f21e9843ca3c

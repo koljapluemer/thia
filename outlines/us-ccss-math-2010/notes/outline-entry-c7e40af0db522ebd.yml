@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: For exponential models, express as a logarithm the solution to abᶜᵗ = d where a, c, and d are numbers and the base b is 2, 10, or e; evaluate the logarithm using technology.
 notation: HSF-LE.A.4
 kind: standard
+concepts:
+  concept-750f95d774982f90: 1
+  concept-808aace97b14c9b0: 1

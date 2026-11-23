@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use data from a randomized experiment to compare two treatments; use simulations to decide if differences between parameters are significant.
 notation: HSS-IC.B.5
 kind: standard
+concepts:
+  concept-e91b7152a45b698e: 1
+  concept-1cad115a0c99d7c0: 1

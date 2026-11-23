@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Compose functions. For example, if T(y) is the temperature in the atmosphere as a function of height, and h(t) is the height of a weather balloon as a function of time, then T(h(t)) is the temperature at the location of the weather balloon as a function of time.
 notation: HSF-BF.A.1.c
 kind: component
+concepts:
+  concept-54716b712466946d: 1

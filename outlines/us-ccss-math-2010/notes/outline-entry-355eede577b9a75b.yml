@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Measure angles in whole-number degrees using a protractor. Sketch angles of specified measure.
 notation: 4.MD.C.6
 kind: standard
+concepts:
+  concept-cbfe54abbd8e5fde: 1

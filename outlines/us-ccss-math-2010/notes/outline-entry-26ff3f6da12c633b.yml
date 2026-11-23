@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Compare two decimals to thousandths based on meanings of the digits in each place, using >, =, and < symbols to record the results of comparisons.
 notation: 5.NBT.A.3.b
 kind: component
+concepts:
+  concept-bfb0250084efa32a: 1
+  concept-174cb6d234329d96: 1

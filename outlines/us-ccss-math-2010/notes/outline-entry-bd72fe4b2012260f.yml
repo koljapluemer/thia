@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Graph proportional relationships, interpreting the unit rate as the slope of the graph. Compare two different proportional relationships represented in different ways. For example, compare a distance-time graph to a distance-time equation to determine which of two moving objects has greater speed.
 notation: 8.EE.B.5
 kind: standard
+concepts:
+  concept-0bcc05514e9c0b32: 1
+  concept-fb1acd44962209a6: 1
+  concept-e3b833e7d263b2c8: 0.5

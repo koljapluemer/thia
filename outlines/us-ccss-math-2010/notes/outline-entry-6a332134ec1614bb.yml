@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Tell and write time from analog and digital clocks to the nearest five minutes, using a.m. and p.m.
 notation: 2.MD.C.7
 kind: standard
+concepts:
+  concept-e6ebb444b8533f66: 1

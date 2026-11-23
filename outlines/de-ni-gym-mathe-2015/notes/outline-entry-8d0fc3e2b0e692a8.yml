@@ -2,6 +2,9 @@ id: outline-entry-8d0fc3e2b0e692a8
 gestalt: outline-entry@1
 label: quadratische Zusammenhänge modellieren
 kind: Kern
+concepts:
+  concept-77ece9b508c7afdc: 1
+  concept-1853393cbcdcdb7c: 1
 entries:
   - outline-entry-8c6a0fe47e83ffa9
   - outline-entry-2fd916abbfd14443

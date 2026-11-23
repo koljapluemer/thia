@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Write and evaluate numerical expressions involving whole-number exponents.
 notation: 6.EE.A.1
 kind: standard
+concepts:
+  concept-7e51887e3623d84a: 1
+  concept-30fadfa494aeeb97: 1

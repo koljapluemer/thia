@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Explain and use the relationship between the sine and cosine of complementary angles.
 notation: HSG-SRT.C.7
 kind: standard
+concepts:
+  concept-9a8cb59c53c785be: 1

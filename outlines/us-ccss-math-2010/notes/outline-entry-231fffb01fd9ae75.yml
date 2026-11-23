@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Understand that rational expressions form a system analogous to the rational numbers, closed under addition, subtraction, multiplication, and division by a nonzero rational expression; add, subtract, multiply, and divide rational expressions.
 notation: HSA-APR.D.7
 kind: standard
+concepts:
+  concept-7fe2fd2482e4751b: 1

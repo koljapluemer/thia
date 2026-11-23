@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Solve quadratic equations in one variable.
 notation: HSA-REI.B.4
 kind: standard
+concepts:
+  concept-cf556713a0182443: 1
 entries:
   - outline-entry-6ebfda712d81519c
   - outline-entry-7bba5f55445958a8

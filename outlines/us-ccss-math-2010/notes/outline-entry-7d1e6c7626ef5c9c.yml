@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Count to 100 by ones and by tens.
 notation: K.CC.A.1
 kind: standard
+concepts:
+  concept-d7dcbffafdb8ebc6: 1
+  concept-fd945af8611e76a1: 0.5

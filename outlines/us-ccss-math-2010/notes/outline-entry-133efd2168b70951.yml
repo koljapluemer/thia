@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Read, write, and compare decimals to thousandths.
 notation: 5.NBT.A.3
 kind: standard
+concepts:
+  concept-bfb0250084efa32a: 0.5
+  concept-174cb6d234329d96: 1
 entries:
   - outline-entry-4ae24e8a3fda472c
   - outline-entry-26ff3f6da12c633b

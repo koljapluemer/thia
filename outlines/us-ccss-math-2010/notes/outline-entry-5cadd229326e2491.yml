@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Choose and produce an equivalent form of an expression to reveal and explain properties of the quantity represented by the expression.
 notation: HSA-SSE.B.3
 kind: standard
+concepts:
+  concept-63f90848624c269a: 1
 entries:
   - outline-entry-e7d8032c49d2693a
   - outline-entry-0d16f22f65ae0353

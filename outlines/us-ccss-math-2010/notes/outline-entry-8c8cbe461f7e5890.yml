@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use trigonometric ratios and the Pythagorean Theorem to solve right triangles in applied problems.
 notation: HSG-SRT.C.8
 kind: standard
+concepts:
+  concept-67bc9199a1f31ba3: 1
+  concept-9a8cb59c53c785be: 1

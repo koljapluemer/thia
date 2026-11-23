@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use variables to represent numbers and write expressions when solving a real-world or mathematical problem; understand that a variable can represent an unknown number, or, depending on the purpose at hand, any number in a specified set.
 notation: 6.EE.B.6
 kind: standard
+concepts:
+  concept-6306a35147f24b2a: 1
+  concept-7af0b3e47c35820f: 1

@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Apply the Pythagorean Theorem to determine unknown side lengths in right triangles in real-world and mathematical problems in two and three dimensions.
 notation: 8.G.B.7
 kind: standard
+concepts:
+  concept-67bc9199a1f31ba3: 1

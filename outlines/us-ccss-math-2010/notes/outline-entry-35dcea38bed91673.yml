@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Recognize that in a multi-digit number, a digit in one place represents 10 times as much as it represents in the place to its right and 1/10 of what it represents in the place to its left.
 notation: 5.NBT.A.1
 kind: standard
+concepts:
+  concept-4d17ad85cc8ef71e: 1

@@ -3,3 +3,8 @@ gestalt: outline-entry@1
 label: Construct linear and exponential functions, including arithmetic and geometric sequences, given a graph, a description of a relationship, or two input-output pairs (include reading these from a table).
 notation: HSF-LE.A.2
 kind: standard
+concepts:
+  concept-1c3d3a4a42ef1393: 0.5
+  concept-aa2c5163cb8653d6: 1
+  concept-dc13cef29d57b990: 0.5
+  concept-915347f3163caf9d: 1

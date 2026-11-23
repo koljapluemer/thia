@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: Find probabilities of compound events using organized lists, tables, tree diagrams, and simulation.
 notation: 7.SP.C.8
 kind: standard
+concepts:
+  concept-4cb329588c534281: 1
+  concept-32e4bc02a7ccf34d: 0.5
+  concept-6f561758051dc6b3: 0.5
 entries:
   - outline-entry-6db482a4bd35440f
   - outline-entry-b4954c18ae36ab08

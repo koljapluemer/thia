@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Classify objects into given categories; count the numbers of objects in each category and sort the categories by count.
 notation: K.MD.B.3
 kind: standard
+concepts:
+  concept-1b767504faa074a8: 1
+  concept-d7dcbffafdb8ebc6: 0.5

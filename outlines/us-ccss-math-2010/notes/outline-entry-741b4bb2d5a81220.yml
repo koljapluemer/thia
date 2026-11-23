@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Identify and describe relationships among inscribed angles, radii, and chords.
 notation: HSG-C.A.2
 kind: standard
+concepts:
+  concept-816bb50f07c5d5bf: 1
+  concept-da9374924a90b410: 1

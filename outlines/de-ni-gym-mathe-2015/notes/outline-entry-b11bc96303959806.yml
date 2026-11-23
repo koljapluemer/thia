@@ -2,5 +2,7 @@ id: outline-entry-b11bc96303959806
 gestalt: outline-entry@1
 label: Brüche im Alltag erkunden
 kind: Kern
+concepts:
+  concept-00cbd63c561c05da: 1
 entries:
   - outline-entry-71487c76666c2689

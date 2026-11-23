@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand subtraction as an unknown-addend problem. For example, subtract 10 - 8 by finding the number that makes 10 when added to 8.
 notation: 1.OA.B.4
 kind: standard
+concepts:
+  concept-87c1b6677dea6e4a: 1
+  concept-63a2798c5fe93c9a: 1

@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Write, read, and evaluate expressions in which letters stand for numbers.
 notation: 6.EE.A.2
 kind: standard
+concepts:
+  concept-6306a35147f24b2a: 1
+  concept-7af0b3e47c35820f: 1
 entries:
   - outline-entry-cbbb160abe106304
   - outline-entry-14787405638c68cf

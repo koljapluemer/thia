@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: Understand a rational number as a point on the number line. Extend number line diagrams and coordinate axes familiar from previous grades to represent points on the line and in the plane with negative number coordinates.
 notation: 6.NS.C.6
 kind: standard
+concepts:
+  concept-8aa6e6c4a2ece627: 0.5
+  concept-4f1860d2eb5f34e4: 1
+  concept-6f72712503b12365: 1
 entries:
   - outline-entry-064055212bc4113b
   - outline-entry-616eb987a642a75f

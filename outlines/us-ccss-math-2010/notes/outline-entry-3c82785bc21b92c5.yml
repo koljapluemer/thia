@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Explain each step in solving a simple equation as following from the equality of numbers asserted at the previous step, starting from the assumption that the original equation has a solution. Construct a viable argument to justify a solution method.
 notation: HSA-REI.A.1
 kind: standard
+concepts:
+  concept-b2681cda9c3323bc: 0.5
+  concept-5ab6acf08e80e357: 1

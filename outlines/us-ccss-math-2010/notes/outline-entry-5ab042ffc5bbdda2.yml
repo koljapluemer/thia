@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: (+) Prove the Laws of Sines and Cosines and use them to solve problems.
 notation: HSG-SRT.D.10
 kind: standard
+concepts:
+  concept-d4fd7a664582db8b: 1
+  concept-d8c0729f8f96d515: 1
+  concept-aed6fc7f9e12c20a: 0.5

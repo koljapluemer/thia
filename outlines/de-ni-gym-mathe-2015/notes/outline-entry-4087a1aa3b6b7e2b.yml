@@ -2,6 +2,8 @@ id: outline-entry-4087a1aa3b6b7e2b
 gestalt: outline-entry@1
 label: natürliche Zahlen darstellen und ordnen
 kind: Kern
+concepts:
+  concept-acdfc8fea87ef392: 1
 entries:
   - outline-entry-48cd992cddf8761d
   - outline-entry-29715d830dc31e5c

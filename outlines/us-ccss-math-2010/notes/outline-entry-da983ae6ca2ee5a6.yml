@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: "Recognize angles as geometric shapes that are formed wherever two rays share a common endpoint, and understand concepts of angle measurement:"
 notation: 4.MD.C.5
 kind: standard
+concepts:
+  concept-6e1402e9f589d210: 1
+  concept-cbfe54abbd8e5fde: 1
 entries:
   - outline-entry-2b06742ca0e38f82
   - outline-entry-94f63d8850527300

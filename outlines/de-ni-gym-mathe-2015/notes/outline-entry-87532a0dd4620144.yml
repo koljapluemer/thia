@@ -2,6 +2,8 @@ id: outline-entry-87532a0dd4620144
 gestalt: outline-entry@1
 label: Wahrscheinlichkeit
 kind: Lernbereich
+concepts:
+  concept-3955f8fd92cda2c1: 1
 entries:
   - outline-entry-d5841da198b3b5c8
   - outline-entry-c669d8cf16b2b72c

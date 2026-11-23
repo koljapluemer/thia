@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Solve a simple system consisting of a linear equation and a quadratic equation in two variables algebraically and graphically. For example, find the points of intersection between the line y = -3x and the circle x² + y² = 3.
 notation: HSA-REI.C.7
 kind: standard
+concepts:
+  concept-cf556713a0182443: 0.5
+  concept-1dd6a28870442545: 1

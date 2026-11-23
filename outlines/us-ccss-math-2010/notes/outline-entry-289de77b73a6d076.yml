@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Know that straight lines are widely used to model relationships between two quantitative variables. For scatter plots that suggest a linear association, informally fit a straight line, and informally assess the model fit by judging the closeness of the data points to the line.
 notation: 8.SP.A.2
 kind: standard
+concepts:
+  concept-9f6183312a353732: 1
+  concept-15166e85871d71b5: 0.5

@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Fluently add and subtract multi-digit whole numbers using the standard algorithm.
 notation: 4.NBT.B.4
 kind: standard
+concepts:
+  concept-77f930e4b1a52703: 1
+  concept-a0e449e4b4011fe8: 1
+  concept-63a2798c5fe93c9a: 1

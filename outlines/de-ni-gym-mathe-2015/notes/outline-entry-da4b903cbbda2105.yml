@@ -2,6 +2,9 @@ id: outline-entry-da4b903cbbda2105
 gestalt: outline-entry@1
 label: Körper und Figuren
 kind: Lernbereich
+concepts:
+  concept-ab0f16ec93dcea05: 1
+  concept-3a59f4e57ca86f1b: 1
 entries:
   - outline-entry-314dd56983fd4450
   - outline-entry-8d2e0831b620d22b

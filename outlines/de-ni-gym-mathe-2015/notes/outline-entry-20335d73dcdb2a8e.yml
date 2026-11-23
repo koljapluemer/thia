@@ -2,6 +2,8 @@ id: outline-entry-20335d73dcdb2a8e
 gestalt: outline-entry@1
 label: positive und negative Zahlen addieren und subtrahieren
 kind: Kern
+concepts:
+  concept-3715a5c08a4bea17: 1
 entries:
   - outline-entry-2d6958dc1d6b6ab9
   - outline-entry-8017afb40e4ddc18

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Apply the general Multiplication Rule in a uniform probability model, P(A and B) = P(A)P(B|A) = P(B)P(A|B), and interpret the answer in terms of the model.
 notation: HSS-CP.B.8
 kind: standard
+concepts:
+  concept-6e67f84d8254f593: 0.5
+  concept-8094ae561c60f5f5: 1

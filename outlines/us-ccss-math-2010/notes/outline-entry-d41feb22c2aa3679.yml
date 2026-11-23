@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Create equations and inequalities in one variable and use them to solve problems. Include equations arising from linear and quadratic functions, and simple rational and exponential functions.
 notation: HSA-CED.A.1
 kind: standard
+concepts:
+  concept-29e52ee0bb9d8b36: 1
+  concept-af1a8417d45e0d76: 1
+  concept-77ece9b508c7afdc: 0.5

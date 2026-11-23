@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use place value understanding to round decimals to any place.
 notation: 5.NBT.A.4
 kind: standard
+concepts:
+  concept-4d17ad85cc8ef71e: 0.5
+  concept-8d17f4312de0db8d: 1
+  concept-9a6aefb4a7505ff2: 1

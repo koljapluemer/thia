@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: (+) Prove the addition and subtraction formulas for sine, cosine, and tangent and use them to solve problems.
 notation: HSF-TF.C.9
 kind: standard
+concepts:
+  concept-1de268f76db7045b: 1

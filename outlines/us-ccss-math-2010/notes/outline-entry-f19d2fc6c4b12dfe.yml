@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Find the point on a directed line segment between two given points that partitions the segment in a given ratio.
 notation: HSG-GPE.B.6
 kind: standard
+concepts:
+  concept-bc1821efefbeb2a7: 1
+  concept-a57fa114a36ae2d3: 0.5

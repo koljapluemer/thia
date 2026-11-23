@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Prove theorems about lines and angles.
 notation: HSG-CO.C.9
 kind: standard
+concepts:
+  concept-7f2858cf2f9cb008: 1
+  concept-aed6fc7f9e12c20a: 1

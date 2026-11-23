@@ -2,6 +2,9 @@ id: outline-entry-024b4307d304ce44
 gestalt: outline-entry@1
 label: quadratische Funktionen untersuchen – Parametervariation
 kind: Kern
+concepts:
+  concept-e311da45639cf62a: 1
+  concept-1853393cbcdcdb7c: 1
 entries:
   - outline-entry-a8c8d9b066f6a5c0
   - outline-entry-5497f15a1785bf60

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Use the method of completing the square to transform any quadratic equation in x into an equation of the form (x - p)² = q that has the same solutions. Derive the quadratic formula from this form.
 notation: HSA-REI.B.4.a
 kind: component
+concepts:
+  concept-332984e3acf05bf1: 1
+  concept-24423c83c86e81ee: 1

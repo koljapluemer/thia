@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Calculate and interpret the average rate of change of a function (presented symbolically or as a table) over a specified interval. Estimate the rate of change from a graph.
 notation: HSF-IF.B.6
 kind: standard
+concepts:
+  concept-989e22e90082d14f: 1

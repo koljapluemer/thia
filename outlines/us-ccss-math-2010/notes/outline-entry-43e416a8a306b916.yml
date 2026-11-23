@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Know that numbers that are not rational are called irrational. Understand informally that every number has a decimal expansion; for rational numbers show that the decimal expansion repeats eventually, and convert a decimal expansion which repeats eventually into a rational number.
 notation: 8.NS.A.1
 kind: standard
+concepts:
+  concept-9d11981ea7ad94ab: 1
+  concept-c17d3666cb6590e3: 0.5
+  concept-6f72712503b12365: 0.5

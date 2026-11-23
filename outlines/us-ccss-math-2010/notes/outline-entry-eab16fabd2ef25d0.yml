@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Explain a proof of the Pythagorean Theorem and its converse.
 notation: 8.G.B.6
 kind: standard
+concepts:
+  concept-67bc9199a1f31ba3: 1
+  concept-aed6fc7f9e12c20a: 0.5

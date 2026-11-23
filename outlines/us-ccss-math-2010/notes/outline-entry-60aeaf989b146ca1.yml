@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Use facts about supplementary, complementary, vertical, and adjacent angles in a multi-step problem to write and solve simple equations for an unknown angle in a figure.
 notation: 7.G.B.5
 kind: standard
+concepts:
+  concept-7f2858cf2f9cb008: 1

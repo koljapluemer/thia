@@ -2,6 +2,10 @@ id: outline-entry-e71b45033879c071
 gestalt: outline-entry@1
 label: Dreiecke und Vierecke nach Symmetrien lokal ordnen
 kind: Kern
+concepts:
+  concept-66716cb4884e4372: 1
+  concept-3781049acb7fd5d7: 0.5
+  concept-5b72fd8854e740a6: 1
 entries:
   - outline-entry-f21e74bbbb5df1e9
   - outline-entry-00b8eea1643556dd

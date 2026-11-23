@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Directly compare two objects with a measurable attribute in common, to see which object has "more of"/"less of" the attribute, and describe the difference. For example, directly compare the heights of two children and describe one child as taller/shorter.
 notation: K.MD.A.2
 kind: standard
+concepts:
+  concept-5a1524707c40786c: 1
+  concept-2e63ebbc56e18006: 1

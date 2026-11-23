@@ -3,6 +3,8 @@ gestalt: outline-entry@1
 label: Solve linear equations in one variable.
 notation: 8.EE.C.7
 kind: standard
+concepts:
+  concept-af1a8417d45e0d76: 1
 entries:
   - outline-entry-35379e9298b067b0
   - outline-entry-15e272ee138d8fb9

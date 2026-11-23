@@ -2,6 +2,9 @@ id: outline-entry-4001c728f69cf6db
 gestalt: outline-entry@1
 label: Umfang und Flächeninhalt von Dreieck, Parallelogramm, Trapez
 kind: Kern
+concepts:
+  concept-04c56071c6e237ee: 1
+  concept-6dc449e2bfbd53f4: 1
 entries:
   - outline-entry-cebe250407c67303
   - outline-entry-4bcf974824f8b58e

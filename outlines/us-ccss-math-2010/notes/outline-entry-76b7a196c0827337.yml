@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Know precise definitions of angle, circle, perpendicular line, parallel line, and line segment, based on the undefined notions of point, line, distance along a line, and distance around a circular arc.
 notation: HSG-CO.A.1
 kind: standard
+concepts:
+  concept-6e1402e9f589d210: 0.5
+  concept-816bb50f07c5d5bf: 0.5
+  concept-c5b63d2fea78f31a: 1

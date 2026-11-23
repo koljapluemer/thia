@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Construct a function to model a linear relationship between two quantities. Determine the rate of change and initial value of the function from a description of a relationship or from two (x, y) values, including reading these from a table or from a graph. Interpret the rate of change and initial value of a linear function in terms of the situation it models, and in terms of its graph or a table of values.
 notation: 8.F.B.4
 kind: standard
+concepts:
+  concept-915347f3163caf9d: 1
+  concept-77ece9b508c7afdc: 0.5
+  concept-989e22e90082d14f: 1

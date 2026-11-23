@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: (+) Use the unit circle to explain symmetry (odd and even) and periodicity of trigonometric functions.
 notation: HSF-TF.A.4
 kind: standard
+concepts:
+  concept-43d7e1d922025a1c: 0.5
+  concept-0bb8334069a6e3d0: 1
+  concept-c8648574227bb895: 1

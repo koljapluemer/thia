@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Describe the two-dimensional figures that result from slicing three-dimensional figures, as in plane sections of right rectangular prisms and right rectangular pyramids.
 notation: 7.G.A.3
 kind: standard
+concepts:
+  concept-46039241e9b96f03: 1
+  concept-ab0f16ec93dcea05: 0.5

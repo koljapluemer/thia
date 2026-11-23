@@ -3,6 +3,10 @@ gestalt: outline-entry@1
 label: Apply and extend previous understandings of addition and subtraction to add and subtract rational numbers; represent addition and subtraction on a horizontal or vertical number line diagram.
 notation: 7.NS.A.1
 kind: standard
+concepts:
+  concept-3715a5c08a4bea17: 1
+  concept-4f1860d2eb5f34e4: 0.5
+  concept-6f72712503b12365: 1
 entries:
   - outline-entry-5dd2dd335f68c8b6
   - outline-entry-ffd76b0aff7fcdc5

@@ -2,6 +2,9 @@ id: outline-entry-314dd56983fd4450
 gestalt: outline-entry@1
 label: Formen in Raum und Ebene erkunden
 kind: Kern
+concepts:
+  concept-ab0f16ec93dcea05: 1
+  concept-3a59f4e57ca86f1b: 1
 entries:
   - outline-entry-83f7c7f13104725c
   - outline-entry-1e064d8c182e10a1

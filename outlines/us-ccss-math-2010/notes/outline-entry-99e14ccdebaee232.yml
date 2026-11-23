@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Solve problems involving velocity and other quantities that can be represented by vectors.
 notation: HSN-VM.A.3
 kind: standard
+concepts:
+  concept-29a6a5e3c3986276: 1
+  concept-7b26a7ad5a57a420: 0.5

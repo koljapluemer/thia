@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Multiply a vector (regarded as a matrix with one column) by a matrix of suitable dimensions to produce another vector. Work with matrices as transformations of vectors.
 notation: HSN-VM.C.11
 kind: standard
+concepts:
+  concept-470180795d139606: 1
+  concept-29a6a5e3c3986276: 1

@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Rewrite simple rational expressions in different forms; write a(x)/b(x) in the form q(x) + r(x)/b(x), where a(x), b(x), q(x), and r(x) are polynomials with the degree of r(x) less than the degree of b(x), using inspection, long division, or, for the more complicated examples, a computer algebra system.
 notation: HSA-APR.D.6
 kind: standard
+concepts:
+  concept-e4837b6c5f3bdd20: 1
+  concept-7fe2fd2482e4751b: 1

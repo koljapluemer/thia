@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Understand that a two-dimensional figure is similar to another if the second can be obtained from the first by a sequence of rotations, reflections, translations, and dilations; given two similar two-dimensional figures, describe a sequence that exhibits the similarity between them.
 notation: 8.G.A.4
 kind: standard
+concepts:
+  concept-c84781f2113775ec: 0.5
+  concept-8cc0e56b16368984: 1

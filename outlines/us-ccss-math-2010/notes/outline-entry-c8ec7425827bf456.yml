@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Solve systems of linear equations exactly and approximately (e.g., with graphs), focusing on pairs of linear equations in two variables.
 notation: HSA-REI.C.6
 kind: standard
+concepts:
+  concept-58f80e904467155c: 1

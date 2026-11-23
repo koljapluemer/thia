@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Write arithmetic and geometric sequences both recursively and with an explicit formula, use them to model situations, and translate between the two forms.
 notation: HSF-BF.A.2
 kind: standard
+concepts:
+  concept-1c3d3a4a42ef1393: 1
+  concept-dc13cef29d57b990: 1
+  concept-8ea1f510bfe2177d: 0.5

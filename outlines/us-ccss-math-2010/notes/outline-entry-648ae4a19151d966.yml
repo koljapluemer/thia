@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Prove polynomial identities and use them to describe numerical relationships. For example, the polynomial identity (x² + y²)2 = (x² — y²)² + (2xy)² can be used to generate Pythagorean triples.
 notation: HSA-APR.C.4
 kind: standard
+concepts:
+  concept-74a2d88d86cd65c4: 1

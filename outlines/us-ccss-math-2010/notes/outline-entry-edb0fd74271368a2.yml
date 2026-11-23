@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: (+) Multiply matrices by scalars to produce new matrices, e.g., as when all of the payoffs in a game are doubled.
 notation: HSN-VM.C.7
 kind: standard
+concepts:
+  concept-3b095cb6d8b6dffd: 1
+  concept-2e74d357a05c0c49: 1

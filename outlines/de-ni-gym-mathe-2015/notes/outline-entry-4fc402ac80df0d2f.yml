@@ -2,6 +2,9 @@ id: outline-entry-4fc402ac80df0d2f
 gestalt: outline-entry@1
 label: mit Schrägbildern und Netzen umgehen
 kind: Kern
+concepts:
+  concept-43f24f50a09d2d94: 1
+  concept-eaa30108dc09591d: 1
 entries:
   - outline-entry-03b74b6f22d984ca
   - outline-entry-48596fe23e6e6873

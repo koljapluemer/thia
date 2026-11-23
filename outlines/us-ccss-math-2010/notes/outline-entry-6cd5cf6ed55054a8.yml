@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: "Interpret multiplication as scaling (resizing), by:"
 notation: 5.NF.B.5
 kind: standard
+concepts:
+  concept-1347ac189dae80e2: 1
+  concept-567cf013bf70f18f: 1
 entries:
   - outline-entry-93d4ed50860e342d
   - outline-entry-f23e61df9df7395f

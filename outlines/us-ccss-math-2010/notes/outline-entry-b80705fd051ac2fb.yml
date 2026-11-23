@@ -3,6 +3,9 @@ gestalt: outline-entry@1
 label: Distinguish between situations that can be modeled with linear functions and with exponential functions.
 notation: HSF-LE.A.1
 kind: standard
+concepts:
+  concept-aa2c5163cb8653d6: 1
+  concept-915347f3163caf9d: 1
 entries:
   - outline-entry-99d7b5de8cb8a520
   - outline-entry-be67daf402e15ef3

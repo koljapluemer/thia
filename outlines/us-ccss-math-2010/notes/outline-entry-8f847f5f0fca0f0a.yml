@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use the process of factoring and completing the square in a quadratic function to show zeros, extreme values, and symmetry of the graph, and interpret these in terms of a context.
 notation: HSF-IF.C.8.a
 kind: component
+concepts:
+  concept-332984e3acf05bf1: 1
+  concept-1853393cbcdcdb7c: 0.5
+  concept-28716e8284b8e9d2: 1

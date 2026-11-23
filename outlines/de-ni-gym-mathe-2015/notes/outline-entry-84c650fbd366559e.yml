@@ -2,6 +2,9 @@ id: outline-entry-84c650fbd366559e
 gestalt: outline-entry@1
 label: einstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren
 kind: Kern
+concepts:
+  concept-3955f8fd92cda2c1: 1
+  concept-32e4bc02a7ccf34d: 0.5
 entries:
   - outline-entry-2198c6f94f7c1579
   - outline-entry-22c216364130c836

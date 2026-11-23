@@ -3,3 +3,5 @@ gestalt: outline-entry@1
 label: Tell and write time in hours and half-hours using analog and digital clocks.
 notation: 1.MD.B.3
 kind: standard
+concepts:
+  concept-e6ebb444b8533f66: 1

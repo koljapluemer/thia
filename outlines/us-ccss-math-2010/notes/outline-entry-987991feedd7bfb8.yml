@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Use addition and subtraction within 100 to solve word problems involving lengths that are given in the same units, e.g., by using drawings (such as drawings of rulers) and equations with a symbol for the unknown number to represent the problem.
 notation: 2.MD.B.5
 kind: standard
+concepts:
+  concept-77f930e4b1a52703: 0.5
+  concept-37241ef273bbe64d: 1
+  concept-7b26a7ad5a57a420: 1

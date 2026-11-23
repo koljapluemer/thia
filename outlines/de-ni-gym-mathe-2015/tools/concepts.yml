@@ -1,0 +1,789 @@
+# What each entry is about, by its labels from its Lernbereich down, joined by " › ": concept names (canonical
+# English, doc/roadmap/concept-naming.md; existing `math: …` names as they are) to 1 (it is about it), 0.5 (needed or
+# practised) or 0.2 (it comes up). Ours, not the Kultusministerium's.
+
+Umgang mit natürlichen Zahlen:
+  natural numbers: 1
+Umgang mit natürlichen Zahlen › mit natürlichen Zahlen rechnen:
+  basic arithmetic operations: 1
+  natural numbers: 0.5
+Umgang mit natürlichen Zahlen › mit natürlichen Zahlen rechnen › Grundrechenarten in alltagsrelevanten Zahlenräumen anwenden:
+  basic arithmetic operations: 1
+Umgang mit natürlichen Zahlen › mit natürlichen Zahlen rechnen › Grundrechenarten umkehren, auch in Sachsituationen:
+  inverse operations: 1
+  word problems: 0.5
+Umgang mit natürlichen Zahlen › mit natürlichen Zahlen rechnen › Zusammenhänge zwischen den Grundrechenarten auch bei Sachproblemen nutzen:
+  basic arithmetic operations: 0.5
+  word problems: 0.5
+Umgang mit natürlichen Zahlen › mit natürlichen Zahlen rechnen › Rechenregeln auch in Sachzusammenhängen erläutern und zum vorteilhaften Rechnen verwenden:
+  laws of arithmetic: 1
+  "math: order of operations": 0.5
+  mental calculation: 0.5
+Umgang mit natürlichen Zahlen › natürliche Zahlen darstellen und ordnen:
+  natural numbers: 1
+Umgang mit natürlichen Zahlen › natürliche Zahlen darstellen und ordnen › Zahlengerade und Stellenwertsystem sowie bildliche Darstellungen nutzen:
+  number line: 1
+  "math: place value": 1
+Umgang mit natürlichen Zahlen › natürliche Zahlen darstellen und ordnen › Vielfache und Teiler zum vorteilhaften Rechnen verwenden:
+  divisors and multiples: 1
+  mental calculation: 0.5
+Umgang mit natürlichen Zahlen › natürliche Zahlen darstellen und ordnen › Primzahlen identifizieren:
+  prime numbers: 1
+Umgang mit natürlichen Zahlen › runden und schätzen:
+  "math: rounding": 1
+  estimation: 1
+Umgang mit natürlichen Zahlen › Fakultative Erweiterungen › Quadratzahlen:
+  square numbers: 1
+Umgang mit natürlichen Zahlen › Fakultative Erweiterungen › ggT:
+  greatest common divisor: 1
+Umgang mit natürlichen Zahlen › Fakultative Erweiterungen › kgV:
+  least common multiple: 1
+Umgang mit natürlichen Zahlen › Fakultative Erweiterungen › einfache Zahlenfolgen und Zahlenreihen:
+  number sequences: 1
+
+"Körper und Figuren":
+  "geometric solids": 1
+  "plane figures": 1
+"Körper und Figuren › Formen in Raum und Ebene erkunden":
+  "geometric solids": 1
+  "plane figures": 1
+"Körper und Figuren › Formen in Raum und Ebene erkunden › Grundformen geometrischer Körper und Figuren beschreiben, charakterisieren und in der Umwelt identifizieren":
+  "geometric solids": 1
+  "plane figures": 1
+"Körper und Figuren › Formen in Raum und Ebene erkunden › Kantenmodelle von Körpern und Figuren":
+  "geometric solids": 1
+"Körper und Figuren › zueinander parallele und zueinander senkrechte Geraden identifizieren und darstellen":
+  "parallel and perpendicular lines": 1
+"Körper und Figuren › räumliche Objekte darstellen":
+  "geometric solids": 1
+  "spatial reasoning": 0.5
+"Körper und Figuren › räumliche Objekte darstellen › Schrägbilder und Modelle von Würfeln und Quadern":
+  "oblique projection": 1
+  "cuboids": 1
+"Körper und Figuren › räumliche Objekte darstellen › Raumanschauung durch Netze":
+  "nets of solids": 1
+  "spatial reasoning": 0.5
+"Körper und Figuren › Längen, Flächen- und Rauminhalte ermitteln":
+  "perimeter": 1
+  "area": 1
+  "volume": 1
+"Körper und Figuren › Längen, Flächen- und Rauminhalte ermitteln › Vergleichen, schätzen, berechnen":
+  "perimeter": 1
+  "area": 1
+  "volume": 1
+  "estimation": 0.5
+"Körper und Figuren › Längen, Flächen- und Rauminhalte ermitteln › Formeln entwickeln, anwenden und interpretieren":
+  "area formulas": 1
+  "volume formulas": 1
+"Körper und Figuren › Winkel erkunden":
+  "angles": 1
+"Körper und Figuren › Winkel erkunden › Winkel in der Umwelt entdecken":
+  "angles": 1
+"Körper und Figuren › Winkel erkunden › Winkel schätzen, messen und zeichnen":
+  "measuring angles": 1
+  "estimation": 0.5
+"Körper und Figuren › Winkel erkunden › Neben-, Scheitel- und Stufenwinkel":
+  "angle relationships": 1
+"Körper und Figuren › Winkelsummensatz für Innenwinkel in Drei- und Vierecken begründen und anwenden":
+  "angle sum of polygons": 1
+"Körper und Figuren › Fakultative Erweiterungen › Schrägbilder und Modelle weiterer Körper":
+  "oblique projection": 1
+  "geometric solids": 1
+"Körper und Figuren › Fakultative Erweiterungen › Parkettierung":
+  "tessellations": 1
+"Körper und Figuren › Fakultative Erweiterungen › Wechselwinkel":
+  "angle relationships": 1
+"Körper und Figuren › Fakultative Erweiterungen › Winkelsummensatz für Innenwinkel in n-Ecken":
+  "angle sum of polygons": 1
+"Umgang mit Brüchen":
+  "math: fractions": 1
+"Umgang mit Brüchen › Brüche im Alltag erkunden":
+  "math: fractions": 1
+"Umgang mit Brüchen › Brüche im Alltag erkunden › Anteile, Maßstäbe, Prozente, Verhältnisse":
+  "math: fractions": 1
+  "percentages": 1
+  "ratios": 1
+  "scale drawings": 0.5
+"Umgang mit Brüchen › Bruchdarstellungen verwenden":
+  "math: fractions": 1
+"Umgang mit Brüchen › Bruchdarstellungen verwenden › Bildliche, verbale, geometrische und algebraische Bruchdarstellungen":
+  "math: fractions": 1
+"Umgang mit Brüchen › Bruchdarstellungen verwenden › Brüche vergleichen, kürzen und erweitern":
+  "comparing numbers": 1
+  "math: simplifying fractions": 1
+  "equivalent fractions": 1
+"Umgang mit Brüchen › mit Brüchen rechnen":
+  "fraction arithmetic": 1
+"Umgang mit Brüchen › mit Brüchen rechnen › Grundrechenarten mit einfachen Brüchen":
+  "fraction arithmetic": 1
+"Umgang mit Brüchen › mit Brüchen rechnen › Rechenregeln zum vorteilhaften Rechnen verwenden":
+  "laws of arithmetic": 1
+  "fraction arithmetic": 0.5
+"Umgang mit Brüchen › mit Brüchen rechnen › Bruchvorstellungen in Sachzusammenhängen anwenden":
+  "math: fractions": 1
+  "word problems": 0.5
+"Umgang mit Brüchen › mit Brüchen rechnen › Grundrechenarten umkehren, um einfache Gleichungen zu lösen":
+  "inverse operations": 1
+  "solving equations": 0.5
+"Planung und Durchführung statistischer Erhebungen":
+  "statistical surveys": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen":
+  "statistical surveys": 1
+  "data collection": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › Erkenntnisinteresse formulieren":
+  "statistical questions": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › das zu ermittelnde Merkmal identifizieren":
+  "statistical variables": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › die ggf. vorliegende Nichteindeutigkeit des Merkmals diskutieren":
+  "statistical variables": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › vorab Hypothesen aufstellen":
+  "statistical hypotheses": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › die zu befragende bzw. zu beobachtende Stichprobe planen":
+  "sampling": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › Strichlisten zur Aufbereitung der Daten anlegen und nutzen":
+  "tally charts": 1
+"Planung und Durchführung statistischer Erhebungen › eine Befragung oder eine Beobachtung planen und durchführen › Hypothesen prüfen":
+  "statistical hypotheses": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen":
+  "statistical experiments": 1
+  "data collection": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen › Erkenntnisinteresse formulieren":
+  "statistical questions": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen › das zu ermittelnde Merkmal identifizieren":
+  "statistical variables": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen › vorab Hypothesen aufstellen":
+  "statistical hypotheses": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen › die Durchführung planen":
+  "statistical experiments": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen › Tabellen zur Aufbereitung der Daten anlegen und nutzen":
+  "frequency tables": 1
+"Planung und Durchführung statistischer Erhebungen › ein Experiment planen und durchführen › Hypothesen prüfen":
+  "statistical hypotheses": 1
+"Umgang mit Dezimalzahlen":
+  "math: decimals": 1
+"Umgang mit Dezimalzahlen › Dezimalzahlen auf der Zahlengeraden, im Stellenwertsystem und als Bruch darstellen":
+  "math: decimals": 1
+  "number line": 0.5
+  "math: place value": 0.5
+  "math: fractions": 0.5
+"Umgang mit Dezimalzahlen › mit Dezimalzahlen rechnen":
+  "decimal arithmetic": 1
+"Umgang mit Dezimalzahlen › mit Dezimalzahlen rechnen › Grundrechenarten in alltagsrelevanten Zahlenräumen anwenden und mit dem Wissen über das Rechnen mit Brüchen verknüpfen":
+  "decimal arithmetic": 1
+  "fraction arithmetic": 0.5
+"Umgang mit Dezimalzahlen › mit Dezimalzahlen rechnen › Grundrechenarten umkehren, um einfache Gleichungen zu lösen":
+  "inverse operations": 1
+  "solving equations": 0.5
+"Umgang mit Dezimalzahlen › mit Dezimalzahlen rechnen › Rechenregeln in Sachzusammenhängen erläutern und zum vorteilhaften Rechnen verwenden":
+  "laws of arithmetic": 1
+  "decimal arithmetic": 0.5
+"Umgang mit Dezimalzahlen › mit Dezimalzahlen rechnen › Zusammenhänge zwischen den Grundrechenarten auch bei Sachproblemen nutzen":
+  "decimal arithmetic": 0.5
+  "word problems": 0.5
+"Umgang mit Dezimalzahlen › runden und schätzen":
+  "math: rounding": 1
+  "estimation": 1
+  "math: decimals": 0.5
+"Umgang mit Dezimalzahlen › Größen umrechnen":
+  "unit conversion": 1
+"Symmetrien":
+  "symmetry": 1
+"Symmetrien › Ebenensymmetrie, Achsensymmetrie, Punktsymmetrie, Drehsymmetrie beschreiben, auch im Raum":
+  "symmetry": 1
+"Symmetrien › Verschiebungen, Spiegelungen und Drehungen in der Ebene durchführen":
+  "geometric transformations": 1
+"Symmetrien › Dreiecke und Vierecke nach Symmetrien lokal ordnen":
+  "triangles": 1
+  "quadrilaterals": 1
+  "symmetry": 0.5
+"Symmetrien › Dreiecke und Vierecke nach Symmetrien lokal ordnen › Gleichschenkliges und gleichseitiges Dreieck":
+  "triangles": 1
+"Symmetrien › Dreiecke und Vierecke nach Symmetrien lokal ordnen › Haus der Vierecke":
+  "quadrilaterals": 1
+"Symmetrien › Kreise beschreiben und nutzen":
+  "circles": 1
+"Symmetrien › Kreise beschreiben und nutzen › Symmetrie des Kreises":
+  "circles": 1
+  "symmetry": 0.5
+"Symmetrien › Kreise beschreiben und nutzen › Kreis als Ortslinie":
+  "locus": 1
+"Symmetrien › Kreise beschreiben und nutzen › Mittelsenkrechte und Winkelhalbierende als Symmetrieachsen":
+  "perpendicular bisector": 1
+  "angle bisector": 1
+  "symmetry": 0.5
+"Symmetrien › Muster beschreiben und erzeugen":
+  "patterns": 1
+"Symmetrien › Fakultative Erweiterungen › Kugeln und Mittelebenen als Ortsflächen":
+  "spheres": 1
+  "locus": 1
+"Symmetrien › Fakultative Erweiterungen › Parkettierung":
+  "tessellations": 1
+"Maßzahlen statistischer Erhebungen":
+  "descriptive statistics": 1
+"Maßzahlen statistischer Erhebungen › Häufigkeitsverteilungen grafisch darstellen":
+  "frequency distributions": 1
+  "bar charts": 1
+"Maßzahlen statistischer Erhebungen › Häufigkeitsverteilungen grafisch darstellen › Säulendiagramme erstellen; Einfluss der Klassenbreite beschreiben":
+  "bar charts": 1
+  "histograms": 0.5
+"Maßzahlen statistischer Erhebungen › Häufigkeitsverteilungen grafisch darstellen › Informationsreduktion beim Übergang von Rohdaten zum Säulendiagramm begründen":
+  "bar charts": 1
+"Maßzahlen statistischer Erhebungen › Häufigkeitsverteilungen grafisch darstellen › aus Säulendiagrammen Informationen entnehmen":
+  "bar charts": 1
+  "data interpretation": 1
+"Maßzahlen statistischer Erhebungen › Häufigkeitsverteilungen grafisch darstellen › Säulendiagramme kritisch bewerten":
+  "bar charts": 1
+  "data interpretation": 1
+"Maßzahlen statistischer Erhebungen › Häufigkeitsverteilungen grafisch darstellen › Kreisdiagramme lesen":
+  "pie charts": 1
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen":
+  "frequency distributions": 1
+  "measures of central tendency": 0.5
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen › relative Häufigkeit":
+  "relative frequency": 1
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen › die Lageparameter arithmetisches Mittel und Modalwert interpretieren und gegeneinander abgrenzen, insbesondere bei selbst erhobenen Daten":
+  "mean": 1
+  "mode": 1
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen › Lageparameter bestimmten Fragestellungen zuordnen":
+  "measures of central tendency": 1
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen › Spannweite als Streumaß":
+  "range (statistics)": 1
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen › Informationsreduktion beim Übergang vom Säulendiagramm zu den Lageparametern und Streumaßen":
+  "measures of central tendency": 1
+  "measures of spread": 1
+"Maßzahlen statistischer Erhebungen › zwei Häufigkeitsverteilungen vergleichen › Umkehrung der Fragestellung: fiktive Rohdaten mit vorgegebenen Lageparametern und Streumaßen erstellen":
+  "measures of central tendency": 1
+  "measures of spread": 1
+"Umgang mit negativen Zahlen":
+  "negative numbers": 1
+"Umgang mit negativen Zahlen › positive und negative Zahlen an der Zahlengeraden veranschaulichen":
+  "negative numbers": 1
+  "number line": 1
+"Umgang mit negativen Zahlen › positive und negative Zahlen addieren und subtrahieren":
+  "integer arithmetic": 1
+"Umgang mit negativen Zahlen › positive und negative Zahlen addieren und subtrahieren › realitätsnahe Einführung, etwa am Temperaturmodell":
+  "integer arithmetic": 1
+  "negative numbers": 0.5
+"Umgang mit negativen Zahlen › positive und negative Zahlen addieren und subtrahieren › Muster in Rechenreihen beschreiben und fortführen":
+  "integer arithmetic": 1
+  "patterns": 0.5
+"Umgang mit negativen Zahlen › positive Zahlen mit negativen Zahlen multiplizieren und umgekehrt":
+  "integer arithmetic": 1
+"Umgang mit negativen Zahlen › positive Zahlen mit negativen Zahlen multiplizieren und umgekehrt › realitätsnahe Einführung, etwa am Schuldenmodell":
+  "integer arithmetic": 1
+  "negative numbers": 0.5
+"Umgang mit negativen Zahlen › positive Zahlen mit negativen Zahlen multiplizieren und umgekehrt › Muster in Rechenreihen beschreiben und fortführen":
+  "integer arithmetic": 1
+  "patterns": 0.5
+"Umgang mit negativen Zahlen › negative Zahlen mit negativen Zahlen multiplizieren":
+  "integer arithmetic": 1
+"Umgang mit negativen Zahlen › Vorzeichenregeln bei der Division":
+  "integer arithmetic": 1
+"Umgang mit negativen Zahlen › Klammerschreibweise; Umgang mit Vor- und Rechenzeichen":
+  "integer arithmetic": 1
+  "math: order of operations": 1
+"Umgang mit negativen Zahlen › Rechenregeln zum vorteilhaften Rechnen verwenden":
+  "laws of arithmetic": 1
+"Wahrscheinlichkeit":
+  "probability": 1
+"Wahrscheinlichkeit › Versuchsreihen mit teilsymmetrischen Objekten durchführen":
+  "probability": 1
+  "relative frequency": 1
+"Wahrscheinlichkeit › Versuchsreihen mit teilsymmetrischen Objekten durchführen › Vermutungen über Häufigkeiten aufstellen":
+  "relative frequency": 1
+"Wahrscheinlichkeit › Versuchsreihen mit teilsymmetrischen Objekten durchführen › Wahrscheinlichkeit gegen relative Häufigkeit abgrenzen":
+  "probability": 1
+  "relative frequency": 1
+"Wahrscheinlichkeit › Versuchsreihen mit teilsymmetrischen Objekten durchführen › Gesetz der großen Zahlen qualitativ erfahren":
+  "law of large numbers": 1
+"Wahrscheinlichkeit › Versuchsreihen mit teilsymmetrischen Objekten durchführen › Wahrscheinlichkeit als Prognose":
+  "probability": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit unsymmetrischen Objekten durchführen":
+  "probability": 1
+  "relative frequency": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit unsymmetrischen Objekten durchführen › Gesetz der großen Zahlen qualitativ erfahren":
+  "law of large numbers": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit unsymmetrischen Objekten durchführen › Wahrscheinlichkeit als Prognose":
+  "probability": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit vollsymmetrischen Objekten durchführen":
+  "probability": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit vollsymmetrischen Objekten durchführen › Laplace-Wahrscheinlichkeit":
+  "classical probability": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit vollsymmetrischen Objekten durchführen › Wahrscheinlichkeit gegen relative Häufigkeit abgrenzen":
+  "probability": 1
+  "relative frequency": 1
+"Wahrscheinlichkeit › eine Versuchsreihe mit vollsymmetrischen Objekten durchführen › Gesetz der großen Zahlen qualitativ erfahren":
+  "law of large numbers": 1
+"Wahrscheinlichkeit › Additions- und Komplementärregel begründen und anwenden":
+  "addition rule of probability": 1
+  "complementary events": 1
+"Wahrscheinlichkeit › Fakultative Erweiterungen › Erwartungswert eines Gewinns":
+  "expected value": 1
+"Proportionale und antiproportionale Zusammenhänge":
+  "proportionality": 1
+  "inverse proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › Zuordnungen erfassen":
+  "functions": 1
+  "representations of functions": 1
+"Proportionale und antiproportionale Zusammenhänge › Zuordnungen erfassen › Beschreibung durch Worte, Tabellen und Graphen":
+  "representations of functions": 1
+"Proportionale und antiproportionale Zusammenhänge › Zuordnungen erfassen › zwischen Darstellungsformen wechseln":
+  "representations of functions": 1
+"Proportionale und antiproportionale Zusammenhänge › proportionale Zusammenhänge erfassen":
+  "proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › proportionale Zusammenhänge erfassen › grafisches und tabellarisches Identifizieren":
+  "proportionality": 1
+  "representations of functions": 0.5
+"Proportionale und antiproportionale Zusammenhänge › proportionale Zusammenhänge erfassen › Abgrenzung zu anderen „Je-mehr-desto-mehr“-Zusammenhängen":
+  "proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › proportionale Zusammenhänge erfassen › Dreisatz zur Berechnung":
+  "rule of three": 1
+"Proportionale und antiproportionale Zusammenhänge › proportionale Zusammenhänge erfassen › Quotient als „Betrag pro Einheit“":
+  "unit rate": 1
+"Proportionale und antiproportionale Zusammenhänge › proportionale Zusammenhänge erfassen › Zuordnungsvorschrift":
+  "proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › antiproportionale Zusammenhänge erfassen":
+  "inverse proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › antiproportionale Zusammenhänge erfassen › grafisches und tabellarisches Identifizieren":
+  "inverse proportionality": 1
+  "representations of functions": 0.5
+"Proportionale und antiproportionale Zusammenhänge › antiproportionale Zusammenhänge erfassen › Abgrenzung zu anderen „Je-mehr-desto-weniger“-Zusammenhängen":
+  "inverse proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › antiproportionale Zusammenhänge erfassen › Dreisatz zur Berechnung":
+  "rule of three": 1
+"Proportionale und antiproportionale Zusammenhänge › antiproportionale Zusammenhänge erfassen › Produkt als „Gesamtgröße“":
+  "inverse proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › antiproportionale Zusammenhänge erfassen › Zuordnungsvorschrift":
+  "inverse proportionality": 1
+"Proportionale und antiproportionale Zusammenhänge › Prozent- und Zinsrechnung mithilfe des Dreisatzes":
+  "percentages": 1
+  "interest": 1
+  "rule of three": 0.5
+"Proportionale und antiproportionale Zusammenhänge › Fakultative Erweiterungen › Zinseszinsen":
+  "compound interest": 1
+"Längen, Flächen- und Rauminhalte und deren Terme":
+  "area": 1
+  "volume": 1
+  "algebraic expressions": 0.5
+"Längen, Flächen- und Rauminhalte und deren Terme › Umfang und Flächeninhalt von Dreieck, Parallelogramm, Trapez":
+  "area of polygons": 1
+  "perimeter": 1
+"Längen, Flächen- und Rauminhalte und deren Terme › Umfang und Flächeninhalt von Dreieck, Parallelogramm, Trapez › vergleichen, schätzen, berechnen":
+  "area of polygons": 1
+  "perimeter": 1
+  "estimation": 0.5
+"Längen, Flächen- und Rauminhalte und deren Terme › Umfang und Flächeninhalt von Dreieck, Parallelogramm, Trapez › Formeln begründen, anwenden und interpretieren":
+  "area formulas": 1
+"Längen, Flächen- und Rauminhalte und deren Terme › Oberflächen- und Rauminhalt des Prismas":
+  "prisms": 1
+  "surface area": 1
+  "volume": 1
+"Längen, Flächen- und Rauminhalte und deren Terme › Oberflächen- und Rauminhalt des Prismas › vergleichen, schätzen, berechnen":
+  "prisms": 1
+  "surface area": 1
+  "volume": 1
+  "estimation": 0.5
+"Längen, Flächen- und Rauminhalte und deren Terme › Oberflächen- und Rauminhalt des Prismas › Formeln begründen, anwenden und interpretieren":
+  "volume formulas": 1
+  "surface area": 1
+"Längen, Flächen- und Rauminhalte und deren Terme › mit Schrägbildern und Netzen umgehen":
+  "oblique projection": 1
+  "nets of solids": 1
+"Längen, Flächen- und Rauminhalte und deren Terme › mit Schrägbildern und Netzen umgehen › vergleichen und interpretieren":
+  "oblique projection": 1
+  "nets of solids": 1
+"Längen, Flächen- und Rauminhalte und deren Terme › mit Schrägbildern und Netzen umgehen › zwischen verschiedenen Darstellungen wechseln":
+  "oblique projection": 1
+  "nets of solids": 1
+  "spatial reasoning": 0.5
+"Längen, Flächen- und Rauminhalte und deren Terme › Fakultative Erweiterungen › Raute":
+  "quadrilaterals": 1
+  "area of polygons": 0.5
+"Längen, Flächen- und Rauminhalte und deren Terme › Fakultative Erweiterungen › Drachenviereck":
+  "quadrilaterals": 1
+  "area of polygons": 0.5
+"Elementare Termumformungen":
+  "algebraic expressions": 1
+"Elementare Termumformungen › einfache Termumformungen durchführen":
+  "algebraic expressions": 1
+"Elementare Termumformungen › einfache Termumformungen durchführen › gleichartige Terme zusammenfassen":
+  "like terms": 1
+"Elementare Termumformungen › einfache Termumformungen durchführen › ausmultiplizieren":
+  "distributive property": 1
+"Elementare Termumformungen › einfache Termumformungen durchführen › ausklammern":
+  "factoring": 1
+"Elementare Termumformungen › Summen multiplizieren":
+  "expanding products": 1
+"Elementare Termumformungen › Summen multiplizieren › unterschiedliche Summen ausmultiplizieren":
+  "expanding products": 1
+"Elementare Termumformungen › Summen multiplizieren › Binomische Formeln als Spezialfall anwenden":
+  "special products": 1
+"Elementare Termumformungen › einfache lineare Gleichungen lösen":
+  "linear equations": 1
+"Elementare Termumformungen › einfache Verhältnisgleichungen lösen":
+  "proportions": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien":
+  "triangles": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Dreiecke konstruieren":
+  "triangle construction": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Dreiecke konstruieren › vier Grundkonstruktionen":
+  "triangle construction": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Dreiecke konstruieren › Kongruenz":
+  "congruence": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Satz des Thales begründen und anwenden":
+  "Thales's theorem": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Transversalen erkunden":
+  "triangle centers": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Transversalen erkunden › Mittelsenkrechten, Winkelhalbierenden, Seitenhalbierenden, Höhen identifizieren und konstruieren":
+  "perpendicular bisector": 1
+  "angle bisector": 1
+  "median (geometry)": 1
+  "altitude (triangle)": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Transversalen erkunden › Parallelen, Mittelsenkrechten und Winkelhalbierenden als Ortslinien identifizieren":
+  "locus": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Transversalen erkunden › Schnittpunkte von Mittelsenkrechten und Winkelhalbierenden begründen":
+  "triangle centers": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Transversalen erkunden › ausgewählte komplexere Dreieckskonstruktionen durchführen":
+  "triangle construction": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Fakultative Erweiterungen › Umkreis":
+  "circumcircle": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Fakultative Erweiterungen › Inkreis":
+  "incircle": 1
+"Entdeckungen an Dreiecken – Konstruktionen und besondere Linien › Fakultative Erweiterungen › Begründungen mit Kongruenzsätzen":
+  "congruence": 1
+"Ein- und mehrstufige Zufallsversuche":
+  "probability": 1
+  "multistage experiments": 1
+"Ein- und mehrstufige Zufallsversuche › einstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren":
+  "probability": 1
+  "simulation": 0.5
+"Ein- und mehrstufige Zufallsversuche › einstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › Prognose absoluter Häufigkeiten":
+  "probability": 1
+"Ein- und mehrstufige Zufallsversuche › einstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › die Prognose mit dem Ausgang eines mehrfach durchgeführten Zufallsexperiments vergleichen":
+  "relative frequency": 1
+"Ein- und mehrstufige Zufallsversuche › einstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › qualitative Beurteilung der Prognose in Abhängigkeit von der Anzahl der Versuchsdurchführungen; Zusammenhang zum Gesetz der großen Zahlen":
+  "law of large numbers": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren":
+  "multistage experiments": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › Darstellung im Baumdiagramm":
+  "tree diagrams": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › Prognose absoluter Häufigkeiten":
+  "multistage experiments": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › die Prognose mit dem Ausgang eines mehrfach durchgeführten Zufallsexperiments vergleichen":
+  "relative frequency": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › Variabilität der erzielten absoluten Häufigkeiten":
+  "relative frequency": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › die Pfadregeln mithilfe von absoluten Häufigkeiten begründen":
+  "tree diagrams": 1
+"Ein- und mehrstufige Zufallsversuche › zwei- und mehrstufige Zufallsexperimente mit bekannten Pfad-Wahrscheinlichkeiten prognostizieren, durchführen und simulieren › die Pfadregeln anwenden":
+  "tree diagrams": 1
+"Ein- und mehrstufige Zufallsversuche › Fakultative Erweiterungen › Summenverteilung beim zweimaligen Würfeln":
+  "probability distributions": 1
+"Ein- und mehrstufige Zufallsversuche › Fakultative Erweiterungen › Erwartungswerte":
+  "expected value": 1
+"Lineare Zusammenhänge":
+  "linear functions": 1
+"Lineare Zusammenhänge › lineare Zusammenhänge identifizieren und darstellen":
+  "linear functions": 1
+  "representations of functions": 0.5
+"Lineare Zusammenhänge › lineare Zusammenhänge identifizieren und darstellen › Sachtext, Diagramm, Tabelle, Koordinatensystem, Gleichung":
+  "representations of functions": 1
+"Lineare Zusammenhänge › lineare Zusammenhänge identifizieren und darstellen › Wechsel und Beziehungen der Darstellungsformen":
+  "representations of functions": 1
+"Lineare Zusammenhänge › lineare Zusammenhänge identifizieren und darstellen › hilfsmittelfreies Zeichnen von Geraden":
+  "graphs of functions": 1
+"Lineare Zusammenhänge › lineare Zusammenhänge identifizieren und darstellen › Abgrenzung gegen nicht-lineare Zusammenhänge":
+  "linear functions": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen":
+  "linear functions": 1
+  "linear equations": 0.5
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Bezug Funktionsterm, Funktionsgleichung und Funktionsgraph":
+  "linear functions": 1
+  "graphs of functions": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Steigungsdreieck, y-Achsenabschnitt und Nullstelle":
+  "slope": 1
+  "y-intercept": 1
+  "zeros of functions": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Steigung als konstante Änderungsrate":
+  "slope": 1
+  "rate of change": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Parametervariationen in Funktionsgleichung und Funktionsgraph":
+  "linear functions": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Modellierung von Sachproblemen":
+  "mathematical modelling": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Geradengleichungen aus zwei Punkten bestimmen, in einfachen Fällen hilfsmittelfrei":
+  "linear functions": 1
+  "slope": 0.5
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Ausgleichsgeraden zeichnerisch finden":
+  "linear regression": 1
+"Lineare Zusammenhänge › lineare Funktionen und lineare Gleichungen analysieren und vergleichen › Ausgleichsgeraden mithilfe des Regressionsmoduls oder Parametervariation bestimmen":
+  "linear regression": 1
+"Lineare Zusammenhänge › lineare Gleichungen lösen":
+  "linear equations": 1
+"Lineare Zusammenhänge › lineare Gleichungen lösen › Lösen durch Probieren und Rückwärtsarbeiten":
+  "linear equations": 1
+"Lineare Zusammenhänge › lineare Gleichungen lösen › Lösen einfacher linearer Gleichungen hilfsmittelfrei":
+  "linear equations": 1
+"Lineare Zusammenhänge › lineare Gleichungen lösen › Lösen linearer Gleichungen mit digitalen Mathematikwerkzeugen":
+  "linear equations": 1
+"Lineare Zusammenhänge › lineare Gleichungssysteme mit zwei Variablen aufstellen und lösen":
+  "systems of linear equations": 1
+"Lineare Zusammenhänge › lineare Gleichungssysteme mit zwei Variablen aufstellen und lösen › Sachprobleme modellieren":
+  "systems of linear equations": 1
+  "mathematical modelling": 0.5
+"Lineare Zusammenhänge › lineare Gleichungssysteme mit zwei Variablen aufstellen und lösen › Bezug LGS und Graph, auch im Hinblick auf die Lösbarkeit":
+  "systems of linear equations": 1
+  "graphs of functions": 0.5
+"Lineare Zusammenhänge › lineare Gleichungssysteme mit zwei Variablen aufstellen und lösen › Lösen einfacher LGS grafisch und mit Einsetzungs- und Gleichsetzungsverfahren":
+  "systems of linear equations": 1
+"Lineare Zusammenhänge › lineare Gleichungssysteme mit zwei Variablen aufstellen und lösen › Lösen komplexer LGS mit digitalen Mathematikwerkzeugen":
+  "systems of linear equations": 1
+"Baumdiagramme und Vierfeldertafeln":
+  "two-way tables": 1
+  "tree diagrams": 1
+"Baumdiagramme und Vierfeldertafeln › Daten mit zwei unterschiedlichen Merkmalen darstellen und analysieren":
+  "two-way tables": 1
+  "tree diagrams": 1
+"Baumdiagramme und Vierfeldertafeln › Daten mit zwei unterschiedlichen Merkmalen darstellen und analysieren › Einträge in Baumdiagramm und Vierfeldertafel vervollständigen":
+  "two-way tables": 1
+  "tree diagrams": 1
+"Baumdiagramme und Vierfeldertafeln › Daten mit zwei unterschiedlichen Merkmalen darstellen und analysieren › zwischen diesen Darstellungen wechseln":
+  "two-way tables": 1
+  "tree diagrams": 1
+"Baumdiagramme und Vierfeldertafeln › zweistufige Zufallsexperimente darstellen und analysieren":
+  "multistage experiments": 1
+  "tree diagrams": 1
+  "two-way tables": 1
+"Baumdiagramme und Vierfeldertafeln › zweistufige Zufallsexperimente darstellen und analysieren › Einträge in Baumdiagramm und Vierfeldertafel vervollständigen":
+  "two-way tables": 1
+  "tree diagrams": 1
+"Baumdiagramme und Vierfeldertafeln › zweistufige Zufallsexperimente darstellen und analysieren › zwischen diesen Darstellungen wechseln":
+  "two-way tables": 1
+  "tree diagrams": 1
+"Baumdiagramme und Vierfeldertafeln › unbekannte Wahrscheinlichkeiten ermitteln und interpretieren":
+  "conditional probability": 1
+"Baumdiagramme und Vierfeldertafeln › Fakultative Erweiterungen › Einheitsquadrat zur Visualisierung":
+  "conditional probability": 1
+"Baumdiagramme und Vierfeldertafeln › Fakultative Erweiterungen › iteratives Lernen aus Erfahrung":
+  "conditional probability": 1
+"Baumdiagramme und Vierfeldertafeln › Fakultative Erweiterungen › ausgewählte funktionale Zusammenhänge":
+  "conditional probability": 1
+  "functions": 0.5
+"Baumdiagramme und Vierfeldertafeln › Fakultative Erweiterungen › Veranschaulichung der Variabilität durch Simulationen":
+  "simulation": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit":
+  "similarity": 1
+  "Pythagorean theorem": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Ähnlichkeit beschreiben und nutzen":
+  "similarity": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Ähnlichkeit beschreiben und nutzen › zueinander ähnliche Dreiecke identifizieren":
+  "similarity": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Ähnlichkeit beschreiben und nutzen › Ähnlichkeitssätze für Dreiecke":
+  "similarity": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Ähnlichkeit beschreiben und nutzen › Streckenlängen berechnen":
+  "similarity": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Satzgruppe des Pythagoras begründen und anwenden":
+  "Pythagorean theorem": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › mit Wurzeln umgehen":
+  "square roots": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › mit Wurzeln umgehen › Wurzelziehen als Umkehroperation":
+  "square roots": 1
+  "inverse operations": 0.5
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › mit Wurzeln umgehen › Rechengesetze exemplarisch begründen":
+  "square roots": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › mit Wurzeln umgehen › Anwendung zur Streckenberechnung":
+  "square roots": 1
+  "Pythagorean theorem": 0.5
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › trigonometrische Beziehungen identifizieren und nutzen":
+  "trigonometric ratios": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › trigonometrische Beziehungen identifizieren und nutzen › Berechnungen in rechtwinkligen Dreiecken mit Sinus, Kosinus, Tangens":
+  "trigonometric ratios": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › trigonometrische Beziehungen identifizieren und nutzen › Tangens als Steigungsmaß":
+  "trigonometric ratios": 1
+  "slope": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Berechnungen an allgemeinen Dreiecken":
+  "law of sines": 1
+  "law of cosines": 1
+"Entdeckungen an rechtwinkligen Dreiecken und Ähnlichkeit › Berechnungen an allgemeinen Dreiecken › Sinussatz, Kosinussatz":
+  "law of sines": 1
+  "law of cosines": 1
+"Quadratische Zusammenhänge":
+  "quadratic functions": 1
+"Quadratische Zusammenhänge › quadratische Funktionen untersuchen – Parametervariation":
+  "quadratic functions": 1
+  "parabolas": 1
+"Quadratische Zusammenhänge › quadratische Funktionen untersuchen – Parametervariation › Zusammenhang von Funktionsgleichung und -graph für f(x) = a · x² + b · x + c":
+  "quadratic functions": 1
+  "parabolas": 1
+"Quadratische Zusammenhänge › quadratische Funktionen untersuchen – Parametervariation › Zusammenhang von Funktionsgleichung und -graph für f(x) = a · (x − m) · (x − n)":
+  "quadratic functions": 1
+  "factored form": 1
+"Quadratische Zusammenhänge › quadratische Funktionen untersuchen – Parametervariation › Zusammenhang von Funktionsgleichung und -graph für f(x) = a · (x − d)² + e":
+  "quadratic functions": 1
+  "vertex form": 1
+"Quadratische Zusammenhänge › quadratische Funktionen untersuchen – Parametervariation › Wechsel zwischen den Formen":
+  "quadratic functions": 1
+"Quadratische Zusammenhänge › quadratische Funktionen untersuchen – Parametervariation › hilfsmittelfreies Skizzieren von Parabeln":
+  "parabolas": 1
+"Quadratische Zusammenhänge › quadratische Gleichungen":
+  "quadratic equations": 1
+"Quadratische Zusammenhänge › quadratische Gleichungen › Verknüpfung der Lösung mit den Eigenschaften des Graphen und der Struktur des Terms":
+  "quadratic equations": 1
+  "zeros of functions": 1
+"Quadratische Zusammenhänge › quadratische Gleichungen › x² + p · x = 0 und x² + q = 0 hilfsmittelfrei lösen":
+  "quadratic equations": 1
+"Quadratische Zusammenhänge › quadratische Gleichungen › x² + p · x + q = 0, a · x² + b · x = 0, a · x² + c = 0 und a · (x − d)² + e = 0 lösen, in einfachen Fällen auch hilfsmittelfrei":
+  "quadratic equations": 1
+"Quadratische Zusammenhänge › quadratische Zusammenhänge modellieren":
+  "quadratic functions": 1
+  "mathematical modelling": 1
+"Quadratische Zusammenhänge › quadratische Zusammenhänge modellieren › Optimierungsprobleme und Nullstellensuche":
+  "optimization": 1
+  "zeros of functions": 1
+"Quadratische Zusammenhänge › quadratische Zusammenhänge modellieren › Ausgleichsparabeln mithilfe der Parametervariation oder des Regressionsmoduls bestimmen":
+  "regression analysis": 1
+  "quadratic functions": 0.5
+"Quadratische Zusammenhänge › Parabel als Ort aller Punkte, die zu einem Punkt und zu einer Geraden gleichen Abstand haben":
+  "parabolas": 1
+  "locus": 1
+"Quadratische Zusammenhänge › Fakultative Erweiterungen › Deutung des Graphen einer quadratischen Funktion als Überlagerung von Gerade und Parabel":
+  "parabolas": 1
+  "linear functions": 0.5
+"Kreis- und Körperberechnungen":
+  "circles": 1
+  "geometric solids": 1
+"Kreis- und Körperberechnungen › Flächeninhalt und Umfang des Kreises ermitteln":
+  "area of a circle": 1
+  "circumference": 1
+"Kreis- und Körperberechnungen › Flächeninhalt und Umfang des Kreises ermitteln › Weg zur Kreiszahl π":
+  "pi": 1
+"Kreis- und Körperberechnungen › Flächeninhalt und Umfang des Kreises ermitteln › Flächeninhalt und Umfang schätzen und berechnen":
+  "area of a circle": 1
+  "circumference": 1
+"Kreis- und Körperberechnungen › Flächeninhalt und Umfang des Kreises ermitteln › Bogenlänge und Kreisausschnitt":
+  "arc length": 1
+  "circular sector": 1
+"Kreis- und Körperberechnungen › Flächeninhalt und Umfang des Kreises ermitteln › Bogenmaß":
+  "radian": 1
+"Kreis- und Körperberechnungen › Maßzahlen ausgewählter Körper schätzen und berechnen":
+  "surface area": 1
+  "volume": 1
+"Kreis- und Körperberechnungen › Maßzahlen ausgewählter Körper schätzen und berechnen › Oberflächeninhalt und Volumen des Zylinders":
+  "cylinders": 1
+  "surface area": 1
+  "volume": 1
+"Kreis- und Körperberechnungen › Maßzahlen ausgewählter Körper schätzen und berechnen › Oberflächeninhalt und Volumen der Pyramide und des Kegels":
+  "pyramids": 1
+  "cones": 1
+  "surface area": 1
+  "volume": 1
+"Kreis- und Körperberechnungen › Maßzahlen ausgewählter Körper schätzen und berechnen › Oberflächeninhalt und Volumen der Kugel":
+  "spheres": 1
+  "surface area": 1
+  "volume": 1
+"Kreis- und Körperberechnungen › Fakultative Erweiterungen › Weg zum Volumen von Pyramide, Kegel und Kugel":
+  "volume": 1
+  "pyramids": 1
+  "cones": 1
+  "spheres": 1
+"Kreis- und Körperberechnungen › Fakultative Erweiterungen › Weg zum Oberflächeninhalt von Kegel und Kugel":
+  "surface area": 1
+  "cones": 1
+  "spheres": 1
+"Exponentielle Zusammenhänge":
+  "exponential functions": 1
+  "exponential growth": 1
+"Exponentielle Zusammenhänge › exponentielle Wachstums- und Abnahmeprozesse modellieren":
+  "exponential growth": 1
+  "exponential decay": 1
+"Exponentielle Zusammenhänge › exponentielle Wachstums- und Abnahmeprozesse modellieren › Sachsituationen iterativ und explizit modellieren":
+  "recursive definitions": 1
+  "exponential growth": 1
+"Exponentielle Zusammenhänge › exponentielle Wachstums- und Abnahmeprozesse modellieren › lineare und exponentielle Prozesse voneinander abgrenzen":
+  "exponential growth": 1
+  "linear functions": 0.5
+"Exponentielle Zusammenhänge › exponentielle Wachstums- und Abnahmeprozesse modellieren › Überlagerung von linearem und exponentiellem Wachstum untersuchen":
+  "exponential growth": 1
+"Exponentielle Zusammenhänge › exponentielle Wachstums- und Abnahmeprozesse modellieren › Bestimmen der Grenze G beim begrenzten Wachstum":
+  "bounded growth": 1
+"Exponentielle Zusammenhänge › exponentielle Wachstums- und Abnahmeprozesse modellieren › Vergleich der expliziten und iterativen Darstellung":
+  "recursive definitions": 1
+"Exponentielle Zusammenhänge › Exponentialfunktionen untersuchen – Parametervariation":
+  "exponential functions": 1
+"Exponentielle Zusammenhänge › Exponentialfunktionen untersuchen – Parametervariation › Zusammenhang von Funktionsgleichung und -graph für f(x) = a · bˣ + c":
+  "exponential functions": 1
+"Exponentielle Zusammenhänge › Exponentialfunktionen untersuchen – Parametervariation › hilfsmittelfreies Skizzieren der Graphen f(x) = a · bˣ für b > 0":
+  "exponential functions": 1
+"Exponentielle Zusammenhänge › Exponentialfunktionen untersuchen – Parametervariation › Funktionsgleichungen aus zwei Punkten bestimmen, in einfachen Fällen hilfsmittelfrei":
+  "exponential functions": 1
+"Exponentielle Zusammenhänge › Exponentialfunktionen untersuchen – Parametervariation › Ausgleichsfunktionen mithilfe des Regressionsmoduls oder Parametervariation bestimmen":
+  "regression analysis": 1
+  "exponential functions": 0.5
+"Exponentielle Zusammenhänge › mit Potenzen rechnen":
+  "laws of exponents": 1
+"Exponentielle Zusammenhänge › mit Potenzen rechnen › Rechengesetze exemplarisch begründen":
+  "laws of exponents": 1
+"Exponentielle Zusammenhänge › mit Potenzen rechnen › Gleichungen umformen und lösen, in einfachen Fällen auch hilfsmittelfrei":
+  "exponential equations": 1
+"Exponentielle Zusammenhänge › Fakultative Erweiterungen › Spinnweb-Diagramme":
+  "cobweb plot": 1
+  "recursive definitions": 0.5
+"Exponentielle Zusammenhänge › Fakultative Erweiterungen › iterative Modellierung des logistischen Wachstums":
+  "logistic growth": 1
+"Periodische Zusammenhänge":
+  "periodic functions": 1
+"Periodische Zusammenhänge › Sinus- und Kosinusfunktion als periodische Funktion":
+  "sine and cosine functions": 1
+"Periodische Zusammenhänge › Sinus- und Kosinusfunktion als periodische Funktion › Definition am Einheitskreis":
+  "unit circle": 1
+"Periodische Zusammenhänge › Sinus- und Kosinusfunktion als periodische Funktion › Verschiebung des Graphen der Sinusfunktion zum Graphen der Kosinusfunktion":
+  "sine and cosine functions": 1
+"Periodische Zusammenhänge › Sinus- und Kosinusfunktion als periodische Funktion › Darstellung im Grad- und Bogenmaß":
+  "radian": 1
+"Periodische Zusammenhänge › Sinusfunktion untersuchen – Parametervariation":
+  "sine and cosine functions": 1
+"Periodische Zusammenhänge › Sinusfunktion untersuchen – Parametervariation › Zusammenhang von Funktionsgleichung und -graph für f(x) = a · sin(b · (x − c)) + d":
+  "sine and cosine functions": 1
+"Periodische Zusammenhänge › Sinusfunktion untersuchen – Parametervariation › einfache Funktionsgraphen hilfsmittelfrei skizzieren":
+  "sine and cosine functions": 1
+"Periodische Zusammenhänge › periodische Zusammenhänge modellieren":
+  "periodic functions": 1
+  "mathematical modelling": 1
+"Periodische Zusammenhänge › Fakultative Erweiterungen › Modellierung mithilfe des Regressionsmoduls":
+  "regression analysis": 1
+  "periodic functions": 0.5
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen":
+  "limits": 1
+  "real numbers": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben":
+  "limits": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben › ein Verfahren zur Annäherung an irrationale Quadratwurzeln":
+  "square roots": 1
+  "numerical approximation": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben › die Identität 0,9̅ = 1 als Grenzprozess":
+  "math: recurring decimals": 1
+  "limits": 0.5
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben › die Kreiszahl π als Ergebnis eines Grenzprozesses":
+  "pi": 1
+  "limits": 0.5
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben › exponentieller Zerfall und begrenztes Wachstum als Grenzprozesse":
+  "exponential decay": 1
+  "bounded growth": 1
+  "limits": 0.5
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Gemeinsamkeiten und Unterschiede ausgewählter Grenzprozesse beschreiben › Grenzverhalten des Graphen von f mit f(x) = 1/x":
+  "asymptotes": 1
+  "limits": 0.5
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Zahlbereichserweiterungen erläutern":
+  "number systems": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Zahlbereichserweiterungen erläutern › eine exemplarische Irrationalitätsbegründung":
+  "irrational numbers": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Zahlbereichserweiterungen erläutern › Erweiterung der Zahlbereiche zu den reellen Zahlen":
+  "real numbers": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Zahlbereichserweiterungen erläutern › Rückblick auf frühere Zahlbereichserweiterungen":
+  "number systems": 1
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Fakultative Erweiterungen › Grenzverhalten der Graphen von f und g mit f(x) = a ± b/x und g(x) = a · bˣ; b > 0":
+  "asymptotes": 1
+  "limits": 0.5
+"Näherungsverfahren als Grenzprozesse – Zahlbereichserweiterungen › Fakultative Erweiterungen › Grenzprozesse beim Pyramidenvolumen, bei der Kegelmantelfläche und bei der Kugel":
+  "limits": 1
+  "volume": 0.5

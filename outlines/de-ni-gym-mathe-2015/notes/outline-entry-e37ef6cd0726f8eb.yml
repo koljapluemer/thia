@@ -2,6 +2,9 @@ id: outline-entry-e37ef6cd0726f8eb
 gestalt: outline-entry@1
 label: mit natürlichen Zahlen rechnen
 kind: Kern
+concepts:
+  concept-101e9fa65d4f4266: 1
+  concept-acdfc8fea87ef392: 0.5
 entries:
   - outline-entry-1ec72a54ca8dff03
   - outline-entry-22a9c4c7a4fa8ffe

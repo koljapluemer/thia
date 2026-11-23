@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Explain how the unit circle in the coordinate plane enables the extension of trigonometric functions to all real numbers, interpreted as radian measures of angles traversed counterclockwise around the unit circle.
 notation: HSF-TF.A.2
 kind: standard
+concepts:
+  concept-7f4a9d2c6b6024a5: 1
+  concept-c8648574227bb895: 1

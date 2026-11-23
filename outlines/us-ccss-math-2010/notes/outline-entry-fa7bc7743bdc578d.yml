@@ -3,3 +3,7 @@ gestalt: outline-entry@1
 label: Display numerical data in plots on a number line, including dot plots, histograms, and box plots.
 notation: 6.SP.B.4
 kind: standard
+concepts:
+  concept-388d9abedad40f5f: 1
+  concept-555aa7118ae6adec: 1
+  concept-69c2fe6644d3a99c: 1

@@ -2,6 +2,8 @@ id: outline-entry-59bef2307b116097
 gestalt: outline-entry@1
 label: Summen multiplizieren
 kind: Kern
+concepts:
+  concept-07abbc4172269b35: 1
 entries:
   - outline-entry-52b4a6d426ccee29
   - outline-entry-ca94bddf0d5fbff8

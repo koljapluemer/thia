@@ -3,3 +3,6 @@ gestalt: outline-entry@1
 label: Organize, represent, and interpret data with up to three categories; ask and answer questions about the total number of data points, how many in each category, and how many more or less are in one category than in another.
 notation: 1.MD.C.4
 kind: standard
+concepts:
+  concept-9df3096a0f1c47bf: 1
+  concept-e4e4a1256b2c80ca: 1

@@ -1,0 +1,1208 @@
+# What each entry is about, by its code (or, without one, its labels from the top joined by " › "): concept names
+# (canonical English, doc/roadmap/concept-naming.md; existing `math: …` names as they are) to 1 (it is about it), 0.5
+# (needed or practised) or 0.2 (it comes up). Ours, not the standards'.
+
+5.NBT.A:
+  "math: place value": 1
+5.NBT.A.1:
+  "math: place value": 1
+5.NBT.A.2:
+  powers of ten: 1
+  "math: place value": 0.5
+  "math: decimals": 0.5
+5.NBT.A.3:
+  "math: decimals": 1
+  comparing numbers: 0.5
+5.NBT.A.3.a:
+  "math: decimals": 1
+  expanded form: 0.5
+5.NBT.A.3.b:
+  "math: decimals": 1
+  comparing numbers: 1
+5.NBT.A.4:
+  "math: rounding to decimal places": 1
+  "math: rounding": 1
+  "math: place value": 0.5
+5.NBT.B.5:
+  multi-digit multiplication: 1
+5.NBT.B.6:
+  long division: 1
+5.NBT.B.7:
+  decimal arithmetic: 1
+  "math: decimals": 0.5
+
+"K.CC.A.1":
+  "counting": 1
+  "skip counting": 0.5
+"K.CC.A.2":
+  "counting": 1
+"K.CC.A.3":
+  "writing numerals": 1
+  "counting": 0.5
+"K.CC.B.4":
+  "counting": 1
+  "cardinality": 1
+"K.CC.B.5":
+  "counting": 1
+  "cardinality": 1
+"K.CC.C.6":
+  "comparing numbers": 1
+  "counting": 0.5
+"K.CC.C.7":
+  "comparing numbers": 1
+"K.OA.A.1":
+  "addition": 1
+  "subtraction": 1
+"K.OA.A.2":
+  "addition": 1
+  "subtraction": 1
+  "word problems": 1
+"K.OA.A.3":
+  "decomposing numbers": 1
+"K.OA.A.4":
+  "number bonds to ten": 1
+"K.OA.A.5":
+  "addition": 1
+  "subtraction": 1
+  "mental calculation": 0.5
+"K.NBT.A.1":
+  "decomposing numbers": 1
+  "math: place value": 0.5
+"K.MD.A.1":
+  "measurable attributes": 1
+"K.MD.A.2":
+  "measurable attributes": 1
+  "comparing quantities": 1
+"K.MD.B.3":
+  "classifying objects": 1
+  "counting": 0.5
+"K.G.A.1":
+  "plane figures": 1
+  "geometric solids": 1
+  "spatial reasoning": 0.5
+"K.G.A.2":
+  "plane figures": 1
+"K.G.A.3":
+  "plane figures": 1
+  "geometric solids": 1
+"K.G.B.4":
+  "plane figures": 1
+  "geometric solids": 1
+"K.G.B.5":
+  "plane figures": 1
+  "geometric solids": 1
+"K.G.B.6":
+  "composing shapes": 1
+"1.OA.A.1":
+  "addition": 1
+  "subtraction": 1
+  "word problems": 1
+"1.OA.A.2":
+  "addition": 1
+  "word problems": 1
+"1.OA.B.3":
+  "properties of operations": 1
+"1.OA.B.4":
+  "inverse operations": 1
+  "subtraction": 1
+"1.OA.C.5":
+  "counting": 1
+  "addition": 0.5
+  "subtraction": 0.5
+"1.OA.C.6":
+  "addition": 1
+  "subtraction": 1
+  "mental calculation": 1
+"1.OA.D.7":
+  "equal sign": 1
+  "solving equations": 0.5
+"1.OA.D.8":
+  "solving equations": 1
+  "addition": 0.5
+  "subtraction": 0.5
+"1.NBT.A.1":
+  "counting": 1
+  "writing numerals": 0.5
+"1.NBT.B.2":
+  "math: place value": 1
+"1.NBT.B.3":
+  "comparing numbers": 1
+  "math: place value": 0.5
+"1.NBT.C.4":
+  "addition": 1
+  "math: place value": 0.5
+"1.NBT.C.5":
+  "mental calculation": 1
+  "math: place value": 0.5
+"1.NBT.C.6":
+  "subtraction": 1
+  "math: place value": 0.5
+"1.MD.A.1":
+  "measuring length": 1
+  "comparing quantities": 0.5
+"1.MD.A.2":
+  "measuring length": 1
+"1.MD.B.3":
+  "telling time": 1
+"1.MD.C.4":
+  "data interpretation": 1
+  "data representation": 1
+"1.G.A.1":
+  "plane figures": 1
+"1.G.A.2":
+  "composing shapes": 1
+"1.G.A.3":
+  "equal shares": 1
+  "math: fractions": 0.5
+"2.OA.A.1":
+  "addition": 1
+  "subtraction": 1
+  "word problems": 1
+"2.OA.B.2":
+  "addition": 1
+  "subtraction": 1
+  "mental calculation": 1
+"2.OA.C.3":
+  "even and odd numbers": 1
+"2.OA.C.4":
+  "arrays": 1
+  "multiplication": 0.5
+"2.NBT.A.1":
+  "math: place value": 1
+"2.NBT.A.2":
+  "counting": 1
+  "skip counting": 1
+"2.NBT.A.3":
+  "expanded form": 1
+  "writing numerals": 1
+  "math: place value": 0.5
+"2.NBT.A.4":
+  "comparing numbers": 1
+  "math: place value": 0.5
+"2.NBT.B.5":
+  "addition": 1
+  "subtraction": 1
+  "mental calculation": 0.5
+"2.NBT.B.6":
+  "addition": 1
+"2.NBT.B.7":
+  "addition": 1
+  "subtraction": 1
+  "math: place value": 0.5
+"2.NBT.B.8":
+  "mental calculation": 1
+  "math: place value": 0.5
+"2.NBT.B.9":
+  "properties of operations": 1
+  "math: place value": 0.5
+"2.MD.A.1":
+  "measuring length": 1
+"2.MD.A.2":
+  "measuring length": 1
+  "units of measurement": 1
+"2.MD.A.3":
+  "measuring length": 1
+  "estimation": 1
+"2.MD.A.4":
+  "measuring length": 1
+  "subtraction": 0.5
+"2.MD.B.5":
+  "measuring length": 1
+  "word problems": 1
+  "addition": 0.5
+"2.MD.B.6":
+  "number line": 1
+"2.MD.C.7":
+  "telling time": 1
+"2.MD.C.8":
+  "money": 1
+  "word problems": 1
+"2.MD.D.9":
+  "line plots": 1
+  "measuring length": 0.5
+"2.MD.D.10":
+  "picture graphs": 1
+  "bar charts": 1
+"2.G.A.1":
+  "plane figures": 1
+  "geometric solids": 0.5
+"2.G.A.2":
+  "area": 0.5
+  "arrays": 1
+"2.G.A.3":
+  "equal shares": 1
+  "math: fractions": 0.5
+"3.OA.A.1":
+  "multiplication": 1
+"3.OA.A.2":
+  "division": 1
+"3.OA.A.3":
+  "multiplication": 1
+  "division": 1
+  "word problems": 1
+"3.OA.A.4":
+  "solving equations": 1
+  "multiplication": 0.5
+  "division": 0.5
+"3.OA.B.5":
+  "properties of operations": 1
+  "multiplication": 0.5
+"3.OA.B.6":
+  "inverse operations": 1
+  "division": 1
+"3.OA.C.7":
+  "multiplication tables": 1
+  "multiplication": 1
+  "division": 1
+"3.OA.D.8":
+  "word problems": 1
+  "basic arithmetic operations": 1
+  "estimation": 0.5
+"3.OA.D.9":
+  "patterns": 1
+  "multiplication tables": 0.5
+"3.NBT.A.1":
+  "math: rounding": 1
+  "math: place value": 0.5
+"3.NBT.A.2":
+  "addition": 1
+  "subtraction": 1
+"3.NBT.A.3":
+  "multiplication": 1
+  "math: place value": 0.5
+"3.NF.A.1":
+  "math: fractions": 1
+  "unit fractions": 1
+"3.NF.A.2":
+  "math: fractions": 1
+  "number line": 1
+"3.NF.A.3":
+  "equivalent fractions": 1
+  "comparing numbers": 1
+"3.MD.A.1":
+  "telling time": 1
+  "word problems": 0.5
+"3.MD.A.2":
+  "mass": 1
+  "liquid volume": 1
+  "estimation": 0.5
+"3.MD.B.3":
+  "picture graphs": 1
+  "bar charts": 1
+"3.MD.B.4":
+  "line plots": 1
+  "measuring length": 0.5
+"3.MD.C.5":
+  "area": 1
+"3.MD.C.6":
+  "area": 1
+"3.MD.C.7":
+  "area": 1
+  "area of rectangles": 1
+  "multiplication": 0.5
+"3.MD.D.8":
+  "perimeter": 1
+"3.G.A.1":
+  "quadrilaterals": 1
+"3.G.A.2":
+  "equal shares": 1
+  "area": 0.5
+  "math: fractions": 0.5
+"4.OA.A.1":
+  "multiplicative comparison": 1
+"4.OA.A.2":
+  "multiplicative comparison": 1
+  "word problems": 1
+"4.OA.A.3":
+  "word problems": 1
+  "basic arithmetic operations": 1
+  "estimation": 0.5
+"4.OA.B.4":
+  "divisors and multiples": 1
+  "prime numbers": 1
+"4.OA.C.5":
+  "patterns": 1
+"4.NBT.A.1":
+  "math: place value": 1
+"4.NBT.A.2":
+  "writing numerals": 1
+  "expanded form": 1
+  "comparing numbers": 1
+"4.NBT.A.3":
+  "math: rounding": 1
+  "math: place value": 0.5
+"4.NBT.B.4":
+  "addition": 1
+  "subtraction": 1
+  "standard algorithms": 1
+"4.NBT.B.5":
+  "multi-digit multiplication": 1
+"4.NBT.B.6":
+  "long division": 1
+"4.NF.A.1":
+  "equivalent fractions": 1
+"4.NF.A.2":
+  "comparing numbers": 1
+  "math: fractions": 1
+"4.NF.B.3":
+  "fraction arithmetic": 1
+  "mixed numbers": 0.5
+"4.NF.B.4":
+  "fraction arithmetic": 1
+"4.NF.C.5":
+  "equivalent fractions": 1
+  "math: decimals": 0.5
+"4.NF.C.6":
+  "math: decimals": 1
+  "math: fractions": 0.5
+"4.NF.C.7":
+  "comparing numbers": 1
+  "math: decimals": 1
+"4.MD.A.1":
+  "unit conversion": 1
+  "units of measurement": 1
+"4.MD.A.2":
+  "word problems": 1
+  "units of measurement": 0.5
+"4.MD.A.3":
+  "area of rectangles": 1
+  "perimeter": 1
+"4.MD.B.4":
+  "line plots": 1
+  "fraction arithmetic": 0.5
+"4.MD.C.5":
+  "angles": 1
+  "measuring angles": 1
+"4.MD.C.6":
+  "measuring angles": 1
+"4.MD.C.7":
+  "angles": 1
+"4.G.A.1":
+  "lines and angles": 1
+  "parallel and perpendicular lines": 1
+"4.G.A.2":
+  "classifying shapes": 1
+  "parallel and perpendicular lines": 0.5
+  "triangles": 0.5
+"4.G.A.3":
+  "symmetry": 1
+"5.OA.A.1":
+  "math: order of operations": 1
+"5.OA.A.2":
+  "numerical expressions": 1
+"5.OA.B.3":
+  "patterns": 1
+  "coordinate plane": 0.5
+"5.NF.A.1":
+  "fraction arithmetic": 1
+  "equivalent fractions": 0.5
+"5.NF.A.2":
+  "fraction arithmetic": 1
+  "word problems": 1
+  "estimation": 0.5
+"5.NF.B.3":
+  "math: fractions": 1
+  "division": 0.5
+"5.NF.B.4":
+  "fraction arithmetic": 1
+  "area": 0.5
+"5.NF.B.5":
+  "fraction arithmetic": 1
+  "scaling": 1
+"5.NF.B.6":
+  "fraction arithmetic": 1
+  "word problems": 1
+"5.NF.B.7":
+  "fraction arithmetic": 1
+"5.MD.A.1":
+  "unit conversion": 1
+"5.MD.B.2":
+  "line plots": 1
+  "fraction arithmetic": 0.5
+"5.MD.C.3":
+  "volume": 1
+"5.MD.C.4":
+  "volume": 1
+"5.MD.C.5":
+  "volume": 1
+  "volume formulas": 1
+  "cuboids": 1
+"5.G.A.1":
+  "coordinate plane": 1
+"5.G.A.2":
+  "coordinate plane": 1
+"5.G.B.3":
+  "classifying shapes": 1
+"5.G.B.4":
+  "classifying shapes": 1
+  "quadrilaterals": 0.5
+"6.RP.A.1":
+  "ratios": 1
+"6.RP.A.2":
+  "unit rate": 1
+  "ratios": 0.5
+"6.RP.A.3":
+  "ratios": 1
+  "unit rate": 1
+  "percentages": 1
+  "unit conversion": 0.5
+"6.NS.A.1":
+  "fraction arithmetic": 1
+  "word problems": 0.5
+"6.NS.B.2":
+  "long division": 1
+"6.NS.B.3":
+  "decimal arithmetic": 1
+  "standard algorithms": 0.5
+"6.NS.B.4":
+  "greatest common divisor": 1
+  "least common multiple": 1
+  "distributive property": 0.5
+"6.NS.C.5":
+  "negative numbers": 1
+"6.NS.C.6":
+  "rational numbers": 1
+  "number line": 1
+  "coordinate plane": 0.5
+"6.NS.C.7":
+  "comparing numbers": 1
+  "absolute value": 1
+  "rational numbers": 0.5
+"6.NS.C.8":
+  "coordinate plane": 1
+  "absolute value": 0.5
+"6.EE.A.1":
+  "exponents": 1
+  "numerical expressions": 1
+"6.EE.A.2":
+  "algebraic expressions": 1
+  "variables": 1
+"6.EE.A.3":
+  "equivalent expressions": 1
+  "properties of operations": 1
+  "distributive property": 0.5
+"6.EE.A.4":
+  "equivalent expressions": 1
+"6.EE.B.5":
+  "solving equations": 1
+  "inequalities": 1
+"6.EE.B.6":
+  "variables": 1
+  "algebraic expressions": 1
+"6.EE.B.7":
+  "solving equations": 1
+  "linear equations": 0.5
+"6.EE.B.8":
+  "inequalities": 1
+"6.EE.C.9":
+  "dependent and independent variables": 1
+  "representations of functions": 0.5
+"6.G.A.1":
+  "area of polygons": 1
+"6.G.A.2":
+  "volume": 1
+  "volume formulas": 1
+"6.G.A.3":
+  "coordinate plane": 1
+  "plane figures": 0.5
+"6.G.A.4":
+  "nets of solids": 1
+  "surface area": 1
+"6.SP.A.1":
+  "statistical questions": 1
+"6.SP.A.2":
+  "frequency distributions": 1
+  "measures of central tendency": 0.5
+  "measures of spread": 0.5
+"6.SP.A.3":
+  "measures of central tendency": 1
+  "measures of spread": 1
+"6.SP.B.4":
+  "dot plots": 1
+  "histograms": 1
+  "box plots": 1
+"6.SP.B.5":
+  "descriptive statistics": 1
+  "mean": 0.5
+  "measures of spread": 0.5
+"7.RP.A.1":
+  "unit rate": 1
+  "fraction arithmetic": 0.5
+"7.RP.A.2":
+  "proportionality": 1
+"7.RP.A.3":
+  "percentages": 1
+  "proportionality": 0.5
+  "interest": 0.5
+"7.NS.A.1":
+  "integer arithmetic": 1
+  "rational numbers": 1
+  "number line": 0.5
+"7.NS.A.2":
+  "integer arithmetic": 1
+  "rational numbers": 1
+  "math: recurring decimals": 0.5
+"7.NS.A.3":
+  "rational numbers": 1
+  "word problems": 1
+"7.EE.A.1":
+  "equivalent expressions": 1
+  "factoring": 0.5
+  "expanding products": 0.5
+"7.EE.A.2":
+  "equivalent expressions": 1
+"7.EE.B.3":
+  "word problems": 1
+  "rational numbers": 0.5
+  "estimation": 0.5
+"7.EE.B.4":
+  "linear equations": 1
+  "inequalities": 1
+"7.G.A.1":
+  "scale drawings": 1
+"7.G.A.2":
+  "triangle construction": 1
+  "geometric constructions": 1
+"7.G.A.3":
+  "cross sections": 1
+  "geometric solids": 0.5
+"7.G.B.4":
+  "area of a circle": 1
+  "circumference": 1
+"7.G.B.5":
+  "angle relationships": 1
+"7.G.B.6":
+  "area of polygons": 1
+  "surface area": 1
+  "volume": 1
+"7.SP.A.1":
+  "sampling": 1
+  "statistical inference": 1
+"7.SP.A.2":
+  "sampling": 1
+  "statistical inference": 1
+  "simulation": 0.5
+"7.SP.B.3":
+  "comparing distributions": 1
+  "measures of spread": 0.5
+"7.SP.B.4":
+  "comparing distributions": 1
+  "measures of central tendency": 0.5
+"7.SP.C.5":
+  "probability": 1
+"7.SP.C.6":
+  "probability": 1
+  "relative frequency": 1
+  "law of large numbers": 0.5
+"7.SP.C.7":
+  "probability models": 1
+  "classical probability": 0.5
+"7.SP.C.8":
+  "compound events": 1
+  "tree diagrams": 0.5
+  "simulation": 0.5
+"8.NS.A.1":
+  "irrational numbers": 1
+  "rational numbers": 0.5
+  "math: recurring decimals": 0.5
+"8.NS.A.2":
+  "irrational numbers": 1
+  "numerical approximation": 1
+  "number line": 0.5
+"8.EE.A.1":
+  "laws of exponents": 1
+"8.EE.A.2":
+  "square roots": 1
+  "cube roots": 1
+"8.EE.A.3":
+  "scientific notation": 1
+  "powers of ten": 0.5
+"8.EE.A.4":
+  "scientific notation": 1
+"8.EE.B.5":
+  "proportionality": 1
+  "slope": 1
+  "unit rate": 0.5
+"8.EE.B.6":
+  "slope": 1
+  "similarity": 0.5
+  "linear functions": 0.5
+"8.EE.C.7":
+  "linear equations": 1
+"8.EE.C.8":
+  "systems of linear equations": 1
+"8.F.A.1":
+  "functions": 1
+  "graphs of functions": 0.5
+"8.F.A.2":
+  "functions": 1
+  "representations of functions": 1
+"8.F.A.3":
+  "linear functions": 1
+"8.F.B.4":
+  "linear functions": 1
+  "rate of change": 1
+  "mathematical modelling": 0.5
+"8.F.B.5":
+  "graphs of functions": 1
+  "functions": 0.5
+"8.G.A.1":
+  "geometric transformations": 1
+"8.G.A.2":
+  "congruence": 1
+  "geometric transformations": 0.5
+"8.G.A.3":
+  "geometric transformations": 1
+  "dilations": 1
+  "coordinate plane": 0.5
+"8.G.A.4":
+  "similarity": 1
+  "dilations": 0.5
+"8.G.A.5":
+  "angle sum of polygons": 1
+  "angle relationships": 1
+  "similarity": 0.5
+"8.G.B.6":
+  "Pythagorean theorem": 1
+  "mathematical proof": 0.5
+"8.G.B.7":
+  "Pythagorean theorem": 1
+"8.G.B.8":
+  "Pythagorean theorem": 1
+  "coordinate plane": 0.5
+"8.G.C.9":
+  "cylinders": 1
+  "cones": 1
+  "spheres": 1
+  "volume": 1
+  "volume formulas": 1
+"8.SP.A.1":
+  "scatter plots": 1
+  "bivariate data": 1
+"8.SP.A.2":
+  "linear regression": 1
+  "scatter plots": 0.5
+"8.SP.A.3":
+  "linear regression": 1
+  "slope": 0.5
+"8.SP.A.4":
+  "two-way tables": 1
+  "bivariate data": 1
+"MP1":
+  "problem solving": 1
+"MP2":
+  "quantitative reasoning": 1
+"MP3":
+  "mathematical argumentation": 1
+"MP4":
+  "mathematical modelling": 1
+"MP5":
+  "mathematical tools": 1
+"MP6":
+  "mathematical precision": 1
+"MP7":
+  "mathematical structure": 1
+"MP8":
+  "generalization": 1
+"HSN-RN.A.1":
+  "rational exponents": 1
+  "laws of exponents": 0.5
+"HSN-RN.A.2":
+  "rational exponents": 1
+  "radicals": 1
+"HSN-RN.B.3":
+  "rational numbers": 1
+  "irrational numbers": 1
+"HSN-Q.A.1":
+  "units of measurement": 1
+  "dimensional analysis": 1
+"HSN-Q.A.2":
+  "mathematical modelling": 1
+  "quantities": 1
+"HSN-Q.A.3":
+  "accuracy and precision": 1
+  "math: significant figures": 0.5
+  "math: rounding": 0.2
+"HSN-CN.A.1":
+  "complex numbers": 1
+"HSN-CN.A.2":
+  "complex numbers": 1
+  "complex arithmetic": 1
+"HSN-CN.A.3":
+  "complex numbers": 1
+  "complex conjugate": 1
+"HSN-CN.B.4":
+  "complex plane": 1
+  "polar form": 1
+"HSN-CN.B.5":
+  "complex plane": 1
+  "complex arithmetic": 1
+"HSN-CN.B.6":
+  "complex plane": 1
+  "absolute value": 0.5
+"HSN-CN.C.7":
+  "quadratic equations": 1
+  "complex numbers": 1
+"HSN-CN.C.8":
+  "complex numbers": 1
+  "polynomial identities": 1
+"HSN-CN.C.9":
+  "fundamental theorem of algebra": 1
+"HSN-VM.A.1":
+  "vectors": 1
+"HSN-VM.A.2":
+  "vectors": 1
+"HSN-VM.A.3":
+  "vectors": 1
+  "word problems": 0.5
+"HSN-VM.B.4":
+  "vector addition": 1
+"HSN-VM.B.5":
+  "scalar multiplication": 1
+"HSN-VM.C.6":
+  "matrices": 1
+"HSN-VM.C.7":
+  "matrices": 1
+  "scalar multiplication": 1
+"HSN-VM.C.8":
+  "matrix arithmetic": 1
+"HSN-VM.C.9":
+  "matrix multiplication": 1
+"HSN-VM.C.10":
+  "matrices": 1
+  "identity matrix": 1
+"HSN-VM.C.11":
+  "matrix multiplication": 1
+  "vectors": 1
+"HSN-VM.C.12":
+  "matrices": 1
+  "geometric transformations": 1
+  "determinant": 0.5
+"HSA-SSE.A.1":
+  "algebraic expressions": 1
+"HSA-SSE.A.2":
+  "equivalent expressions": 1
+  "factoring": 0.5
+  "special products": 0.5
+"HSA-SSE.B.3":
+  "equivalent expressions": 1
+"HSA-SSE.B.3.a":
+  "factoring": 1
+  "quadratic functions": 0.5
+  "zeros of functions": 0.5
+"HSA-SSE.B.3.b":
+  "completing the square": 1
+  "vertex form": 1
+"HSA-SSE.B.3.c":
+  "laws of exponents": 1
+  "exponential functions": 0.5
+"HSA-SSE.B.4":
+  "geometric series": 1
+"HSA-APR.A.1":
+  "polynomials": 1
+  "polynomial arithmetic": 1
+"HSA-APR.B.2":
+  "polynomial remainder theorem": 1
+"HSA-APR.B.3":
+  "polynomials": 1
+  "zeros of functions": 1
+"HSA-APR.C.4":
+  "polynomial identities": 1
+"HSA-APR.C.5":
+  "binomial theorem": 1
+"HSA-APR.D.6":
+  "rational expressions": 1
+  "polynomial long division": 1
+"HSA-APR.D.7":
+  "rational expressions": 1
+"HSA-CED.A.1":
+  "linear equations": 1
+  "inequalities": 1
+  "mathematical modelling": 0.5
+"HSA-CED.A.2":
+  "equations in two variables": 1
+  "graphs of functions": 0.5
+"HSA-CED.A.3":
+  "systems of linear equations": 1
+  "inequalities": 1
+  "linear programming": 0.5
+"HSA-CED.A.4":
+  "rearranging formulas": 1
+"HSA-REI.A.1":
+  "solving equations": 1
+  "mathematical argumentation": 0.5
+"HSA-REI.A.2":
+  "rational equations": 1
+  "radical equations": 1
+"HSA-REI.B.3":
+  "linear equations": 1
+  "inequalities": 1
+"HSA-REI.B.4":
+  "quadratic equations": 1
+"HSA-REI.B.4.a":
+  "completing the square": 1
+  "quadratic formula": 1
+"HSA-REI.B.4.b":
+  "quadratic equations": 1
+  "quadratic formula": 1
+  "factoring": 0.5
+"HSA-REI.C.5":
+  "systems of linear equations": 1
+"HSA-REI.C.6":
+  "systems of linear equations": 1
+"HSA-REI.C.7":
+  "systems of equations": 1
+  "quadratic equations": 0.5
+"HSA-REI.C.8":
+  "systems of linear equations": 1
+  "matrices": 1
+"HSA-REI.C.9":
+  "inverse matrix": 1
+  "systems of linear equations": 0.5
+"HSA-REI.D.10":
+  "graphs of functions": 1
+  "equations in two variables": 1
+"HSA-REI.D.11":
+  "graphs of functions": 1
+  "solving equations": 1
+"HSA-REI.D.12":
+  "inequalities": 1
+  "systems of inequalities": 1
+"HSF-IF.A.1":
+  "functions": 1
+  "domain and range": 1
+"HSF-IF.A.2":
+  "function notation": 1
+"HSF-IF.A.3":
+  "number sequences": 1
+  "recursive definitions": 1
+"HSF-IF.B.4":
+  "graphs of functions": 1
+  "zeros of functions": 0.5
+"HSF-IF.B.5":
+  "domain and range": 1
+"HSF-IF.B.6":
+  "rate of change": 1
+"HSF-IF.C.7":
+  "graphs of functions": 1
+"HSF-IF.C.7.a":
+  "linear functions": 1
+  "quadratic functions": 1
+"HSF-IF.C.7.b":
+  "square root functions": 1
+  "piecewise functions": 1
+"HSF-IF.C.7.c":
+  "polynomial functions": 1
+  "zeros of functions": 0.5
+"HSF-IF.C.7.d":
+  "rational functions": 1
+  "asymptotes": 1
+"HSF-IF.C.7.e":
+  "exponential functions": 1
+  "logarithmic functions": 1
+  "sine and cosine functions": 1
+"HSF-IF.C.8":
+  "equivalent expressions": 1
+  "functions": 1
+"HSF-IF.C.8.a":
+  "completing the square": 1
+  "vertex form": 1
+  "quadratic functions": 0.5
+"HSF-IF.C.8.b":
+  "exponential growth": 1
+  "exponential decay": 1
+  "laws of exponents": 0.5
+"HSF-IF.C.9":
+  "functions": 1
+  "representations of functions": 1
+"HSF-BF.A.1":
+  "functions": 1
+  "mathematical modelling": 1
+"HSF-BF.A.1.a":
+  "functions": 1
+  "recursive definitions": 0.5
+"HSF-BF.A.1.b":
+  "function arithmetic": 1
+"HSF-BF.A.1.c":
+  "function composition": 1
+"HSF-BF.A.2":
+  "arithmetic sequences": 1
+  "geometric sequences": 1
+  "recursive definitions": 0.5
+"HSF-BF.B.3":
+  "transformations of functions": 1
+  "even and odd functions": 0.5
+"HSF-BF.B.4":
+  "inverse functions": 1
+"HSF-BF.B.5":
+  "logarithms": 1
+  "exponential functions": 0.5
+"HSF-LE.A.1":
+  "linear functions": 1
+  "exponential functions": 1
+"HSF-LE.A.2":
+  "linear functions": 1
+  "exponential functions": 1
+  "arithmetic sequences": 0.5
+  "geometric sequences": 0.5
+"HSF-LE.A.3":
+  "exponential growth": 1
+  "polynomial functions": 0.5
+"HSF-LE.A.4":
+  "logarithms": 1
+  "exponential equations": 1
+"HSF-LE.B.5":
+  "linear functions": 1
+  "exponential functions": 1
+  "mathematical modelling": 0.5
+"HSF-TF.A.1":
+  "radian": 1
+  "unit circle": 1
+"HSF-TF.A.2":
+  "unit circle": 1
+  "trigonometric functions": 1
+"HSF-TF.A.3":
+  "special right triangles": 1
+  "trigonometric functions": 1
+"HSF-TF.A.4":
+  "unit circle": 1
+  "periodic functions": 1
+  "even and odd functions": 0.5
+"HSF-TF.B.5":
+  "periodic functions": 1
+  "sine and cosine functions": 1
+  "mathematical modelling": 1
+"HSF-TF.B.6":
+  "inverse trigonometric functions": 1
+"HSF-TF.B.7":
+  "inverse trigonometric functions": 1
+  "trigonometric equations": 1
+"HSF-TF.C.8":
+  "Pythagorean trigonometric identity": 1
+"HSF-TF.C.9":
+  "trigonometric addition formulas": 1
+"HSG-CO.A.1":
+  "geometric definitions": 1
+  "angles": 0.5
+  "circles": 0.5
+"HSG-CO.A.2":
+  "geometric transformations": 1
+"HSG-CO.A.3":
+  "symmetry": 1
+  "geometric transformations": 0.5
+"HSG-CO.A.4":
+  "geometric transformations": 1
+"HSG-CO.A.5":
+  "geometric transformations": 1
+"HSG-CO.B.6":
+  "rigid motions": 1
+  "congruence": 1
+"HSG-CO.B.7":
+  "congruence": 1
+  "rigid motions": 1
+"HSG-CO.B.8":
+  "triangle congruence criteria": 1
+"HSG-CO.C.9":
+  "angle relationships": 1
+  "mathematical proof": 1
+"HSG-CO.C.10":
+  "triangles": 1
+  "mathematical proof": 1
+  "angle sum of polygons": 0.5
+"HSG-CO.C.11":
+  "parallelograms": 1
+  "mathematical proof": 1
+"HSG-CO.D.12":
+  "geometric constructions": 1
+"HSG-CO.D.13":
+  "geometric constructions": 1
+  "regular polygons": 1
+"HSG-SRT.A.1":
+  "dilations": 1
+"HSG-SRT.A.2":
+  "similarity": 1
+  "dilations": 0.5
+"HSG-SRT.A.3":
+  "similarity": 1
+"HSG-SRT.B.4":
+  "similarity": 1
+  "Pythagorean theorem": 0.5
+  "mathematical proof": 1
+"HSG-SRT.B.5":
+  "congruence": 1
+  "similarity": 1
+"HSG-SRT.C.6":
+  "trigonometric ratios": 1
+  "similarity": 0.5
+"HSG-SRT.C.7":
+  "trigonometric ratios": 1
+"HSG-SRT.C.8":
+  "trigonometric ratios": 1
+  "Pythagorean theorem": 1
+"HSG-SRT.D.9":
+  "area of a triangle": 1
+  "trigonometric ratios": 0.5
+"HSG-SRT.D.10":
+  "law of sines": 1
+  "law of cosines": 1
+  "mathematical proof": 0.5
+"HSG-SRT.D.11":
+  "law of sines": 1
+  "law of cosines": 1
+"HSG-C.A.1":
+  "circles": 1
+  "similarity": 1
+"HSG-C.A.2":
+  "inscribed angles": 1
+  "circles": 1
+"HSG-C.A.3":
+  "incircle": 1
+  "circumcircle": 1
+  "inscribed quadrilaterals": 0.5
+"HSG-C.A.4":
+  "tangent lines to circles": 1
+"HSG-C.B.5":
+  "arc length": 1
+  "circular sector": 1
+  "radian": 1
+"HSG-GPE.A.1":
+  "equation of a circle": 1
+  "completing the square": 0.5
+"HSG-GPE.A.2":
+  "parabolas": 1
+  "conic sections": 1
+"HSG-GPE.A.3":
+  "conic sections": 1
+"HSG-GPE.B.4":
+  "coordinate geometry": 1
+  "mathematical proof": 0.5
+"HSG-GPE.B.5":
+  "slope": 1
+  "parallel and perpendicular lines": 1
+"HSG-GPE.B.6":
+  "coordinate geometry": 1
+  "ratios": 0.5
+"HSG-GPE.B.7":
+  "coordinate geometry": 1
+  "perimeter": 1
+  "area of polygons": 1
+"HSG-GMD.A.1":
+  "circumference": 1
+  "area of a circle": 1
+  "volume formulas": 1
+  "limits": 0.2
+"HSG-GMD.A.2":
+  "Cavalieri's principle": 1
+  "spheres": 1
+  "volume formulas": 1
+"HSG-GMD.A.3":
+  "volume": 1
+  "cylinders": 1
+  "pyramids": 1
+  "cones": 1
+  "spheres": 1
+"HSG-GMD.B.4":
+  "cross sections": 1
+  "solids of revolution": 1
+"HSG-MG.A.1":
+  "mathematical modelling": 1
+  "geometric solids": 0.5
+"HSG-MG.A.2":
+  "density": 1
+  "mathematical modelling": 0.5
+"HSG-MG.A.3":
+  "mathematical modelling": 1
+  "optimization": 0.5
+"HSS-ID.A.1":
+  "dot plots": 1
+  "histograms": 1
+  "box plots": 1
+"HSS-ID.A.2":
+  "measures of central tendency": 1
+  "measures of spread": 1
+  "comparing distributions": 1
+"HSS-ID.A.3":
+  "comparing distributions": 1
+  "outliers": 1
+"HSS-ID.A.4":
+  "normal distribution": 1
+  "standard deviation": 1
+"HSS-ID.B.5":
+  "two-way tables": 1
+  "relative frequency": 1
+"HSS-ID.B.6":
+  "scatter plots": 1
+  "bivariate data": 1
+  "regression analysis": 1
+"HSS-ID.C.7":
+  "linear regression": 1
+  "slope": 0.5
+  "y-intercept": 0.5
+"HSS-ID.C.8":
+  "correlation": 1
+"HSS-ID.C.9":
+  "correlation and causation": 1
+"HSS-IC.A.1":
+  "statistical inference": 1
+  "sampling": 0.5
+"HSS-IC.A.2":
+  "probability models": 1
+  "simulation": 1
+"HSS-IC.B.3":
+  "sampling": 1
+  "statistical experiments": 1
+  "observational studies": 1
+"HSS-IC.B.4":
+  "statistical inference": 1
+  "margin of error": 1
+  "sampling": 0.5
+"HSS-IC.B.5":
+  "statistical experiments": 1
+  "statistical significance": 1
+"HSS-IC.B.6":
+  "data interpretation": 1
+  "statistical literacy": 1
+"HSS-CP.A.1":
+  "sample space": 1
+  "events (probability)": 1
+"HSS-CP.A.2":
+  "independence (probability)": 1
+"HSS-CP.A.3":
+  "conditional probability": 1
+  "independence (probability)": 1
+"HSS-CP.A.4":
+  "two-way tables": 1
+  "conditional probability": 1
+"HSS-CP.A.5":
+  "conditional probability": 1
+  "independence (probability)": 1
+"HSS-CP.B.6":
+  "conditional probability": 1
+"HSS-CP.B.7":
+  "addition rule of probability": 1
+"HSS-CP.B.8":
+  "multiplication rule of probability": 1
+  "conditional probability": 0.5
+"HSS-CP.B.9":
+  "permutations and combinations": 1
+  "compound events": 1
+"HSS-MD.A.1":
+  "random variables": 1
+  "probability distributions": 1
+"HSS-MD.A.2":
+  "expected value": 1
+"HSS-MD.A.3":
+  "probability distributions": 1
+  "expected value": 0.5
+"HSS-MD.A.4":
+  "probability distributions": 1
+  "expected value": 0.5
+"HSS-MD.B.5":
+  "expected value": 1
+  "decision making": 1
+"HSS-MD.B.6":
+  "probability": 1
+  "decision making": 1
+"HSS-MD.B.7":
+  "probability": 1
+  "decision making": 1
