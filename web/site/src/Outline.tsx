@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import type { OutlineTree, OutlineTreeEntry } from '@gestalts/host';
 import { BY_SOURCE, follow, ViewCard } from './Catalog';
 import { Notice, Spinner, store } from './Run';
 
 /**
- * A curriculum or guide (`/o/<outline>`), as its issuer structured it: the whole tree, each entry with how many views
- * practise what it is about (its own and its descendants'), found by the build through concepts. `/o/<outline>/<entry>`
- * opens it at that entry, for links to share. Its few own words are in the outline's language.
+ * A curriculum or guide (`/o/<outline>`), as its issuer structured it: the whole tree, as a disclosure list (each
+ * entry a full-width button that opens what's under it: its views as the catalog's cards, then its children), each
+ * entry with how many views practise what it is about (its own and its descendants'), found by the build through
+ * concepts. `/o/<outline>/<entry>` opens it at that entry, for links to share. Its few own words are in the outline's
+ * language.
  */
 
 const WORDS = {
@@ -85,26 +87,27 @@ export function Outline({ name, entry, open }: { name: string; entry?: string; o
     const children = shown(e.entries);
     const empty = e.views.length === 0;
     return (
-      <li key={e.id} id={e.id}>
+      <li key={e.id} id={e.id} className="min-w-0">
         <button
           type="button"
-          aria-expanded={children.length || !empty ? isOpen : undefined}
-          className={`items-start text-left ${e.id === selected ? 'menu-active' : ''} ${empty ? 'text-base-content/45' : ''}`}
+          aria-expanded={isOpen}
+          className={`flex w-full min-w-0 items-start gap-1.5 rounded-field px-2 py-1.5 text-left hover:bg-base-200 ${e.id === selected ? 'bg-base-200' : ''} ${empty ? 'text-base-content/45' : ''}`}
           onClick={() => select(e)}
         >
-          <span className="flex-1">
-            {e.notation && <span className="mr-2 font-mono text-xs opacity-70">{e.notation}</span>}
+          <ChevronRight className={`mt-0.5 size-4 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''} ${children.length || !empty ? '' : 'invisible'}`} />
+          <span className="min-w-0 flex-1 wrap-break-word">
+            {e.notation && <span className="mr-2 font-mono opacity-70">{e.notation}</span>}
             {e.label}
           </span>
           {!empty && <span className="badge badge-sm badge-primary shrink-0" title={w.views(e.views.length)}>{e.views.length}</span>}
         </button>
         {isOpen && !empty && (
-          <div className="grid gap-3 py-2 pl-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 py-2 pl-6 sm:grid-cols-2 lg:grid-cols-3">
             {e.views.flatMap((v) => BY_SOURCE.get(v.source) ?? []).map((v) => <ViewCard key={v.path} e={v} open={open} />)}
           </div>
         )}
-        {isOpen && empty && children.length === 0 && <p className="py-1 pl-4 text-sm text-base-content/50">{w.none}</p>}
-        {isOpen && children.length > 0 && <ul>{children.map(item)}</ul>}
+        {isOpen && empty && children.length === 0 && <p className="py-1 pl-8 text-base-content/50">{w.none}</p>}
+        {isOpen && children.length > 0 && <ul className="ml-3 min-w-0 border-l border-base-300 pl-1 sm:pl-2">{children.map(item)}</ul>}
       </li>
     );
   };
@@ -129,7 +132,7 @@ export function Outline({ name, entry, open }: { name: string; entry?: string; o
         </label>
       </header>
       <main className="mx-auto max-w-5xl px-4 pb-12">
-        <ul className="menu w-full rounded-box bg-base-100 p-2">{shown(tree.entries).map(item)}</ul>
+        <ul className="min-w-0 rounded-box bg-base-100 p-2 text-sm">{shown(tree.entries).map(item)}</ul>
       </main>
     </div>
   );
