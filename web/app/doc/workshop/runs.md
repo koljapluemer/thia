@@ -84,3 +84,17 @@ An admin area (`web/app/src/runs/`). What's picked is kept in the address, so a 
   wrong (the start of finding what to improve); Export, a zip of its record and blobs.
 
 Everything is loaded in pages or when opened: no list or record is read whole.
+
+## From a terminal
+
+`thia-server admin runs …` reads the same record straight from the data folder, for an admin or an agent looking
+into runs (the project skill `.claude/skills/runs/SKILL.md` says how to go about it). Locally `mise run server:admin
+runs …` (on `server-data/`); on the box `sudo -u thia /opt/thia-server/current/bin/thia-server --data
+/var/lib/thia-server admin runs …`.
+
+- `list` and `summary [--by …]` take the filters of `/runs`, `--since` also as `7d`, and `--rating-min/--rating-max`
+  (the latest rating; `rating_min`/`rating_max` on `/api/admin/runs` too); `--json` for the index's rows
+- `show <id>`: the run without its raw stream, long texts cut (`--full` keeps them): its facts, what it was sent, the
+  timeline (`src/runs/read.rs`)
+- `diff <id> [path]`: what it changed; `stream <id> [--grep RE]`: the raw stream, a line each; `blob <sha>`
+- `note <id> --by <admin email> "…"`: the only one that writes

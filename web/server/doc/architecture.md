@@ -123,7 +123,7 @@ per run under `runs/<yyyy-mm-dd>/`, appended to and never rewritten, and the con
 under `runs/blobs/`. The `runs` table is an index folded from them (`src/runs/index.rs`), rebuilt from the records
 whenever its `VERSION` changes, and by `admin reindex-runs`; cost is derived there from tokens and the dated prices in
 `src/runs/prices.rs`. A run is its account's: the first line says whose (`owner`), and only that account appends to
-it; admins read every run (`/api/admin/runs…`) and add notes. The server's own agent sends its usage, retries,
+it; admins read every run (`/api/admin/runs…`, or `admin runs …` in a terminal) and add notes. The server's own agent sends its usage, retries,
 tool results and responses as job events, which reach the record through the page like the rest. See
 [`web/app/doc/workshop/runs.md`](../../app/doc/workshop/runs.md).
 

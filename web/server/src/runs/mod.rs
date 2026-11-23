@@ -7,8 +7,10 @@
 //! - admins: `GET /api/admin/runs` (a page of the index, filtered), `…/summary` (grouped), `…/facets`, `…/{id}` (its
 //!   events, in pages), `…/blobs/{sha}`, `POST …/{id}/notes`, `GET …/{id}/export` (a zip of its record and blobs)
 
+pub mod cli;
 pub mod index;
 pub mod prices;
+pub mod read;
 pub mod store;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -34,7 +36,7 @@ const MAX_BATCH: usize = 5000;
 const MAX_BATCH_BYTES: usize = 16 * 1024 * 1024;
 const MAX_BLOB: usize = 64 * 1024 * 1024;
 /// at most this many runs' rows are summed for one summary
-const SUMMARY_ROWS: i64 = 10_000;
+pub const SUMMARY_ROWS: i64 = 10_000;
 
 /// The runs' records and the lock that keeps two batches of one run from interleaving.
 pub struct Runs {
@@ -143,23 +145,27 @@ async fn put_blob(State(state): State<AppState>, _me: SignedIn, Path(sha): Path<
     Ok(StatusCode::NO_CONTENT)
 }
 
+/// Which runs: the `/api/admin/runs…` query, and `thia-server admin runs`'.
 #[derive(Deserialize, Default)]
 #[serde(default)]
-struct Filter {
-    since: Option<String>,
-    until: Option<String>,
-    backend: Option<String>,
-    model: Option<String>,
-    kind: Option<String>,
-    purpose: Option<String>,
-    outcome: Option<String>,
+pub struct Filter {
+    pub since: Option<String>,
+    pub until: Option<String>,
+    pub backend: Option<String>,
+    pub model: Option<String>,
+    pub kind: Option<String>,
+    pub purpose: Option<String>,
+    pub outcome: Option<String>,
     /// `yes` or `no`
-    rated: Option<String>,
-    draft: Option<String>,
+    pub rated: Option<String>,
+    /// the latest rating at least / at most this (an unrated run is neither)
+    pub rating_min: Option<i64>,
+    pub rating_max: Option<i64>,
+    pub draft: Option<String>,
     /// a page after this one: `<started>|<id>` of the last row seen
-    before: Option<String>,
-    limit: Option<i64>,
-    by: Option<String>,
+    pub before: Option<String>,
+    pub limit: Option<i64>,
+    pub by: Option<String>,
 }
 
 impl Filter {
@@ -185,41 +191,44 @@ impl Filter {
             Some("no") => w.push("rating IS NULL".into()),
             _ => {}
         }
+        // numbers, so in the SQL as they are
+        if let Some(n) = self.rating_min { w.push(format!("rating >= {n}")); }
+        if let Some(n) = self.rating_max { w.push(format!("rating <= {n}")); }
         (w.join(" AND "), p)
     }
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct Row {
-    id: String,
-    account: String,
-    started: String,
-    last_at: Option<String>,
-    draft: Option<String>,
-    kind: Option<String>,
-    purpose: Option<String>,
-    backend: Option<String>,
-    models: Option<String>,
-    billing: Option<String>,
-    outcome: Option<String>,
-    waiting: bool,
-    wall_ms: Option<i64>,
-    first_output_ms: Option<i64>,
-    requests: i64,
-    input: i64,
-    output: i64,
-    cache_read: i64,
-    cache_write: i64,
-    cost_usd: Option<f64>,
-    tools: i64,
-    tool_failures: i64,
-    check_ok: Option<bool>,
-    files_changed: i64,
-    errors: i64,
-    rating: Option<i64>,
-    comment: Option<String>,
-    notes: i64,
+pub struct Row {
+    pub id: String,
+    pub account: String,
+    pub started: String,
+    pub last_at: Option<String>,
+    pub draft: Option<String>,
+    pub kind: Option<String>,
+    pub purpose: Option<String>,
+    pub backend: Option<String>,
+    pub models: Option<String>,
+    pub billing: Option<String>,
+    pub outcome: Option<String>,
+    pub waiting: bool,
+    pub wall_ms: Option<i64>,
+    pub first_output_ms: Option<i64>,
+    pub requests: i64,
+    pub input: i64,
+    pub output: i64,
+    pub cache_read: i64,
+    pub cache_write: i64,
+    pub cost_usd: Option<f64>,
+    pub tools: i64,
+    pub tool_failures: i64,
+    pub check_ok: Option<bool>,
+    pub files_changed: i64,
+    pub errors: i64,
+    pub rating: Option<i64>,
+    pub comment: Option<String>,
+    pub notes: i64,
 }
 
 const COLUMNS: &str = "id, account, started, last_at, draft, kind, purpose, backend, models, billing, outcome, waiting, wall_ms,
@@ -236,7 +245,8 @@ fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Row> {
     })
 }
 
-fn rows(conn: &Connection, f: &Filter, limit: i64, cursor: bool) -> rusqlite::Result<Vec<Row>> {
+/// A page of the index, newest first; `cursor`: after `f.before`.
+pub fn rows(conn: &Connection, f: &Filter, limit: i64, cursor: bool) -> rusqlite::Result<Vec<Row>> {
     let (mut w, mut p) = f.sql();
     if cursor && let Some((started, id)) = f.before.as_deref().and_then(|b| b.split_once('|')) {
         p.push(started.to_owned());
@@ -257,6 +267,14 @@ async fn list(State(state): State<AppState>, _admin: Admin, Query(f): Query<Filt
     Ok(Json(json!({ "runs": found, "next": next, "pricesAsOf": prices::AS_OF })))
 }
 
+/// A record's lines as they happened: the page's by seq, then what the server wrote (owner, notes) by when.
+pub fn in_order(events: &mut [Value]) {
+    events.sort_by(|a, b| {
+        let (sa, sb) = (a["seq"].as_i64().unwrap_or(0), b["seq"].as_i64().unwrap_or(0));
+        (sa < 0).cmp(&(sb < 0)).then(if sa < 0 { a["at"].as_str().cmp(&b["at"].as_str()) } else { sa.cmp(&sb) })
+    });
+}
+
 fn quantile(sorted: &[i64], q: f64) -> Option<i64> {
     if sorted.is_empty() { return None; }
     Some(sorted[((sorted.len() - 1) as f64 * q).round() as usize])
@@ -264,7 +282,17 @@ fn quantile(sorted: &[i64], q: f64) -> Option<i64> {
 
 async fn summary(State(state): State<AppState>, _admin: Admin, Query(f): Query<Filter>) -> ApiResult<Json<Value>> {
     let all = state.db.with(|c| rows(c, &f, SUMMARY_ROWS, false))?;
-    let by = f.by.as_deref().unwrap_or("backend");
+    Ok(Json(summarize(&all, f.by.as_deref().unwrap_or("backend"))))
+}
+
+/// The one row of run `id`, if it's indexed.
+pub fn row_of(conn: &Connection, id: &str) -> rusqlite::Result<Option<Row>> {
+    use rusqlite::OptionalExtension;
+    conn.query_row(&format!("SELECT {COLUMNS} FROM runs WHERE id = ?1"), [id], row).optional()
+}
+
+/// The runs `all` (a summary's rows, at most [`SUMMARY_ROWS`]) summed by `by`.
+pub fn summarize(all: &[Row], by: &str) -> Value {
     let key = |r: &Row| -> String {
         match by {
             "model" => r.models.clone(),
@@ -277,7 +305,7 @@ async fn summary(State(state): State<AppState>, _admin: Admin, Query(f): Query<F
         .unwrap_or_else(|| "—".into())
     };
     let mut groups: BTreeMap<String, Vec<&Row>> = BTreeMap::new();
-    for r in &all { groups.entry(key(r)).or_default().push(r); }
+    for r in all { groups.entry(key(r)).or_default().push(r); }
     let out: Vec<Value> = groups.into_iter().map(|(k, rs)| {
         let mut wall: Vec<i64> = rs.iter().filter_map(|r| r.wall_ms).collect();
         wall.sort_unstable();
@@ -309,7 +337,7 @@ async fn summary(State(state): State<AppState>, _admin: Admin, Query(f): Query<F
             "toolFailures": rs.iter().map(|r| r.tool_failures).sum::<i64>(),
         })
     }).collect();
-    Ok(Json(json!({ "by": by, "groups": out, "rows": all.len(), "capped": all.len() as i64 == SUMMARY_ROWS, "pricesAsOf": prices::AS_OF })))
+    json!({ "by": by, "groups": out, "rows": all.len(), "capped": all.len() as i64 == SUMMARY_ROWS, "pricesAsOf": prices::AS_OF })
 }
 
 async fn facets(State(state): State<AppState>, _admin: Admin) -> ApiResult<Json<Value>> {
@@ -339,11 +367,7 @@ async fn detail(State(state): State<AppState>, _admin: Admin, Path(id): Path<Str
     let only_trace = q.trace.as_deref() == Some("only");
     let mut events = state.runs.store.read(&rel).map_err(io)?;
     events.retain(|e| (e["type"] == "trace") == only_trace);
-    // the page's in its order, then what the server wrote (owner, notes) by when
-    events.sort_by(|a, b| {
-        let (sa, sb) = (a["seq"].as_i64().unwrap_or(0), b["seq"].as_i64().unwrap_or(0));
-        (sa < 0).cmp(&(sb < 0)).then(if sa < 0 { a["at"].as_str().cmp(&b["at"].as_str()) } else { sa.cmp(&sb) })
-    });
+    in_order(&mut events);
     // what the server wrote (seq below zero) comes with the first page
     let first = q.after.is_none();
     let after = q.after.unwrap_or(-1);
@@ -373,17 +397,31 @@ struct Note {
 }
 
 async fn add_note(State(state): State<AppState>, admin: Admin, Path(id): Path<String>, Json(n): Json<Note>) -> ApiResult<StatusCode> {
-    let text = n.text.trim();
-    if text.is_empty() { return Err(ApiError::BadRequest("a note says something".into())); }
-    if text.len() > 20_000 { return Err(ApiError::TooLarge("a note of at most 20000 characters".into())); }
+    let text = check_note(&n.text).map_err(ApiError::BadRequest)?;
     let _w = state.runs.writes.lock().await;
-    let (mut s, rel) = state.db.with(|c| index::load(c, &id))?.ok_or(ApiError::NotFound)?;
-    let note = json!({"v": 1, "run": id, "seq": s.server_seq, "type": "note", "by": admin.0.id, "at": now_iso(), "text": text});
+    if !state.db.with(|c| Ok(note(c, &state.runs.store, &id, &admin.0.id, text)))?.map_err(ApiError::Internal)? {
+        return Err(ApiError::NotFound);
+    }
+    Ok(StatusCode::NO_CONTENT)
+}
+
+/// A note's text, trimmed, if it's one.
+pub fn check_note(text: &str) -> Result<&str, String> {
+    let text = text.trim();
+    if text.is_empty() { return Err("a note says something".into()); }
+    if text.len() > 20_000 { return Err("a note of at most 20000 characters".into()); }
+    Ok(text)
+}
+
+/// Appends an admin's (`by`, an account's id) note to run `id`; false when there's no such run.
+pub fn note(conn: &Connection, store: &Store, id: &str, by: &str, text: &str) -> Result<bool, String> {
+    let Some((mut s, rel)) = index::load(conn, id).map_err(|e| e.to_string())? else { return Ok(false) };
+    let note = json!({"v": 1, "run": id, "seq": s.server_seq, "type": "note", "by": by, "at": now_iso(), "text": text});
     s.server_seq -= 1;
     s.fold(&note);
-    state.runs.store.append(&rel, &[note]).map_err(io)?;
-    state.db.with(|c| index::save(c, &id, &rel, &s))?;
-    Ok(StatusCode::NO_CONTENT)
+    store.append(&rel, &[note]).map_err(|e| e.to_string())?;
+    index::save(conn, id, &rel, &s).map_err(|e| e.to_string())?;
+    Ok(true)
 }
 
 async fn export(State(state): State<AppState>, _admin: Admin, Path(id): Path<String>) -> ApiResult<Response> {

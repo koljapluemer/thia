@@ -107,6 +107,11 @@ enum Admin {
     /// The index of agent runs made anew from their records (runs/); prints how many
     #[command(name = "reindex-runs")]
     ReindexRuns,
+    /// The record of agent runs: list, summary, show, diff, stream, blob, note
+    Runs {
+        #[command(subcommand)]
+        command: Box<thia_server::runs::cli::Command>,
+    },
 }
 
 #[tokio::main]
@@ -172,6 +177,7 @@ async fn run(cli: Cli) -> Result<(), String> {
                     let n = db.with(|c| Ok(thia_server::runs::Runs::open(c, root, false).and_then(|r| r.reindex(c)))).map_err(|e| e.to_string())??;
                     println!("{n}");
                 }
+                Admin::Runs { command } => thia_server::runs::cli::run(&db, &cli.data, *command, &mut std::io::stdout().lock())?,
                 Admin::ResetPassword { email } => {
                     let password = random_token(12);
                     if !db.set_password(&email.trim().to_lowercase(), &auth::hash_password(&password)).map_err(|e| e.to_string())? {

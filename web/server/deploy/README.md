@@ -20,6 +20,7 @@ Then, from a committed tree here: `THIA_HOST=root@box mise run server:deploy`. A
 `sudo -u thia /opt/thia-server/current/bin/thia-server --data /var/lib/thia-server admin add-account --email <email>`,
 which prints the password to hand over. To associate it with a school, first use `admin add-school "…"` and pass its
 printed id to `add-account --school <id>`. Pass `--password <password>` to choose one instead of generating it.
+The agent runs are read the same way, `… admin runs list|summary|show|diff|stream` (`web/app/doc/workshop/runs.md`).
 
 Every player a deploy installs stays (`/var/lib/thia-server/runtime/`), so lessons published against an older
 runtime keep opening. Before anyone else uses it: a processing agreement with Anthropic (what is typed to the server's agent goes to the

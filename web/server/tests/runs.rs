@@ -51,6 +51,10 @@ async fn a_run_is_kept_once_and_read_back_by_admins() {
     assert_eq!((row["id"].as_str(), row["outcome"].as_str(), row["rating"].as_i64(), row["comment"].as_str()), (Some(RUN), Some("completed"), Some(4), Some("close")));
     assert_eq!((row["input"].as_i64(), row["firstOutputMs"].as_i64(), row["costUsd"].as_f64()), (Some(1000), Some(200), Some(0.006)));
     assert_eq!(s.call("GET", "/api/admin/runs?backend=server", Some(&bea), None).await.1["runs"].as_array().unwrap().len(), 0);
+    // by the latest rating's score
+    for (q, found) in [("rating_max=4", 1), ("rating_max=3", 0), ("rating_min=5", 0), ("rating_min=4&rating_max=4", 1)] {
+        assert_eq!(s.call("GET", &format!("/api/admin/runs?{q}"), Some(&bea), None).await.1["runs"].as_array().unwrap().len(), found, "{q}");
+    }
 
     let (_, sum, _) = s.call("GET", "/api/admin/runs/summary?by=model", Some(&bea), None).await;
     assert_eq!((sum["groups"][0]["key"].as_str(), sum["groups"][0]["ratingMean"].as_f64()), (Some("claude-opus-5-5"), Some(4.0)));
