@@ -34,16 +34,19 @@ sdk/python        gestalts_backend.py, what a backend.py imports
 
 ## The apps
 
-`web/app` is the one web app, `/` a landing page of cards, its areas paths: `/notes` (the gestalter), `/workshop`
-(views and visualizations made with an agent, behind an account), `/review` (admins). Notes need no node. Notes are the **home**
-store, the user's ymls in this browser (OPFS), opened once for the app (`web/app/src/home.tsx`) and asking the
-desktop node, if one runs, for plugin backends, `/net` and `/llm` without syncing with it (`bridge` in `Repo.open`).
-Each workshop draft is its own store synced with the server (`web/server`); its agent is the server's, or Claude Code
+Two apps on one origin. `web/site` is the **use app**: every view, `/` the catalog (search, the curricula and guides,
+what was opened lately), `/v/<view>[/<deck>]` a view, `/o/<outline>[/<entry>]` a curriculum. Every view runs on the
+**home** store, the user's ymls in this browser (OPFS `home`), opened once for the site (`web/site/src/home.tsx`) with
+every deck opened on it so far mounted read-only (`useHomeRepo` in `packages/host`), so notes and practice from every
+view are in one place; it asks the desktop node, if one runs, for plugin backends, `/net` and `/llm` without syncing
+with it (`bridge` in `Repo.open`), and syncs with it if the user connects. "Guest" switches the site to a store of its
+own for a shared device, deleted when the guest ends it. `web/app` is the **make app**, behind an account:
+`/workshop` (views and visualizations made with an agent), `/review` and `/runs` (admins). Each workshop draft is its own store synced with the server (`web/server`); its agent is the server's, or Claude Code
 through the Claude bridge (`installables/claude-bridge`), whose tool calls come back to the page (the `check` is
 `@gestalts/check`, run there). A conversation belongs to its draft, not to the chat that shows it
 (`packages/workshop/src/turns.ts`): a turn runs on while another draft is open, and shows again, still going, when its
-draft is opened again. `web/site` is the public site: every learning view and visualization, workshop results
-accepted in review among them ([[publishing]]); its build also plays published lessons on the lesson domain.
+draft is opened again. Workshop results accepted in review become views of the use app ([[publishing]]); its build also
+plays published lessons on the lesson domain, each on a store of its own there.
 
 ## Data
 

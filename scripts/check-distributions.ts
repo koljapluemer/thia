@@ -33,8 +33,8 @@ for (const file of distributions(web)) {
   // paths are from the file
   const app = dirname(file);
   const own = join(web, relative(web, app).split(sep)[0], 'plugins');
-  const d = (parse(readFileSync(file, 'utf8')) ?? {}) as { id?: string; core?: string[]; plugins?: string[]; models?: string[]; outlines?: string[] };
-  for (const entry of [...(d.core ?? []), ...(d.plugins ?? [])]) {
+  const d = (parse(readFileSync(file, 'utf8')) ?? {}) as { id?: string; plugins?: string[]; models?: string[]; outlines?: string[] };
+  for (const entry of (d.plugins ?? [])) {
     const path = resolve(app, entry);
     const where = relative(root, file);
     if (!inside(plugins, path) && !inside(own, path)) problems.push(`${where}: ${entry} is outside plugins/ and the app's own plugins/`);
@@ -47,7 +47,7 @@ for (const file of distributions(web)) {
     else if (!existsSync(join(path, 'index.json'))) problems.push(`${where}: outline ${entry} has no index.json (mise run publish-data ${relative(root, path)})`);
   }
   if (d.id === 'site') {
-    for (const entry of [...(d.core ?? []), ...(d.plugins ?? [])]) {
+    for (const entry of (d.plugins ?? [])) {
       const decks = join(resolve(app, entry), 'decks');
       if (!existsSync(decks)) continue;
       for (const deck of readdirSync(decks, { withFileTypes: true }).filter((e) => e.isDirectory())) {

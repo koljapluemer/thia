@@ -1,13 +1,10 @@
 # web
 
-The one web app. `/` is a landing page with a card per area; each area is a path: `/notes` (the gestalter: notes and
-installable views in tabs), `/workshop` (views and visualizations made with an agent, behind an account, kept on the
-server), `/review` (admins: what the workshop offered for the public site), `/runs` (admins: every agent turn, [`doc/workshop/runs.md`](doc/workshop/runs.md)). Notes need no node: they are in the
-browser (OPFS). The learning views and visualizations, for anyone, are the public site, [`../site`](../site).
+The make app, behind an account; each area is a path: `/workshop` (views and visualizations made with an agent, kept
+on the server; any other path), `/review` (admins: what the workshop offered for the public site), `/runs` (admins:
+every agent turn, [`doc/workshop/runs.md`](doc/workshop/runs.md)). Using views, and the user's notes, is the use app,
+[`../site`](../site) (`VITE_SITE`), on the same origin when deployed.
 
-- notes are the home store and `distributions/home.yml`; the desktop node, when one
-  runs (`VITE_GESTALTS_NODE`, default :7717), is asked for plugin backends, `/net` and `/llm`, and the user may sync
-  with it (settings)
 - each workshop draft is its own store, synced with the server under `/api` (`VITE_THIA_API` in dev, default
   :7740), previewed in the context it goes out in (`distributions/lessons.yml` for a lesson,
   `distributions/workshop.yml` for the public site). The agent is the server's, or Claude Code through the Claude

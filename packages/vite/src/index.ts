@@ -35,8 +35,8 @@ const RUNTIME = 'virtual:gestalts-runtime';
 const SOURCES = /^@gestalts-sources;$/m;
 
 type Manifest = { id: string; title: string; version: string; reads?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string> };
-type DistributionFile = { id?: unknown; core?: string[]; plugins?: string[]; models?: string[]; outlines?: string[]; default_views?: string[]; install_ui?: boolean; grants?: unknown; pinned_npm?: boolean };
-const DISTRIBUTION_KEYS = ['id', 'core', 'plugins', 'models', 'outlines', 'default_views', 'install_ui', 'grants', 'pinned_npm'];
+type DistributionFile = { id?: unknown; plugins?: string[]; models?: string[]; outlines?: string[]; grants?: unknown; pinned_npm?: boolean };
+const DISTRIBUTION_KEYS = ['id', 'plugins', 'models', 'outlines', 'grants', 'pinned_npm'];
 /** where npm bundles are kept between builds */
 const NPM_CACHE = resolve(import.meta.dirname, '../../../node_modules/.cache/gestalts-npm');
 /** The repo's `gestalts/`: the core's (`<name>/v<N>.yml`, compiled in) and the model packages (`<package>/<name>/`). */
@@ -128,14 +128,14 @@ function readDecks(pluginId: string, root: string) {
   });
 }
 
-function loadPlugin(base: string, path: string, core: boolean) {
+function loadPlugin(base: string, path: string) {
   const root = realpathSync(resolve(base, path));
   const manifest = parse(readFileSync(join(root, 'plugin.yml'), 'utf8')) as Manifest;
   const viewFile = join(root, 'view.tsx');
   const compiled = compile(readFileSync(viewFile, 'utf8'), viewFile);
   if (!compiled.ok) throw new Error(`${manifest.id}/view.tsx: ${compiled.errors.map((e) => `${e.line ?? '?'}: ${e.message}`).join('; ')}`);
   if (existsSync(join(root, 'gestalts'))) throw new Error(`${manifest.id}: a plugin doesn't define gestalts; they go in a model package, gestalts/<package>/<name>/v<N>.yml`);
-  return { id: manifest.id, root, manifest, decks: readDecks(manifest.id, root), js: compiled.js, npm: compiled.npm, core, backend: existsSync(join(root, 'backend.py')) };
+  return { id: manifest.id, root, manifest, decks: readDecks(manifest.id, root), js: compiled.js, npm: compiled.npm, backend: existsSync(join(root, 'backend.py')) };
 }
 
 /**
@@ -161,13 +161,12 @@ export function loadDistribution(file: string) {
   const unknown = Object.keys(parsed).filter((k) => !DISTRIBUTION_KEYS.includes(k));
   if (unknown.length) throw new Error(`${where}: unknown key ${unknown.join(', ')} (known: ${DISTRIBUTION_KEYS.join(', ')})`);
   if (typeof parsed.id !== 'string' || !/^[a-z0-9-]+$/.test(parsed.id)) throw new Error(`${where} needs an \`id\` (lowercase letters, digits and -)`);
-  const plugins = [...(parsed.core ?? []).map((p) => loadPlugin(base, p, true)), ...(parsed.plugins ?? []).map((p) => loadPlugin(base, p, false))];
+  const plugins = (parsed.plugins ?? []).map((p) => loadPlugin(base, p));
   const seen = new Set<string>();
   for (const p of plugins) {
     if (seen.has(p.id)) throw new Error(`${where}: plugin ${p.id} is listed twice`);
     seen.add(p.id);
   }
-  for (const v of parsed.default_views ?? []) if (!seen.has(v)) throw new Error(`${where}: default view ${v} is in no plugin of the distribution`);
   const models = (parsed.models ?? []).map((m) => loadModel(base, m, where));
   // every gestalt a view reads or a deck holds is the core's or a named model's
   const defined = new Set([...coreGestalts(), ...models.flatMap((m) => m.ids)]);
@@ -190,7 +189,7 @@ export function loadDistribution(file: string) {
   if (new Set(outlines.map((o) => o.name)).size !== outlines.length) throw new Error(`${where}: an outline is listed twice`);
   return {
     file,
-    distribution: { id: parsed.id, default_views: parsed.default_views ?? [], install_ui: parsed.install_ui ?? false },
+    distribution: { id: parsed.id },
     pinned,
     plugins: plugins.map((p) => ({ ...p, granted: granted.get(p.id) ?? [] })),
     models,
@@ -333,7 +332,7 @@ export function gestaltsPlugins(): PluginOption[] {
         this.addWatchFile(join(p.root, 'plugin.yml'));
         this.addWatchFile(join(p.root, 'view.tsx'));
         const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}` }));
-        return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], core: p.core, granted: p.granted, backend: p.backend };
+        return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);
       for (const o of outlines) this.addWatchFile(join(o.root, 'index.json'));

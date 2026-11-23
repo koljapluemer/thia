@@ -17,8 +17,12 @@ pub const NAME: &str = "gestalts-node";
 /// The desktop app's earlier names, newest first: what an old install still answers `/health` with, and its
 /// autostart entry.
 pub const OLD_NAMES: &[&str] = &["gestalter", "gestalts-connector"];
-/// The apps (websites) allowed to use the node, besides localhost.
-pub const ORIGINS: &[&str] = &["https://gestalter.koljasam.com", "https://loop.koljasam.com"];
+/// The apps (websites) allowed to use the node, besides localhost: thia's (its use app, `THIA_APP_ORIGIN` when built,
+/// e.g. `https://thia.example`), and the old sites, which keep their last deploy.
+pub const ORIGINS: &[&str] = match option_env!("THIA_APP_ORIGIN") {
+    Some(thia) => &[thia, "https://gestalter.koljasam.com", "https://loop.koljasam.com"],
+    None => &["https://gestalter.koljasam.com", "https://loop.koljasam.com"],
+};
 
 /// The repo's plugins (manifests and workers) and model packages, copied by `build.rs`.
 static BUILTIN: Dir<'static> = include_dir!("$OUT_DIR/builtin");

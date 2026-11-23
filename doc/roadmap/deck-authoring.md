@@ -119,8 +119,8 @@ Worth it only once decks have their own release cadence or come from others; for
 2. A `catalog.json` read on open: `source`, `url`, `title`, `version`, and what it needs (plugin, gestalts with
    versions), so an older app skips a deck it can't read instead of loading unknown ymls. New decks appear without a
    deploy as long as the app has their view.
-3. Optionally, checking the catalog's version on focus and reopening the repo with the new decks, as `usePluginRepo`
-   already does when the mounted decks change.
+3. Optionally, checking the catalog's version on focus and reopening the repo with the new decks, as `useHomeRepo`
+   already does when a view opens on a deck it doesn't have yet.
 
 What has to hold then:
 

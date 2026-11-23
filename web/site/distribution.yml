@@ -1,10 +1,20 @@
-# The public site: every view in it, each opened on one of its decks, for anyone, without signing in. Workshop results
-# accepted in review are added here (web/server, promote.rs). Its models are also what published lessons, played under
-# /l/<lesson>, may read besides the core's and their own: a superset of the lessons' (web/app/distributions/lessons.yml, checked).
+# The use app: every view in it, for anyone, without signing in, on the user's own store in this browser (notes, what
+# they practised) with each deck opened on it read-only. Workshop results accepted in review are added here (web/server,
+# promote.rs). Its models are also what published lessons, played under /l/<lesson>, may read besides the core's and
+# their own: a superset of the lessons' (web/app/distributions/lessons.yml, checked).
 id: site
 # every view loads only what the build bundled: nothing from elsewhere at run time
 pinned_npm: true
 plugins:
+  - ../../plugins/quick-note
+  - ../../plugins/note-crud
+  - ../../plugins/note-queue
+  - ../../plugins/flashcards
+  - ../../plugins/flashcard-manager
+  - ../../plugins/source-manager
+  - ../../plugins/concept-explorer
+  - ../../plugins/zettelkasten
+  - ../../plugins/transparent-input
   - ../../plugins/alphabet-pronunciation-trainer
   - ../../plugins/phrasebook
   - ../../plugins/math-drills
@@ -22,6 +32,9 @@ models:
 outlines:
   - ../../outlines/de-ni-gym-mathe-2015
   - ../../outlines/us-ccss-math-2010
-# as in the web app (web/app/distributions/home.yml): only for our own views, which load nothing at run time
+# what views may do beyond the strict sandbox, out of what each asks for (`permissions` in its plugin.yml): same-origin
+# runs a view in the site's origin, so frames it embeds (a video player) work, and is only for our own code, which
+# loads nothing from elsewhere at run time; microphone lets it record
 grants:
+  transparent-input: [same-origin]
   phrasebook: [same-origin, microphone]

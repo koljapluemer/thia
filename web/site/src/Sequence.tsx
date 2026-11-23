@@ -8,7 +8,9 @@ import type { LessonManifest, SequenceManifest } from '@gestalts/workshop/lesson
 import { decide, type Step } from '@gestalts/workshop/sequence';
 import tailwind from '@tailwindcss/browser?raw';
 import css from './app.css?inline';
-import { Notice, Spinner, forget, store } from './Run';
+import { forget } from './home';
+import { Notice, Spinner } from './Run';
+import { store } from './store';
 
 /** A lesson of several views as loaded: its manifest, and each view with where its deck is. */
 export type LoadedSequence = { id: string; manifest: SequenceManifest; views: { manifest: LessonManifest; base: string; js: string }[] };

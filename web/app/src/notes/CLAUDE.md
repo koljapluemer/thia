@@ -1,1 +1,0 @@
-- optimize UX. this is an expert app, used for many hours. Avoid 27-click flows for simple actions.

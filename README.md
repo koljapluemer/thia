@@ -10,9 +10,9 @@ gestalts/     gestalt definitions: the core's, and model packages (gestalts/<pac
 plugins/      the views (and their decks, workers), one folder each, usable by any app
 sdk/python/   what plugin workers import
 web/
-  app/                  the one web app: notes, the workshops, lessons, the review; data in the browser
-  site/                 the public site: every view on its decks, accepted workshop results among them; also plays
-                        published lessons' links on the lesson domain
+  site/                 the use app: every view (on its decks), the user's notes, curricula; data in the browser;
+                        also plays published lessons' links on the lesson domain
+  app/                  the make app: the workshop, the review, agent runs; behind an account
   server/               the server (thia-server), its worker, docs and deploy/
 installables/           optional, on the user's computer
   folder-sync/          gestalts-node: a folder synced with the app; desktop/ (tray), settings/

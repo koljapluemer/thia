@@ -2,20 +2,20 @@ import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { LayoutGrid } from 'lucide-react';
 import { me } from './workshop/api';
 
-/** The public site (web/site): what the workshops' accepted results, and the learning views, are published on. */
-export const SITE: string = import.meta.env.VITE_SITE ?? 'http://127.0.0.1:5177';
+/** The use app (web/site): every view, the user's notes, what the workshops' accepted results are published on. The
+ * same origin when deployed. */
+export const SITE: string = import.meta.env.VITE_SITE ?? '/';
 
-/** The app's areas, by path, in the landing page's order; `/` is the landing page. */
+/** The app's areas, by path; any other path is the workshop. */
 export const AREAS = [
   { path: '/workshop', title: 'Workshop', about: 'Make learning views and visualizations with an agent; publish them to a class, or offer them for the public site.' },
-  { path: '/notes', title: 'Gestalter', about: 'Your notes, and the views you install, in tabs.' },
   { path: '/review', title: 'Review', about: 'What the workshops offered for the public site: accept or reject it.' },
   { path: '/runs', title: 'Agent runs', about: 'Every agent turn: what it was sent, what it did, its time, tokens, cost and rating.' },
 ] as const;
 /** The areas only admins see. */
 const ADMIN: readonly string[] = ['/review', '/runs'];
-export type AreaPath = '/' | (typeof AREAS)[number]['path'];
-const HOME: AreaPath = '/';
+export type AreaPath = (typeof AREAS)[number]['path'];
+const HOME: AreaPath = '/workshop';
 
 const listeners = new Set<() => void>();
 const areaOf = (pathname: string): AreaPath => AREAS.find((a) => pathname === a.path || pathname.startsWith(`${a.path}/`))?.path ?? HOME;
@@ -27,7 +27,7 @@ export function navigate(path: AreaPath) {
   listeners.forEach((l) => l());
 }
 
-/** The area shown: from the path, the landing page `/` for anything else (and the path made to say so). */
+/** The area shown: from the path, the workshop for anything else (and the path made to say so). */
 export function useArea(): AreaPath {
   const [area, setArea] = useState(() => areaOf(location.pathname));
   useEffect(() => {
@@ -71,9 +71,8 @@ export function Areas({ end = false }: { end?: boolean }) {
     <details className={`dropdown ${end ? 'dropdown-end' : ''}`}>
       <summary className="btn btn-sm btn-ghost btn-square" title="Areas"><LayoutGrid className="size-4" /></summary>
       <ul className="dropdown-content menu z-50 mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow">
-        <li><AreaLink path="/">All areas</AreaLink></li>
         {areas.map((a) => <li key={a.path}><AreaLink path={a.path} className={a.path === here ? 'menu-active' : ''}>{a.title}</AreaLink></li>)}
-        <li><a href={SITE}>The public site</a></li>
+        <li><a href={SITE}>Views and notes</a></li>
       </ul>
     </details>
   );

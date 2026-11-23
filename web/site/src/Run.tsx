@@ -6,14 +6,10 @@ import { FrameView, type RunnableView, type ViewEnv } from '@gestalts/host';
 import type { JsonMap } from '@gestalts/view';
 import tailwind from '@tailwindcss/browser?raw';
 import css from './app.css?inline';
+import { forget } from './home';
+import { store } from './store';
 
-export const store = {
-  get(k: string) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k: string, v: string) { try { localStorage.setItem(k, v); } catch { /* not kept: fine here */ } },
-  remove(k: string) { try { localStorage.removeItem(k); } catch { /* nothing kept */ } },
-};
-
-/** What a page runs: one view on one deck, with what it did kept on this device under `dir`. */
+/** What a published lesson's page runs: one view on one deck, with what it did kept on this device under `dir`. */
 export type Run = {
   title: string;
   /** names this device's own data for it: the OPFS folder, and the keys of its state and generation */
@@ -74,15 +70,6 @@ export function RunPage({ run }: { run: Run }) {
       </main>
     </div>
   );
-}
-
-/** Lets go of a folder this device no longer uses. Best effort: a browser that won't is no worse off. */
-export async function forget(dir: string, repo: Repo | undefined) {
-  repo?.dispose();
-  try {
-    const root = await navigator.storage.getDirectory();
-    await root.removeEntry(dir, { recursive: true });
-  } catch { /* still open somewhere, or no OPFS: it stays, unused */ }
 }
 
 const paramsOfHash = (start: Record<string, string> = {}): Record<string, string> => (location.hash.length > 1 ? Object.fromEntries(new URLSearchParams(location.hash.slice(1))) : start);

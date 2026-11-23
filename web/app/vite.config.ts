@@ -13,6 +13,6 @@ export default defineConfig({
   // the check's typecheck runs in a worker the dev server's scan doesn't follow: found only at the agent's first check,
   // its dependency would be optimized then, and the dev server reloads the page, ending the agent's turn
   optimizeDeps: { include: ['@gestalts/check > typescript-js', '@gestalts/check > esbuild-wasm'] },
-  // the areas are paths (/notes, /learn, …), so everything is from the root
+  // the areas are paths (/workshop, /review, /runs), so everything is from the root
   base: '/',
 });

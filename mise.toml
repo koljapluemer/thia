@@ -84,7 +84,7 @@ run = "cargo run -q --release -p gestalts-node-desktop -- $(bash scripts/plugin-
 
 [tasks."web:dev"]
 hide = true
-description = "The web app on the first free port from :5173 with hot reload, without the node or the server (mise run just dev starts all three)"
+description = "The make app (web/app: workshop, review, runs) on the first free port from :5173 with hot reload, without the node or the server (mise run just dev starts all three)"
 depends = ["setup"]
 shell = "bash -c"
 run = 'pnpm --dir web/app dev --port "$(scripts/free-port.sh 5173)" --strictPort'
@@ -235,7 +235,7 @@ run = ["node outlines/us-ccss-math-2010/tools/build.ts {{usage.package}}", "mise
 
 [tasks."site:dev"]
 hide = true
-description = "The public site (web/site) on :5177 with hot reload; lessons' links from the server on :7741"
+description = "The use app (web/site) on :5177 with hot reload; lessons' links from the server on :7741"
 depends = ["setup"]
 run = "pnpm --dir web/site dev"
 

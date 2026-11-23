@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # `mise run just dev`: everything for development at once, with hot reload, stopped together (Ctrl-C, or when any of
 # it exits):
-#   - the web app (web/app): notes on the home store in the browser, the workshop, the review
-#   - the public site (web/site): the learning views, visualizations and accepted workshop results
+#   - the make app (web/app): the workshop, the review, the agent runs
+#   - the use app (web/site): every view and visualization, the notes on the store in the browser, accepted workshop results
 #   - the Claude bridge (scripts/claude-bridge.sh): runs the agents (the claude CLI), with the pages' tools: the
 #     workshop's
 #   - the Ollama bridge (scripts/ollama-bridge.sh, experimental): the same, with a local Ollama model
@@ -95,12 +95,13 @@ serve servers serverapi "server" "http://127.0.0.1:$serverapi" "$serverapi" "$se
 
 if [[ -e server-data/dev-login.txt ]]; then login="lessons sign-in: server-data/dev-login.txt"
 else login="lessons sign-in: your account, or mise run server:admin add-account / reset-password"; fi
-serve apps web "web app" "http://localhost:$web/" "$web" "$login" \
-  env VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_AGENT_NODE="http://127.0.0.1:$bridge" \
+serve apps web "make app" "http://localhost:$web/workshop" "$web" "$login" \
+  env VITE_AGENT_NODE="http://127.0.0.1:$bridge" \
   VITE_OLLAMA_NODE="http://127.0.0.1:$ollamabridge" \
   VITE_THIA_API="http://127.0.0.1:$serverapi" VITE_SITE="http://localhost:$site/" pnpm --dir web/app dev --port "$web" --strictPort
-serve apps site "public site" "http://localhost:$site/" "$site" "what's accepted shows here once it's in plugins/" \
-  env VITE_LESSONS="http://127.0.0.1:$serverlessons" pnpm --dir web/site dev --port "$site" --strictPort
+serve apps site "use app" "http://localhost:$site/" "$site" "every view, your notes; what's accepted shows here once it's in plugins/" \
+  env VITE_LESSONS="http://127.0.0.1:$serverlessons" VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_MAKE="http://localhost:$web/workshop" \
+  pnpm --dir web/site dev --port "$site" --strictPort
 
 listening() { (exec 3<> "/dev/tcp/127.0.0.1/$1") 2> /dev/null || (exec 3<> "/dev/tcp/::1/$1") 2> /dev/null; }
 

@@ -3,7 +3,9 @@ import { ArrowLeft, ChevronRight } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import type { OutlineTree, OutlineTreeEntry } from '@gestalts/host';
 import { BY_SOURCE, follow, ViewCard } from './Catalog';
-import { Notice, Spinner, store } from './Run';
+import { Notice, Spinner } from './Run';
+import { store } from './store';
+import { GuestBanner, Toolbar } from './Toolbar';
 
 /**
  * A curriculum or guide (`/o/<outline>`), as its issuer structured it: the whole tree, as a disclosure list (each
@@ -115,10 +117,14 @@ export function Outline({ name, entry, open }: { name: string; entry?: string; o
   const successor = summary.replacedBy && registry.outlines?.find((o) => o.name === summary.replacedBy);
   return (
     <div className="min-h-dvh bg-base-200">
+      <GuestBanner />
       <header className="mx-auto flex max-w-5xl flex-col gap-2 px-4 pt-6 pb-4">
-        <a href="/" onClick={(ev) => follow(ev, '/', open)} className="link link-hover flex items-center gap-1 text-sm text-base-content/70">
-          <ArrowLeft className="size-4" />{w.back}
-        </a>
+        <div className="flex items-center gap-2">
+          <a href="/" onClick={(ev) => follow(ev, '/', open)} className="link link-hover flex flex-1 items-center gap-1 text-sm text-base-content/70">
+            <ArrowLeft className="size-4" />{w.back}
+          </a>
+          <Toolbar />
+        </div>
         <h1 className="text-2xl font-semibold">{tree.title}</h1>
         <p className="text-sm text-base-content/70">{[tree.issuer, tree.edition].filter(Boolean).join(' · ')}</p>
         {successor && (

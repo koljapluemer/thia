@@ -4,7 +4,7 @@ import { useConnector, useHostRepo } from '@gestalts/client';
 const DEFAULT_URL = 'http://127.0.0.1:7717';
 
 /**
- * Connect to the gestalter desktop app, which makes a folder on disk the source of truth. `defaultUrl` is the node it
+ * Connect to the desktop app (folder-sync, gestalts-node), which makes a folder on disk the source of truth. `defaultUrl` is the node it
  * offers (default the installed one's, `http://127.0.0.1:7717`).
  */
 export function ConnectorSettings({ defaultUrl = DEFAULT_URL }: { defaultUrl?: string }) {
@@ -14,7 +14,7 @@ export function ConnectorSettings({ defaultUrl = DEFAULT_URL }: { defaultUrl?: s
     return (
       <div className="flex w-72 flex-col gap-2">
         <p className="text-sm text-base-content/70">
-          Sync with a folder on this computer through the gestalter desktop app. Without it, everything stays in this browser.
+          Sync with a folder on this computer through the folder-sync desktop app. Without it, everything stays in this browser.
         </p>
         <input className="input input-sm w-full" value={url} onChange={(e) => setUrl(e.target.value)} disabled={!!status.url} aria-label="Desktop app URL" />
         {status.url ? (

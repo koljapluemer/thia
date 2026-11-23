@@ -36,16 +36,14 @@ export type PluginEntry = {
   npm: string[];
   /** where the build put each of `npm`, bundled, relative to the app (a distribution with `pinned_npm`); else esm.sh */
   npmUrls?: Record<string, string>;
-  /** can't be uninstalled here */
-  core: boolean;
   /** what the distribution granted of what it asked for */
   granted: Permission[];
   /** it has a `backend.py`: required when the manifest says `requires: [backend]`, else optional */
   backend: boolean;
 };
 
-/** `id`: whose tabs and data are whose, for good. */
-export type Distribution = { id: string; default_views: string[]; install_ui: boolean };
+/** `id`: what its views' kept state is under, for good. */
+export type Distribution = { id: string };
 
 /** What every view's frame loads: React, the kit and the rest, as one script, and their styles. */
 /** What every frame loads. `version` names it: a hash of `js`, so a lesson or draft can say what it was made against. */

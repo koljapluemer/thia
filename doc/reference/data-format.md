@@ -109,7 +109,7 @@ fields:
 | `outline-entry@1` | one node of an outline: `label`, its children as `entries`; optional `notation`, `kind`, `level`, `grades`, `isced`, `concepts` |
 | `fsrs-data@1` | spaced-repetition state for a `target` |
 | `practice-session@1` | one session's timing and trials |
-| `plugin-install@1` | whether a plugin is on here |
+| `plugin-install@1` | whether a plugin was on here (the gestalter's installs; no longer written) |
 | `view@1` | a vibecoded view: `title`, `source`, `reads`, `writes` |
 | `conflict@1` | a value a sync couldn't settle |
 | `gestalt@1` | a gestalt's definition, as data (above) |

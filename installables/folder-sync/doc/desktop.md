@@ -1,8 +1,8 @@
 # gestalts-node on the desktop (folder-sync)
 
 `gestalts-node` (`installables/folder-sync/desktop`) makes a folder on this computer the source of truth for the gestalts apps
-and runs the plugins' workers, inside a tray. It ships no app: gestalter,
-loops-for-learning and the learning workshop are websites that use it on `http://127.0.0.1:7717`. Install it from a
+and runs the plugins' workers, inside a tray. It ships no app: thia's use app
+(`web/site`) is a website that uses it on `http://127.0.0.1:7717`. Install it from a
 package (`mise run node:package` / `mise run node:install`) and launch it from the app menu. On first start it opens
 its settings page, which asks for your folder; it remembers it and lives in the tray from then on.
 
@@ -29,11 +29,12 @@ web app doesn't need a node: its notes are in the browser.
 ## The apps on it
 
 An app is a website: it reaches the node across origins (CORS, and Chrome asks once whether the page may use apps on
-this device). Allowed are localhost (any port), the origins in `ORIGINS` (`installables/folder-sync/desktop/src/main.rs`: the
-deployed gestalter and loops-for-learning) and the config's `extra_origins`. gestalter uses the folder directly
-(`usePluginRepo({ node })`): every write goes to the folder, and the node's `/events` socket brings changes from
-elsewhere (workers, another app, a hand edit) into the open page. loops-for-learning and the learning workshop keep
-their ymls in the browser and sync with a node.
+this device). Allowed are localhost (any port), the origins in `ORIGINS` (`installables/folder-sync/desktop/src/main.rs`: thia's use
+app, `THIA_APP_ORIGIN` at build time, and the old gestalter and loops-for-learning sites) and the config's
+`extra_origins`. The use app keeps its ymls in the browser and asks the node for plugin backends, `/net` and `/llm`;
+it syncs with it once the user connects. A page may also open the folder directly (`useHomeRepo({ node })`): every
+write goes to the folder, and the node's `/events` socket brings changes from elsewhere (workers, another app, a hand
+edit) into the open page.
 
 ## Tray and settings
 
@@ -59,7 +60,7 @@ their ymls in the browser and sync with a node.
 The app was called `gestalts-connector`, then `gestalter`. Its settings (the folder, `extra_origins`, LLM providers) are the
 node's and stay. "Start on login" moves to the new name on first start. The `.rpm` obsoletes
 both old packages; the `.deb` can't say so, so remove `gestalter` by hand. If an old app still runs, the new one says
-so and exits. gestalter is now a website on the node instead of built into it.
+so and exits. What gestalter was is now thia's use app, a website.
 
 ## Packaging
 
