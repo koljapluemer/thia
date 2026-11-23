@@ -46,8 +46,9 @@ impl Server {
         let db = Db::memory().unwrap();
         db.add_school("s1", "A school", "2026-11-20T00:00:00Z").unwrap();
         for (id, email) in [("a1", "ada@school.example"), ("a2", "bea@school.example"), ("a3", "cal@school.example")] {
-            db.add_account(id, "s1", email, &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
+            db.add_account(id, Some("s1"), email, &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
         }
+        db.add_account("a4", None, "independent@example.com", &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
         // bea reviews
         db.set_admin("bea@school.example", true).unwrap();
         // cal makes what the public site ships

@@ -16,9 +16,10 @@ On the box (Debian/Ubuntu), as root:
 6. Backups: `backup.sh` to `/usr/local/bin/`, `/etc/thia-server-backup.env` with the restic repository, and a
    nightly cron entry for it.
 
-Then, from a committed tree here: `THIA_HOST=root@box mise run server:deploy`. Schools and accounts on the box:
-`sudo -u thia /opt/thia-server/current/bin/thia-server --data /var/lib/thia-server admin add-school "…"`,
-then `admin add-account --school <id> --email <email>`, which prints the password to hand over.
+Then, from a committed tree here: `THIA_HOST=root@box mise run server:deploy`. Add an account on the box with
+`sudo -u thia /opt/thia-server/current/bin/thia-server --data /var/lib/thia-server admin add-account --email <email>`,
+which prints the password to hand over. To associate it with a school, first use `admin add-school "…"` and pass its
+printed id to `add-account --school <id>`. Pass `--password <password>` to choose one instead of generating it.
 
 Every player a deploy installs stays (`/var/lib/thia-server/runtime/`), so lessons published against an older
 runtime keep opening. Before anyone else uses it: a processing agreement with Anthropic (what is typed to the server's agent goes to the

@@ -297,7 +297,7 @@ cargo run -q -p thia-server -- --data server-data serve --insecure-cookies --pro
 
 [tasks."server:admin"]
 hide = true
-description = "Schools and accounts on the local server: mise run server:admin add-school NAME, add-account --school ID --email E [--admin], grant-admin E"
+description = "Accounts on the local server: mise run server:admin add-account --email E [--password P] [--school ID] [--admin], add-school NAME, grant-admin E"
 run = "cargo run -q -p thia-server -- --data server-data admin"
 
 [tasks."server:deploy"]

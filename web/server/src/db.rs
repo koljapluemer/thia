@@ -1,5 +1,5 @@
 //! What isn't an account's own plain-text data: schools, accounts, sessions, drafts, publications and the agent's usage.
-//! Every draft and publication has an owner and a school from the start, whether or not anything shows it yet.
+//! Drafts and publications keep their owner's school when the account belongs to one.
 
 use std::path::Path;
 use std::sync::Mutex;
@@ -97,6 +97,51 @@ const MIGRATIONS: &[&str] = &[r"
     ALTER TABLE drafts ADD COLUMN kind TEXT NOT NULL DEFAULT 'view';
     -- may use every model package in the repo in drafts, and has more room
     ALTER TABLE accounts ADD COLUMN maintainer INTEGER NOT NULL DEFAULT 0;
+", r"
+    -- Accounts need not belong to a school. Drafts and publications inherit that optional association.
+    PRAGMA defer_foreign_keys = ON;
+    CREATE TABLE accounts_new (
+        id TEXT PRIMARY KEY,
+        school TEXT REFERENCES schools(id),
+        email TEXT NOT NULL UNIQUE,
+        password TEXT,
+        oidc_subject TEXT UNIQUE,
+        token_budget INTEGER NOT NULL,
+        created TEXT NOT NULL,
+        disabled TEXT,
+        admin INTEGER NOT NULL DEFAULT 0,
+        maintainer INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO accounts_new SELECT id, school, email, password, oidc_subject, token_budget, created, disabled, admin, maintainer FROM accounts;
+    CREATE TABLE drafts_new (
+        id TEXT PRIMARY KEY,
+        owner TEXT NOT NULL REFERENCES accounts_new(id),
+        school TEXT REFERENCES schools(id),
+        package TEXT NOT NULL UNIQUE,
+        title TEXT NOT NULL,
+        created TEXT NOT NULL,
+        deleted TEXT,
+        kind TEXT NOT NULL DEFAULT 'view'
+    );
+    INSERT INTO drafts_new SELECT id, owner, school, package, title, created, deleted, kind FROM drafts;
+    CREATE TABLE publications_new (
+        id TEXT PRIMARY KEY,
+        draft TEXT NOT NULL REFERENCES drafts_new(id),
+        owner TEXT NOT NULL REFERENCES accounts_new(id),
+        school TEXT REFERENCES schools(id),
+        manifest TEXT NOT NULL,
+        definitions TEXT NOT NULL,
+        created TEXT NOT NULL,
+        updated TEXT NOT NULL,
+        revoked TEXT
+    );
+    INSERT INTO publications_new SELECT id, draft, owner, school, manifest, definitions, created, updated, revoked FROM publications;
+    DROP TABLE publications;
+    DROP TABLE drafts;
+    DROP TABLE accounts;
+    ALTER TABLE accounts_new RENAME TO accounts;
+    ALTER TABLE drafts_new RENAME TO drafts;
+    ALTER TABLE publications_new RENAME TO publications;
 "];
 
 pub struct Db(Mutex<Connection>);
@@ -104,7 +149,7 @@ pub struct Db(Mutex<Connection>);
 #[derive(Debug, Clone, PartialEq)]
 pub struct Account {
     pub id: String,
-    pub school: String,
+    pub school: Option<String>,
     pub email: String,
     pub token_budget: i64,
     pub admin: bool,
@@ -117,7 +162,7 @@ pub struct Draft {
     #[serde(skip)]
     pub owner: String,
     #[serde(skip)]
-    pub school: String,
+    pub school: Option<String>,
     pub package: String,
     pub kind: String,
     pub title: String,
@@ -175,7 +220,7 @@ impl Db {
         self.conn().query_row("SELECT 1 FROM schools WHERE id = ?1", [id], |_| Ok(())).optional().map(|r| r.is_some())
     }
 
-    pub fn add_account(&self, id: &str, school: &str, email: &str, password_hash: &str, token_budget: i64, now: &str) -> Result<(), Error> {
+    pub fn add_account(&self, id: &str, school: Option<&str>, email: &str, password_hash: &str, token_budget: i64, now: &str) -> Result<(), Error> {
         self.conn()
             .execute(
                 "INSERT INTO accounts (id, school, email, password, token_budget, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
@@ -433,4 +478,30 @@ pub struct Submission {
     pub decided: Option<String>,
     pub note: Option<String>,
     pub promoted: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn existing_school_accounts_migrate_and_schoolless_accounts_work() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "foreign_keys", true).unwrap();
+        for migration in &MIGRATIONS[..3] {
+            conn.execute_batch(migration).unwrap();
+        }
+        conn.pragma_update(None, "user_version", 3).unwrap();
+        conn.execute("INSERT INTO schools VALUES ('s', 'School', 'now')", []).unwrap();
+        conn.execute(
+            "INSERT INTO accounts (id, school, email, password, token_budget, created) VALUES ('old', 's', 'old@example.com', 'hash', 1, 'now')",
+            [],
+        )
+        .unwrap();
+
+        let db = Db::migrate(conn).unwrap();
+        assert_eq!(db.account_by_email("old@example.com").unwrap().unwrap().0.school.as_deref(), Some("s"));
+        db.add_account("new", None, "new@example.com", "hash", 1, "now").unwrap();
+        assert_eq!(db.account_by_email("new@example.com").unwrap().unwrap().0.school, None);
+    }
 }

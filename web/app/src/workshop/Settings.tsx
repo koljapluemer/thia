@@ -9,7 +9,7 @@ const CLAUDE: BridgeText = { name: 'Claude bridge', placeholder: DEFAULT_NODE, b
 const OLLAMA: BridgeText = { name: 'Ollama bridge', placeholder: DEFAULT_OLLAMA_NODE, backend: ollamaBackend, ok: 'The bridge is there, Ollama has the model, and the bridge lets this site use it.', start: INSTALL_OLLAMA_BRIDGE };
 
 const TEXT: Record<AgentId, { name: string; about: ReactNode }> = {
-  server: { name: 'Claude, on this site', about: 'Within your school’s monthly budget.' },
+  server: { name: 'Claude, on this site', about: 'Within your account’s monthly budget.' },
   cli: { name: 'Claude Code on this computer', about: <>The <code>claude</code> command you’re signed in to here, on your own plan, through the Claude bridge.</> },
   ollama: { name: 'Ollama on this computer (experimental)', about: 'A local model, through the Ollama bridge. Free, and much weaker than Claude.' },
   gemini: { name: 'Gemini, free tier', about: 'Google’s free models on your own AI Studio key, called from this browser; the conversation stays in this tab. Google may use what’s sent on the free tier to improve its products.' },

@@ -85,7 +85,7 @@ struct Login {
 #[derive(Serialize)]
 pub struct Me {
     pub email: String,
-    pub school: String,
+    pub school: Option<String>,
     pub admin: bool,
     pub maintainer: bool,
 }

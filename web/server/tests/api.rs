@@ -23,6 +23,19 @@ async fn signing_in_and_out() {
 }
 
 #[tokio::test]
+async fn an_account_without_a_school_can_sign_in_and_create_a_draft() {
+    let s = Server::new(Limits::default());
+    let independent = s.login("independent@example.com").await;
+    let (status, me, _) = s.call("GET", "/api/me", Some(&independent), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(me["school"].is_null());
+
+    let (status, draft, _) = s.call("POST", "/api/drafts", Some(&independent), Some(json!({ "title": "Independent draft" }))).await;
+    assert_eq!(status, StatusCode::CREATED);
+    assert_eq!(draft["title"], "Independent draft");
+}
+
+#[tokio::test]
 async fn too_many_wrong_passwords_wait() {
     let s = Server::new(Limits::default());
     for _ in 0..5 {

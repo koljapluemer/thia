@@ -63,12 +63,15 @@ enum Command {
 enum Admin {
     /// A school; prints its id
     AddSchool { name: String },
-    /// An account at a school; prints a password to hand over
+    /// An account, optionally associated with a school; prints a password to hand over
     AddAccount {
         #[arg(long)]
-        school: String,
+        school: Option<String>,
         #[arg(long)]
         email: String,
+        /// use this password instead of generating one
+        #[arg(long)]
+        password: Option<String>,
         /// may review submissions for the public site
         #[arg(long)]
         admin: bool,
@@ -127,13 +130,18 @@ async fn run(cli: Cli) -> Result<(), String> {
                     db.add_school(&id, &name, &now).map_err(|e| e.to_string())?;
                     println!("{id}");
                 }
-                Admin::AddAccount { school, email, admin, maintainer } => {
-                    if !db.school_exists(&school).map_err(|e| e.to_string())? {
+                Admin::AddAccount { school, email, password, admin, maintainer } => {
+                    if let Some(school) = &school
+                        && !db.school_exists(school).map_err(|e| e.to_string())?
+                    {
                         return Err(format!("no school {school}"));
                     }
-                    let password = random_token(12);
+                    let password = password.unwrap_or_else(|| random_token(12));
+                    if password.is_empty() {
+                        return Err("password must not be empty".into());
+                    }
                     let email = email.trim().to_lowercase();
-                    db.add_account(&random_hex(8), &school, &email, &auth::hash_password(&password), limits.token_budget, &now).map_err(|e| e.to_string())?;
+                    db.add_account(&random_hex(8), school.as_deref(), &email, &auth::hash_password(&password), limits.token_budget, &now).map_err(|e| e.to_string())?;
                     if admin {
                         db.set_admin(&email, true).map_err(|e| e.to_string())?;
                     }

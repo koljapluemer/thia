@@ -10,9 +10,11 @@ Locally, `mise run just dev` runs it all, with the server's agent if `ANTHROPIC_
 made the account `dev@localhost`, an admin and a maintainer (`server-data/dev-login.txt`). Piece by piece, from the repo root:
 
 ```sh
-mise run server:admin add-school "Test"                          # prints its id
-mise run server:admin add-account --school <id> --email a@b.c    # prints a password; --admin: reviews submissions,
+mise run server:admin add-account --email a@b.c                  # prints a password; --admin: reviews submissions,
                                                                   # --maintainer: every model package, more room
+mise run server:admin add-school "Test"                          # optional: prints its id; associate an account with
+mise run server:admin add-account --school <id> --email t@b.c    # it by passing --school
+mise run server:admin add-account --email a@b.c --password '…'   # optional: choose the password instead of generating it
 ANTHROPIC_API_KEY=… mise run server:serve                        # API on :7740, lessons on :7741; accepts into this checkout
 mise run web:dev                                                  # the app; /workshop, /api from :7740
 ```

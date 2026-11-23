@@ -1,6 +1,6 @@
 /** The workshop server's API (web/server), on this origin under /api, with the session cookie. */
 
-export type Me = { email: string; school: string; admin: boolean; maintainer: boolean };
+export type Me = { email: string; school: string | null; admin: boolean; maintainer: boolean };
 /** What a draft makes: a learning view, a visualization, or a lesson of several views. */
 export type Kind = 'view' | 'viz' | 'sequence';
 export type DraftInfo = { id: string; package: string; kind: Kind; title: string; created: string };
