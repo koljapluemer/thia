@@ -16,7 +16,7 @@ type Fn<K extends Method> = WasmRepo[K] extends (...a: infer A) => infer R ? (..
  */
 export type Core = { [K in Method]: Fn<K> } & { free(): void };
 
-/** A core on this thread: the native app's, whose storage is the page's (`HostStorage` callbacks). */
+/** A core on this thread, where there's no Worker. */
 export function localCore(wasm: WasmRepo): Core {
   const core = Object.fromEntries(METHODS.map((m) => [m, async (...a: unknown[]) => (wasm[m] as (...x: unknown[]) => unknown).apply(wasm, a)]));
   return { ...(core as Omit<Core, 'free'>), free: () => wasm.free() };

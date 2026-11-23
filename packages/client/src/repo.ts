@@ -2,20 +2,17 @@ import { logger, type Belief, type BeliefDelta, type Delta, type Health, type It
 import init, { WasmRepo, contentHash as wasmContentHash, newId as wasmNewId, stableId as wasmStableId, stateId as wasmStateId } from '../wasm/gestalts.js';
 import { coalesce } from './coalesce';
 import { localCore, workerCore, type Core } from './core';
-import { nativeHost, type NativeHost, type NativeKind, type NativeStatus, type PairedNodeInfo } from './native';
 
 const log = logger('repo');
 
 /** A read-only deck published at `url` (a folder with `index.json`), under its `source` id. */
 export type DeckSource = { source: string; url: string };
 
-/** Where the user's notes live: in OPFS under `dir` (synced with a connector, if one is set), in the folder the
- * node at `node` serves (the desktop app; written directly, nothing to sync), or in the folder of the native app
- * around the page (`native`: Android), which syncs it with the node it paired with. */
+/** Where the user's notes live: in OPFS under `dir` (synced with a connector, if one is set), or in the folder the
+ * node at `node` serves (the desktop app; written directly, nothing to sync). */
 export type YmlsIn =
-  | { dir: string; node?: undefined; native?: undefined }
-  | { node: string; dir?: undefined; native?: undefined }
-  | { native: NativeKind; dir?: undefined; node?: undefined };
+  | { dir: string; node?: undefined }
+  | { node: string; dir?: undefined };
 
 export type RepoSource = YmlsIn & {
   /** read-only decks under them */
@@ -60,11 +57,8 @@ function withSlash(url: string) {
 const RECONNECT_MS = [500, 1000, 2000, 5000];
 
 export type ConnectorStatus = {
-  /**
-   * `sync`: notes in this browser, synced with the connector at `url`; `direct`: the notes are the node's folder;
-   * `paired`: the notes are a native app's, which syncs them with the node it paired with (`node`, no `url`)
-   */
-  mode: 'sync' | 'direct' | 'paired';
+  /** `sync`: notes in this browser, synced with the connector at `url`; `direct`: the notes are the node's folder */
+  mode: 'sync' | 'direct';
   url: string | null;
   state: 'off' | 'syncing' | 'ok' | 'error';
   error?: string;
@@ -74,8 +68,6 @@ export type ConnectorStatus = {
   conflicts: string[];
   /** the folder the connector serves, as of the last sync (direct: as of opening) */
   folder?: string;
-  /** paired: the node, if the app is paired with one */
-  node?: PairedNodeInfo;
 };
 
 export type SyncReport = {
@@ -143,8 +135,6 @@ export class Repo {
   private pollTimer: ReturnType<typeof setInterval> | undefined;
   /** direct mode: the node's change events */
   private events: WebSocket | undefined;
-  /** paired mode: the native app, and what to undo on closing */
-  private native: { host: NativeHost; stop: (() => void)[] } | undefined;
   private closed = false;
   /**
    * Settles once the first sync after opening is done (or failed), right away without a connector. Seed ymls (installs)
@@ -160,14 +150,6 @@ export class Repo {
     try {
       // the core on this thread too, for ids and hashes, which are asked for synchronously
       await loadCore();
-      if (source.native !== undefined) {
-        // the native app's folder is reached through the page (its commands), so its core stays here
-        const host = await nativeHost(source.native);
-        await host.setGestalts(source.gestalts ?? []);
-        wasm = localCore(await WasmRepo.openWith(host, source.decks ?? [], source.gestalts ?? []));
-        span.end();
-        return await Repo.paired(wasm, host);
-      }
       const decks = source.decks ?? [];
       const gestalts = source.gestalts ?? [];
       // reading and indexing every yml happens in a worker, so the page stays responsive meanwhile
@@ -197,33 +179,6 @@ export class Repo {
     repo.setStatus({ mode: 'direct', url, state: 'ok', folder });
     repo.listen(0);
     void wasm.collectNodeBlobs().catch((e: unknown) => log.warn('collecting blobs failed', { error: e }));
-    return repo;
-  }
-
-  /**
-   * A repo on a native app's folder: the app syncs it and says what changed. Only visible pages sync on a timer. If
-   * the app is paired, `firstSync` waits for its first sync (or failure).
-   */
-  private static async paired(wasm: Core, host: NativeHost): Promise<Repo> {
-    const repo = new Repo(wasm, '');
-    const native: { host: NativeHost; stop: (() => void)[] } = { host, stop: [] };
-    repo.native = native;
-    repo.setStatus(nativeStatus(await host.status()));
-    let synced: () => void = () => {};
-    const first = new Promise<void>((resolve) => { synced = resolve; });
-    native.stop.push(await host.onChanged((c) => void repo.reindex(c.ymls, c.blobs)));
-    native.stop.push(await host.onStatus((s) => {
-      repo.setStatus(nativeStatus(s));
-      if (s.state !== 'syncing') synced();
-    }));
-    const visible = () => void host.setActive(document.visibilityState === 'visible').catch((e: unknown) => log.warn('telling the app failed', { error: e }));
-    document.addEventListener('visibilitychange', visible);
-    native.stop.push(() => document.removeEventListener('visibilitychange', visible));
-    visible();
-    if (repo.status.node) {
-      repo.firstSync = Promise.race([first, new Promise<void>((r) => setTimeout(r, 20_000))]);
-      void host.sync();
-    }
     return repo;
   }
 
@@ -376,8 +331,7 @@ export class Repo {
   }
 
   /**
-   * The node to ask for backends, `/net` and `/llm`: the one synced with, else the bridge; none when it's a native
-   * app's paired one.
+   * The node to ask for backends, `/net` and `/llm`: the one synced with, else the bridge.
    */
   private nodeUrl(): string | null {
     return nodeFor(this.status, this.bridge);
@@ -499,7 +453,6 @@ export class Repo {
     clearTimeout(this.syncTimer);
     this.closed = true;
     this.events?.close();
-    this.native?.stop.forEach((f) => f());
     this.setStatus({ url: null, state: 'off' });
   }
 
@@ -528,8 +481,6 @@ export class Repo {
   sync = coalesce(() => this.runSync(), () => log.debug('sync: coalesced'));
 
   private async runSync(): Promise<SyncReport | undefined> {
-    // the native app syncs on its own; its status events tell how it went
-    if (this.native) return void (await this.native.host.sync().catch((e: unknown) => log.warn('asking the app to sync failed', { error: e })));
     const url = this.status.url;
     if (!url || this.status.mode === 'direct') return;
     this.setStatus({ state: 'syncing' });
@@ -555,22 +506,7 @@ export class Repo {
 }
 
 /** The node a repo asks for backends, `/net` and `/llm`, with a slash: see `Repo.nodeUrl`. */
-export function nodeFor(status: Pick<ConnectorStatus, 'mode' | 'url'>, bridge: string | null): string | null {
-  if (status.mode === 'paired') return null;
+export function nodeFor(status: Pick<ConnectorStatus, 'url'>, bridge: string | null): string | null {
   const url = status.url ?? bridge;
   return url ? withSlash(url) : null;
-}
-
-function nativeStatus(s: NativeStatus): Partial<ConnectorStatus> {
-  return {
-    mode: 'paired',
-    url: null,
-    node: s.paired ?? undefined,
-    state: s.state,
-    error: s.error ?? undefined,
-    lastSync: s.lastSync === null ? undefined : new Date(s.lastSync),
-    lastReport: (s.lastReport ?? undefined) as SyncReport | undefined,
-    folder: s.folder ?? undefined,
-    conflicts: s.conflicts,
-  };
 }

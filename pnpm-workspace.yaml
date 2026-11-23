@@ -1,7 +1,6 @@
 packages:
   - packages/*
   - web/app
-  - web/android
   - web/site
   - web/server
   - installables/folder-sync/settings

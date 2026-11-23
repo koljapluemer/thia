@@ -11,7 +11,6 @@ uv = "0.13.6"
 "cargo:wasm-pack" = "0.15.1"
 "cargo:cargo-packager" = "0.11.8"
 "cargo:cargo-generate-rpm" = "0.21.1"
-"cargo:tauri-cli" = "2.12.4"
 
 # --- for people ---
 
@@ -149,10 +148,10 @@ shell = "bash -c"
 run = """
 trap 'kill 0' EXIT
 page="$(scripts/free-port.sh 5176)"
-# in steps of two: the port after it is this node's home-network port. Clear of an installed node on 7717
-node="$(scripts/free-port.sh 7727 2)"
+# clear of an installed node on 7717
+node="$(scripts/free-port.sh 7727)"
 echo "gestalts-node settings: http://localhost:$page/ on the node at :$node"
-cargo run -q -p gestalts-node-desktop -- --profile dev --port "$node" --lan-port "$((node + 1))" $(bash scripts/plugin-dirs.sh) --open-url "http://localhost:$page/" &
+cargo run -q -p gestalts-node-desktop -- --profile dev --port "$node" $(bash scripts/plugin-dirs.sh) --open-url "http://localhost:$page/" &
 GESTALTS_NODE="http://127.0.0.1:$node" pnpm --dir installables/folder-sync/settings dev --port "$page" --strictPort &
 wait
 """
@@ -183,51 +182,6 @@ hide = true
 description = "Build and install the desktop app on this machine, the way a user gets it"
 depends = ["node:package"]
 run = "bash scripts/install-package.sh target/packages"
-
-
-# --- the Android app ---
-
-[tasks."android:check"]
-hide = true
-description = "Clippy on the Android app for arm64 Android (needs the NDK, see installables/folder-sync/doc/android.md)"
-shell = "bash -c"
-run = """
-set -euo pipefail
-source scripts/android-env.sh
-bin="$(echo "$NDK_HOME"/toolchains/llvm/prebuilt/*/bin)"
-export CC_aarch64_linux_android="$bin/aarch64-linux-android24-clang" AR_aarch64_linux_android="$bin/llvm-ar"
-export CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER="$bin/aarch64-linux-android24-clang"
-cargo clippy --manifest-path installables/folder-sync/android/Cargo.toml -q --target aarch64-linux-android -- -D warnings
-"""
-
-[tasks."android:dev"]
-hide = true
-description = "The Android app on a connected phone or a running emulator, with the page hot-reloading from this machine; the page is $GESTALTS_ANDROID_DISTRIBUTION (default web/android)"
-depends = ["setup"]
-dir = "installables/folder-sync/android"
-shell = "bash -c"
-run = """
-source ../../../scripts/android-env.sh
-source ../../../scripts/android-distribution.sh
-export GESTALTER_PAGE_PORT="$(../../../scripts/free-port.sh 5174)"
-export GESTALTER_HMR_PORT="$(../../../scripts/free-port.sh $((GESTALTER_PAGE_PORT + 1)))"
-cargo tauri android dev --config "$(distribution_config "http://localhost:$GESTALTER_PAGE_PORT")"
-"""
-
-[tasks."android:build"]
-hide = true
-description = "A debug APK for arm64 phones, to install with adb, of $GESTALTS_ANDROID_DISTRIBUTION (default web/android)"
-depends = ["setup", "icons:check"]
-dir = "installables/folder-sync/android"
-shell = "bash -c"
-run = """
-set -euo pipefail
-source ../../../scripts/android-env.sh
-source ../../../scripts/android-distribution.sh
-cargo tauri android build --debug --apk --target aarch64 --config "$(distribution_config)"
-ls gen/android/app/build/outputs/apk/*/debug/*.apk
-"""
-
 
 
 # --- decks: rebuilt from their sources, and published ---

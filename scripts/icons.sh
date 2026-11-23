@@ -25,7 +25,6 @@ stamp() {
 
 web_apps=(
   web/app
-  web/android
   installables/folder-sync/settings
 )
 for app in "${web_apps[@]}"; do
@@ -40,8 +39,4 @@ bridge_source="$(source_for installables/claude-bridge)"
 render "$bridge_source" 256 "$root/installables/claude-bridge/assets/icon.png"
 stamp "$bridge_source" "$root/installables/claude-bridge/assets/icon.source.sha256"
 
-android_source="$(source_for installables/folder-sync/android)"
-(cd "$root/installables/folder-sync/android" && mise exec -- cargo tauri icon "$android_source")
-stamp "$android_source" "$root/installables/folder-sync/android/icons/icon.source.sha256"
-
-echo "Updated web, desktop and Android icons."
+echo "Updated web and desktop icons."

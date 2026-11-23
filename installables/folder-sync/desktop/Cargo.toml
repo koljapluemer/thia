@@ -33,7 +33,7 @@ tao = "0.37"
 product-name = "gestalts-node"
 identifier = "com.koljasam.gestalts-node"
 category = "Productivity"
-description = "Your ymls in a folder on this computer, synced with your devices, for the gestalts apps"
+description = "Your ymls in a folder on this computer, for the thia apps"
 icons = ["assets/icon.png"]
 authors = ["Kolja Sam"]
 publisher = "Kolja Sam"
@@ -43,7 +43,7 @@ out-dir = "../../../target/packages"
 
 [package.metadata.generate-rpm]
 name = "gestalts-node"
-summary = "Your ymls in a folder on this computer, synced with your devices, for the gestalts apps"
+summary = "Your ymls in a folder on this computer, for the thia apps"
 license = "proprietary"
 assets = [
   { source = "../../../target/release/gestalts-node", dest = "/usr/bin/gestalts-node", mode = "755" },

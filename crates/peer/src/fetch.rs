@@ -20,15 +20,6 @@ fn status_error(method: &str, url: &str, status: u16, text: &str) -> StorageErro
     StorageError::Io(format!("{method} {url}: {status} {text}"))
 }
 
-/// How requests go out: with a device token, and natively over a client that pins the node's certificate
-/// (`paired.rs`). The default is a plain request.
-#[derive(Clone, Default)]
-pub struct Auth {
-    pub token: Option<String>,
-    #[cfg(not(target_arch = "wasm32"))]
-    pub client: Option<reqwest::Client>,
-}
-
 /// A request body.
 pub enum Payload<'a> {
     Bytes(&'a [u8]),
@@ -49,7 +40,7 @@ impl Payload<'_> {
 
 /// `Ok(None)` on 404.
 pub async fn fetch(url: &str, method: &str, body: Option<&[u8]>) -> Result<Option<Body>> {
-    send(&Auth::default(), url, method, body.map(Payload::Bytes)).await
+    send(url, method, body.map(Payload::Bytes)).await
 }
 
 pub async fn json<T: for<'de> Deserialize<'de>>(resp: Body) -> Result<T> {
@@ -83,7 +74,7 @@ mod imp {
     }
 
     /// `Ok(None)` on 404.
-    pub async fn send(auth: &Auth, url: &str, method: &str, body: Option<Payload<'_>>) -> Result<Option<Body>> {
+    pub async fn send(url: &str, method: &str, body: Option<Payload<'_>>) -> Result<Option<Body>> {
         let init = RequestInit::new();
         init.set_method(method);
         let headers = web_sys::Headers::new().map_err(js_err)?;
@@ -92,9 +83,6 @@ mod imp {
             if b.is_json() {
                 headers.set("content-type", "application/json").map_err(js_err)?;
             }
-        }
-        if let Some(t) = &auth.token {
-            headers.set("authorization", &format!("Bearer {t}")).map_err(js_err)?;
         }
         init.set_headers(&headers);
         let req = Request::new_with_str_and_init(url, &init).map_err(js_err)?;
@@ -145,17 +133,14 @@ mod imp {
     }
 
     /// `Ok(None)` on 404.
-    pub async fn send(auth: &Auth, url: &str, method: &str, body: Option<Payload<'_>>) -> Result<Option<Body>> {
+    pub async fn send(url: &str, method: &str, body: Option<Payload<'_>>) -> Result<Option<Body>> {
         let m = reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| StorageError::Io(e.to_string()))?;
-        let mut req = auth.client.as_ref().unwrap_or_else(|| client()).request(m, url);
+        let mut req = client().request(m, url);
         if let Some(b) = &body {
             req = req.body(b.bytes().to_vec());
             if b.is_json() {
                 req = req.header("content-type", "application/json");
             }
-        }
-        if let Some(t) = &auth.token {
-            req = req.bearer_auth(t);
         }
         let resp = req.send().await.map_err(|e| StorageError::Io(format!("{method} {url}: {e}")))?;
         match resp.status().as_u16() {

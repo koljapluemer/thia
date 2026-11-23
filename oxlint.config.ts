@@ -49,7 +49,7 @@ const allowed: Record<string, string[]> = {
 };
 
 export default defineConfig({
-  ignorePatterns: ['**/dist', 'packages/client/wasm', '**/node_modules', '**/decks', 'installables/folder-sync/android/gen'],
+  ignorePatterns: ['**/dist', 'packages/client/wasm', '**/node_modules', '**/decks'],
   plugins: ['typescript', 'react', 'oxc', 'unicorn'],
   jsPlugins: [{ name: 'react-hooks-js', specifier: 'eslint-plugin-react-hooks' }, 'eslint-plugin-boundaries'],
   categories: { correctness: 'error' },

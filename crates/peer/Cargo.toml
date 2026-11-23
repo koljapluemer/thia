@@ -1,6 +1,6 @@
 [package]
 name = "gestalts-peer"
-description = "Storage over HTTP: another device's node, and published decks; native and wasm"
+description = "Storage over HTTP: a node's folder, and published decks; native and wasm"
 edition.workspace = true
 version.workspace = true
 
@@ -19,8 +19,3 @@ web-sys = { version = "0.3", features = ["Window", "WorkerGlobalScope", "Request
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
-# pairing: a client that pins the node's certificate, and finding the node again by mDNS
-mdns-sd = "0.13"
-rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
-sha2.workspace = true
-tokio = { version = "1", features = ["rt", "time"] }

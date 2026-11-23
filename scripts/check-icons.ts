@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 
 const webApps = [
   'web/app',
-  'web/android',
   'installables/folder-sync/settings',
 ];
 
@@ -35,7 +34,6 @@ const pngSize = (path: string) => {
 };
 const nativeTargets = [
   ['installables/folder-sync/desktop', 'installables/folder-sync/desktop/assets/icon.source.sha256'],
-  ['installables/folder-sync/android', 'installables/folder-sync/android/icons/icon.source.sha256'],
   ['installables/claude-bridge', 'installables/claude-bridge/assets/icon.source.sha256'],
 ];
 for (const [app, stamp] of nativeTargets) {
@@ -45,10 +43,6 @@ for (const [app, stamp] of nativeTargets) {
 const pngs = new Map([
   ['installables/folder-sync/desktop/assets/icon.png', 256],
   ['installables/claude-bridge/assets/icon.png', 256],
-  ['installables/folder-sync/android/icons/32x32.png', 32],
-  ['installables/folder-sync/android/icons/128x128.png', 128],
-  ['installables/folder-sync/android/icons/128x128@2x.png', 256],
-  ['installables/folder-sync/android/icons/icon.png', 512],
 ]);
 for (const [path, expected] of pngs) {
   const [width, height] = pngSize(path);
@@ -61,9 +55,4 @@ if (!desktopConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gesta
 const bridgeConfig = readFileSync('installables/claude-bridge/Cargo.toml', 'utf8');
 if (!bridgeConfig.includes('icons = ["assets/icon.png"]')) fail('the Claude bridge packager does not reference its icon');
 if (!bridgeConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gestalts-claude-bridge.png"')) fail('the Claude bridge RPM does not install its icon');
-const androidConfig = readFileSync('installables/folder-sync/android/tauri.conf.json', 'utf8');
-for (const name of ['32x32.png', '128x128.png', '128x128@2x.png', 'icon.png']) {
-  if (!androidConfig.includes(`icons/${name}`)) fail(`the Android bundle does not reference ${name}`);
-}
-
-console.log('Web, desktop and Android icons are present and wired into their builds.');
+console.log('Web and desktop icons are present and wired into their builds.');

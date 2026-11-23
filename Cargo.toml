@@ -1,8 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/merge", "crates/core", "crates/fs", "crates/peer", "crates/wasm", "crates/node", "crates/device", "web/server", "installables/folder-sync/desktop", "installables/claude-bridge", "installables/ollama-bridge"]
-# a workspace of its own: Tauri pulls in webkit2gtk on a Linux host, which the desktop app avoids
-exclude = ["installables/folder-sync/android"]
+members = ["crates/merge", "crates/core", "crates/fs", "crates/peer", "crates/wasm", "crates/node", "web/server", "installables/folder-sync/desktop", "installables/claude-bridge", "installables/ollama-bridge"]
 
 [workspace.package]
 edition = "2024"
@@ -13,7 +11,6 @@ gestalts-core = { path = "crates/core" }
 gestalts-merge = { path = "crates/merge" }
 gestalts-fs = { path = "crates/fs" }
 gestalts-peer = { path = "crates/peer" }
-gestalts-device = { path = "crates/device" }
 gestalts-node = { path = "crates/node" }
 async-trait = "0.1"
 serde = { version = "1", features = ["derive"] }

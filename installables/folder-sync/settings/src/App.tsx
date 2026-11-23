@@ -7,8 +7,8 @@ export function App() {
     <main className="mx-auto flex max-w-xl flex-col gap-6 p-4">
       <header>
         <h1 className="text-xl font-semibold">gestalts-node</h1>
-        <p className="text-sm text-base-content/70">Keeps your ymls in a folder on this computer, syncs them with your
-          paired devices and runs plugin workers, for the apps you use it with.</p>
+        <p className="text-sm text-base-content/70">Keeps your ymls in a folder on this computer and runs plugin workers, for
+          the apps you use it with.</p>
       </header>
       <Settings />
       <section className="flex flex-col gap-2">

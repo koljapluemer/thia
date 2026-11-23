@@ -3,7 +3,7 @@
 Views on top-of semantic yml to represent a wide range of interactive learning experiences.
 
 ```
-crates/       the core (Rust, also in the page as wasm), merge, fs, peer sync, the node, the phone's device
+crates/       the core (Rust, also in the page as wasm), merge, fs, peer sync, the node
 packages/     what apps and views build with: client, host, view (the view contract), kit, learning, sources, vite, viz,
               check (what an agent's work is checked with), workshop
 gestalts/     gestalt definitions: the core's, and model packages (gestalts/<package>/<name>/)
@@ -13,10 +13,9 @@ web/
   app/                  the one web app: notes, the workshops, lessons, the review; data in the browser
   site/                 the public site: every view on its decks, accepted workshop results among them; also plays
                         published lessons' links on the lesson domain
-  android/              the page the Android app wraps
   server/               the server (thia-server), its worker, docs and deploy/
 installables/           optional, on the user's computer
-  folder-sync/          gestalts-node: a folder synced with the app and paired devices; desktop/ (tray), settings/, android/
+  folder-sync/          gestalts-node: a folder synced with the app; desktop/ (tray), settings/
   claude-bridge/        lets a site you allow run Claude Code here, with the site's tools (the web app's agents)
   ollama-bridge/        the same with a local Ollama model, experimental
 scripts/      shared by the tasks
@@ -27,7 +26,7 @@ from `plugins/` and their models from `gestalts/`, by `scripts/check-distributio
 ## Developing
 
 Needs [mise](https://mise.jdx.dev) and [rustup](https://rustup.rs). mise installs Node, pnpm, uv, wasm-pack and the
-packaging tools as pinned in `mise.toml`; rustup picks up the Rust version (and the wasm and Android targets) from
+packaging tools as pinned in `mise.toml`; rustup picks up the Rust version (and the wasm target) from
 `rust-toolchain.toml`.
 
 ```sh
@@ -47,7 +46,6 @@ mise run claude-bridge                            # the Claude bridge alone, hea
 mise run ollama-bridge                            # the Ollama bridge (experimental) alone, the same way
 mise run node                                     # folder-sync headless: plugin backends, /net, /llm
 mise run node:dev                                 # the desktop node and its settings page, hot reload
-mise run android:dev                              # the Android app on a phone or emulator (needs the SDK and NDK)
 mise run publish-data plugins/<id>/decks/<deck>   # after editing a plugin's deck
 mise run health-data ~/some-folder                # which ymls can't be used, and why
 mise run serve ~/some-folder                      # the node headless with the repo's plugins

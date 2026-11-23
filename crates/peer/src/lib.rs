@@ -1,15 +1,12 @@
-//! Storage over HTTP: [`Peer`], another device's node, and [`Static`], a published deck. Compiles for the browser
+//! Storage over HTTP: [`Peer`], a node's folder, and [`Static`], a published deck. Compiles for the browser
 //! (`fetch`) and natively (reqwest, which needs a tokio runtime).
 
 mod fetch;
-#[cfg(not(target_arch = "wasm32"))]
-pub mod paired;
 
 use async_trait::async_trait;
 use gestalts_core::storage::{Hashes, Result, Storage, StorageError, check_key};
 use serde::{Deserialize, Serialize};
 
-pub use crate::fetch::Auth;
 use crate::fetch::{Body, Payload, enc, fetch, json, send};
 
 /// A gestalt data folder published as static files, with an `index.json` of `{ymls: [ids], blobs: [names]}`, and, where
@@ -88,10 +85,9 @@ impl Storage for Static {
     }
 }
 
-/// Another device's node (`gestalts-node`, the desktop app's "connector"), over its node API: see `doc/node.md`.
+/// A node (`gestalts-node`, the desktop app's "connector"), over its node API (`crates/node/src/server.rs`).
 pub struct Peer {
     base: String,
-    auth: Auth,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -102,12 +98,7 @@ struct YmlEntry {
 
 impl Peer {
     pub fn new(base: &str) -> Self {
-        Self::with_auth(base, Auth::default())
-    }
-
-    /// A node reached with `auth`: a paired node over the network (`paired.rs`).
-    pub fn with_auth(base: &str, auth: Auth) -> Self {
-        Peer { base: base.trim_end_matches('/').to_owned(), auth }
+        Peer { base: base.trim_end_matches('/').to_owned() }
     }
 
     pub fn url(&self) -> &str {
@@ -115,7 +106,7 @@ impl Peer {
     }
 
     async fn req(&self, path: &str, method: &str, body: Option<Payload<'_>>) -> Result<Option<Body>> {
-        send(&self.auth, &format!("{}{path}", self.base), method, body).await
+        send(&format!("{}{path}", self.base), method, body).await
     }
 
     /// Asks the node to collect the folder's unreferenced blobs; the names it deleted.

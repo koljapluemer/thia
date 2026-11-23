@@ -50,6 +50,5 @@ if [[ -e server-data/dev-login.txt ]]; then admin grant-admin dev@localhost && a
 step "optional"
 command -v claude > /dev/null || echo "no claude CLI: the workshop's local agent needs it, and it's the only one that builds visualizations (https://claude.com/claude-code)"
 [[ -n "${ANTHROPIC_API_KEY:-}" ]] || echo "no ANTHROPIC_API_KEY: the server's own agent stays off in just dev (the local CLI agent works without it)"
-echo "Android: needs the SDK and NDK, see installables/folder-sync/doc/android.md"
 
 printf '\nReady: mise run just dev\n'

@@ -21,7 +21,7 @@ function mountedDecks(dir: string, registry: Registry): string[] {
  * open, so it's remembered per browser; if the installs changed since, the repo opens once more with the right decks.
  */
 export function usePluginRepo(where: YmlsIn & { bridge?: string }, registry: Registry): { repo?: Repo; installed: PluginEntry[]; decks: string[]; error?: string } {
-  const dir = where.dir ?? (where.node !== undefined ? `node:${where.node}` : `native:${where.native}`);
+  const dir = where.dir ?? `node:${where.node}`;
   const [mounted, setMounted] = useState(() => mountedDecks(dir, registry));
   const whereKey = JSON.stringify(where);
   const source = useMemo(() => ({

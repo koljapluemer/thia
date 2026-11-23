@@ -3,15 +3,13 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./tauri": "./src/tauri.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@gestalts/view": "workspace:*",
-    "@tauri-apps/api": "2.12.4"
+    "@gestalts/view": "workspace:*"
   },
   "peerDependencies": {
     "react": "19.3.1"

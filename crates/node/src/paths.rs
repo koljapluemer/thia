@@ -25,11 +25,6 @@ impl Paths {
 
     pub fn config_file(&self) -> PathBuf { self.config.join("config.json") }
     pub fn control_token_file(&self) -> PathBuf { self.config.join("control-token") }
-    /// the node's TLS certificate and key for the home network (DER), whose fingerprint is its id
-    pub fn node_cert_file(&self) -> PathBuf { self.config.join("node.crt") }
-    pub fn node_key_file(&self) -> PathBuf { self.config.join("node.key") }
-    /// the devices paired with this node
-    pub fn devices_file(&self) -> PathBuf { self.config.join("devices.json") }
     /// plugins the user added themselves, next to the built-in ones
     pub fn user_plugins(&self) -> PathBuf { self.data.join("plugins") }
 }
@@ -61,7 +56,7 @@ pub fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
     std::fs::rename(tmp, path)
 }
 
-/// Writes a secret (the per-run control token, the node's key), readable only by this user.
+/// Writes a secret (the per-run control token), readable only by this user.
 pub fn write_secret(path: &Path, secret: impl AsRef<[u8]>) -> std::io::Result<()> {
     let secret = secret.as_ref();
     if let Some(parent) = path.parent() { std::fs::create_dir_all(parent)?; }

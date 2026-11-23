@@ -7,10 +7,9 @@ folder; a **note** is a yml of gestalt `note`.
 crates/merge      symmetric three-way merge of YAML values
 crates/core       ymls, gestalts, the index and queries, beliefs about concepts, sync, decks, blob GC; no IO
 crates/fs         a folder on disk
-crates/peer       another node over HTTP, a published deck, pairing
+crates/peer       a node's folder over HTTP, a published deck
 crates/wasm       the core in the browser
-crates/device     a phone's folder and sync thread
-crates/node       the local server, watcher, backends, LAN pairing
+crates/node       the local server, watcher, backends
 web/server        thia's server: accounts, drafts synced and validated, the agent, publishing, the lesson domain
 packages/view     @gestalts/view: everything a view gets from the app
 packages/kit      @gestalts/kit: the UI kit, for views only (primitives < components < widgets < perspectives); on view and sources. Apps and the host use tailwind + daisyUI
@@ -26,7 +25,7 @@ packages/npm-bundle npm packages for views, installed without scripts, bundled a
 packages/viz      @gestalts/viz: interactive visualizations (params, clock, model, scene) and their runtime; imports nothing of ours
 plugins/          the views that live in source: notes, flashcards, sources, concepts
 web/              the web app (app/), the public site (site/), the page the Android app wraps (android/), the server
-installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings, the Android app), claude-bridge
+installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings), claude-bridge
                   (Claude Code for a site the person allowed, with the site's tools)
 sdk/python        gestalts_backend.py, what a backend.py imports
 ```
@@ -44,8 +43,7 @@ through the Claude bridge (`installables/claude-bridge`), whose tool calls come 
 `@gestalts/check`, run there). A conversation belongs to its draft, not to the chat that shows it
 (`packages/workshop/src/turns.ts`): a turn runs on while another draft is open, and shows again, still going, when its
 draft is opened again. `web/site` is the public site: every learning view and visualization, workshop results
-accepted in review among them ([[publishing]]); its build also plays published lessons on the lesson domain. The
-Android app wraps `web/android`.
+accepted in review among them ([[publishing]]); its build also plays published lessons on the lesson domain.
 
 ## Data
 
@@ -138,6 +136,4 @@ of `gestalts/`, and its own settings page at `/`. A folder is marked in `.gestal
 | `/services/{plugin}/{path}` | a plugin's backend |
 | `/net` | HTTP for a view, to hosts some plugin declares in `network` (the bridge checks the view's own list first) |
 | `/llm/complete`, `/llm/settings` | completions from the user's providers in their order, and those providers (read only); keys are kept in the node's config folder and never returned |
-| `/control/*` | the node's own settings page (same origin) or the tray (its token): folder, devices and pairing, autostart, changing the LLM settings |
-
-Paired devices reach a subset over TLS on the home network.
+| `/control/*` | the node's own settings page (same origin) or the tray (its token): folder, autostart, changing the LLM settings |
