@@ -98,7 +98,7 @@ function TargetName({ item }: { item: Item }) {
     return (
       <span className="min-w-0">
         <span className="break-words">{sourceTitle(item.value)}</span>
-        {by && <span className="ml-2 text-xs whitespace-nowrap text-base-content/60">{by}</span>}
+        {by && <span className="ml-2 whitespace-nowrap text-base-content/60">{by}</span>}
       </span>
     );
   }
@@ -132,8 +132,8 @@ function RelationshipRow({ r, target, known, onLabel, onDetach }: {
       <BlurInput className="input input-sm w-36 shrink-0" aria-label="How it relates" placeholder={RELATED} value={r.label === RELATED ? '' : r.label}
                  onCommit={(l) => onLabel(l.trim() || RELATED)} />
       <span className="flex w-5 shrink-0 justify-center text-base-content/60" title={editor?.kind}>{Icon && <Icon className="size-4" />}</span>
-      <span className="flex min-w-0 flex-1 items-baseline text-sm">
-        {target ? <TargetName item={target} /> : <span className="text-xs text-base-content/50">{known ? '(gone) ' : ''}<code>{r.to}</code></span>}
+      <span className="flex min-w-0 flex-1 items-baseline">
+        {target ? <TargetName item={target} /> : <span className="text-base-content/60">{known ? '(gone) ' : ''}<code>{r.to}</code></span>}
       </span>
       {editor && (
         <button type="button" className="btn btn-ghost btn-xs btn-square" title={`Open the ${editor.kind} in a new browser tab`}
@@ -155,7 +155,7 @@ function Relationships({ self, value, onChange }: { self: string; value: Relatio
   };
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold">Relationships</h3>
+      <h3 className="font-semibold">Relationships</h3>
       {value.map((r, i) => (
         <RelationshipRow key={`${r.to}:${i}`} r={r} target={targets?.get(r.to)} known={!!targets}
                          onLabel={(label) => onChange(value.map((x, j) => (j === i ? { ...x, label } : x)))}
@@ -170,11 +170,22 @@ function Relationships({ self, value, onChange }: { self: string; value: Relatio
   );
 }
 
-/** Finding a note or a concept to relate to; `exclude` aren't offered. */
+/**
+ * Finding a note or a concept to relate to, or a new note titled with what's typed when nothing found goes by that
+ * name; `exclude` aren't offered.
+ */
 function LinkSearch({ exclude, onPick }: { exclude: Set<string>; onPick: (id: string) => void }) {
+  const write = useWrite();
+  const fold = (s: string) => s.trim().toLowerCase();
+  const named = (i: Item, text: string) => fold(str(isConcept(i.gestalt) ? i.value.name : i.value.title)) === fold(text);
   return (
     <ItemPicker
-      placeholder="Link a note or concept…" exclude={exclude} onPick={(i) => onPick(i.id)}
+      placeholder="Link a note or concept, or name a new note…" exclude={exclude} onPick={(i) => onPick(i.id)}
+      create={{
+        offer: (text, found) => !found.some((i) => named(i, text)),
+        label: (text) => <>New note “{text}”</>,
+        run: async (text) => onPick((await write.put({ gestalt: NOTE, title: text })).id),
+      }}
       // concepts first: there are few, and a name typed in full is most likely meant
       query={(text) => ({ gestalt: CONCEPTS, text, fields: ['name'], limit: 4 })}
       more={(text) => ({ gestalt: NOTE, text, fields: ['title', 'main'], limit: 6 })}
@@ -201,11 +212,11 @@ function Files({ blobs, onChange, onError }: { blobs: BlobRef[]; onChange: (b: B
   };
   return (
     <section className="flex flex-col gap-1">
-      <h3 className="text-sm font-semibold">Files</h3>
+      <h3 className="font-semibold">Files</h3>
       {blobs.map((b, i) => (
         <div key={b.file} className="flex items-center gap-2">
-          <BlurInput className="input input-xs w-32" aria-label="Label" value={b.label} onCommit={(label) => onChange(blobs.map((x, j) => (j === i ? { ...x, label } : x)))} />
-          <code className="min-w-0 flex-1 truncate text-xs">{b.file}</code>
+          <BlurInput className="input input-sm w-32" aria-label="Label" value={b.label} onCommit={(label) => onChange(blobs.map((x, j) => (j === i ? { ...x, label } : x)))} />
+          <code className="min-w-0 flex-1 truncate">{b.file}</code>
           <button type="button" className="btn btn-ghost btn-xs btn-square" title="Remove" onClick={() => onChange(blobs.filter((_, j) => j !== i))}><Trash2 className="size-3" /></button>
         </div>
       ))}
@@ -265,9 +276,9 @@ function Fields({ id, note, onCreated, autoFocus }: { id: string; note?: Item; o
 
   const set = (patch: Patch) => void commit(patch);
   return (
-    <div className="flex flex-col gap-3 p-3">
-      {error && <div role="alert" className="alert alert-error text-sm whitespace-pre-wrap">{error}</div>}
-      <input className="input w-full" placeholder="Title" value={texts.title} autoFocus={autoFocus} onChange={(e) => type('title', e.target.value)}
+    <div className="flex flex-col gap-3 p-3 text-sm">
+      {error && <div role="alert" className="alert alert-error whitespace-pre-wrap">{error}</div>}
+      <input className="input input-sm w-full" placeholder="Title" value={texts.title} autoFocus={autoFocus} onChange={(e) => type('title', e.target.value)}
              onBlur={() => leave('title')} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
       <MarkdownEditor value={texts.main} onChange={(v: string) => type('main', v)} onBlur={() => leave('main')} onSave={() => leave('main')} placeholder="Main" />
       <MarkdownEditor value={texts.extra} onChange={(v: string) => type('extra', v)} onBlur={() => leave('extra')} onSave={() => leave('extra')} placeholder="Extra" minHeight="3rem" />
