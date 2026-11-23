@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ChartSpline, LayoutTemplate, ListOrdered, LogOut, Plus, Settings as SettingsIcon } from 'lucide-react';
+import { useRunning } from '@gestalts/workshop';
 import * as api from './api';
 import { loadChoice, saveChoice, type AgentChoice } from './agent';
 import { DraftPane } from './DraftPane';
@@ -65,6 +66,11 @@ const KINDS: { kind: api.Kind; label: string; icon: typeof Plus; ask: string }[]
 ];
 const KIND = Object.fromEntries(KINDS.map((k) => [k.kind, k])) as Record<api.Kind, (typeof KINDS)[number]>;
 
+/** A turn running on a draft that isn't open goes on there: said where the draft is listed. */
+function Running({ draft }: { draft: string }) {
+  return useRunning(draft) ? <span className="loading loading-dots loading-xs shrink-0" title="The agent is working on it" /> : null;
+}
+
 function Drafts({ me, onOut }: { me: api.Me; onOut: () => void }) {
   const [list, setList] = useState<api.DraftInfo[]>();
   const [error, setError] = useState<string>();
@@ -117,7 +123,7 @@ function Drafts({ me, onOut }: { me: api.Me; onOut: () => void }) {
               return (
                 <li key={d.id}>
                   <button type="button" className={d.id === selected ? 'menu-active' : ''} onClick={() => choose(d.id)} title={KIND[d.kind]?.label}>
-                    <Icon className="size-4 shrink-0 opacity-60" /><span className="truncate">{d.title || d.id}</span>
+                    <Icon className="size-4 shrink-0 opacity-60" /><span className="flex-1 truncate">{d.title || d.id}</span><Running draft={d.id} />
                   </button>
                 </li>
               );

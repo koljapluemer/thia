@@ -41,7 +41,9 @@ store, the user's ymls in this browser (OPFS), opened once for the app (`web/app
 desktop node, if one runs, for plugin backends, `/net` and `/llm` without syncing with it (`bridge` in `Repo.open`).
 Each workshop draft is its own store synced with the server (`web/server`); its agent is the server's, or Claude Code
 through the Claude bridge (`installables/claude-bridge`), whose tool calls come back to the page (the `check` is
-`@gestalts/check`, run there). `web/site` is the public site: every learning view and visualization, workshop results
+`@gestalts/check`, run there). A conversation belongs to its draft, not to the chat that shows it
+(`packages/workshop/src/turns.ts`): a turn runs on while another draft is open, and shows again, still going, when its
+draft is opened again. `web/site` is the public site: every learning view and visualization, workshop results
 accepted in review among them ([[publishing]]); its build also plays teachers' lessons on the lesson domain. The
 Android app wraps `web/android`.
 

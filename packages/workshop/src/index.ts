@@ -1,5 +1,6 @@
 export { DEFINITION, VIEW, VIEWS, applyFiles, asDraft, createDraft, definitionId, filesOf, isStarter, loadMembers, packageOf, saveDraft, saveSpec, type Draft, type DraftChange } from './draft';
 export { Chat, type Action } from './Chat';
+export { useRunning } from './turns';
 export { buildActions, flushing, viewWork, vizWork, type Settled, type Snapshot, type Work } from './work';
 export { VIZ, asViz, createViz, packagesJson, saveViz, storeBlob, vizYml, type BlobRef, type Viz } from './viz';
 export { fromBase64, toBase64 } from './base64';
