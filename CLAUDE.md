@@ -4,3 +4,9 @@
 - keep README lean, and docs/.md up to date
 - this is a real, user-facing app that has to work, and not just on this random dev machine
 - do not repeatedly tell me what I put in this claude.md, I know
+
+## Style
+
+- Use tailwind+daisyUI+lucide for web UIs. Avoid custom CSS unless needed.
+- Use clear, simple grids when possible
+- Use consistent font size unless differentiation is called for
