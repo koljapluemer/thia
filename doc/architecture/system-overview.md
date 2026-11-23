@@ -69,7 +69,8 @@ the index:
   each gets a delta of its page. `crates/core/src/repo.rs` has a test of this with 12k ymls.
 - Search, ordering, a random draw and references both ways run in the host's index. A query can ask what a yml
   references (`links`): through which prop, with which label, and to a yml of what shape. A shape is about the
-  target, so a change to a yml also rechecks the subscriptions with a shape for the ymls referencing it.
+  target, so a change to a yml also rechecks the subscriptions with a shape for the ymls referencing it. With `count`,
+  a page also says how many match in all (`total`), kept current: a view shows how many there are without loading them.
 - So does what a learner knows: the core keeps beliefs about concepts up to date from practice events as they change
   ([[../reference/data-format|Data format]]), and `useBeliefs` is live like `useQuery`, for just the concepts a view shows.
 - So is an outline over labelled references, Luhmann's Zettelkasten being one (`crates/core/src/outline.rs`): the

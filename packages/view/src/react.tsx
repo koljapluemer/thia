@@ -55,6 +55,8 @@ export type QueryResult = {
   /** whether `more` would load anything */
   hasMore: boolean;
   more: () => void;
+  /** how many match in all, when the query asked (`count`) */
+  total?: number;
 };
 
 const LOADING: QueryResult = { items: [], loading: true, hasMore: false, more: () => {} };
@@ -62,7 +64,7 @@ const LOADING: QueryResult = { items: [], loading: true, hasMore: false, more: (
 /** A query kept current: one live subscription per loaded page, stopped when nobody watches. */
 class LiveQuery {
   private listeners = new Set<() => void>();
-  private pages: { sub: number; items: Map<string, Item>; order: string[]; next: string | null; stop: () => void }[] = [];
+  private pages: { sub: number; items: Map<string, Item>; order: string[]; next: string | null; total?: number; stop: () => void }[] = [];
   private snapshot = LOADING;
   private generation = 0;
   private busy = false;
@@ -118,12 +120,13 @@ class LiveQuery {
   }
 
   private add(sub: number, page: Page) {
-    const entry = { sub, items: new Map(page.items.map((i) => [i.id, i])), order: page.items.map((i) => i.id), next: page.next, stop: () => {} };
+    const entry = { sub, items: new Map(page.items.map((i) => [i.id, i])), order: page.items.map((i) => i.id), next: page.next, total: page.total, stop: () => {} };
     entry.stop = this.host.onDelta(sub, (d) => {
       d.remove.forEach((id) => entry.items.delete(id));
       d.upsert.forEach((i) => entry.items.set(i.id, i));
       entry.order = d.order;
       entry.next = d.next;
+      entry.total = d.total;
       this.publish();
     });
     this.pages.push(entry);
@@ -139,7 +142,9 @@ class LiveQuery {
       seen.add(id);
       return [item];
     }));
-    this.snapshot = { items, loading: false, error, hasMore: Boolean(this.pages.at(-1)?.next), more: this.more };
+    // every page counts all that match; the first is kept current
+    const total = this.pages[0]?.total;
+    this.snapshot = { items, loading: false, error, hasMore: Boolean(this.pages.at(-1)?.next), more: this.more, ...(total === undefined ? {} : { total }) };
     this.listeners.forEach((l) => l());
   }
 }

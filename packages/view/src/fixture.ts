@@ -62,7 +62,7 @@ function page(all: Item[], q: Query): Page {
     const keep = new Set(['id', 'gestalt', ...q.fields]);
     return { ...i, value: Object.fromEntries(Object.entries(i.value).filter(([k]) => keep.has(k))) };
   });
-  return { items, next: start + limit < sorted.length ? String(start + limit) : null };
+  return { items, next: start + limit < sorted.length ? String(start + limit) : null, ...(q.count ? { total: sorted.length } : {}) };
 }
 
 export type Fixture = ViewHost & {
@@ -115,7 +115,7 @@ export function fixtureHost(ymls: JsonMap[] = [], beliefs: Belief[] = []): Fixtu
       if (JSON.stringify(order) === JSON.stringify(s.order) && order.length === 0) continue;
       const remove = s.order.filter((id) => !order.includes(id));
       s.order = order;
-      s.listener?.({ sub, upsert: p.items, remove, order, next: p.next });
+      s.listener?.({ sub, upsert: p.items, remove, order, next: p.next, ...(p.total === undefined ? {} : { total: p.total }) });
     }
     for (const [sub, s] of outlineSubs) {
       const p = outlinePage([...store.values()], s.query);

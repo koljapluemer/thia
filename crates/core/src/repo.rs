@@ -35,6 +35,9 @@ pub struct Delta {
     /// the page's ids, in order
     pub order: Vec<String>,
     pub next: Option<String>,
+    /// how many match in all, if the query asked (`count`)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total: Option<usize>,
 }
 
 /// A yml that can't be used, and why.
@@ -48,6 +51,7 @@ struct Subscription {
     query: Query,
     window: Vec<String>,
     next: Option<String>,
+    total: Option<usize>,
 }
 
 /// What changed about one belief subscription's concepts.
@@ -269,7 +273,7 @@ impl<S: Storage> Repo<S> {
         let page = self.query(&query);
         let id = self.new_sub();
         let window = page.items.iter().map(|i| i.id.clone()).collect();
-        self.subs.borrow_mut().insert(id, Subscription { query, window, next: page.next.clone() });
+        self.subs.borrow_mut().insert(id, Subscription { query, window, next: page.next.clone(), total: page.total });
         (id, page)
     }
 
@@ -440,12 +444,13 @@ impl<S: Storage> Repo<S> {
             let order: Vec<String> = page.items.iter().map(|i| i.id.clone()).collect();
             let upsert: Vec<Item> = page.items.into_iter().filter(|i| touching.contains(i.id.as_str()) || !s.window.contains(&i.id)).collect();
             let remove: Vec<String> = s.window.iter().filter(|id| !order.contains(id)).cloned().collect();
-            if upsert.is_empty() && remove.is_empty() && order == s.window && page.next == s.next {
+            if upsert.is_empty() && remove.is_empty() && order == s.window && page.next == s.next && page.total == s.total {
                 continue;
             }
             s.window = order.clone();
             s.next = page.next.clone();
-            self.deltas.borrow_mut().push(Delta { sub, upsert, remove, order, next: page.next });
+            s.total = page.total;
+            self.deltas.borrow_mut().push(Delta { sub, upsert, remove, order, next: page.next, total: page.total });
         }
     }
 }
@@ -885,6 +890,23 @@ mod tests {
             r.unsubscribe(sub);
             r.put(note("e", "")).await.unwrap();
             assert!(r.take_deltas().is_empty());
+        });
+    }
+
+    #[test]
+    fn count_gives_the_total_beyond_the_page_and_keeps_it_current() {
+        pollster::block_on(async {
+            let r = repo();
+            for i in 0..5 {
+                r.put(note(&format!("n{i}"), "")).await.unwrap();
+            }
+            assert_eq!(r.query(&Query { limit: Some(2), ..notes() }).total, None);
+            assert_eq!(r.query(&Query { limit: Some(2), count: true, ..notes() }).total, Some(5));
+            let seeded = Query { limit: Some(2), count: true, order: Some(Order::Random { seed: 7 }), ..notes() };
+            let (_, first) = r.subscribe(seeded);
+            assert_eq!((first.items.len(), first.total), (2, Some(5)));
+            r.delete("n4", NOW).await.unwrap();
+            assert_eq!(r.take_deltas().last().unwrap().total, Some(4));
         });
     }
 

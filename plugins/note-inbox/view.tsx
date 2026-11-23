@@ -130,7 +130,7 @@ export default function NoteInbox() {
   const [error, setError] = useState<string>();
 
   // two at random, so one can be other than the one just left
-  const drawn = useQuery({ gestalt: TEXT, order: { seed }, limit: 2, fields: ['name'] });
+  const drawn = useQuery({ gestalt: TEXT, order: { seed }, limit: 2, fields: ['name'], count: true });
   const shown = useQuery(current ? { gestalt: TEXT, ids: [current], limit: 1 } : null);
   const file = shown.items[0];
 
@@ -173,6 +173,7 @@ export default function NoteInbox() {
     <div className="flex h-full min-h-0 flex-col bg-base-100">
       <div className="flex items-center gap-2 border-b border-base-300 p-2">
         <span className="min-w-0 flex-1 truncate font-semibold">{file ? String(file.value.name) : ''}</span>
+        {drawn.total !== undefined && <span className="whitespace-nowrap text-base-content/60" title="Files in the inbox, this one included">{drawn.total} left</span>}
         {uploadButton}
       </div>
       {error && <div role="alert" className="alert alert-error m-2 whitespace-pre-wrap">{error}</div>}

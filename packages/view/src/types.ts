@@ -30,6 +30,8 @@ export type Query = {
   cursor?: string;
   /** only these props (with `id` and `gestalt`, always) */
   fields?: string[];
+  /** also how many match in all (`total`), kept current like the page */
+  count?: boolean;
 };
 
 /** What a yml a link points at must be; a target that isn't there is no shape. */
@@ -38,7 +40,8 @@ export type Shape = { gestalt?: string | string[]; ids?: string[]; where?: Recor
 /** One kind of reference: through `field`, labelled `label`, to a yml of shape `to`, each if given. */
 export type LinkMatch = { field?: string; label?: string; to?: Shape };
 
-export type Page = { items: Item[]; next: string | null };
+/** `total`: how many match in all, when the query asked (`count`). */
+export type Page = { items: Item[]; next: string | null; total?: number };
 
 /**
  * An outline over labelled references, worked out by the app (Luhmann's Zettelkasten is one): a yml `follows` another
@@ -79,7 +82,7 @@ export type OutlinePage = { entries: OutlineEntry[]; next: string | null };
 export type OutlineDelta = { sub: number; page: OutlinePage };
 
 /** What changed in one live query's page. */
-export type Delta = { sub: number; upsert: Item[]; remove: string[]; order: string[]; next: string | null };
+export type Delta = { sub: number; upsert: Item[]; remove: string[]; order: string[]; next: string | null; total?: number };
 
 /**
  * What is believed about how well the learner knows a concept, worked out by the app from all practice: `mean` on the

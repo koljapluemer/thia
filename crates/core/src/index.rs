@@ -163,6 +163,8 @@ pub struct Query {
     pub cursor: Option<String>,
     /// only these props (with `id` and `gestalt`, always)
     pub fields: Option<Vec<String>>,
+    /// also how many match in all (the page's `total`)
+    pub count: bool,
 }
 
 /// A yml as views get it.
@@ -178,6 +180,9 @@ pub struct Page {
     pub items: Vec<Item>,
     /// the cursor of the next page; `None` on the last
     pub next: Option<String>,
+    /// how many match in all, if the query asked (`count`)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total: Option<usize>,
 }
 
 /// One indexed yml.
@@ -445,7 +450,16 @@ impl Index {
         found.truncate(limit);
         let next = more.then(|| found.last()).flatten().and_then(|e| serde_json::to_string(&(Value::Null, &e.yml.id)).ok());
         let fields = q.fields.as_deref();
-        Page { items: found.iter().filter_map(|e| e.item(fields)).collect(), next }
+        let total = q.count.then(|| self.count(q));
+        Page { items: found.iter().filter_map(|e| e.item(fields)).collect(), next, total }
+    }
+
+    /// How many ymls `q` matches in all, cursor and limit aside.
+    fn count(&self, q: &Query) -> usize {
+        match self.narrowed(q) {
+            Some(ids) => ids.iter().filter_map(|id| self.entries.get(id)).filter(|e| q.matches(e, self)).count(),
+            None => self.entries.values().filter(|e| q.matches(e, self)).count(),
+        }
     }
 
     /// One page of what `q` asks for.
@@ -474,7 +488,8 @@ impl Index {
             .flatten()
             .and_then(|(k, e)| serde_json::to_string(&(k, &e.yml.id)).ok());
         let fields = q.fields.as_deref();
-        Page { items: window.iter().filter_map(|(_, e)| e.item(fields)).collect(), next }
+        let total = q.count.then_some(keyed.len());
+        Page { items: window.iter().filter_map(|(_, e)| e.item(fields)).collect(), next, total }
     }
 }
 
