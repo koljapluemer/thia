@@ -1,5 +1,5 @@
 import { contracts, systemOf } from './kinds';
-import type { AgentTool } from './tools';
+import { timed, type AgentTool } from './tools';
 import type { AgentBackend, AgentEvent, Answers, CompleteRequest, Question, TurnRequest } from './types';
 
 /**
@@ -26,17 +26,12 @@ export type BridgeStart = {
   maxBudgetUsd?: number;
   /** how hard Claude thinks: low, medium, high, xhigh or max */
   effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+  /** the page's record of this turn, for the bridge's own messages about it */
+  run?: string;
 };
 
-export type BridgeEvent =
-  | { type: 'text'; text: string }
-  | { type: 'tool'; name: string; summary: string }
-  /** the draft's files the turn changed; `null`: deleted */
-  | { type: 'files'; files: Record<string, string | null> }
-  /** a tool asks the person; `reply` is the answer, while the run lasts */
-  | { type: 'ask'; id: string; questions: Question[]; reply: (answers: Answers) => void }
-  | { type: 'done'; session?: string }
-  | { type: 'error'; message: string };
+/** What the bridge says: the same events a turn has anywhere (a bridge sends what it can of them). */
+export type BridgeEvent = AgentEvent;
 
 export const INSTALL_BRIDGE = 'Install the Claude bridge and Claude Code on this computer, then start the bridge';
 
@@ -103,10 +98,13 @@ export async function* runOnBridge(url: string, start: BridgeStart, tools: Agent
     if (e.type === 'tool_call') {
       const tool = byName.get(e.name ?? '');
       const show = (questions: Question[], reply: (answers: Answers) => void) => push({ type: 'ask', id: e.id ?? '', questions, reply });
-      const answer = tool
+      const answer = timed(e.name ?? '', tool
         ? tool.run(e.input, e.files ?? {}, show)
-        : Promise.resolve({ content: [{ type: 'text' as const, text: `no tool ${e.name}` }], isError: true });
-      void answer.then((r) => { if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'tool_result', id: e.id, ...r })); });
+        : Promise.resolve({ content: [{ type: 'text' as const, text: `no tool ${e.name}` }], isError: true }));
+      void answer.then(({ result, event }) => {
+        push(event);
+        if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ type: 'tool_result', id: e.id, ...result }));
+      });
     } else {
       push(e as BridgeEvent);
     }
@@ -171,7 +169,7 @@ export function onBridge(url: string, who: OnBridge): AgentBackend & { connect()
       }
       const start: BridgeStart = {
         workspace: req.view, session: req.session, prompt, files, binary: { ...template.binary, ...req.binary }, keep: kind.keep,
-        system: systemOf(req.kind ?? 'view'),
+        system: systemOf(req.kind ?? 'view'), run: req.run,
       };
       yield* runOnBridge(url, start, kind.tools(req), signal, who.name);
     },

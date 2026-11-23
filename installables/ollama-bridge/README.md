@@ -12,6 +12,10 @@ Writes go only to paths matching `keep`. The model is told the page's `system`, 
 template's `CLAUDE.md`. When it answers without a tool, the changed draft files go back. Conversations are kept in
 memory, so a restart forgets them and the next turn starts a new one.
 
+For the page's record of the turn ([`web/app/doc/workshop/runs.md`](../../web/app/doc/workshop/runs.md)), each
+answer also goes back as `usage` (Ollama's token counts and time) and `trace` (the answer as it came), and each of
+its own file tools' calls as `tool_result`.
+
 ```sh
 mise run ollama-bridge                  # development: headless, dev profile, localhost pages allowed
 gestalts-ollama-bridge serve [--dev] [--port 7738] [--profile NAME]

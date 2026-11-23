@@ -51,5 +51,7 @@ shell. It has no tools besides the page's, which it gets as the `gestalts` MCP s
 (`gestalts-claude-bridge mcp`), started by claude with the turn's address and secret. It forwards each call to the
 bridge (`/internal/runs/<id>`, which browsers can't reach), and the bridge asks the page.
 
-Each turn is logged in `<data>/runs/`: the raw stream, plus one summary line a day (`workshop-agent-run@2`).
-`mise run workshop:agent-stats` summarizes them (`scripts/agent_stats.py`).
+Besides the turn's own events, the page hears what's for its record of the turn
+([`web/app/doc/workshop/runs.md`](../../web/app/doc/workshop/runs.md)): `usage` for each assistant message (once,
+with its last usage: the stream repeats a message for each block), `trace` with every line of claude's stream as it
+came (and stderr), and `done` with the outcome and the exit code. The bridge keeps no log of its own.

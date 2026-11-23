@@ -107,7 +107,10 @@ async fn a_turn_with_a_tool_call() {
             _ => {}
         }
     }
-    assert_eq!(seen, ["tool", "tool_call", "text", "files", "done"]);
+    // the conversation, between claude's stream as it came (`trace`, for the page's record)
+    let said: Vec<&str> = seen.iter().map(String::as_str).filter(|t| *t != "trace" && *t != "usage").collect();
+    assert_eq!(said, ["tool", "tool_call", "text", "files", "done"]);
+    assert!(seen.iter().any(|t| t == "trace"));
     assert_eq!(text["tool"]["content"][0]["text"], "all good");
     assert_eq!(text["prompt"], "make it");
     assert!(text["allowed"].as_array().unwrap().contains(&json!("mcp__gestalts__check")));

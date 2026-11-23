@@ -103,7 +103,12 @@ async fn a_turn_with_a_tool_call() {
             _ => {}
         }
     }
-    assert_eq!(seen, ["tool", "tool", "tool", "tool_call", "text", "files", "done"]);
+    // the conversation, between what's for the page's record: each answer's usage and itself, the own tools' results
+    let record = ["usage", "trace", "tool_result"];
+    let said: Vec<&str> = seen.iter().map(String::as_str).filter(|t| !record.contains(t)).collect();
+    assert_eq!(said, ["tool", "tool", "tool", "tool_call", "text", "files", "done"]);
+    assert_eq!(seen.iter().filter(|t| *t == "usage").count(), 4);
+    assert_eq!(seen.iter().filter(|t| *t == "tool_result").count(), 2);
     assert!(session.is_string());
 
     let reqs = b.seen.lock().unwrap().clone();

@@ -1,5 +1,6 @@
 import instructions from '../agent-template/plan-lesson.md?raw';
 import type { AgentBackend } from './agents/types';
+import { recordedComplete } from './runs';
 
 /**
  * How a lesson splits into views and visualizations, as an agent proposes it: whichever agent (`AgentBackend.complete`, one answer at low
@@ -70,7 +71,7 @@ export function checkPlan(answer: string): Plan {
 
 /** The agent's plan for `request`, for the lesson draft `view`. Throws with a message to show. */
 export async function planLesson(backend: AgentBackend, view: string, request: string, signal: AbortSignal): Promise<Plan> {
-  const answer = await backend.complete({ view, system: instructions, prompt: request.trim() }, signal);
+  const answer = await recordedComplete(backend, { view, system: instructions, prompt: request.trim() }, signal, 'sequence');
   try {
     return checkPlan(answer);
   } catch (e) {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { ChartSpline, LayoutTemplate, ListOrdered, LogOut, Plus, Settings as SettingsIcon } from 'lucide-react';
-import { useRunning } from '@gestalts/workshop';
+import { recordRunsTo, useRunning } from '@gestalts/workshop';
 import * as api from './api';
 import { loadChoice, saveChoice, type AgentChoice } from './agent';
 import { DraftPane } from './DraftPane';
@@ -8,6 +8,7 @@ import { MoveOffer } from './move';
 import { SequencePane } from './SequencePane';
 import { Settings } from './Settings';
 import { VizPane } from './VizPane';
+import { serverRuns } from './runs';
 import { Areas } from '../router';
 
 /**
@@ -17,6 +18,8 @@ import { Areas } from '../router';
 export function Workshop() {
   const [me, setMe] = useState<api.Me | null>();
   useEffect(() => { api.me().then(setMe, () => setMe(null)); }, []);
+  // signed in, every agent run is recorded as this account's (admins read them in /runs)
+  useEffect(() => { recordRunsTo(me ? serverRuns : undefined); }, [me]);
   if (me === undefined) return <div className="flex h-dvh items-center justify-center"><span className="loading loading-spinner" /></div>;
   if (!me) return <Login onIn={setMe} />;
   return <Drafts me={me} onOut={() => setMe(null)} />;

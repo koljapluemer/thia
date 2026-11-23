@@ -3,6 +3,7 @@ import { HomeProvider } from './home';
 import { Landing } from './Landing';
 import { useArea } from './router';
 import { Review } from './review/Review';
+import { Runs } from './runs/Runs';
 import { Workshop } from './workshop/Workshop';
 
 /**
@@ -18,6 +19,7 @@ export function App() {
       {area === '/notes' && <Notes />}
       {area === '/workshop' && <Workshop />}
       {area === '/review' && <Review />}
+      {area === '/runs' && <Runs />}
     </HomeProvider>
   );
 }

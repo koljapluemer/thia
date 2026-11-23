@@ -157,6 +157,11 @@ impl Db {
         Ok(Db(Mutex::new(conn)))
     }
 
+    /// Runs `f` on the connection (for what keeps its own tables: the runs' index).
+    pub fn with<T>(&self, f: impl FnOnce(&Connection) -> Result<T, Error>) -> Result<T, Error> {
+        f(&self.conn())
+    }
+
     fn conn(&self) -> std::sync::MutexGuard<'_, Connection> {
         // a panic mid-query leaves nothing half-done that SQLite didn't roll back
         self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -257,6 +262,11 @@ impl Db {
     }
 
     /// Whether a draft, even a deleted one, has this id or package: neither is ever used twice.
+    /// Whether a draft of that id exists, whoever's.
+    pub fn draft_exists(&self, id: &str) -> Result<bool, Error> {
+        self.conn().query_row("SELECT EXISTS (SELECT 1 FROM drafts WHERE id = ?1)", [id], |r| r.get(0))
+    }
+
     pub fn draft_taken(&self, id: &str, package: &str) -> Result<bool, Error> {
         self.conn().query_row("SELECT 1 FROM drafts WHERE id = ?1 OR package = ?2", params![id, package], |_| Ok(())).optional().map(|r| r.is_some())
     }

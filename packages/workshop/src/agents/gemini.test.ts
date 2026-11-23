@@ -124,3 +124,16 @@ describe('geminiBackend', () => {
     expect(await geminiBackend(' ', fake([]).env).available()).toMatch(/API key/);
   });
 });
+
+describe('what a Gemini turn tells the record', () => {
+  it('each request’s usage, by the model that answered, and each throttle', async () => {
+    const f = fake([
+      limited(),
+      () => ({ status: 200, body: { candidates: [{ content: { role: 'model', parts: [{ text: 'done' }] }, finishReason: 'STOP' }], usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 3, thoughtsTokenCount: 2 }, modelVersion: 'second-001' } }),
+    ]);
+    const events = await all(geminiBackend('k', f.env).turn(req(), new AbortController().signal));
+    expect(events.find((e) => e.type === 'throttle')).toMatchObject({ model: GEMINI_CHAIN[0], status: 429, waitMs: 20_000 });
+    expect(events.find((e) => e.type === 'usage')).toMatchObject({ model: 'second-001', input: 10, output: 3, reasoning: 2, billing: 'free' });
+    expect(events.some((e) => e.type === 'trace' && e.source === 'gemini')).toBe(true);
+  });
+});

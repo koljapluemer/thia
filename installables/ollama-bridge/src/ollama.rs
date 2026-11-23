@@ -36,6 +36,8 @@ pub struct Reply {
     pub calls: Vec<(String, Value)>,
     /// the message as Ollama gave it, for the conversation
     pub message: Value,
+    /// the whole answer as it came, for the page's record
+    pub raw: Value,
 }
 
 impl Ollama {
@@ -89,7 +91,7 @@ impl Ollama {
         // its thinking stays out of the conversation: it's long, and the next round doesn't need it
         let mut message = json!({ "role": "assistant", "content": m["content"].as_str().unwrap_or_default() });
         if let Some(tc) = m.get("tool_calls") { message["tool_calls"] = tc.clone(); }
-        Ok(Reply { content: m["content"].as_str().unwrap_or_default().to_owned(), calls, message })
+        Ok(Reply { content: m["content"].as_str().unwrap_or_default().to_owned(), calls, message, raw: v.clone() })
     }
 }
 

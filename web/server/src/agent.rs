@@ -336,6 +336,19 @@ fn api_content(content: &[Value]) -> Value {
     }).collect())
 }
 
+/// A tool result's content as the page's tools give it (`ToolContent`): texts, and images as base64 with their type.
+fn page_content(content: &Value) -> Value {
+    match content {
+        Value::String(s) => json!([{ "type": "text", "text": s }]),
+        Value::Array(blocks) => Value::Array(blocks.iter().map(|b| match b["type"].as_str() {
+            Some("image") => json!({ "type": "image", "mimeType": b["source"]["media_type"], "data": b["source"]["data"] }),
+            Some("text") => json!({ "type": "text", "text": b["text"] }),
+            _ => b.clone(),
+        }).collect()),
+        other => json!([{ "type": "text", "text": other.to_string() }]),
+    }
+}
+
 fn summary(name: &str, input: &Value) -> String {
     match name {
         "search" => format!("“{}”", input["text"].as_str().unwrap_or_default()),
@@ -499,7 +512,7 @@ impl Agents {
         }
     }
 
-    async fn call_model(&self, system: &str, tools: &Value, messages: &[Value]) -> Result<Value, String> {
+    async fn call_model(&self, system: &str, tools: &Value, messages: &[Value], notes: &mut Vec<Value>) -> Result<Value, String> {
         self.send(&json!({
             "model": self.model.model,
             "max_tokens": MAX_TOKENS,
@@ -512,7 +525,7 @@ impl Agents {
             "cache_control": { "type": "ephemeral" },
             // a request a safety classifier declines is retried on the model that fits, in the same call
             "fallbacks": "default",
-        }))
+        }), notes)
         .await
     }
 
@@ -525,12 +538,12 @@ impl Agents {
             "system": [{ "type": "text", "text": system, "cache_control": { "type": "ephemeral" } }],
             "messages": [{ "role": "user", "content": [{ "type": "text", "text": user }] }],
             "fallbacks": "default",
-        }))
+        }), &mut vec![])
         .await
     }
 
-    /// A request to the Messages API, retried as it says.
-    async fn send(&self, body: &Value) -> Result<Value, String> {
+    /// A request to the Messages API, retried as it says; each retry is noted (a `throttle` event for the run's record).
+    async fn send(&self, body: &Value, notes: &mut Vec<Value>) -> Result<Value, String> {
         let mut wait = Duration::from_secs(2);
         for attempt in 0..4 {
             let res = self
@@ -553,10 +566,14 @@ impl Agents {
                     if !retryable || attempt == 3 {
                         return Err(format!("the model answered {status}: {message}"));
                     }
+                    notes.push(json!({ "type": "throttle", "model": body["model"], "status": status.as_u16(), "waitMs": wait.as_millis() as u64, "reason": message }));
                     message
                 }
                 Err(e) if attempt == 3 => return Err(format!("reaching the model: {e}")),
-                Err(e) => e.to_string(),
+                Err(e) => {
+                    notes.push(json!({ "type": "throttle", "model": body["model"], "waitMs": wait.as_millis() as u64, "reason": e.to_string() }));
+                    e.to_string()
+                }
             };
             eprintln!("agent: retrying a model call ({retry})");
             tokio::time::sleep(wait).await;
@@ -805,13 +822,24 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
             if job.cancelled.load(Ordering::SeqCst) {
                 return Err("stopped".into());
             }
+            let mut notes = vec![];
+            let asked_at = std::time::Instant::now();
             let resp = tokio::select! {
-                r = agents.call_model(&system, &tools, &messages) => r?,
+                r = agents.call_model(&system, &tools, &messages, &mut notes) => r,
                 () = job.cancel.notified() => return Err("stopped".into()),
             };
+            for n in notes { job.emit(n); }
+            let resp = resp?;
             let u = &resp["usage"];
             let n = |k: &str| u[k].as_i64().unwrap_or(0);
             let _ = state.db.add_usage(&job.id, n("input_tokens"), n("output_tokens"), n("cache_read_input_tokens"), n("cache_creation_input_tokens"));
+            // for the run's record: what this request used, and the answer as it came
+            job.emit(json!({
+                "type": "usage", "model": resp["model"], "input": n("input_tokens"), "output": n("output_tokens"),
+                "cacheRead": n("cache_read_input_tokens"), "cacheWrite": n("cache_creation_input_tokens"),
+                "ms": asked_at.elapsed().as_millis() as u64, "billing": "api",
+            }));
+            job.emit(json!({ "type": "trace", "source": "claude-api", "data": resp }));
             let stop = resp["stop_reason"].as_str().unwrap_or_default().to_owned();
             if stop == "refusal" {
                 return Err("The agent declined this request. Try putting it differently.".into());
@@ -841,11 +869,13 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
                             continue;
                         }
                         job.emit(json!({ "type": "tool", "name": name, "summary": summary(name, &b["input"]) }));
+                        let ran_at = std::time::Instant::now();
                         let (content, is_error) = if name == "check" {
                             check(&state, &job, &ws, &req, &b["input"]).await
                         } else {
                             match ws.run(name, &b["input"]) { Ok(t) => (json!(t), false), Err(t) => (json!(t), true) }
                         };
+                        job.emit(json!({ "type": "tool_result", "name": name, "ok": !is_error, "ms": ran_at.elapsed().as_millis() as u64, "content": page_content(&content) }));
                         results.push(json!({ "type": "tool_result", "tool_use_id": b["id"], "content": content, "is_error": is_error }));
                     }
                     if let Some((id, questions)) = question {

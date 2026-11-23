@@ -176,19 +176,19 @@ async fn session(socket: WebSocket, b: Arc<Bridge>, origin: String) {
     };
     let keep = match run::validate(&start) {
         Ok(k) => k,
-        Err(e) => { let _ = send(&mut sink, &fail(e)).await; let _ = send(&mut sink, &ToPage::Done { session: start.session }).await; return; }
+        Err(e) => { let _ = send(&mut sink, &fail(e)).await; let _ = send(&mut sink, &ToPage::Done { session: start.session, outcome: Some("failed"), exit_code: None }).await; return; }
     };
     let c = b.claude().await;
     let Some(claude_path) = c.path.filter(|_| c.found) else {
         let _ = send(&mut sink, &fail("Claude Code isn't installed on this computer, or can't be found: install it (claude.com/claude-code), sign in once in a terminal, then try again".into())).await;
-        let _ = send(&mut sink, &ToPage::Done { session: start.session }).await;
+        let _ = send(&mut sink, &ToPage::Done { session: start.session, outcome: Some("failed"), exit_code: None }).await;
         return;
     };
     let site = hex(&Sha256::digest(origin.as_bytes())[..8]);
     let dir = b.paths.workspaces().join(site).join(&start.workspace);
     if !b.busy.lock().expect("busy lock").insert(dir.clone()) {
         let _ = send(&mut sink, &fail("a turn is already running for this draft".into())).await;
-        let _ = send(&mut sink, &ToPage::Done { session: start.session }).await;
+        let _ = send(&mut sink, &ToPage::Done { session: start.session, outcome: Some("failed"), exit_code: None }).await;
         return;
     }
     let _busy = Busy(&b.busy, dir.clone());
@@ -198,7 +198,7 @@ async fn session(socket: WebSocket, b: Arc<Bridge>, origin: String) {
     };
     let outside = match prepared {
         Ok(o) => o,
-        Err(e) => { let _ = send(&mut sink, &fail(e)).await; let _ = send(&mut sink, &ToPage::Done { session: start.session }).await; return; }
+        Err(e) => { let _ = send(&mut sink, &fail(e)).await; let _ = send(&mut sink, &ToPage::Done { session: start.session, outcome: Some("failed"), exit_code: None }).await; return; }
     };
 
     let id = uuid::Uuid::new_v4().simple().to_string();
@@ -211,7 +211,7 @@ async fn session(socket: WebSocket, b: Arc<Bridge>, origin: String) {
     } } });
     if let Err(e) = write_secret(&mcp_config, serde_json::to_vec_pretty(&config).unwrap_or_default()) {
         let _ = send(&mut sink, &fail(format!("cannot write the tools' config: {e}"))).await;
-        let _ = send(&mut sink, &ToPage::Done { session: start.session }).await;
+        let _ = send(&mut sink, &ToPage::Done { session: start.session, outcome: Some("failed"), exit_code: None }).await;
         return;
     }
     let (out, mut out_rx) = mpsc::unbounded_channel();
@@ -219,7 +219,7 @@ async fn session(socket: WebSocket, b: Arc<Bridge>, origin: String) {
     b.runs.lock().expect("runs lock").insert(id.clone(), live.clone());
     let (cancel, cancelled) = oneshot::channel();
     let command = run::Command { claude: claude_path, mcp_config };
-    let task = tokio::spawn(run::run(command, *start, live.clone(), b.paths.runs(), outside, cancelled));
+    let task = tokio::spawn(run::run(command, *start, live.clone(), outside, cancelled));
     let mut cancel = Some(cancel);
     loop {
         tokio::select! {

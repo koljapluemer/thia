@@ -3,7 +3,7 @@ import ask from '../../agent-template/ask.json';
 import view from '../../agent-template/kinds/view.json';
 import viz from '../../agent-template/kinds/viz.json';
 import { toBase64 } from '../base64';
-import type { Answers, Question } from './types';
+import type { AgentEvent, Answers, Question } from './types';
 
 /**
  * What an agent may do besides thinking: the app's tools, the same whichever model runs the loop. The claude CLI gets
@@ -102,4 +102,11 @@ export function askTool(): AgentTool {
       show(questions, (answers) => resolve({ content: [{ type: 'text', text: answerText(answers) }] }));
     }),
   };
+}
+
+/** A tool's run, timed, and the `tool_result` it makes for the record. */
+export async function timed(name: string, run: Promise<ToolResult>): Promise<{ result: ToolResult; event: AgentEvent }> {
+  const t0 = performance.now();
+  const result = await run;
+  return { result, event: { type: 'tool_result', name, ok: !result.isError, ms: Math.round(performance.now() - t0), content: result.content } };
 }

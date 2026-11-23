@@ -23,6 +23,7 @@ web/app/src/workshop/
   agent.ts, Settings.tsx     which agents make views, tried in the order set there: the server's, Claude Code through
                              the Claude bridge, Ollama through the Ollama bridge (experimental), Gemini's free tier
   api.ts                     the server's API
+  runs.ts                    where the agents' runs are recorded: the server's (runs.md)
 
 packages/workshop/           shared by the panes:
   draft.ts, viz.ts           a view's draft as ymls (`view@3` and its members), a viz as its `viz@1` yml
@@ -30,6 +31,7 @@ packages/workshop/           shared by the panes:
                              what comes back goes, and the page's own check after a turn (`settle`)
   Preview.tsx                compiles a draft's view in the browser and runs it in a frame, as any view runs
   Chat.tsx                   one conversation about one draft of any kind
+  runs/                      the record of each agent run, as it goes (recorder.ts), and a line diff (runs.md)
   agents/                    what an agent backend is; the server's (a job over HTTP, jobs.ts); Claude Code
                              through the Claude bridge (bridge.ts); a local model through the Ollama bridge, on the same
                              protocol (ollama.ts); Gemini's free models from the page (gemini.ts); each kind's
@@ -143,17 +145,9 @@ A view goes out as a lesson for a class (**Publish**), or is offered for the pub
 ([`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md)). Its `reads` and `writes` come from what the agent declared in
 `view.json`, and there is no prompt when they widen. Chat history isn't kept across reloads; the CLI's session is.
 
-## Agent run logs
+## Agent runs
 
-The Claude bridge records every turn locally under its data folder's `runs/` (on Linux
-`~/.local/share/gestalts-claude-bridge/runs`). Daily `workshop-agent-run@2` JSONL files distinguish the
-turn's process outcome (`completed`, `failed` or `cancelled`), how each page tool's last call came out (`verification`,
-by tool: the bridge knows none of them) and permission warnings. Wall and
-provider timings, token/cache usage and tools belong to that run. Claude's API time, cost and model usage are cumulative
-for a resumed session, so they live under `session_totals`; reports count only the latest totals for each session.
-`raw/<date>/<run>.jsonl` contains the complete Claude stream with receipt timing, including assistant and tool content;
-it is private local data and is kept until manually deleted. Prompts and view files are not copied into the normalized
-record. Older record schemas are left untouched and ignored by the report.
-
-Run `mise run workshop:agent-stats`, optionally followed by `-- --days N`, `--view ID`, `--limit N` or `--json`, to summarize
-the journal. A failed logging write is reported on the bridge's stderr but never changes the turn's result.
+Every turn is recorded, whichever backend runs it: the page records what it sent and every event as it came,
+each backend sends what it can of its usage, tool results, throttles and raw stream, the person rates the turn
+after it (1–5, and why), and the server keeps it all, for admins to read in `/runs`
+([`runs.md`](runs.md)).

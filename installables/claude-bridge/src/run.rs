@@ -6,7 +6,6 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
 
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -73,8 +72,63 @@ pub enum ToPage {
     ToolCall { id: String, name: String, input: Value, files: BTreeMap<String, String> },
     /// the files the turn changed; `null`: deleted
     Files { files: BTreeMap<String, Option<String>> },
-    Done { session: Option<String> },
+    /// how the run ended (completed, failed or cancelled), when it did
+    Done {
+        session: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        outcome: Option<&'static str>,
+        #[serde(rename = "exitCode", skip_serializing_if = "Option::is_none")]
+        exit_code: Option<i32>,
+    },
     Error { message: String },
+    /// one model request's tokens, for the page's record of the turn
+    Usage {
+        model: Option<String>,
+        input: Option<i64>,
+        output: Option<i64>,
+        #[serde(rename = "cacheRead")]
+        cache_read: Option<i64>,
+        #[serde(rename = "cacheWrite")]
+        cache_write: Option<i64>,
+        billing: &'static str,
+    },
+    /// claude's stream as it came (a line of stdout, or stderr at the end), for the page's record
+    Trace { source: &'static str, data: Value },
+}
+
+/// The usage of one assistant message: claude's stream repeats a message for each of its content blocks, so a
+/// message counts once, with what its last block said.
+#[derive(Default)]
+pub struct Usages {
+    current: Option<(String, Value, Option<String>)>,
+}
+
+impl Usages {
+    /// What to send for `e`, a line of the stream: the previous message's usage, once a new message begins.
+    pub fn see(&mut self, e: &Value) -> Option<ToPage> {
+        if e.get("type").and_then(Value::as_str) != Some("assistant") { return None; }
+        let m = e.get("message")?;
+        let id = m.get("id").and_then(Value::as_str)?.to_owned();
+        let usage = m.get("usage").cloned().unwrap_or(Value::Null);
+        let model = m.get("model").and_then(Value::as_str).map(str::to_owned);
+        match &mut self.current {
+            Some((cur, u, md)) if *cur == id => { *u = usage; if model.is_some() { *md = model; } None }
+            _ => self.current.replace((id, usage, model)).map(|(_, u, md)| usage_event(&u, md)),
+        }
+    }
+
+    /// The last message's, at the end.
+    pub fn finish(&mut self) -> Option<ToPage> {
+        self.current.take().map(|(_, u, md)| usage_event(&u, md))
+    }
+}
+
+fn usage_event(u: &Value, model: Option<String>) -> ToPage {
+    let n = |k: &str| u.get(k).and_then(Value::as_i64);
+    ToPage::Usage {
+        model, input: n("input_tokens"), output: n("output_tokens"), cache_read: n("cache_read_input_tokens"),
+        cache_write: n("cache_creation_input_tokens"), billing: "subscription",
+    }
 }
 
 const WORKSPACE_ID: &str = r"^[a-z0-9][a-z0-9-]{0,63}$";
@@ -285,11 +339,11 @@ pub fn events_of(e: &Value, workspace: &Path, session: &mut Option<String>, fail
 }
 
 /// Runs one turn to its end, telling the page as it goes. `cancel` stops claude.
-pub async fn run(cmd: Command, start: Start, live: Arc<Live>, runs: PathBuf, outside: Vec<String>, mut cancel: oneshot::Receiver<()>) {
+pub async fn run(cmd: Command, start: Start, live: Arc<Live>, outside: Vec<String>, mut cancel: oneshot::Receiver<()>) {
     let out = live.out.clone();
     let workspace = live.workspace.clone();
     let input: BTreeMap<String, String> = start.files.iter().filter(|(p, _)| live.keep.is_match(p)).map(|(p, t)| (p.clone(), t.clone())).collect();
-    let mut log = RunLog::new(&runs, &start, &input);
+    let mut usages = Usages::default();
     let mut session = start.session.clone();
     let mut failed: Option<String> = None;
     let mut cancelled = false;
@@ -304,9 +358,8 @@ pub async fn run(cmd: Command, start: Start, live: Arc<Live>, runs: PathBuf, out
         Ok(c) => c,
         Err(e) => {
             let message = format!("cannot run {}: {e}", cmd.claude.display());
-            log.finish("failed", None, None, 0, Some(&message));
             let _ = out.send(ToPage::Error { message });
-            let _ = out.send(ToPage::Done { session: start.session });
+            let _ = out.send(ToPage::Done { session: start.session, outcome: Some("failed"), exit_code: None });
             return;
         }
     };
@@ -326,10 +379,11 @@ pub async fn run(cmd: Command, start: Start, live: Arc<Live>, runs: PathBuf, out
             line = lines.next_line() => match line {
                 Ok(Some(line)) => match serde_json::from_str::<Value>(&line) {
                     Ok(e) => {
-                        log.event(&e);
+                        if let Some(u) = usages.see(&e) { let _ = out.send(u); }
                         for ev in events_of(&e, &workspace, &mut session, &mut failed) { let _ = out.send(ev); }
+                        let _ = out.send(ToPage::Trace { source: "claude-cli", data: e });
                     }
-                    Err(_) => log.malformed(&line),
+                    Err(_) => { let _ = out.send(ToPage::Trace { source: "claude-cli", data: json!({ "unparsed": line }) }); }
                 },
                 _ => break,
             },
@@ -340,8 +394,9 @@ pub async fn run(cmd: Command, start: Start, live: Arc<Live>, runs: PathBuf, out
         }
     }
     if let Ok(status) = child.wait().await { exit_code = status.code(); }
+    if let Some(u) = usages.finish() { let _ = out.send(u); }
     let stderr = stderr_task.await.unwrap_or_default();
-    log.stderr(stderr.trim());
+    if !stderr.trim().is_empty() { let _ = out.send(ToPage::Trace { source: "claude-cli", data: json!({ "stderr": stderr.trim() }) }); }
     if !cancelled && exit_code != Some(0) && failed.is_none() {
         let tail: String = stderr.trim().chars().rev().take(2000).collect::<Vec<_>>().into_iter().rev().collect();
         failed = Some(format!("claude exited with {}{}", exit_code.map_or("a signal".into(), |c| c.to_string()),
@@ -351,167 +406,11 @@ pub async fn run(cmd: Command, start: Start, live: Arc<Live>, runs: PathBuf, out
     let _ = std::fs::write(workspace.join(OWN).join("last.json"), serde_json::to_vec(&after).unwrap_or_default());
     let mut changed: BTreeMap<String, Option<String>> = after.iter().filter(|(p, t)| input.get(*p) != Some(t)).map(|(p, t)| (p.clone(), Some(t.clone()))).collect();
     changed.extend(input.keys().filter(|p| !after.contains_key(*p)).map(|p| (p.clone(), None)));
-    let changed_count = changed.len();
     if !changed.is_empty() { let _ = out.send(ToPage::Files { files: changed }); }
     if cancelled { let _ = out.send(ToPage::Error { message: "stopped".into() }); }
     else if let Some(f) = &failed { let _ = out.send(ToPage::Error { message: f.clone() }); }
     let outcome = if cancelled { "cancelled" } else if failed.is_some() { "failed" } else { "completed" };
-    log.finish(outcome, session.as_deref(), exit_code, changed_count, failed.as_deref());
-    let _ = out.send(ToPage::Done { session });
-}
-
-/// A durable record of each turn: the raw stream, and one summary line a day (`workshop-agent-run@2`, which
-/// `scripts/agent_stats.py` reads).
-pub struct RunLog {
-    root: PathBuf,
-    run_id: String,
-    workspace: String,
-    session_in: Option<String>,
-    started_at: String,
-    started: Instant,
-    first_output_ms: Option<u128>,
-    result: Value,
-    tools: BTreeMap<String, u64>,
-    /// the page's tool calls this run, by id: their tool's name
-    page_calls: BTreeMap<String, String>,
-    /// by page tool, how its last call came out: whatever the page's tools are, the bridge knows none of them
-    verification: BTreeMap<String, &'static str>,
-    request: Value,
-    raw: PathBuf,
-}
-
-impl RunLog {
-    fn new(root: &Path, start: &Start, input: &BTreeMap<String, String>) -> RunLog {
-        let run_id = uuid::Uuid::new_v4().simple().to_string();
-        let started_at = now();
-        let day = started_at[..10].to_owned();
-        RunLog {
-            root: root.to_owned(),
-            raw: root.join("raw").join(&day).join(format!("{run_id}.jsonl")),
-            run_id,
-            workspace: start.workspace.clone(),
-            session_in: start.session.clone(),
-            started_at,
-            started: Instant::now(),
-            first_output_ms: None,
-            result: Value::Null,
-            tools: BTreeMap::new(),
-            page_calls: BTreeMap::new(),
-            verification: BTreeMap::new(),
-            request: json!({
-                "message_chars": start.prompt.chars().count(),
-                "files": input.len(),
-                "file_chars": input.values().map(|t| t.chars().count()).sum::<usize>(),
-                "resumed": start.session.is_some(),
-            }),
-        }
-    }
-
-    fn raw(&self, payload: Value) {
-        let mut envelope = json!({ "received_at": now(), "elapsed_ms": self.started.elapsed().as_millis() });
-        if let (Some(e), Value::Object(p)) = (envelope.as_object_mut(), payload) { e.extend(p); }
-        let _ = append(&self.raw, &envelope);
-    }
-
-    fn event(&mut self, e: &Value) {
-        self.raw(json!({ "stream": "stdout", "event": e }));
-        match e.get("type").and_then(Value::as_str) {
-            Some("assistant") => {
-                self.first_output_ms.get_or_insert(self.started.elapsed().as_millis());
-                for c in e.pointer("/message/content").and_then(Value::as_array).into_iter().flatten() {
-                    if c.get("type").and_then(Value::as_str) != Some("tool_use") { continue; }
-                    let name = c.get("name").and_then(Value::as_str).unwrap_or("unknown");
-                    *self.tools.entry(name.to_owned()).or_default() += 1;
-                    if let Some(tool) = name.strip_prefix(&format!("mcp__{MCP_SERVER}__")) && let Some(id) = c.get("id").and_then(Value::as_str) {
-                        self.page_calls.insert(id.to_owned(), tool.to_owned());
-                        self.verification.insert(tool.to_owned(), "failed");
-                    }
-                }
-            }
-            Some("user") => {
-                for c in e.pointer("/message/content").and_then(Value::as_array).into_iter().flatten() {
-                    if c.get("type").and_then(Value::as_str) == Some("tool_result")
-                        && let Some(tool) = c.get("tool_use_id").and_then(Value::as_str).and_then(|id| self.page_calls.get(id)) {
-                        self.verification.insert(tool.clone(), if c.get("is_error").and_then(Value::as_bool) == Some(true) { "failed" } else { "passed" });
-                    }
-                }
-            }
-            Some("result") => self.result = e.clone(),
-            _ => {}
-        }
-    }
-
-    fn malformed(&self, line: &str) { self.raw(json!({ "stream": "stdout", "unparsed": line })); }
-
-    fn stderr(&self, text: &str) {
-        if !text.is_empty() { self.raw(json!({ "stream": "stderr", "text": text })); }
-    }
-
-    fn finish(&self, outcome: &str, session: Option<&str>, exit_code: Option<i32>, changed_files: usize, error: Option<&str>) {
-        let r = &self.result;
-        let mut timings = json!({ "wall_ms": self.started.elapsed().as_millis() });
-        if let Some(v) = r.get("duration_ms").filter(|v| v.is_number()) { timings["provider_ms"] = v.clone(); }
-        if let Some(v) = self.first_output_ms { timings["first_output_ms"] = json!(v); }
-        let mut usage = serde_json::Map::new();
-        for (from, to) in [("input_tokens", "input_tokens"), ("output_tokens", "output_tokens"),
-                           ("cache_read_input_tokens", "cache_read_tokens"), ("cache_creation_input_tokens", "cache_creation_tokens")] {
-            if let Some(v) = r.pointer(&format!("/usage/{from}")).filter(|v| v.is_number()) { usage.insert(to.into(), v.clone()); }
-        }
-        let raw = self.raw.strip_prefix(&self.root).map(|p| p.to_string_lossy().replace('\\', "/")).unwrap_or_default();
-        let mut record = json!({
-            "schema": "workshop-agent-run@2",
-            "run_id": self.run_id,
-            "session_in": self.session_in,
-            "session_out": session,
-            "view": self.workspace,
-            "backend": "claude-cli",
-            "started_at": self.started_at,
-            "finished_at": now(),
-            "outcome": outcome,
-            "timings": timings,
-            "tools": self.tools,
-            "request": self.request,
-            "result": { "exit_code": exit_code, "changed_files": changed_files, "error": error },
-            "verification": self.verification,
-            "warnings": { "permission_denials": r.get("permission_denials").and_then(Value::as_array).map_or(0, Vec::len) },
-            "raw": raw,
-        });
-        if !usage.is_empty() { record["usage"] = Value::Object(usage); }
-        if let Some(v) = r.get("num_turns").filter(|v| v.is_number()) { record["turns"] = v.clone(); }
-        let mut totals = serde_json::Map::new();
-        for (from, to) in [("duration_api_ms", "api_ms"), ("total_cost_usd", "cost_usd")] {
-            if let Some(v) = r.get(from).filter(|v| v.is_number()) { totals.insert(to.into(), v.clone()); }
-        }
-        if let Some(m) = r.get("modelUsage").filter(|v| v.is_object()) { totals.insert("models".into(), m.clone()); }
-        if !totals.is_empty() { record["session_totals"] = Value::Object(totals); }
-        if let Err(e) = append(&self.root.join(format!("{}.jsonl", &self.started_at[..10])), &record) {
-            eprintln!("gestalts-claude-bridge: cannot write the run log: {e}");
-        }
-    }
-}
-
-fn append(path: &Path, v: &Value) -> std::io::Result<()> {
-    use std::io::Write;
-    if let Some(parent) = path.parent() { std::fs::create_dir_all(parent)?; }
-    let mut f = std::fs::OpenOptions::new().create(true).append(true).open(path)?;
-    writeln!(f, "{}", serde_json::to_string(v).unwrap_or_default())
-}
-
-/// Now, as RFC 3339 in UTC, without a date library.
-fn now() -> String {
-    let secs = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |d| d.as_secs()) as i64;
-    let (days, rem) = (secs.div_euclid(86_400), secs.rem_euclid(86_400));
-    // days since 1970-01-01 to a civil date (Howard Hinnant's algorithm)
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let d = doy - (153 * mp + 2) / 5 + 1;
-    let m = if mp < 10 { mp + 3 } else { mp - 9 };
-    let y = yoe + era * 400 + i64::from(m <= 2);
-    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}Z", rem / 3600, rem % 3600 / 60, rem % 60)
+    let _ = out.send(ToPage::Done { session, outcome: Some(outcome), exit_code });
 }
 
 #[cfg(test)]
@@ -595,8 +494,15 @@ mod tests {
     }
 
     #[test]
-    fn dates() {
-        assert_eq!(now().len(), 20);
-        assert!(now().starts_with("20"));
+    fn counts_each_message_once_with_its_last_usage() {
+        let msg = |id: &str, out: i64| json!({"type": "assistant", "message": {"id": id, "model": "claude-opus-5-5", "usage": {"input_tokens": 10, "output_tokens": out, "cache_read_input_tokens": 5}}});
+        let mut u = Usages::default();
+        assert!(u.see(&msg("m1", 1)).is_none());
+        assert!(u.see(&msg("m1", 7)).is_none());
+        assert!(u.see(&json!({"type": "user"})).is_none());
+        let first = serde_json::to_value(u.see(&msg("m2", 3)).unwrap()).unwrap();
+        assert_eq!(first, json!({"type": "usage", "model": "claude-opus-5-5", "input": 10, "output": 7, "cacheRead": 5, "cacheWrite": null, "billing": "subscription"}));
+        assert_eq!(serde_json::to_value(u.finish().unwrap()).unwrap()["output"], 3);
+        assert!(u.finish().is_none());
     }
 }

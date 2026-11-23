@@ -116,6 +116,17 @@ and kept as an immutable snapshot (`submissions/<id>/`). Admins (`accounts.admin
 (`promote.rs`) writes it into the repo checkout given with `--promote-into`, as a plugin or a vizint deck. See
 [`doc/architecture/publishing.md`](../../../doc/architecture/publishing.md).
 
+## Agent runs
+
+`runs/` keeps the record of every agent turn, whichever backend ran it, as the workshop page sent it: one JSONL file
+per run under `runs/<yyyy-mm-dd>/`, appended to and never rewritten, and the contents it names as blobs by sha256
+under `runs/blobs/`. The `runs` table is an index folded from them (`src/runs/index.rs`), rebuilt from the records
+whenever its `VERSION` changes, and by `admin reindex-runs`; cost is derived there from tokens and the dated prices in
+`src/runs/prices.rs`. A run is its account's: the first line says whose (`owner`), and only that account appends to
+it; admins read every run (`/api/admin/runs…`) and add notes. The server's own agent sends its usage, retries,
+tool results and responses as job events, which reach the record through the page like the rest. See
+[`web/app/doc/workshop/runs.md`](../../app/doc/workshop/runs.md).
+
 ## Not yet
 
 QR and short codes, rotating a link, an offline player, schools and sharing in

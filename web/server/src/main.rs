@@ -101,6 +101,9 @@ enum Admin {
         #[arg(long, default_value = "web/site/dist")]
         dist: PathBuf,
     },
+    /// The index of agent runs made anew from their records (runs/); prints how many
+    #[command(name = "reindex-runs")]
+    ReindexRuns,
 }
 
 #[tokio::main]
@@ -155,6 +158,11 @@ async fn run(cli: Cli) -> Result<(), String> {
                     let to = cli.data.join("runtime").join(&version);
                     copy_dir(&dist, &to).map_err(|e| format!("{}: {e}", to.display()))?;
                     println!("{version}");
+                }
+                Admin::ReindexRuns => {
+                    let root = cli.data.join("runs");
+                    let n = db.with(|c| Ok(thia_server::runs::Runs::open(c, root, false).and_then(|r| r.reindex(c)))).map_err(|e| e.to_string())??;
+                    println!("{n}");
                 }
                 Admin::ResetPassword { email } => {
                     let password = random_token(12);

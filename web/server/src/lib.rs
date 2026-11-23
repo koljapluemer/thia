@@ -28,6 +28,7 @@ pub mod lessons;
 pub mod npm;
 pub mod promote;
 pub mod publish;
+pub mod runs;
 pub mod sequence;
 pub mod submissions;
 pub mod validate;
@@ -125,6 +126,8 @@ pub struct Inner {
     pub misses: lessons::Misses,
     /// the repo checkout accepted submissions are written into; none on a box that only queues them
     pub promote_into: Option<PathBuf>,
+    /// the record of agent runs, `runs/`
+    pub runs: runs::Runs,
 }
 
 /// What the server runs besides itself.
@@ -157,6 +160,7 @@ impl AppState {
         let repo_gestalts = Gestalts::builtin_with(&all)?;
         let agents = agent::Agents::new(services.model, agent::Reference::new(services.worker.template.clone()), services.viz_render);
         let worker = worker::Worker::new(services.worker.clone());
+        let runs = db.with(|c| Ok(runs::Runs::open(c, data.join("runs"), false))).map_err(|e| e.to_string())??;
         Ok(AppState(Arc::new(Inner {
             db,
             data,
@@ -171,6 +175,7 @@ impl AppState {
             lesson_origin: services.lesson_origin,
             misses: lessons::Misses::default(),
             promote_into: services.promote_into,
+            runs,
         })))
     }
 }
@@ -270,7 +275,7 @@ pub fn now_iso() -> String {
 
 /// The app's routes, under `/api`.
 pub fn app(state: AppState) -> axum::Router {
-    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(sequence::routes()).merge(submissions::routes())).with_state(state)
+    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(sequence::routes()).merge(submissions::routes()).merge(runs::routes())).with_state(state)
 }
 
 /// The lesson domain's routes.

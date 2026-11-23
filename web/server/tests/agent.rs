@@ -43,7 +43,13 @@ fn reply(content: Value, stop: &str) -> Value {
 
 const VIEW: &str = "export default function View() {\n  return <div className=\"h-full\">Hallo</div>;\n}\n";
 
+/// What the turn said, without what's only for its record (usage, raw answers, tool results, throttles).
 async fn events(s: &Server, cookie: &str, base: &str, job: &str) -> Vec<Value> {
+    let record = ["usage", "trace", "tool_result", "throttle"];
+    every_event(s, cookie, base, job).await.into_iter().filter(|e| !record.contains(&e["type"].as_str().unwrap_or(""))).collect()
+}
+
+async fn every_event(s: &Server, cookie: &str, base: &str, job: &str) -> Vec<Value> {
     let mut all = Vec::new();
     loop {
         let (status, page, _) = s.call("GET", &format!("{base}/agent/events?job={job}&after={}", all.len()), Some(cookie), None).await;
@@ -77,6 +83,12 @@ async fn a_turn_edits_the_files_checks_them_and_hands_them_back() {
     let all = events(&s, &ada, &base, started["job"].as_str().unwrap()).await;
     let kinds: Vec<&str> = all.iter().map(|e| e["type"].as_str().unwrap()).collect();
     assert_eq!(kinds, ["text", "tool", "tool", "tool", "text", "files", "done"], "{all:?}");
+    // and for the run's record: each request's usage, each tool's result
+    let every = every_event(&s, &ada, &base, started["job"].as_str().unwrap()).await;
+    let usage: Vec<&Value> = every.iter().filter(|e| e["type"] == "usage").collect();
+    assert_eq!((usage.len(), usage[0]["model"].as_str(), usage[0]["cacheRead"].as_i64(), usage[0]["billing"].as_str()), (3, Some("claude-opus-5-5"), Some(1000), Some("api")));
+    let results: Vec<(&str, bool)> = every.iter().filter(|e| e["type"] == "tool_result").map(|e| (e["name"].as_str().unwrap(), e["ok"].as_bool().unwrap())).collect();
+    assert_eq!(results, [("write_file", true), ("check", true), ("write_file", false)]);
     assert_eq!(all[5]["files"], json!({ "view.tsx": VIEW }));
     let session = all[6]["session"].as_str().unwrap().to_owned();
 
@@ -256,9 +268,10 @@ async fn a_visualization_is_built_with_the_check_handed_to_the_page() {
             break;
         }
     }
-    let kinds: Vec<&str> = all.iter().map(|e| e["type"].as_str().unwrap()).collect();
+    let record = ["usage", "trace", "tool_result", "throttle"];
+    let kinds: Vec<&str> = all.iter().map(|e| e["type"].as_str().unwrap()).filter(|t| !record.contains(t)).collect();
     assert_eq!(kinds, ["tool", "tool", "tool", "tool", "tool_call", "text", "files", "done"], "{all:?}");
-    assert_eq!(all[6]["files"], json!({ "viz.ts": "export default 1;\n" }));
+    assert_eq!(all.iter().find(|e| e["type"] == "files").unwrap()["files"], json!({ "viz.ts": "export default 1;\n" }));
 
     let sent = seen.lock().unwrap().clone();
     let system = sent[0].1["system"][0]["text"].as_str().unwrap();

@@ -2,7 +2,7 @@
 
 The one web app. `/` is a landing page with a card per area; each area is a path: `/notes` (the gestalter: notes and
 installable views in tabs), `/workshop` (views and visualizations made with an agent, behind an account, kept on the
-server), `/review` (admins: what the workshop offered for the public site). Notes need no node: they are in the
+server), `/review` (admins: what the workshop offered for the public site), `/runs` (admins: every agent turn, [`doc/workshop/runs.md`](doc/workshop/runs.md)). Notes need no node: they are in the
 browser (OPFS). The learning views and visualizations, for anyone, are the public site, [`../site`](../site).
 
 - notes are the home store and `distributions/home.yml`; the desktop node, when one

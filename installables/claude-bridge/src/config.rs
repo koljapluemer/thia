@@ -25,7 +25,6 @@ impl Paths {
     pub fn tokens_file(&self) -> PathBuf { self.config.join("tokens.json") }
     pub fn settings_file(&self) -> PathBuf { self.config.join("settings.json") }
     pub fn workspaces(&self) -> PathBuf { self.data.join("workspaces") }
-    pub fn runs(&self) -> PathBuf { self.data.join("runs") }
 }
 
 /// The sites allowed to run Claude here: origin -> its token.

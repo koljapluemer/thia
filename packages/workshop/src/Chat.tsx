@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ViewError } from '@gestalts/view';
 import type { AgentBackend, Answers } from './agents/types';
 import { AskCard } from './AskCard';
-import { closeAsk, conversationKey, keepSession, onTurnDone as whenDone, runTurn, say, showAsk, stop, useConversation, type Ask } from './turns';
+import { closeAsk, conversationKey, keepSession, onTurnDone as whenDone, rate, runTurn, say, showAsk, stop, useConversation, type Ask, type Rate } from './turns';
 import type { Work } from './work';
 
 /** A message the person can send with one click, as it is (a viz's *Build from the spec*). */
@@ -76,6 +76,8 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 text-sm">
         {lines.map((l, i) => (l.who === 'ask'
           ? <AskCard key={`ask-${l.id}`} questions={l.questions} answered={l.answered} disabled={!l.reply && busy} onAnswer={(a) => answer(l, a)} />
+          : l.who === 'rate'
+          ? <Rating key={`rate-${l.run.id}`} line={l} onRate={(score, comment) => rate(key, l.run, score, comment)} />
           : l.who === 'checked'
           ? (
             <div key={i} className={l.ok ? 'text-success' : 'text-error'}>
@@ -108,6 +110,48 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
           ? <button type="button" className="btn btn-sm" onClick={() => stop(key)}>Stop</button>
           : <button type="button" className="btn btn-sm btn-primary" disabled={!text.trim() || Boolean(unavailable)} onClick={() => send()}>Send</button>}
       </div>
+    </div>
+  );
+}
+
+const SCORES = [1, 2, 3, 4, 5];
+
+/** After a turn: how good it was, 1 (bad) to 5 (good), and why, if the person likes; kept with the turn's record. */
+function Rating({ line, onRate }: { line: Rate; onRate: (score: number, comment: string) => void }) {
+  const [editing, setEditing] = useState(line.score === undefined);
+  const [score, setScore] = useState(line.score);
+  const [comment, setComment] = useState(line.comment ?? '');
+  if (!editing && line.score !== undefined) {
+    return (
+      <div className="flex items-center gap-2 text-base-content/60">
+        <span>Rated {line.score} of 5{line.comment ? `: ${line.comment}` : ''}</span>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>Change</button>
+      </div>
+    );
+  }
+  const send = () => {
+    if (score === undefined) return;
+    onRate(score, comment);
+    setEditing(false);
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-base-content/60">
+      <span>How good was this?</span>
+      <span>bad</span>
+      <div className="join" role="radiogroup">
+        {SCORES.map((s) => (
+          <input key={s} type="radio" className="join-item btn btn-sm" name={`rate-${line.run.id}`} aria-label={String(s)}
+                 checked={score === s} onChange={() => setScore(s)} />
+        ))}
+      </div>
+      <span>good</span>
+      {score !== undefined && (
+        <>
+          <input type="text" className="input input-sm min-w-0 flex-1" placeholder="Why? (optional)" value={comment}
+                 onChange={(e) => setComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
+          <button type="button" className="btn btn-sm" onClick={send}>Send</button>
+        </>
+      )}
     </div>
   );
 }

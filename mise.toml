@@ -280,11 +280,6 @@ run = "pnpm --dir web/site build"
 
 # --- the workshops ---
 
-[tasks."workshop:agent-stats"]
-hide = true
-description = "Summarize the Claude bridge's turns: time, token use, cost and tool activity"
-run = "python3 installables/claude-bridge/scripts/agent_stats.py"
-
 
 # --- server ---
 

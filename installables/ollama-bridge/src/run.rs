@@ -70,6 +70,21 @@ pub enum ToPage {
     Files { files: BTreeMap<String, Option<String>> },
     Done { session: Option<String> },
     Error { message: String },
+    /// one model request's tokens and time, for the page's record of the turn
+    Usage { model: Option<String>, input: Option<i64>, output: Option<i64>, ms: Option<i64>, billing: &'static str },
+    /// how one of the bridge's own tools came out (the page times its own)
+    ToolResult { name: String, ok: bool, ms: i64, content: Vec<Value> },
+    /// Ollama's answer as it came, for the page's record
+    Trace { source: &'static str, data: Value },
+}
+
+/// What an answer says of its tokens and time (`prompt_eval_count`, `eval_count`, `total_duration` in ns).
+pub fn usage_of(model: &str, raw: &Value) -> ToPage {
+    let n = |k: &str| raw.get(k).and_then(Value::as_i64);
+    ToPage::Usage {
+        model: Some(raw.get("model").and_then(Value::as_str).unwrap_or(model).to_owned()),
+        input: n("prompt_eval_count"), output: n("eval_count"), ms: n("total_duration").map(|ns| ns / 1_000_000), billing: "free",
+    }
 }
 
 const WORKSPACE_ID: &str = r"^[a-z0-9][a-z0-9-]{0,63}$";
@@ -342,6 +357,8 @@ pub async fn run(ollama: &Ollama, start: Start, keep: Regex, earlier: Option<Ses
             Ok(r) => r,
             Err(e) => { turn.emit(ToPage::Error { message: e }); break; }
         };
+        turn.emit(usage_of(&model, &reply.raw));
+        turn.emit(ToPage::Trace { source: "ollama", data: reply.raw.clone() });
         if !reply.content.trim().is_empty() { turn.emit(ToPage::Text { text: reply.content.trim().to_owned() }); }
         messages.push(reply.message);
         if reply.calls.is_empty() { break; }
@@ -350,7 +367,10 @@ pub async fn run(ollama: &Ollama, start: Start, keep: Regex, earlier: Option<Ses
             let (text, failed) = if page_tools.contains(name.as_str()) {
                 turn.page_tool(&name, input, ws.draft()).await
             } else if with_files && OWN_TOOLS.contains(&name.as_str()) {
-                match ws.run(&name, &input) { Ok(t) => (t, false), Err(e) => (e, true) }
+                let t0 = std::time::Instant::now();
+                let (text, failed) = match ws.run(&name, &input) { Ok(t) => (t, false), Err(e) => (e, true) };
+                turn.emit(ToPage::ToolResult { name: name.clone(), ok: !failed, ms: t0.elapsed().as_millis() as i64, content: vec![json!({ "type": "text", "text": text })] });
+                (text, failed)
             } else {
                 (format!("no tool {name}"), true)
             };
@@ -367,6 +387,12 @@ pub async fn run(ollama: &Ollama, start: Start, keep: Regex, earlier: Option<Ses
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_answer_says_its_tokens_and_time() {
+        let raw = json!({ "model": "qwen3.5:9b", "prompt_eval_count": 1200, "eval_count": 80, "total_duration": 4_500_000_000i64 });
+        assert_eq!(serde_json::to_value(usage_of("x", &raw)).unwrap(), json!({ "type": "usage", "model": "qwen3.5:9b", "input": 1200, "output": 80, "ms": 4500, "billing": "free" }));
+    }
 
     fn start(files: &[(&str, &str)]) -> Start {
         Start {

@@ -10,9 +10,10 @@ export const AREAS = [
   { path: '/workshop', title: 'Workshop', about: 'Make learning views and visualizations with an agent; publish them to a class, or offer them for the public site.' },
   { path: '/notes', title: 'Gestalter', about: 'Your notes, and the views you install, in tabs.' },
   { path: '/review', title: 'Review', about: 'What the workshops offered for the public site: accept or reject it.' },
+  { path: '/runs', title: 'Agent runs', about: 'Every agent turn: what it was sent, what it did, its time, tokens, cost and rating.' },
 ] as const;
 /** The areas only admins see. */
-const ADMIN: readonly string[] = ['/review'];
+const ADMIN: readonly string[] = ['/review', '/runs'];
 export type AreaPath = '/' | (typeof AREAS)[number]['path'];
 const HOME: AreaPath = '/';
 

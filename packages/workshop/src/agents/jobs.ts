@@ -50,6 +50,7 @@ export function jobBackend(opts: { id: string; label: string; available: () => P
           for (const e of (page.events ?? []) as (AgentEvent | ToolCall)[]) {
             if (e.type !== 'tool_call') { yield e; continue; }
             const tool = contracts[req.kind ?? 'view'].tools(req).find((t) => t.name === e.name);
+            // the job reports how it came out (`tool_result`), as it does for its own tools
             const r = tool ? await tool.run(e.input, e.files) : { content: [{ type: 'text' as const, text: `no tool ${e.name} here` }], isError: true };
             await call('tool_result', json({ job, id: e.id, ...r })).catch(() => {});
           }

@@ -109,7 +109,7 @@ type Reply = { parts: Part[]; finish?: string; model: string };
  * One request, to the first model of the chain that isn't paused: a rate limit or an overload pauses that model and
  * the same request goes to the next. When all are paused, a short pause is waited out (`onWait`); a long one throws.
  */
-async function generate(apiKey: string, pauses: Pauses, env: GeminiEnv, body: (model: string) => unknown, signal: AbortSignal, onWait?: (s: number) => void): Promise<Reply> {
+async function generate(apiKey: string, pauses: Pauses, env: GeminiEnv, body: (model: string) => unknown, signal: AbortSignal, onWait?: (s: number) => void, note?: (e: AgentEvent) => void): Promise<Reply> {
   for (;;) {
     if (signal.aborted) throw new GeminiError('stopped');
     const picked = pauses.pick();
@@ -122,6 +122,7 @@ async function generate(apiKey: string, pauses: Pauses, env: GeminiEnv, body: (m
     }
     const { model } = picked;
     let r: Response;
+    const t0 = env.now();
     try {
       r = await env.fetch(`${API}/${model}:generateContent`, {
         method: 'POST', signal,
@@ -135,13 +136,27 @@ async function generate(apiKey: string, pauses: Pauses, env: GeminiEnv, body: (m
     const text = await r.text();
     if (!r.ok) {
       const pause = pauseMs(r.status, text);
-      if (pause !== null) { pauses.pause(model, pause); continue; }
+      if (pause !== null) {
+        pauses.pause(model, pause);
+        note?.({ type: 'throttle', model, status: r.status, waitMs: pause, reason: text.slice(0, 2000) });
+        continue;
+      }
       let message = text;
       try { message = (JSON.parse(text) as { error?: { message?: string } }).error?.message ?? text; } catch { /* as it came */ }
       if (r.status === 400 && /API key/i.test(message) || r.status === 401 || r.status === 403) throw new GeminiError(`Gemini refused the key: ${message}`);
       throw new GeminiError(`Gemini (${model}) answered ${r.status}: ${message}`);
     }
-    const v = JSON.parse(text) as { candidates?: { content?: { parts?: Part[] }; finishReason?: string }[]; promptFeedback?: { blockReason?: string } };
+    const v = JSON.parse(text) as {
+      candidates?: { content?: { parts?: Part[] }; finishReason?: string }[]; promptFeedback?: { blockReason?: string };
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; cachedContentTokenCount?: number; thoughtsTokenCount?: number };
+      modelVersion?: string;
+    };
+    const u = v.usageMetadata;
+    note?.({
+      type: 'usage', model: v.modelVersion ?? model, input: u?.promptTokenCount, output: u?.candidatesTokenCount, cacheRead: u?.cachedContentTokenCount,
+      reasoning: u?.thoughtsTokenCount, ms: env.now() - t0, billing: 'free',
+    });
+    note?.({ type: 'trace', source: 'gemini', data: v });
     const c = v.candidates?.[0];
     if (!c) throw new GeminiError(`Gemini declined this request${v.promptFeedback?.blockReason ? ` (${v.promptFeedback.blockReason})` : ''}. Try putting it differently.`);
     return { parts: c.content?.parts ?? [], finish: c.finishReason, model };
@@ -357,12 +372,19 @@ export function geminiBackend(apiKey: string, env: GeminiEnv = browserEnv()): Ag
         for (let round = 0; ; round++) {
           if (round === MAX_ROUNDS) { yield { type: 'text', text: `(stopped after ${MAX_ROUNDS} rounds of tool calls)` }; break; }
           const waits: number[] = [];
-          const reply = await generate(key, pauses, env, (model) => ({
-            systemInstruction: { parts: [{ text: system }] },
-            contents: forModel(contents, model),
-            tools: [{ functionDeclarations: declarations }],
-            generationConfig: { thinkingConfig: { thinkingLevel: THINKING_LEVEL } },
-          }), signal, (s) => waits.push(s));
+          const noted: AgentEvent[] = [];
+          let reply: Reply;
+          try {
+            reply = await generate(key, pauses, env, (model) => ({
+              systemInstruction: { parts: [{ text: system }] },
+              contents: forModel(contents, model),
+              tools: [{ functionDeclarations: declarations }],
+              generationConfig: { thinkingConfig: { thinkingLevel: THINKING_LEVEL } },
+            }), signal, (s) => waits.push(s), (e) => noted.push(e));
+          } finally {
+            // what was asked is in the record even when it failed
+            yield* noted;
+          }
           for (const s of waits) yield { type: 'tool', name: 'waiting', summary: `for the free quota, ${s} s` };
           if (reply.finish === 'MAX_TOKENS') throw new GeminiError("The agent's answer got too long and was cut off. Ask for a smaller step.");
           if (reply.finish === 'MALFORMED_FUNCTION_CALL' && !reply.parts.length) {
@@ -380,6 +402,7 @@ export function geminiBackend(apiKey: string, env: GeminiEnv = browserEnv()): Ag
             if (call.name !== 'ask') yield { type: 'tool', name: call.name, summary: summary(call.name, input) };
             const tool = byName.get(call.name);
             let r: ToolResult;
+            const t0 = env.now();
             if (tool) {
               r = yield* runPageTool(tool, input, ws.draft(), signal);
             } else if (OWN_TOOLS.includes(call.name)) {
@@ -387,6 +410,7 @@ export function geminiBackend(apiKey: string, env: GeminiEnv = browserEnv()): Ag
             } else {
               r = { content: [{ type: 'text', text: `no tool ${call.name}` }], isError: true };
             }
+            yield { type: 'tool_result', name: call.name, ok: !r.isError, ms: env.now() - t0, content: r.content };
             results.push(...resultParts(call, r));
           }
           contents.push({ role: 'user', parts: results });
