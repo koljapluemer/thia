@@ -34,14 +34,15 @@ unfiled list rather than storing them.
 ## Needs design
 
 - A per-distribution table of contents, strictly a closed-world navigation tree. A simpler first version could list
-  deck ids directly in `distribution.yml`.
+  deck ids directly in `distribution.yml`. Planned as outlines: [[outlines]].
 - A `closed` marker on set concepts, because the core cannot infer whether a deck ships every member: then closed
   sets show *k of n* (`members.of`). It is structural, so it is `concept@4`.
 - One concept-level estimate fed by fact and skill evidence, with FSRS remaining the item scheduler. This continues
   the Bayesian direction in [[../research/generic-learning-original-brief|the original generic-learning brief]].
 - Aggregate activity by set and abstraction rather than every raw concept touched.
 - Give a fact its own concept when multiple items share it; otherwise the item may be sufficient.
-- Represent curricula and levels as sourced schemes, never as an intrinsic property of a concept.
+- Represent curricula and levels as sourced schemes, never as an intrinsic property of a concept. Planned as
+  outlines: [[outlines]]; naming rules for concepts in [[concept-naming]].
 
 ## Later
 
