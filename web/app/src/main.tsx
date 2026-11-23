@@ -5,7 +5,8 @@ import './app.css';
 
 createRoot(document.getElementById('app')!).render(<StrictMode><App /></StrictMode>);
 
-// the built site opens offline too (public/sw.js); not in development, where Vite serves fresh files
+// the built app opens offline too: the origin's one service worker, the use app's (web/site/public/sw.js); not in
+// development, where Vite serves fresh files
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch((e: unknown) => console.warn('gestalts: no offline copy:', e));
 }

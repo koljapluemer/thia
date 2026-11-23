@@ -16,4 +16,5 @@ every agent turn, [`doc/workshop/runs.md`](doc/workshop/runs.md)). Using views, 
   `/review`: see [`doc/architecture/publishing.md`](../../doc/architecture/publishing.md)
 
 From the repo root: `mise run just dev` (this, the claude and ollama bridges, folder-sync and the server), `mise run web:dev` (this alone),
-`mise run web:build` (a static site in `dist/`; serve every path as `index.html`).
+`mise run web:build` (a static site in `dist/`, its files under `/make/`: deployed beside the use app, its
+`index.html` answering `/workshop`, `/review` and `/runs`; `web/server/deploy/Caddyfile`).

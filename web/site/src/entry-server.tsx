@@ -19,6 +19,8 @@ export type Head = {
   path: string;
   /** schema.org JSON-LD */
   jsonLd?: object;
+  /** nothing of its own to find: a view on the user's data alone (notes, cards) */
+  noindex?: boolean;
 };
 
 const SITE_DESCRIPTION = 'Interactive exercises and visualizations, free to use, nothing to sign up for.';
@@ -58,6 +60,7 @@ function describe(e: Entry): string {
 }
 
 function viewHead(e: Entry, trees: OutlineTree[], base: string): Head {
+  if (!e.deck) return { title: `${e.title} · thia`, description: describe(e), lang: 'en', path: e.path, noindex: true };
   const alignments = e.deck ? trees.flatMap((t) => closest(t.entries, e.deck!.source).map((x) => ({
     '@type': 'AlignmentObject',
     alignmentType: 'teaches',

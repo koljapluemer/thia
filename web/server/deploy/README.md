@@ -16,7 +16,11 @@ On the box (Debian/Ubuntu), as root:
 6. Backups: `backup.sh` to `/usr/local/bin/`, `/etc/thia-server-backup.env` with the restic repository, and a
    nightly cron entry for it.
 
-Then, from a committed tree here: `THIA_HOST=root@box mise run server:deploy`. Add an account on the box with
+Then, from a committed tree here: `THIA_HOST=root@box THIA_PUBLIC_URL=https://<app domain> mise run server:deploy`
+(the URL gives the site's pages their canonical links and a sitemap). The app's domain serves both apps from one
+folder, `/opt/thia-server/current/web`: the use app (`web/site`, a prerendered page per path, `404.html` else) at the
+root and the make app (`web/app`) under `/make/`, whose page answers `/workshop`, `/review` and `/runs`; one origin,
+so the user's store in the browser is the same for both. Its one service worker is the use app's `sw.js`. Add an account on the box with
 `sudo -u thia /opt/thia-server/current/bin/thia-server --data /var/lib/thia-server admin add-account --email <email>`,
 which prints the password to hand over. To associate it with a school, first use `admin add-school "…"` and pass its
 printed id to `add-account --school <id>`. Pass `--password <password>` to choose one instead of generating it.

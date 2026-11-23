@@ -269,6 +269,6 @@ run = "cargo run -q -p thia-server -- --data server-data admin"
 
 [tasks."server:deploy"]
 hide = true
-description = "Build the server, app and player and ship them to THIA_HOST (web/server/deploy/README.md; needs a committed tree)"
+description = "Build the server, the use and make apps and the player and ship them to THIA_HOST, THIA_PUBLIC_URL the app's URL (web/server/deploy/README.md; needs a committed tree)"
 depends = ["setup"]
 run = "bash scripts/deploy-server.sh"

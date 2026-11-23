@@ -79,6 +79,15 @@ no Node, templates or Chromium: it installs on its own (`mise run claude-bridge:
 longer sync with it. An agent loop in the page (a model behind an API) would use the same tools, plus simple file
 tools on the draft (`fileTools`); none is built yet.
 
+Step 4, on 2026-11-23: two apps by what they're for, on one origin. The gestalter and the public site did the same job
+from two ends, so they are one now: the **use app** (`web/site`), every view at its own URL on one store in the
+browser (OPFS `home`, the gestalter's, so nothing moves), with the decks opened on it mounted read-only, a recent bar
+instead of tabs, "Guest" for shared devices, and the catalog's search and outlines. The **make app** (`web/app`), the
+workshop, review and runs behind an account, is served under `/make/` beside it. Item 7 decided: a single-page app
+with a prerender script (React's, `web/site/scripts/prerender.ts`), every page its own HTML with its head for search
+engines, hydrated in the browser; the lesson domain plays lessons from a bare `noindex` page of the same build.
+Pairing devices and the Android app are gone; phones use the use app in the browser.
+
 ## Open, in order
 
 1. **Sync: storage or mailbox.** Decides whether the server is a backup, and how a new device gets its data.
@@ -98,9 +107,8 @@ tools on the draft (`fileTools`); none is built yet.
    the hash). Leaning: the frame runtime (React, the kit, `view`, `learning`, `sources`) versioned as one, by semver
    majors; the player shell always current; a lesson's CSS compiled at publishing; a published version keeps its
    source.
-7. **Frontend structure.** One project: an Astro site with the apps as client-only areas, or a single-page app with a
-   prerender script. Decided by how much public content there will be (CMS, docs, public decks). Shared by both sides
-   and owned by neither: the kit (with the app's components apart from the API views get) and the frame packages.
+7. **Frontend structure.** Decided (step 4): a prerendered single-page use app and the make app beside it. Open: an
+   Astro-like zero-JS path, should there be much editorial content (written guides, docs).
 8. **Server scope.** What stays central: accounts and sync, publishing and the lesson domain, the hosted agent.
 9. **Desktop tools.** Small and optional, each released on its own: Claude Bridge (built, step 3), Sync to
    Folder, YouTube subtitles, imports. A browser extension where it can do the job (cross-origin fetches, store

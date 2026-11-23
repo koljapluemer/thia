@@ -1,6 +1,7 @@
 /** The built page (`dist/index.html`) filled in per page, by scripts/prerender.ts. */
 
-export type Head = { title: string; description: string; lang: string; path: string; jsonLd?: object };
+/** `noindex`: a page with nothing of its own to find (a view on the user's data alone) */
+export type Head = { title: string; description: string; lang: string; path: string; jsonLd?: object; noindex?: boolean };
 
 const APP = '<div id="app"></div>';
 
@@ -26,6 +27,7 @@ const json = (o: object) => JSON.stringify(o).replaceAll('<', '\\u003c');
 export function fill(template: string, markup: string, head: Head, base: string, extra: string[] = []): string {
   const tags = [
     ...extra,
+    ...(head.noindex ? ['<meta name="robots" content="noindex">'] : []),
     `<meta property="og:title" content="${attr(head.title)}">`,
     `<meta property="og:description" content="${attr(head.description)}">`,
     `<meta property="og:type" content="website">`,

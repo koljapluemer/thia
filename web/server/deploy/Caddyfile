@@ -1,14 +1,29 @@
 # The app and the lesson domain on one box. Two registrable domains, so nothing published shares cookies or
 # storage with the app's sessions. Replace the two names; Caddy gets their certificates.
+#
+# The app's domain has both apps on one origin, so the user's store in the browser is the same for both: the use app
+# (web/site, prerendered, a page per path) at the root, and the make app (web/app) under /make/, whose one page answers
+# /workshop, /review and /runs.
 
 lehrer.example.de {
 	encode zstd gzip
 	handle /api/* {
 		reverse_proxy 127.0.0.1:7740
 	}
+	@make path /workshop /workshop/* /review /review/* /runs /runs/*
+	handle @make {
+		root * /opt/thia-server/current/web
+		rewrite * /make/index.html
+		file_server
+	}
 	handle {
-		root * /opt/thia-server/current/app
-		try_files {path} /index.html
+		root * /opt/thia-server/current/web
+		try_files {path} {path}/index.html
+		file_server
+	}
+	handle_errors 404 {
+		root * /opt/thia-server/current/web
+		rewrite * /404.html
 		file_server
 	}
 	header {
