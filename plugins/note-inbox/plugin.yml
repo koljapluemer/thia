@@ -4,5 +4,6 @@ title: Note inbox
 description: >-
   Upload a folder of plaintext files, then turn them into notes one at random: as many notes from each as it holds,
   then delete it, or defer it for later.
-reads: [inbox/text@1, note@1]
-writes: [inbox/text@1, note@1]
+# what NoteEditor reads and writes (as note-crud): notes, the sources and concepts they relate to, new sources
+reads: [inbox/text@1, note@1, source@1, concept@2, concept@3]
+writes: [inbox/text@1, note@1, source@1]
