@@ -17,6 +17,6 @@ export function noteHeadline(v: JsonMap): string {
 /** A note's headline (`noteHeadline`) rendered as one line of Markdown; "(empty)" when there's none. */
 export function NoteTitle({ value, className = '', onOpen }: { value: JsonMap; className?: string; onOpen?: (id: string) => void }) {
   const text = noteHeadline(value);
-  if (!text) return <span className={`text-base-content/50 ${className}`}>(empty)</span>;
+  if (!text) return <span className={`text-base-content/60 ${className}`}>(empty)</span>;
   return <Markdown inline text={text} onOpen={onOpen} className={className} />;
 }

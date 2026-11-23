@@ -27,11 +27,11 @@ function List({ selected, onSelect, onNew }: { selected: string | null; onSelect
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {items.map((n) => (
           <li key={n.id}>
-            <button type="button" className={`w-full truncate px-3 py-3 text-left hover:bg-base-200 ${n.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(n.id)}><NoteTitle value={n.value} /></button>
+            <button type="button" className={`w-full truncate px-3 py-3 text-left text-sm hover:bg-base-200 ${n.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(n.id)}><NoteTitle value={n.value} /></button>
           </li>
         ))}
         {hasMore && <li ref={end} className="flex justify-center p-3"><span className="loading loading-spinner loading-sm" /></li>}
-        {!loading && !items.length && <li className="p-6 text-center text-base-content/60">{text.trim() ? 'Nothing found.' : 'No notes yet.'}</li>}
+        {!loading && !items.length && <li className="p-6 text-center text-sm text-base-content/60">{text.trim() ? 'Nothing found.' : 'No notes yet.'}</li>}
       </ul>
     </div>
   );

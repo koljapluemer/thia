@@ -2,7 +2,7 @@ import { EditorView } from '@codemirror/view';
 
 /** CodeMirror styled with daisyUI's theme variables, so it follows light/dark themes. */
 export const editorTheme = EditorView.theme({
-  '&': { backgroundColor: 'transparent', fontSize: '0.9rem' },
+  '&': { backgroundColor: 'transparent', fontSize: '0.875rem' },
   '&.cm-focused': { outline: 'none' },
   '.cm-content': { fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', padding: '0.75rem 0', minHeight: '12rem', caretColor: 'var(--color-base-content)' },
   '.cm-line': { padding: '0 1rem' },

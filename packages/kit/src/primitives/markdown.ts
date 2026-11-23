@@ -119,17 +119,17 @@ const extensions: MarkedExtension = {
         const { target, label, embed } = t as RefToken;
         if (embed) {
           // a line of text shows what's embedded by name
-          if (inlineOnly) return `<span class="text-base-content/70">${escapeHtml(label ?? target)}</span>`;
+          if (inlineOnly) return `<span class="text-base-content/60">${escapeHtml(label ?? target)}</span>`;
           const src = links.embed?.(target);
           return src
             ? embedHtml(target, src, label)
-            : `<span class="text-base-content/50 line-through" title="not attached">${escapeHtml(label ?? target)}</span>`;
+            : `<span class="text-base-content/60 line-through" title="not attached">${escapeHtml(label ?? target)}</span>`;
         }
         const ref = links.reference?.(target) ?? { label: target, exists: true };
         const text = escapeHtml(label ?? ref.label).replaceAll('$', '&#36;');
         return ref.exists
           ? `<a class="link link-hover" href="#" data-note="${escapeHtml(target)}">${text}</a>`
-          : `<span class="text-base-content/50 line-through" title="no such note">${text}</span>`;
+          : `<span class="text-base-content/60 line-through" title="no such note">${text}</span>`;
       },
     },
   ],

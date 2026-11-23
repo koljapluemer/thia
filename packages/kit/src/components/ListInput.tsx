@@ -24,7 +24,7 @@ function Chip({ value, label, onSave, onRemove }: { value: string; label: string
   };
   if (editing !== null) {
     return (
-      <input className="input input-xs w-40" aria-label={label} autoFocus value={editing} onChange={(e) => setEditing(e.target.value)} onBlur={done}
+      <input className="input input-sm w-40" aria-label={label} autoFocus value={editing} onChange={(e) => setEditing(e.target.value)} onBlur={done}
              onKeyDown={(e) => {
                if (e.key === 'Enter') e.currentTarget.blur();
                if (e.key === 'Escape') { cancelled.current = true; e.currentTarget.blur(); }
@@ -66,11 +66,11 @@ export function ListInput({ value, onChange, label, placeholder, exclude, prefix
   };
   return (
     <div className={`flex flex-wrap items-center gap-1 ${className}`}>
-      {prefix && <span className="text-xs text-base-content/60">{prefix}</span>}
+      {prefix && <span className="text-base-content/60">{prefix}</span>}
       {value.map((a, i) => (
         <Chip key={`${a}:${i}`} value={a} label={label} onSave={(v) => save(value.map((x, j) => (j === i ? v : x)))} onRemove={() => save(value.filter((_, j) => j !== i))} />
       ))}
-      <input className="input input-ghost input-xs w-36" aria-label={`Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}`} placeholder={placeholder ?? `Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}…`} value={adding}
+      <input className="input input-ghost input-sm w-36" aria-label={`Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}`} placeholder={placeholder ?? `Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}…`} value={adding}
              onChange={(e) => { if (e.target.value.endsWith(',')) add(e.target.value); else setAdding(e.target.value); }}
              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(adding); } if (e.key === 'Escape') setAdding(''); }}
              onBlur={() => add(adding)} />
