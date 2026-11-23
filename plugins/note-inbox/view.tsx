@@ -16,31 +16,51 @@ const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string =>
 function Upload({ onClose }: { onClose: () => void }) {
   const write = useWrite();
   const read = useRead();
-  const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; of: number }>();
   const [result, setResult] = useState<{ added: number; there: number; skipped: string[] }>();
+  const busy = !!progress;
 
-  const upload = async (files: FileList | null) => {
-    setBusy(true);
+  const upload = async (list: FileList | null) => {
+    // a folder's own files are `folder/name`; deeper ones have more slashes
+    const files = Array.from(list ?? []).filter((f) => !f.webkitRelativePath || f.webkitRelativePath.split('/').length === 2);
+    setResult(undefined);
+    setProgress({ done: 0, of: files.length });
     const decoder = new TextDecoder('utf-8', { fatal: true });
     const out = { added: 0, there: 0, skipped: [] as string[] };
-    for (const f of Array.from(files ?? [])) {
-      // a folder's own files are `folder/name`; deeper ones have more slashes
-      if (f.webkitRelativePath && f.webkitRelativePath.split('/').length !== 2) continue;
+    // reading and naming them all at once: only the writes go one after another
+    const named = await Promise.all(files.map(async (f) => {
       try {
         const bytes = new Uint8Array(await f.arrayBuffer());
         let text: string;
-        try { text = decoder.decode(bytes); } catch { out.skipped.push(`${f.name}: not plain text`); continue; }
-        if (!text.trim()) { out.skipped.push(`${f.name}: empty`); continue; }
-        const id = await write.stableId('inbox-text', `${f.name}\n${await write.contentHash(bytes)}`);
-        if ((await read.page({ gestalt: TEXT, ids: [id], limit: 1, fields: ['name'] })).items.length) { out.there++; continue; }
-        await write.put({ id, gestalt: TEXT, name: f.name, text });
-        out.added++;
+        try { text = decoder.decode(bytes); } catch { out.skipped.push(`${f.name}: not plain text`); return null; }
+        if (!text.trim()) { out.skipped.push(`${f.name}: empty`); return null; }
+        return { id: await write.stableId('inbox-text', `${f.name}\n${await write.contentHash(bytes)}`), name: f.name, text };
       } catch (e) {
         out.skipped.push(`${f.name}: ${message(e)}`);
+        return null;
       }
+    }));
+    const fresh = named.filter((x) => x !== null);
+    const here = new Set<string>();
+    for (let i = 0; i < fresh.length; i += 500) {
+      const ids = fresh.slice(i, i + 500).map((x) => x.id);
+      for (const it of (await read.page({ gestalt: TEXT, ids, limit: ids.length, fields: ['name'] })).items) here.add(it.id);
+    }
+    out.there = fresh.filter((x) => here.has(x.id)).length;
+    const todo = fresh.filter((x) => !here.has(x.id));
+    let done = files.length - todo.length;
+    setProgress({ done, of: files.length });
+    for (const x of todo) {
+      try {
+        await write.put({ id: x.id, gestalt: TEXT, name: x.name, text: x.text });
+        out.added++;
+      } catch (e) {
+        out.skipped.push(`${x.name}: ${message(e)}`);
+      }
+      setProgress({ done: ++done, of: files.length });
     }
     setResult(out);
-    setBusy(false);
+    setProgress(undefined);
   };
 
   return (
@@ -50,7 +70,12 @@ function Upload({ onClose }: { onClose: () => void }) {
         <p className="text-base-content/70">Its plain text files, not those in folders inside it.</p>
         <input type="file" multiple className="file-input w-full" disabled={busy}
                ref={(el) => el?.setAttribute('webkitdirectory', '')} onChange={(e) => void upload(e.target.files)} />
-        {busy && <span className="loading loading-spinner" />}
+        {progress && (
+          <div className="flex items-center gap-3" role="status">
+            <progress className="progress flex-1" value={progress.done} max={progress.of || 1} />
+            <span className="whitespace-nowrap">{progress.done} of {progress.of}</span>
+          </div>
+        )}
         {result && (
           <p role="status" className="text-success">
             {result.added} added{result.there ? `, ${result.there} already here` : ''}.
