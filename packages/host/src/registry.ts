@@ -68,7 +68,10 @@ export type OutlineSummary = {
   leavesWithViews: number;
 };
 
-/** One entry of an outline's tree, with its own and its descendants' views (`<plugin>/<deck>`), best first. */
+/**
+ * One entry of an outline's tree: the views (`<plugin>/<deck>`) that fit it and none of its descendants, best first,
+ * and how many fit it or a descendant (`count`).
+ */
 export type OutlineTreeEntry = {
   id: string;
   label: string;
@@ -79,6 +82,7 @@ export type OutlineTreeEntry = {
   isced?: number;
   concepts?: string[];
   views: { source: string; score: number }[];
+  count: number;
   entries?: OutlineTreeEntry[];
 };
 

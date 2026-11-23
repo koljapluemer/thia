@@ -7,8 +7,9 @@
 //!
 //! score(entry, deck) = Σ over the entry's concepts c of entry[c] × match(deck, c), where match(deck, c) is the deck's
 //! weight for c, or half the highest it gives a member of c, whichever is more. A deck is listed under an entry from
-//! [`MIN_SCORE`]: 0.5 × 0.5 counts, something that only comes up (0.2) doesn't unless it adds up. An entry lists its
-//! own matches and its descendants', each once at its best score, best first.
+//! [`MIN_SCORE`]: 0.5 × 0.5 counts, something that only comes up (0.2) doesn't unless it adds up. A view is listed at
+//! the deepest entries it fits, never at an entry and one of its ancestors: an entry lists its own matches that no
+//! descendant has, best first, and counts its own and its descendants' views, each once.
 //!
 //! Worked out once per distribution, when the site is built, from the outlines' ymls and the decks' `deck@3` and
 //! concept ymls; the site ships the result and never loads a deck to show an outline.
@@ -80,8 +81,10 @@ pub struct IndexedEntry {
     /// the names of what it is about
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub concepts: Vec<String>,
-    /// its own and its descendants' views, each once, best first
+    /// the views that fit it and none of its descendants, best first
     pub views: Vec<View>,
+    /// how many views fit it or one of its descendants, each once
+    pub count: usize,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub entries: Vec<IndexedEntry>,
 }
@@ -180,6 +183,14 @@ impl Concepts {
             .collect();
         sort_views(&mut out);
         out
+    }
+}
+
+/// The views listed at `e` and below it.
+fn listed<'a>(e: &'a IndexedEntry, into: &mut BTreeSet<&'a str>) {
+    into.extend(e.views.iter().map(|v| v.source.as_str()));
+    for c in &e.entries {
+        listed(c, into);
     }
 }
 
@@ -295,14 +306,13 @@ impl Walk<'_> {
                 self.unmapped.push(gap(Vec::new()));
             }
         }
-        // its own views and its descendants', each at its best
-        let mut best: BTreeMap<String, f64> = BTreeMap::new();
-        for v in own.iter().chain(entries.iter().flat_map(|e| &e.views)) {
-            let s = best.entry(v.source.clone()).or_insert(0.0);
-            *s = s.max(v.score);
+        // its own views, but those a descendant fits more closely; and how many there are here and below
+        let mut below = BTreeSet::new();
+        for e in &entries {
+            listed(e, &mut below);
         }
-        let mut views: Vec<View> = best.into_iter().map(|(source, score)| View { source, score }).collect();
-        sort_views(&mut views);
+        let views: Vec<View> = own.into_iter().filter(|v| !below.contains(v.source.as_str())).collect();
+        let count = below.len() + views.len();
         if entries.is_empty() && !views.is_empty() {
             self.leaves_with_views += 1;
         }
@@ -316,6 +326,7 @@ impl Walk<'_> {
             isced: here.isced,
             concepts: names,
             views,
+            count,
             entries,
         })
     }
@@ -400,13 +411,13 @@ mod tests {
     }
 
     /// o: a (grades [5, 6], level L) > [a1 {r: 1, e: 1}, a2 {r: 0.5}, a3 {r: 0.2}, a4 {r: 0.2, e: 0.2}, a5 {}],
-    /// b {countries: 1}, c {x: 1}
+    /// b {countries: 1}, c {x: 1} > [c1 {}], d {u: 1, s: 1} > [d1 {s: 1}]
     fn outline() -> Folder {
         let name = "test-outline";
         folder(
             "test-outline",
             &[
-                (&*format!("outline-{}", sha16(name)), format!("gestalt: outline@1\nname: {name}\ntitle: T\nlang: en\nentries: [a, b, c]\n")),
+                (&*format!("outline-{}", sha16(name)), format!("gestalt: outline@1\nname: {name}\ntitle: T\nlang: en\nentries: [a, b, c, d]\n")),
                 ("a", entry("A", "level: L\ngrades: [5, 6]\nisced: 2\nentries: [a1, a2, a3, a4, a5]\n")),
                 ("a1", entry("A1", "concepts: {r: 1, e: 1}\n")),
                 ("a2", entry("A2", "concepts: {r: 0.5}\ngrades: [6]\n")),
@@ -416,6 +427,10 @@ mod tests {
                 ("b", entry("B", "concepts: {countries: 1}\n")),
                 ("c", entry("C", "concepts: {x: 1}\nentries: [c1]\n")),
                 ("c1", entry("C1", "")),
+                ("d", entry("D", "concepts: {u: 1, s: 1}\nentries: [d1]\n")),
+                ("d1", entry("D1", "concepts: {s: 1}\n")),
+                ("u", concept("a whole", None)),
+                ("s", concept("a part", None)),
                 ("r", concept("rounding", None)),
                 ("e", concept("estimation", None)),
                 ("x", concept("nothing practises this", None)),
@@ -433,6 +448,8 @@ mod tests {
                 deck("p/round", "{r: 0.5, e: 1}"),
                 deck("p/half", "{r: 0.5}"),
                 world,
+                deck("p/part", "{s: 1}"),
+                deck("p/whole", "{u: 1}"),
                 folder("p/old", &[("d", "gestalt: deck@1\nname: d\nmembers: []\n".into())]),
             ],
         };
@@ -465,10 +482,18 @@ mod tests {
     }
 
     #[test]
-    fn a_subtree_lists_its_descendants_views_once_at_their_best() {
+    fn a_view_is_listed_at_the_deepest_entries_it_fits_and_counted_above() {
         let ix = index();
-        let a = es_find(&ix.outlines[0].entries, "a").unwrap();
-        assert_eq!(views(a), vec![("p/round", 1.5), ("p/half", 0.5)]);
+        let es = &ix.outlines[0].entries;
+        // under each sibling it fits, never at their parent
+        let a = es_find(es, "a").unwrap();
+        assert!(a.views.is_empty());
+        assert_eq!(a.count, 2);
+        assert_eq!(views(es_find(es, "a2").unwrap()), vec![("p/half", 0.25), ("p/round", 0.25)]);
+        // what fits the parent and a child goes to the child; what fits only the parent stays
+        let d = es_find(es, "d").unwrap();
+        assert_eq!((views(d), d.count), (vec![("p/whole", 1.0)], 2));
+        assert_eq!(views(es_find(es, "d1").unwrap()), vec![("p/part", 1.0)]);
     }
 
     #[test]
@@ -490,7 +515,7 @@ mod tests {
         assert_eq!(o.unpractised.iter().map(|g| g.id.as_str()).collect::<Vec<_>>(), vec!["a3", "c"]);
         assert_eq!(o.unpractised[1].concepts, vec!["nothing practises this"]);
         // c1 says nothing, but c above it does
-        assert_eq!((o.leaves, o.leaves_with_views), (7, 4));
+        assert_eq!((o.leaves, o.leaves_with_views), (8, 5));
         assert_eq!(es_find(&o.entries, "a1").unwrap().concepts, vec!["estimation", "rounding"]);
     }
 

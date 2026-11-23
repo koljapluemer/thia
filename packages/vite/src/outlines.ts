@@ -30,7 +30,7 @@ export type OutlineSummary = {
 };
 
 type View = { source: string; score: number };
-export type IndexedEntry = { id: string; label: string; notation?: string; kind?: string; level?: string; grades?: number[]; isced?: number; concepts?: string[]; views: View[]; entries?: IndexedEntry[] };
+export type IndexedEntry = { id: string; label: string; notation?: string; kind?: string; level?: string; grades?: number[]; isced?: number; concepts?: string[]; views: View[]; count: number; entries?: IndexedEntry[] };
 type Gap = { id: string; label: string; notation?: string; concepts?: string[] };
 type IndexedOutline = OutlineSummary & { id: string; subject?: string; schoolType?: string; entries: IndexedEntry[]; unpractised: Gap[]; unmapped: Gap[] };
 type Index = { outlines: IndexedOutline[]; skipped: string[] };

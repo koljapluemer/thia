@@ -34,8 +34,9 @@ Above the views, the catalog lists the site's **outlines** (`outlines:` in `dist
 `outlines/`): a curriculum as its issuer published it, or a guide, as a tree of entries (`outline@1`,
 `outline-entry@1`, [data format](../reference/data-format.md#outlines)). `/o/<outline>` shows the whole tree, and
 `/o/<outline>/<entry>` opens it at one entry, for links to share. An entry lists the views that practise what it is
-about, best first, with its descendants' included, and is greyed where there are none ("only with views" hides
-those, remembered per device). Nobody puts a view under an entry: an entry names concepts, a deck says what it
+about, best first, but those a descendant fits too: a view's card is at the deepest entries it fits only, never at
+an entry and its ancestor. Each entry counts its own and its descendants' views, and is greyed where there are none
+("only with views" hides those, remembered per device). Nobody puts a view under an entry: an entry names concepts, a deck says what it
 practises as a whole (`deck@3.concepts`), and the build matches them (`crates/core/src/outline_index.rs`, run
 through the wasm by `packages/vite/src/outlines.ts`). So a new view that practises an entry's concepts shows up under
 it without anyone touching the outline. The build ships each tree as `outlines/<name>.json`, loaded only by its page,

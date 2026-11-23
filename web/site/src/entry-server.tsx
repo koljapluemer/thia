@@ -44,14 +44,8 @@ export function renderNotFound(): string {
   return renderToString(<Notice title="Nothing here"><a className="link" href="/">See everything there is</a>, or open the link you were given again.</Notice>);
 }
 
-/** The entries of an outline that list `source` and have no child that does: where it fits most closely. */
-function closest(entries: OutlineTreeEntry[], source: string): OutlineTreeEntry[] {
-  return entries.flatMap((e) => {
-    if (!e.views.some((v) => v.source === source)) return [];
-    const below = closest(e.entries ?? [], source);
-    return below.length ? below : [e];
-  });
-}
+/** The entries of an outline that list `source`: where it fits most closely. */
+const closest = (entries: OutlineTreeEntry[], source: string) => walk(entries).filter((e) => e.views.some((v) => v.source === source));
 
 function describe(e: Entry): string {
   const practises = e.deck?.practises ?? [];
@@ -100,7 +94,7 @@ export function head(path: string, trees: OutlineTree[], base: string): Head {
     const edition = [tree.issuer, tree.edition].filter(Boolean).join(', ');
     if (at) {
       const label = [at.notation, at.label].filter(Boolean).join(' ');
-      const n = at.views.length;
+      const n = at.count;
       return {
         title: `${label} · ${tree.title}`,
         description: de ? `${n === 1 ? 'Ein interaktiver Inhalt' : `${n} interaktive Inhalte`} zu „${label}“ (${tree.title}, ${edition}).`

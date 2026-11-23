@@ -128,8 +128,9 @@ Built once per distribution, at site build time, and shipped as JSON. The page n
 - **score(entry, P) = Σ over concepts c: entry.concepts[c] × concepts(P)[c]**. P is listed under the entry when the
   score is **≥ 0.25** (a 0.5 × 0.5 match counts; something that only comes up, 0.2, on either side doesn't, unless it
   adds up). The constant lives in one place and gets tuned once there is content.
-- **A subtree** lists the union of its descendants' entry points, each ranked by its best score in the subtree,
-  without duplicates. Each entry carries the count.
+- **A subtree** counts the union of its descendants' entry points and its own, without duplicates, but lists only
+  its own that no descendant fits: an entry point is listed at the deepest entries it fits, never at an entry and an
+  ancestor of it, so opening a chapter doesn't repeat its sections.
 - **Inherited fields** (`level`, `grades`, `isced`) resolved down the tree.
 - **Gaps**: entries with no concepts, and entries whose concepts no entry point practises. The admin reads them as
   candidate workshop briefs (a later step can show them in `/review`).

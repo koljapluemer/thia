@@ -11,7 +11,7 @@ import { GuestBanner, Toolbar } from './Toolbar';
  * A curriculum or guide (`/o/<outline>`), as its issuer structured it: the whole tree, as a disclosure list (each
  * entry a full-width button that opens what's under it: its views as the catalog's cards, then its children), each
  * entry with how many views practise what it is about (its own and its descendants'), found by the build through
- * concepts. `/o/<outline>/<entry>` opens it at that entry, for links to share. Its few own words are in the outline's
+ * concepts. A view's card is at the deepest entries it fits only, so opening a chapter doesn't repeat its sections'. `/o/<outline>/<entry>` opens it at that entry, for links to share. Its few own words are in the outline's
  * language.
  */
 
@@ -98,11 +98,12 @@ export function Outline({ name, entry, open, tree, onTree }: {
     history.replaceState(null, '', `/o/${name}/${e.id.slice(ENTRY.length)}`);
   };
 
-  const shown = (es: OutlineTreeEntry[] | undefined) => (es ?? []).filter((e) => !only || e.views.length > 0);
+  const shown = (es: OutlineTreeEntry[] | undefined) => (es ?? []).filter((e) => !only || e.count > 0);
   const item = (e: OutlineTreeEntry) => {
     const isOpen = expanded.has(e.id);
     const children = shown(e.entries);
-    const empty = e.views.length === 0;
+    const empty = e.count === 0;
+    const here = e.views.flatMap((v) => BY_SOURCE.get(v.source) ?? []);
     return (
       <li key={e.id} id={e.id} className="min-w-0">
         <button
@@ -111,16 +112,16 @@ export function Outline({ name, entry, open, tree, onTree }: {
           className={`flex w-full min-w-0 items-start gap-1.5 rounded-field px-2 py-1.5 text-left hover:bg-base-200 ${e.id === selected ? 'bg-base-200' : ''} ${empty ? 'text-base-content/45' : ''}`}
           onClick={() => select(e)}
         >
-          <ChevronRight className={`mt-0.5 size-4 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''} ${children.length || !empty ? '' : 'invisible'}`} />
+          <ChevronRight className={`mt-0.5 size-4 shrink-0 transition-transform ${isOpen ? 'rotate-90' : ''} ${children.length || here.length ? '' : 'invisible'}`} />
           <span className="min-w-0 flex-1 wrap-break-word">
             {e.notation && <span className="mr-2 font-mono opacity-70">{e.notation}</span>}
             {e.label}
           </span>
-          {!empty && <span className="badge badge-sm badge-primary shrink-0" title={w.views(e.views.length)}>{e.views.length}</span>}
+          {!empty && <span className="badge badge-sm badge-primary shrink-0" title={w.views(e.count)}>{e.count}</span>}
         </button>
-        {isOpen && !empty && (
+        {isOpen && here.length > 0 && (
           <div className="grid grid-cols-1 gap-3 py-2 pl-6 sm:grid-cols-2 lg:grid-cols-3">
-            {e.views.flatMap((v) => BY_SOURCE.get(v.source) ?? []).map((v) => <ViewCard key={v.path} e={v} open={open} />)}
+            {here.map((v) => <ViewCard key={v.path} e={v} open={open} />)}
           </div>
         )}
         {isOpen && empty && children.length === 0 && <p className="py-1 pl-8 text-base-content/50">{w.none}</p>}
