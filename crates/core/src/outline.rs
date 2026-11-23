@@ -10,7 +10,8 @@
 //! - A yml's place is its first structural reference; more than one is `placedTwice`.
 //! - A placed yml whose places don't lead to the root is `floating`. The first of each floating chain says why: its
 //!   place is missing (not a yml of the gestalt), unplaced or excluded, or the chain is a cycle (marked on its lowest id).
-//! - Several ymls following, or branching from, one yml are a `fork`, marked on all but the first by id; all are shown.
+//! - Several ymls following one yml are a `fork`, marked on all but the first by id; all are shown. Several branching
+//!   from one yml are its branches, each a sequence, listed by id.
 //! - A yml tagged `exclude_tag` that is placed anyway is `excludedPlaced`, and placed.
 //!
 //! Shown as rows: the top level is the root, then its sequence; under a yml, the sequence branching from it. A
@@ -100,7 +101,7 @@ pub enum MarkKind {
     /// the lowest id of a cycle of places
     Cycle,
     PlacedTwice,
-    /// not the first to follow, or branch from, `target`
+    /// not the first to follow `target`
     Fork,
     ExtraRoot,
     RootPlaced,
@@ -123,6 +124,8 @@ pub struct OutlineEntry {
     pub status: Status,
     /// whether a sequence branches from it
     pub has_children: bool,
+    /// whether a yml follows it: its place after it is taken
+    pub has_follower: bool,
     pub marks: Vec<Mark>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub path: Option<Vec<Item>>,
@@ -270,7 +273,6 @@ impl Outline {
         let forks: Vec<(String, String)> = self
             .after
             .iter()
-            .chain(&self.under)
             .flat_map(|(target, list)| list.iter().skip(1).map(move |id| (id.clone(), target.clone())))
             .collect();
         for (id, target) in forks {
@@ -395,6 +397,7 @@ impl Outline {
             item: index.get(id)?.item(fields)?,
             status: *self.status.get(id)?,
             has_children: self.under.get(id).is_some_and(|l| !l.is_empty()),
+            has_follower: self.after.get(id).is_some_and(|l| !l.is_empty()),
             marks: self.marks.get(id).cloned().unwrap_or_default(),
             path: None,
             below_subject: None,
@@ -504,6 +507,19 @@ mod tests {
         let top = ask(&mut o, &index, Ask::Children(None));
         assert_eq!(ids(&top), vec!["r", "x", "x2", "y"]);
         assert_eq!(top[3].2, vec![MarkKind::Fork]);
+    }
+
+    #[test]
+    fn several_branches_are_no_fork() {
+        let (x, y, z) = (at(B, "r"), at(B, "r"), at(F, "x"));
+        let index = index(&[("r", "tags: [zettelkasten-root]\n"), ("x", &x), ("y", &y), ("z", &z)]);
+        let mut o = Outline::new(spec());
+        let under = ask(&mut o, &index, Ask::Children(Some("r".into())));
+        assert_eq!(ids(&under), vec!["x", "z", "y"]);
+        assert!(under.iter().all(|r| r.2.is_empty()));
+        let q = OutlineQuery { spec: spec(), ask: Ask::Children(Some("r".into())), limit: None, cursor: None, fields: None, subject: None };
+        let follower: Vec<bool> = o.answer(&index, &q).entries.iter().map(|e| e.has_follower).collect();
+        assert_eq!(follower, vec![true, false, false]);
     }
 
     #[test]

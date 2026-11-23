@@ -71,7 +71,7 @@ export type OutlineMark = {
  * A yml in an outline. For `locate`: `path`, the ymls it's shown under, from the top level down, and with a `subject`,
  * `belowSubject`.
  */
-export type OutlineEntry = { item: Item; status: OutlineStatus; hasChildren: boolean; marks: OutlineMark[]; path?: Item[]; belowSubject?: boolean };
+export type OutlineEntry = { item: Item; status: OutlineStatus; hasChildren: boolean; hasFollower: boolean; marks: OutlineMark[]; path?: Item[]; belowSubject?: boolean };
 
 export type OutlinePage = { entries: OutlineEntry[]; next: string | null };
 

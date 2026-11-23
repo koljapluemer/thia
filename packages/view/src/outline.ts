@@ -41,7 +41,7 @@ export function outlinePage(all: Item[], q: OutlineQuery): OutlinePage {
     const list = p[0] === 'f' ? after : under;
     list.set(p[1], [...(list.get(p[1]) ?? []), id]);
   }
-  for (const [target, list] of [...after, ...under]) list.slice(1).forEach((id) => mark(id, 'fork', target));
+  for (const [target, list] of after) list.slice(1).forEach((id) => mark(id, 'fork', target));
   const status = new Map<string, OutlineStatus>();
   for (const id of ids) {
     if (place.has(id)) continue;
@@ -128,7 +128,7 @@ export function outlinePage(all: Item[], q: OutlineQuery): OutlinePage {
   const entries = chosen.slice(start, end).flatMap((id): OutlineEntry[] => {
     const n = notes.get(id);
     if (!n) return [];
-    const e: OutlineEntry = { item: project(n), status: status.get(id)!, hasChildren: Boolean(under.get(id)?.length), marks: marks.get(id) ?? [] };
+    const e: OutlineEntry = { item: project(n), status: status.get(id)!, hasChildren: Boolean(under.get(id)?.length), hasFollower: Boolean(after.get(id)?.length), marks: marks.get(id) ?? [] };
     if (ask !== 'loose' && 'locate' in ask) {
       e.path = pathOf(id).flatMap((p) => (notes.has(p) ? [project(notes.get(p)!)] : []));
       if (q.subject !== undefined) e.belowSubject = below(id, q.subject);

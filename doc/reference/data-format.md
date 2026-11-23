@@ -173,7 +173,7 @@ has the model, BibTeX in and out, duplicate finding and merging.
 
 Notes form Luhmann's Zettelkasten through `relationships`, so placing a note writes only that note: `follows` X puts it
 next after X in X's sequence, `branches from` X starts a sequence under X. There's no inserting between two notes, only
-branching. The note tagged `zettelkasten-root` starts it all, and a note tagged `no-zettelkasten` is kept out without
+branching: one note goes after a note (a second is a fork, shown as such), any number branch from it. The note tagged `zettelkasten-root` starts it all, and a note tagged `no-zettelkasten` is kept out without
 being placed. Whatever doesn't add up (two places, two roots, a place that's gone or isn't placed, a cycle) is shown,
 never repaired behind the user's back; the core's outline (`crates/core/src/outline.rs`) says how each case reads.
 `plugins/zettelkasten` is the view.
