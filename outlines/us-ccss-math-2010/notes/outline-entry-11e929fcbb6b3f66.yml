@@ -1,0 +1,5 @@
+id: outline-entry-11e929fcbb6b3f66
+gestalt: outline-entry@1
+label: Use the structure of an expression to identify ways to rewrite it. For example, see x⁴ — y⁴ as (x²)² — (y²)², thus recognizing it as a difference of squares that can be factored as (x² — y²)(x² + y²).
+notation: HSA-SSE.A.2
+kind: standard

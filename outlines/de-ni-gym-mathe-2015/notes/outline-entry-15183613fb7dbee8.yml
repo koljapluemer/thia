@@ -1,0 +1,17 @@
+id: outline-entry-15183613fb7dbee8
+gestalt: outline-entry@1
+label: Doppelschuljahrgang 5/6
+kind: Doppelschuljahrgang
+level: Doppelschuljahrgang 5/6
+grades:
+  - 5
+  - 6
+isced: 2
+entries:
+  - outline-entry-53e34430738ceba0
+  - outline-entry-da4b903cbbda2105
+  - outline-entry-1945de37c284b833
+  - outline-entry-3ebf3ec5e6994354
+  - outline-entry-3b14f503476b04c8
+  - outline-entry-822718ccb4a2b9c9
+  - outline-entry-f88f12971ba8aea5

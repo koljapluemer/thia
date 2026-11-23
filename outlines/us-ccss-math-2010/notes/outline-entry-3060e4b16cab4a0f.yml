@@ -1,0 +1,5 @@
+id: outline-entry-3060e4b16cab4a0f
+gestalt: outline-entry@1
+label: Represent scalar multiplication graphically by scaling vectors and possibly reversing their direction; perform scalar multiplication component-wise, e.g., as c(v_x, v_y) = (cv_x, cv_y).
+notation: HSN-VM.B.5.a
+kind: component

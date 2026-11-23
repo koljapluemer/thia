@@ -1,6 +1,6 @@
 # Outlines: curricula and guides on the site (MVP plan)
 
-Plan from the 2026-11-23 design discussion. Nothing here is built. Background:
+Plan from the 2026-11-23 design discussion, built the same day (see "Built" at the end for what differs). Background:
 [[concept-model|Concept model roadmap]] (navigation vs. knowledge, curricula as sourced schemes),
 [[concept-naming|Concept naming]], [[../research/concept-modelling|Concept modelling research]].
 
@@ -260,3 +260,27 @@ After the MVP:
 Competence tables as a second outline; other Länder or school types; KMK Bildungsstandards as a hub (`aligns`);
 hand-picked views on entries (for small guides); guides themselves; concept chips and `?concept=` filtering;
 carrying concepts across editions; a German UI for the rest of the site; outlines written by accounts.
+
+## Built (2026-11-23)
+
+As planned, except:
+
+- **`deck@3` instead of "deck@2, failing that its members".** What a view practises as a whole is its deck's own
+  declaration, required (`concepts`, at least one), and the index reads only that: members' concepts are evidence,
+  never navigation. Every deck on the site is a `deck@3` (their builders write it; `check-distributions` refuses one
+  that isn't), the core checks a deck names only what its members practise or a set theirs are in, and accepting a
+  submission asks the reviewer for its concepts. The workshop agent proposing them is still after the MVP.
+- **Sets:** an entry naming a set S matches a deck at the higher of its weight for S and half the highest it gives a
+  member of S (the highest, not the sum, so 240 countries don't add up).
+- **Where it runs:** `crates/core/src/outline_index.rs` (the Zettelkasten's `outline.rs` keeps its name), exposed as the
+  wasm's `outlineIndex`, which `packages/vite/src/outlines.ts` calls at build time; there is no Node binding. Its
+  checks are in `crates/core/src/checks.rs`, run by `publish-data` and `health`.
+- **Gaps:** "unmapped" counts leaves where neither they nor an entry above them names concepts, so generic
+  sub-bullets ("vergleichen, schätzen, berechnen") under a mapped bullet aren't gaps. They ship as
+  `outlines/<name>.gaps.json` and are printed at build; `/review` doesn't show them yet.
+- **Sources:** Common Core from CCSSO's CASE package as OpenSALT serves it (`opensalt.net/cfpackage/doc/1912.json`;
+  the CASE Network API refused); Niedersachsen from the PDF, with a few formulas the text layer garbles corrected to
+  what the PDF prints.
+- **Concepts on entries:** keyed by notation (CCSS) or by labels from the Lernbereich down (Niedersachsen) in each
+  outline's `tools/concepts.yml`, so a mapping reads as what it maps.
+

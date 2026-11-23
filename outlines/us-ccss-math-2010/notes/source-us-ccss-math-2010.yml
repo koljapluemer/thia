@@ -1,0 +1,13 @@
+id: source-us-ccss-math-2010
+gestalt: source@1
+key: ccss2010math
+entrytype: report
+title: Common Core State Standards for Mathematics
+organization:
+  - National Governors Association Center for Best Practices
+  - Council of Chief State School Officers
+location:
+  - Washington, D.C.
+date: "2010"
+url: https://www.thecorestandards.org/Math/
+extra: © Copyright 2010. National Governors Association Center for Best Practices and Council of Chief State School Officers. All rights reserved. Taken from the CASE package https://opensalt.net/cfpackage/doc/1912.json.

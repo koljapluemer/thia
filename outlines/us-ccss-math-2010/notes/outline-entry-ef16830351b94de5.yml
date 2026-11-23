@@ -1,0 +1,8 @@
+id: outline-entry-ef16830351b94de5
+gestalt: outline-entry@1
+label: (+) Multiply a vector by a scalar.
+notation: HSN-VM.B.5
+kind: standard
+entries:
+  - outline-entry-3060e4b16cab4a0f
+  - outline-entry-f998387568c114cf

@@ -263,6 +263,20 @@ hide = true
 description = "Rebuild plugins/vietnamese-typing-practice's deck from its tools/data and the phrasebook's Vietnamese deck, and publish it"
 run = ["node plugins/vietnamese-typing-practice/tools/build-deck.ts", "mise run publish-data plugins/vietnamese-typing-practice/decks/vietnamese-typing"]
 
+# --- outlines (curricula on the public site) ---
+
+[tasks."outlines:de-ni"]
+hide = true
+description = "Rebuild outlines/de-ni-gym-mathe-2015 from the Niedersachsen Kerncurriculum's PDF (fetched unless given; needs pdftotext), and publish it"
+usage = 'arg "[pdf]" default="" help="the PDF, if already downloaded"'
+run = ["node outlines/de-ni-gym-mathe-2015/tools/build.ts {{usage.pdf}}", "mise run publish-data outlines/de-ni-gym-mathe-2015"]
+
+[tasks."outlines:us-ccss"]
+hide = true
+description = "Rebuild outlines/us-ccss-math-2010 from the Common Core math CASE package (fetched unless given), and publish it"
+usage = 'arg "[package]" default="" help="the package JSON, if already downloaded"'
+run = ["node outlines/us-ccss-math-2010/tools/build.ts {{usage.package}}", "mise run publish-data outlines/us-ccss-math-2010"]
+
 # --- the public site ---
 
 [tasks."site:dev"]

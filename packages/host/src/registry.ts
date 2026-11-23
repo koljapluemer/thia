@@ -51,8 +51,43 @@ export type Distribution = { id: string; default_views: string[]; install_ui: bo
 /** What every frame loads. `version` names it: a hash of `js`, so a lesson or draft can say what it was made against. */
 export type FrameRuntime = { js: string; css: string; version: string };
 
+/**
+ * A curriculum or guide the distribution lists (`outlines:`), as the catalog shows it; the build ships its tree, with
+ * the views under each entry, as `outlines/<name>.json`. `region` (ISO 3166-2) only when an authority issued it;
+ * `replacedBy` names the outline of the edition after it. `leaves` are entries without children.
+ */
+export type OutlineSummary = {
+  name: string;
+  title: string;
+  lang: string;
+  issuer?: string;
+  region?: string;
+  edition?: string;
+  replaces?: string;
+  replacedBy?: string;
+  leaves: number;
+  leavesWithViews: number;
+};
+
+/** One entry of an outline's tree, with its own and its descendants' views (`<plugin>/<deck>`), best first. */
+export type OutlineTreeEntry = {
+  id: string;
+  label: string;
+  notation?: string;
+  kind?: string;
+  level?: string;
+  grades?: number[];
+  isced?: number;
+  concepts?: string[];
+  views: { source: string; score: number }[];
+  entries?: OutlineTreeEntry[];
+};
+
+/** `outlines/<name>.json`: an outline's tree. */
+export type OutlineTree = OutlineSummary & { id: string; subject?: string; schoolType?: string; entries: OutlineTreeEntry[] };
+
 /** `gestalts`: the definitions of the distribution's model packages, as YAML (the core's are compiled in). */
-export type Registry = { distribution: Distribution; plugins: PluginEntry[]; gestalts: string[]; runtime: FrameRuntime };
+export type Registry = { distribution: Distribution; plugins: PluginEntry[]; gestalts: string[]; outlines?: OutlineSummary[]; runtime: FrameRuntime };
 
 export const findPlugin = (registry: Registry, id: string) => registry.plugins.find((p) => p.manifest.id === id);
 

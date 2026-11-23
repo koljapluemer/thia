@@ -1,0 +1,16 @@
+id: outline-78162ea917c04b0b
+gestalt: outline@1
+name: de-ni-gym-mathe-2015
+title: Kerncurriculum Mathematik, Gymnasium, Schuljahrgänge 5–10
+lang: de
+issuer: Niedersächsisches Kultusministerium
+region: DE-NI
+subject: Mathematik
+school_type: Gymnasium
+edition: "2015"
+valid_from: "2015"
+source: source-de-ni-gym-mathe-2015
+entries:
+  - outline-entry-15183613fb7dbee8
+  - outline-entry-d3b743f47a5acd56
+  - outline-entry-c533592d71f7143f

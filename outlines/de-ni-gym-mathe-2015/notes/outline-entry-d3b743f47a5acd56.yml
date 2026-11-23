@@ -1,0 +1,18 @@
+id: outline-entry-d3b743f47a5acd56
+gestalt: outline-entry@1
+label: Doppelschuljahrgang 7/8
+kind: Doppelschuljahrgang
+level: Doppelschuljahrgang 7/8
+grades:
+  - 7
+  - 8
+isced: 2
+entries:
+  - outline-entry-aa0914746e91f922
+  - outline-entry-87532a0dd4620144
+  - outline-entry-3e452292187870e6
+  - outline-entry-3a0912b80badc9c4
+  - outline-entry-fc0e4d573e685ec8
+  - outline-entry-6c599453a1eb565c
+  - outline-entry-df8f523c9a9f73d8
+  - outline-entry-22b307ebb7dfe50c

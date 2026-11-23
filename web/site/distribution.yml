@@ -17,6 +17,11 @@ models:
   - ../../gestalts/geography
   - ../../gestalts/typing
   - ../../gestalts/viz
+# curricula and guides, each a tree whose entries list the views above that practise what they're about (the build
+# works it out from the decks' deck@3 concepts)
+outlines:
+  - ../../outlines/de-ni-gym-mathe-2015
+  - ../../outlines/us-ccss-math-2010
 # as in the web app (web/app/distributions/home.yml): only for our own views, which load nothing at run time
 grants:
   phrasebook: [same-origin, microphone]

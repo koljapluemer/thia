@@ -1,0 +1,17 @@
+id: outline-entry-c533592d71f7143f
+gestalt: outline-entry@1
+label: Doppelschuljahrgang 9/10
+kind: Doppelschuljahrgang
+level: Doppelschuljahrgang 9/10
+grades:
+  - 9
+  - 10
+isced: 2
+entries:
+  - outline-entry-7054ee19f20f3b90
+  - outline-entry-c816d646d4d93765
+  - outline-entry-7cd5b2f3c88135ff
+  - outline-entry-7fbe77c5f3b5b392
+  - outline-entry-3fa69c5826fd089f
+  - outline-entry-b3fda4e36370a3bf
+  - outline-entry-0a1aa4cd770bc9ac

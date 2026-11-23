@@ -9,6 +9,9 @@
  * `pinned_npm: true` (the public site) refuses a view that imports one unpinned, and bundles each one into the build
  * (`npm/<file>.js`, with `@gestalts/npm-bundle`), so its views load nothing from elsewhere; others load npm from esm.sh.
  *
+ * `outlines` lists curricula and guides (folders in the repo's `outlines/`); the build works out the views under each
+ * entry (`outlines.ts`) and ships them as `outlines/<name>.json`, with a summary in the registry.
+ *
  * Packages may be linked from a sibling checkout, so this also dedupes React (and lucide), lets the dev server read
  * those checkouts, and replaces `@gestalts-sources;` in the app's CSS with an `@source` per package and plugin
  * (Tailwind doesn't reliably scan through pnpm's symlinks). List it before `tailwindcss()`.
@@ -22,6 +25,7 @@ import { build, searchForWorkspaceRoot, type Plugin, type PluginOption, type Rol
 import { parse } from 'yaml';
 // by its package path: Node loads this file as it is when Vite reads the app's config, and needs no extension so
 import { grantsFor } from '@gestalts/vite/grants';
+import { type BuiltOutline, buildOutlines, loadOutline } from '@gestalts/vite/outlines';
 
 const VIRTUAL = 'virtual:gestalts-plugins';
 const RESOLVED = '\0' + VIRTUAL;
@@ -31,8 +35,8 @@ const RUNTIME = 'virtual:gestalts-runtime';
 const SOURCES = /^@gestalts-sources;$/m;
 
 type Manifest = { id: string; title: string; version: string; reads?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string> };
-type DistributionFile = { id?: unknown; core?: string[]; plugins?: string[]; models?: string[]; default_views?: string[]; install_ui?: boolean; grants?: unknown; pinned_npm?: boolean };
-const DISTRIBUTION_KEYS = ['id', 'core', 'plugins', 'models', 'default_views', 'install_ui', 'grants', 'pinned_npm'];
+type DistributionFile = { id?: unknown; core?: string[]; plugins?: string[]; models?: string[]; outlines?: string[]; default_views?: string[]; install_ui?: boolean; grants?: unknown; pinned_npm?: boolean };
+const DISTRIBUTION_KEYS = ['id', 'core', 'plugins', 'models', 'outlines', 'default_views', 'install_ui', 'grants', 'pinned_npm'];
 /** where npm bundles are kept between builds */
 const NPM_CACHE = resolve(import.meta.dirname, '../../../node_modules/.cache/gestalts-npm');
 /** The repo's `gestalts/`: the core's (`<name>/v<N>.yml`, compiled in) and the model packages (`<package>/<name>/`). */
@@ -182,12 +186,15 @@ export function loadDistribution(file: string) {
     if (!version || !isVersion(version)) throw new Error(`${where}: ${p.id} imports ${spec}: pin ${name ?? spec} to an exact version in its plugin.yml (npm: {${name ?? spec}: <version>})`);
   }
   const granted = grantsFor(parsed.grants, plugins.map((p) => ({ id: p.id, permissions: p.manifest.permissions, npm: p.npm })));
+  const outlines = (parsed.outlines ?? []).map((o) => loadOutline(base, o, where));
+  if (new Set(outlines.map((o) => o.name)).size !== outlines.length) throw new Error(`${where}: an outline is listed twice`);
   return {
     file,
     distribution: { id: parsed.id, default_views: parsed.default_views ?? [], install_ui: parsed.install_ui ?? false },
     pinned,
     plugins: plugins.map((p) => ({ ...p, granted: granted.get(p.id) ?? [] })),
     models,
+    outlines,
   };
 }
 
@@ -278,6 +285,8 @@ export function gestaltsPlugins(): PluginOption[] {
   let runtime: Promise<{ js: string; css: string; version: string }> | undefined;
   /** npm bundles of pinned distributions: their cache files, by their file in the build */
   const npmFiles = new Map<string, string>();
+  /** outlines with their views, by name, as the last load of a registry worked them out */
+  const outlineFiles = new Map<string, BuiltOutline>();
   const sources: Plugin = {
     name: 'gestalts-sources',
     enforce: 'pre',
@@ -316,7 +325,7 @@ export function gestaltsPlugins(): PluginOption[] {
       const file = files.get(name);
       if (!file) throw new Error(`${id.slice(1)}: the app has no such distribution (it has ${[...files.keys()].map((n) => (n ? `${VIRTUAL}/${n}` : VIRTUAL)).join(', ')})`);
       loadApp(appRoot);
-      const { distribution, plugins, models, pinned } = loadDistribution(file);
+      const { distribution, plugins, models, pinned, outlines } = loadDistribution(file);
       const npmUrls = pinned ? await bundleNpm(plugins, npmFiles) : {};
       this.addWatchFile(file);
       for (const m of models) for (const f of subdirs(m.root).flatMap(definitionsIn)) this.addWatchFile(f);
@@ -327,13 +336,26 @@ export function gestaltsPlugins(): PluginOption[] {
         return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], core: p.core, granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);
-      return `import { runtime } from ${JSON.stringify(RUNTIME)};\nexport const registry = { ...${JSON.stringify({ distribution, plugins: entries, gestalts })}, runtime };\n`;
+      for (const o of outlines) this.addWatchFile(join(o.root, 'index.json'));
+      for (const p of plugins) for (const d of p.decks) this.addWatchFile(join(d.dir, 'index.json'));
+      const built = await buildOutlines(outlines, plugins.flatMap((p) => p.decks.map((d) => ({ source: `${p.id}/${d.id}`, dir: d.dir }))));
+      for (const b of built) outlineFiles.set(b.summary.name, b);
+      const summaries = built.map((b) => b.summary);
+      return `import { runtime } from ${JSON.stringify(RUNTIME)};\nexport const registry = { ...${JSON.stringify({ distribution, plugins: entries, gestalts, outlines: summaries })}, runtime };\n`;
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
         const path = (req.url ?? '').split('?')[0];
         const bundled = npmFiles.get(path.slice(1));
         if (bundled) { res.setHeader('content-type', 'text/javascript'); res.end(readFileSync(bundled)); return; }
+        const outline = /^\/outlines\/([a-z0-9-]+)(\.gaps)?\.json$/.exec(path);
+        if (outline) {
+          const o = outlineFiles.get(outline[1]);
+          if (!o) { res.statusCode = 404; res.end(); return; }
+          res.setHeader('content-type', 'application/json');
+          res.end(outline[2] ? o.gaps : o.json);
+          return;
+        }
         const m = /^\/decks\/([a-z0-9.-]+)\/([a-z0-9.-]+)\/(.+)$/.exec(path);
         if (!m) return next();
         const d = appPlugins(appRoot).find((x) => x.id === m[1])?.decks.find((x) => x.id === m[2]);
@@ -347,6 +369,10 @@ export function gestaltsPlugins(): PluginOption[] {
       // the frame runtime this build carries, by version, for whatever serves builds by it (the lesson player)
       if (runtime) this.emitFile({ type: 'asset', fileName: 'gestalts-runtime.json', source: `${JSON.stringify({ version: (await runtime).version })}\n` });
       for (const [file, from] of npmFiles) this.emitFile({ type: 'asset', fileName: file, source: readFileSync(from) });
+      for (const [name, o] of outlineFiles) {
+        this.emitFile({ type: 'asset', fileName: `outlines/${name}.json`, source: o.json });
+        this.emitFile({ type: 'asset', fileName: `outlines/${name}.gaps.json`, source: o.gaps });
+      }
       for (const p of appPlugins(appRoot)) {
         for (const d of p.decks) {
           for (const f of files(d.dir)) {

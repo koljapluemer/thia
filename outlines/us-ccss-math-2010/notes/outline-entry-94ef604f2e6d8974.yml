@@ -1,0 +1,5 @@
+id: outline-entry-94ef604f2e6d8974
+gestalt: outline-entry@1
+label: Rewrite simple rational expressions in different forms; write a(x)/b(x) in the form q(x) + r(x)/b(x), where a(x), b(x), q(x), and r(x) are polynomials with the degree of r(x) less than the degree of b(x), using inspection, long division, or, for the more complicated examples, a computer algebra system.
+notation: HSA-APR.D.6
+kind: standard

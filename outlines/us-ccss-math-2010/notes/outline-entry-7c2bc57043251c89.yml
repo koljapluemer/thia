@@ -1,0 +1,5 @@
+id: outline-entry-7c2bc57043251c89
+gestalt: outline-entry@1
+label: Identify when two expressions are equivalent (i.e., when the two expressions name the same number regardless of which value is substituted into them). For example, the expressions y + y + y and 3y are equivalent because they name the same number regardless of which number y stands for.
+notation: 6.EE.A.4
+kind: standard

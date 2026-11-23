@@ -190,6 +190,27 @@ being placed. Whatever doesn't add up (two places, two roots, a place that's gon
 never repaired behind the user's back; the core's outline (`crates/core/src/outline.rs`) says how each case reads.
 `plugins/zettelkasten` is the view.
 
+## Outlines
+
+An outline (`outline@1`) is a curriculum as its issuer published it, or a guide, as an ordered tree of
+`outline-entry@1`s for finding views; it is never evidence about what someone knows, and stays out of the concept
+graph. It lives in a folder of its own, `outlines/<name>/` (`notes/`, `index.json` from `publish-data`, the builder in
+`tools/`, a README on its source and licence), and a distribution lists it under `outlines:`.
+
+- Children point down (`entries`, in order), so a tree is complete by construction. An entry is under one parent, in
+  one outline; no cycles. `level`, `grades` and `isced` hold below an entry unless a descendant says otherwise.
+- Labels are the issuer's, in the outline's `lang`; `notation` is the issuer's own code, never one we make up.
+  `concepts` are ours (canonical English names): 1 it is about it, 0.5 needed or practised, 0.2 it comes up.
+- Ids: `outline-<sha16(name)>`, and `outline-entry-<sha16(name + "/" + key)>`, `key` the notation or the path of
+  ordinals from the top (`2/4/1`). The outline ships the concept ymls its entries name.
+- An outline is one edition: its `name` carries it (`de-ni-gym-mathe-2015`). A new edition is a new outline whose
+  `replaces` names the old one; the site lists current editions only. Within an edition labels only get fixes.
+- A view is under an entry when score(entry, deck) = Σ entry[c] × match(deck, c) is at least 0.25, where match is
+  the deck's (`deck@3`) weight for c, or half the highest it gives a member of c where c is a set. Nothing else is
+  read: not the deck's members, not `concept-link`s. `publish-data` and `health` check the tree; the build works out
+  the views (`crates/core/src/outline_index.rs`).
+- `node outlines/lib/tree.ts outlines/<name>` prints a tree with its concepts.
+
 ## Publishing a deck
 
 `mise run publish-data <dir>` names blobs by content, deletes unused ones and writes `index.json`, the listing a static

@@ -1,0 +1,5 @@
+id: outline-entry-c7409daca7d851d5
+gestalt: outline-entry@1
+label: (+) Multiply a vector (regarded as a matrix with one column) by a matrix of suitable dimensions to produce another vector. Work with matrices as transformations of vectors.
+notation: HSN-VM.C.11
+kind: standard

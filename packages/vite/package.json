@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./grants": "./src/grants.ts",
+    "./outlines": "./src/outlines.ts",
     "./client": "./client.d.ts"
   },
   "files": [

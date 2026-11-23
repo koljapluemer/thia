@@ -1,0 +1,14 @@
+id: outline-entry-5a45b218dbfcc793
+gestalt: outline-entry@1
+label: Kindergarten
+kind: grade
+level: Kindergarten
+grades:
+  - 0
+isced: 1
+entries:
+  - outline-entry-7937d0bec261e96e
+  - outline-entry-485c2079193de462
+  - outline-entry-4323f2b248695141
+  - outline-entry-6f208a694e1ea79b
+  - outline-entry-265cdfa81f704397

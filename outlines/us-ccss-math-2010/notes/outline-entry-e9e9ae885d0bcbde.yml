@@ -1,0 +1,13 @@
+id: outline-entry-e9e9ae885d0bcbde
+gestalt: outline-entry@1
+label: Grade 1
+kind: grade
+level: Grade 1
+grades:
+  - 1
+isced: 1
+entries:
+  - outline-entry-f156b49958b1d6c6
+  - outline-entry-c14a17e3c151d8a2
+  - outline-entry-eb6f63a44ce4dd7e
+  - outline-entry-19e0bb4f49999461

@@ -1,0 +1,14 @@
+id: outline-entry-9fdaabadbd7bf596
+gestalt: outline-entry@1
+label: Grade 3
+kind: grade
+level: Grade 3
+grades:
+  - 3
+isced: 1
+entries:
+  - outline-entry-76f578ca7755eacb
+  - outline-entry-2ea039eb63d9c803
+  - outline-entry-67e27d638546dce9
+  - outline-entry-9df0c8a487a235a4
+  - outline-entry-7ea82a0184b0063f

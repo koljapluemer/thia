@@ -1,0 +1,16 @@
+id: outline-entry-d406688cdef2e291
+gestalt: outline-entry@1
+label: Algebra
+kind: conceptual category
+level: High School
+grades:
+  - 9
+  - 10
+  - 11
+  - 12
+isced: 3
+entries:
+  - outline-entry-cd3784a34d145862
+  - outline-entry-6be12287b50f74fa
+  - outline-entry-b89f2d60950a1093
+  - outline-entry-4fb580cff24772da

@@ -126,7 +126,7 @@ pub struct IndexedOutline {
     pub entries: Vec<IndexedEntry>,
     /// entries that say what they're about, but no view practises it
     pub unpractised: Vec<Gap>,
-    /// leaves that don't say what they're about
+    /// leaves that don't say what they're about, and neither does any entry above them
     pub unmapped: Vec<Gap>,
 }
 
@@ -248,6 +248,8 @@ struct Inherited {
     level: Option<String>,
     grades: Vec<i64>,
     isced: Option<i64>,
+    /// an entry above says what it's about
+    about: bool,
 }
 
 struct Walk<'a> {
@@ -276,8 +278,10 @@ impl Walk<'_> {
             level: string(y, "level").or_else(|| up.level.clone()),
             grades: if grades.is_empty() { up.grades.clone() } else { grades },
             isced: y.get("isced").and_then(Value::as_i64).or(up.isced),
+            about: up.about,
         };
         let about = weighted(y.get("concepts"));
+        let here = Inherited { about: up.about || !about.is_empty(), ..here };
         let entries = self.children(&refs(y, "entries"), &here);
         let own = self.concepts.views(&about);
         let names: Vec<String> = about.keys().map(|c| self.concepts.name(c)).collect();
@@ -287,7 +291,7 @@ impl Walk<'_> {
         }
         if entries.is_empty() {
             self.leaves += 1;
-            if about.is_empty() {
+            if !here.about {
                 self.unmapped.push(gap(Vec::new()));
             }
         }
@@ -410,7 +414,8 @@ mod tests {
                 ("a4", entry("A4", "concepts: {r: 0.2, e: 0.2}\n")),
                 ("a5", entry("A5", "")),
                 ("b", entry("B", "concepts: {countries: 1}\n")),
-                ("c", entry("C", "concepts: {x: 1}\n")),
+                ("c", entry("C", "concepts: {x: 1}\nentries: [c1]\n")),
+                ("c1", entry("C1", "")),
                 ("r", concept("rounding", None)),
                 ("e", concept("estimation", None)),
                 ("x", concept("nothing practises this", None)),
@@ -484,6 +489,7 @@ mod tests {
         assert_eq!(o.unmapped.iter().map(|g| g.id.as_str()).collect::<Vec<_>>(), vec!["a5"]);
         assert_eq!(o.unpractised.iter().map(|g| g.id.as_str()).collect::<Vec<_>>(), vec!["a3", "c"]);
         assert_eq!(o.unpractised[1].concepts, vec!["nothing practises this"]);
+        // c1 says nothing, but c above it does
         assert_eq!((o.leaves, o.leaves_with_views), (7, 4));
         assert_eq!(es_find(&o.entries, "a1").unwrap().concepts, vec!["estimation", "rounding"]);
     }

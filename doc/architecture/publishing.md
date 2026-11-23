@@ -24,6 +24,20 @@ plugin, with a text search. A plugin without a deck isn't listed. Each entry kee
 in a folder of its own (OPFS `view-<plugin>-<deck>`), with only its deck mounted read-only, and has "Start fresh". A
 view's params are in the URL's hash.
 
+### Curricula and guides
+
+Above the views, the catalog lists the site's **outlines** (`outlines:` in `distribution.yml`, each a folder of
+`outlines/`): a curriculum as its issuer published it, or a guide, as a tree of entries (`outline@1`,
+`outline-entry@1`, [data format](../reference/data-format.md#outlines)). `/o/<outline>` shows the whole tree, and
+`/o/<outline>/<entry>` opens it at one entry, for links to share. An entry lists the views that practise what it is
+about, best first, with its descendants' included, and is greyed where there are none ("only with views" hides
+those, remembered per device). Nobody puts a view under an entry: an entry names concepts, a deck says what it
+practises as a whole (`deck@3.concepts`), and the build matches them (`crates/core/src/outline_index.rs`, run
+through the wasm by `packages/vite/src/outlines.ts`). So a new view that practises an entry's concepts shows up under
+it without anyone touching the outline. The build ships each tree as `outlines/<name>.json`, loaded only by its page,
+and what's missing as `outlines/<name>.gaps.json` (entries no view practises, leaves nobody mapped), and prints the
+counts.
+
 The same build also plays unlisted lesson links (`/l/<lesson>`), served by the server's lesson domain
 (`web/server`, `lessons.rs`), which installs it per frame runtime (`admin install-player`).
 
@@ -67,11 +81,12 @@ Accepting (`web/server/src/promote.rs`) writes into the checkout the server was 
 - **A view** becomes `plugins/<plugin>/`:
   - `view.tsx`;
   - a `plugin.yml` from what the view declares (reads, writes, npm pins);
-  - its data as `decks/<deck>/`.
+  - its data as `decks/<deck>/`, a `deck@3` practising what the reviewer names (concept names, canonical English;
+    one of the draft's by its name, or a new concept), which is how outlines find it.
   - Its own gestalts become the model package `gestalts/<package>/`, so the draft's package name (`d-<hex>`) is
     renamed everywhere.
   - The plugin and the package are added to the site's `distribution.yml`.
-- **A viz** becomes `plugins/vizint/decks/<deck>/`.
+- **A viz** becomes `plugins/vizint/decks/<deck>/`, a `deck@3` the same way.
 - Decks are normalized as `publish-data` does it: blobs named by content, plus `index.json`.
 - Every target gets an `origin.yml` (submission, credit, licence).
 - A later submission from the same draft and account replaces what the earlier one put there; git shows the

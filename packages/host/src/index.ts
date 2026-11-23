@@ -6,6 +6,6 @@ export { bootHtml, closedCsp } from './frame/boot';
 export { AccessError, Bridge, type Scope, type ViewEnv } from './frame/bridge';
 export { installId, installState, installedPlugins, useInstalled } from './installs';
 export { PluginSettings } from './PluginSettings';
-export { deckSources, findPlugin, npmUrlsOf, type DeckEntry, type Distribution, type FrameRuntime, type PluginEntry, type PluginManifest, type Registry } from './registry';
+export { deckSources, findPlugin, npmUrlsOf, type DeckEntry, type Distribution, type FrameRuntime, type PluginEntry, type OutlineSummary, type OutlineTree, type OutlineTreeEntry, type PluginManifest, type Registry } from './registry';
 export { usePluginRepo } from './usePluginRepo';
 export { SingleView, ViewTabs } from './ViewTabs';

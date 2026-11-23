@@ -1,0 +1,5 @@
+id: outline-entry-2948b84b08918ab0
+gestalt: outline-entry@1
+label: Generate a number or shape pattern that follows a given rule. Identify apparent features of the pattern that were not explicit in the rule itself. For example, given the rule "Add 3" and the starting number 1, generate terms in the resulting sequence and observe that the terms appear to alternate between odd and even numbers. Explain informally why the numbers will continue to alternate in this way.
+notation: 4.OA.C.5
+kind: standard
