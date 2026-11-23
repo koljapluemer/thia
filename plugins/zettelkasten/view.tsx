@@ -57,7 +57,7 @@ const MARK: Record<OutlineMark['kind'], string> = {
   parentExcluded: 'Its place is a note kept out of the Zettelkasten.',
   cycle: 'Its places go round in a circle.',
   placedTwice: 'It is placed in more than one place.',
-  fork: 'Another note already has the same place.',
+  fork: 'Another note already follows the same note.',
   extraRoot: 'There is already a root.',
   rootPlaced: 'The root is placed somewhere too; that place is ignored.',
   excludedPlaced: 'It is tagged to be kept out, but placed.',
@@ -94,11 +94,14 @@ export default function Zettelkasten() {
   const [seed, setSeed] = useViewState<number>('seed', newSeed());
   const [expanded, setExpanded] = useViewState<string[]>('expanded', []);
   const [selected, setSelected] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const { change, error } = useChange();
   const { openView } = useHost();
 
   const inbox = useQuery(focused ? null : { ...UNPLACED, order: { seed }, limit: 1 });
   const subject = focused ?? inbox.items[0]?.id ?? null;
+  const at = rels(useDoc(NOTE, subject)?.value ?? {}).find(isPlace);
+  const subjectAt = at ? { to: at.to, how: (at.label === FOLLOWS ? 'after' : 'branch') as Place } : undefined;
   const top = useOutline(SPEC, { children: null }, { fields: FIELDS, limit: PAGE });
   // while loading, as if there were one, so "Make it the root" doesn't flash up
   const hasRoot = top.loading || top.entries.length > 0;
@@ -111,9 +114,10 @@ export default function Zettelkasten() {
     await change(subject, (v) => withPlaces(v, [{ to: target, label: how === 'after' ? FOLLOWS : BRANCHES }]));
     if (how === 'branch') expand([target]);
     setSelected(null);
+    setDragging(false);
   };
   const open = (id: string) => { void openView('note-crud', { note: id }); };
-  const ctx: TreeCtx = { expanded, toggle, selected, select: setSelected, subject, place, focus, open, revealed: focused };
+  const ctx: TreeCtx = { expanded, toggle, selected, select: setSelected, subject, subjectAt, dragging, place, focus, open, revealed: focused };
 
   return (
     <div className="h-full overflow-y-auto bg-base-100 md:flex md:overflow-hidden">
@@ -121,9 +125,9 @@ export default function Zettelkasten() {
         {error && <div role="alert" className="alert alert-error text-sm">{error}</div>}
         {inbox.error && <div role="alert" className="alert alert-error text-sm">{inbox.error}</div>}
         {subject
-          ? <Subject key={subject} id={subject} fromInbox={!focused} hasRoot={hasRoot} change={change} expand={expand} focus={focus} open={open} skip={() => setSeed(newSeed())} />
+          ? <Subject key={subject} id={subject} fromInbox={!focused} hasRoot={hasRoot} change={change} expand={expand} focus={focus} open={open} skip={() => setSeed(newSeed())} onDrag={setDragging} />
           : !inbox.loading && <p className="p-4 text-center text-base-content/60">Every note is placed, or kept out.</p>}
-        {subject && <Targets subject={subject} place={place} />}
+        {subject && <Targets ctx={ctx} />}
         <Attention ctx={ctx} />
       </aside>
       <main className="min-w-0 flex-1 p-3 md:overflow-y-auto">
@@ -139,9 +143,11 @@ export default function Zettelkasten() {
 }
 
 /** The note being placed (or moved, or fixed): what it is, where it is, and what can be done with it. */
-function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip }: {
+function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip, onDrag }: {
   id: string; fromInbox: boolean; hasRoot: boolean; change: Change; expand: (ids: string[]) => void;
   focus: (id: string | null) => void; open: (id: string) => void; skip: () => void;
+  /** whether the note is being dragged to its place */
+  onDrag: (dragging: boolean) => void;
 }) {
   const note = useDoc(NOTE, id);
   const located = useOutline(SPEC, { locate: [id] }, { fields: FIELDS }).entries[0];
@@ -165,7 +171,15 @@ function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip }: 
           <button type="button" className="btn btn-ghost btn-xs" title="Edit in Notes" onClick={() => open(id)}><Pencil className="size-4" /> Edit</button>
         </div>
         {path && path.length > 0 && <Path path={path} />}
-        <NoteCard value={v} />
+        {located && located.status !== 'root'
+          ? (
+            <div className="cursor-grab active:cursor-grabbing" draggable title="Drag onto a note in the tree or the search to place it there"
+                 onDragStart={(e) => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; onDrag(true); }}
+                 onDragEnd={() => onDrag(false)}>
+              <NoteCard value={v} />
+            </div>
+          )
+          : <NoteCard value={v} />}
         {located?.marks.map((m, i) => <Fix key={i} id={id} mark={m} value={v} change={change} focus={focus} />)}
         <div className="flex flex-wrap gap-2">
           {fromInbox && <button type="button" className="btn btn-sm" onClick={skip}>Skip</button>}
@@ -186,7 +200,7 @@ function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip }: 
         </div>
         {located?.status !== 'root' && (
           <p className="text-xs text-base-content/60">
-            {places.length ? 'To move it, pick' : 'To place it, pick'} a note in the tree or search: it goes after that note, or starts a branch under it.
+            {places.length ? 'To move it, pick' : 'To place it, pick'} a note in the tree or search, or drag the note onto one: it goes after that note, or starts a branch under it.
           </p>
         )}
       </div>
@@ -227,7 +241,8 @@ function Fix({ id, mark, value, change, focus }: { id: string; mark: OutlineMark
 }
 
 /** Finding where the subject goes by searching, with where each match is. */
-function Targets({ subject, place }: { subject: string; place: (target: string, how: Place) => Promise<void> }) {
+function Targets({ ctx }: { ctx: TreeCtx }) {
+  const subject = ctx.subject!;
   const [search, setSearch] = useViewState<string>('search', '');
   const text = useDebounced(search, 200).trim();
   const found = useQuery(text ? { gestalt: NOTE, text, limit: 20, fields: ['title', 'main'] } : null);
@@ -245,7 +260,7 @@ function Targets({ subject, place }: { subject: string; place: (target: string, 
           <li key={e.item.id} className="rounded-box bg-base-200 p-2 text-sm">
             {e.path && e.path.length > 0 && <Path path={e.path} />}
             <p className="break-words"><NoteTitle value={e.item.value} /></p>
-            <PlaceButtons entry={e} subject={subject} below={e.belowSubject === true} place={place} />
+            <PlaceButtons entry={e} below={e.belowSubject === true} ctx={ctx} />
           </li>
         ))}
       </ul>
@@ -261,13 +276,43 @@ function refusal(e: OutlineEntry, subject: string, below: boolean): string | nul
   return null;
 }
 
-function PlaceButtons({ entry, subject, below, place }: { entry: OutlineEntry; subject: string; below: boolean; place: (target: string, how: Place) => Promise<void> }) {
-  const no = refusal(entry, subject, below);
+/**
+ * Why the subject can't go `how` this note, if it can't: there is one place after a note (any number branch from it),
+ * and going where it already is changes nothing.
+ */
+function taken(e: OutlineEntry, how: Place, at: TreeCtx['subjectAt']): string | null {
+  if (at?.to === e.item.id && at.how === how) return 'It is already here.';
+  if (how === 'after' && e.hasFollower) return 'Another note already follows this one: place it after that one, or branch from this.';
+  return null;
+}
+
+const HOW: Record<Place, string> = { after: 'After this', branch: 'Branch from this' };
+
+/** Putting the subject after this note or under it, by a click or by dropping it on the button. */
+function PlaceButtons({ entry, below, ctx }: { entry: OutlineEntry; below: boolean; ctx: TreeCtx }) {
+  const [over, setOver] = useState<Place | null>(null);
+  const no = ctx.subject ? refusal(entry, ctx.subject, below) : 'Nothing to place.';
   if (no) return <p className="mt-1 text-xs text-base-content/60">{no}</p>;
   return (
     <div className="mt-1 flex gap-2">
-      <button type="button" className="btn btn-xs btn-primary" onClick={() => void place(entry.item.id, 'after')}>After this</button>
-      <button type="button" className="btn btn-xs btn-primary" onClick={() => void place(entry.item.id, 'branch')}>Branch from this</button>
+      {(['after', 'branch'] as const).map((how) => {
+        const why = taken(entry, how, ctx.subjectAt);
+        const drop = ctx.dragging && !why;
+        return (
+          // a disabled button shows no title in every browser: its wrapper does
+          <span key={how} title={why ?? undefined}>
+            <button type="button" disabled={Boolean(why)}
+                    className={`btn btn-xs btn-primary ${drop ? 'btn-outline border-dashed' : ''} ${over === how ? 'btn-active outline outline-2 outline-offset-2 outline-primary' : ''}`}
+                    onClick={() => void ctx.place(entry.item.id, how)}
+                    onDragOver={(e) => { if (drop) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; } }}
+                    onDragEnter={() => { if (drop) setOver(how); }}
+                    onDragLeave={() => setOver(null)}
+                    onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setOver(null); if (drop) void ctx.place(entry.item.id, how); }}>
+              {HOW[how]}
+            </button>
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -315,6 +360,10 @@ type TreeCtx = {
   selected: string | null;
   select: (id: string | null) => void;
   subject: string | null;
+  /** where the subject is now, if placed */
+  subjectAt?: { to: string; how: Place };
+  /** whether the subject is being dragged: a row it's dragged over opens to take it */
+  dragging: boolean;
   place: (target: string, how: Place) => Promise<void>;
   focus: (id: string) => void;
   open: (id: string) => void;
@@ -355,7 +404,8 @@ function Row({ entry, depth, ctx }: { entry: OutlineEntry; depth: number; ctx: T
   useEffect(() => { if (ctx.revealed === id) ref.current?.scrollIntoView({ block: 'nearest' }); }, [ctx.revealed, id]);
   return (
     <li>
-      <div ref={ref} className={`flex items-center gap-1 rounded-box py-0.5 pr-1 ${selected ? 'bg-base-200' : ''} ${isSubject ? 'outline outline-1 outline-primary' : ''}`} style={{ paddingLeft: `${depth * 1.25}rem` }}>
+      <div ref={ref} className={`flex items-center gap-1 rounded-box py-0.5 pr-1 ${selected ? 'bg-base-200' : ''} ${isSubject ? 'outline outline-1 outline-primary' : ''}`} style={{ paddingLeft: `${depth * 1.25}rem` }}
+           onDragEnter={() => { if (ctx.dragging && !selected) ctx.select(id); }}>
         {entry.hasChildren
           ? <button type="button" className="btn btn-ghost btn-xs btn-square" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => ctx.toggle(id)}>{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button>
           : <span className="inline-block w-6 shrink-0" />}
@@ -378,7 +428,7 @@ function RowActions({ entry, depth, ctx }: { entry: OutlineEntry; depth: number;
   const located = useOutline(SPEC, subject ? { locate: [id] } : null, { fields: [], subject: subject ?? undefined }).entries[0];
   return (
     <div className="flex flex-wrap items-center gap-2 py-1" style={{ paddingLeft: `${depth * 1.25 + 1.75}rem` }}>
-      {subject && located && <PlaceButtons entry={entry} subject={subject} below={located.belowSubject === true} place={ctx.place} />}
+      {subject && located && <PlaceButtons entry={entry} below={located.belowSubject === true} ctx={ctx} />}
       <button type="button" className="btn btn-xs" onClick={() => ctx.focus(id)}>Focus</button>
       <button type="button" className="btn btn-xs btn-ghost" title="Edit in Notes" onClick={() => ctx.open(id)}><Pencil className="size-4" /> Edit</button>
     </div>
