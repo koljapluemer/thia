@@ -3,7 +3,7 @@ import type { Repo } from '@gestalts/client';
 import { PROTOCOL, logger, type FromView, type JsonMap, type ToView, type ViewError } from '@gestalts/view';
 import type { FrameRuntime, Permission } from '../registry';
 import { bootHtml } from './boot';
-import { Bridge, type Scope, type ViewEnv } from './bridge';
+import { AccessError, Bridge, type Scope, type ViewEnv } from './bridge';
 
 const log = logger('view');
 
@@ -123,7 +123,15 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
         }
         b.handle(msg.call).then(
           (value) => post({ type: 'reply', id: msg.id, ok: true, value: value as object }),
-          (err: unknown) => post({ type: 'reply', id: msg.id, ok: false, error: err instanceof Error ? err.message : String(err) }),
+          (err: unknown) => {
+            const message = err instanceof Error ? err.message : String(err);
+            // a refusal is a bug in the view (its manifest leaves something out): said, though the view may carry on
+            if (err instanceof AccessError) {
+              log.error('view access refused', { view: view.id, op: msg.call.op, message });
+              latest.current.onError?.({ kind: 'access', message, at: new Date().toISOString() });
+            }
+            post({ type: 'reply', id: msg.id, ok: false, error: message });
+          },
         );
       };
       frame.contentWindow?.postMessage({

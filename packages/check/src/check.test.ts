@@ -45,6 +45,12 @@ describe('a view', () => {
     expect(r.report).toContain('loads https://example.org/a.png');
     expect(r.report).not.toContain('wikipedia');
   }, 60_000);
+  it("wants what the kit parts it uses read and write in view.json", async () => {
+    const source = `import { NoteEditor } from '@gestalts/kit';\n${(good['view.tsx'] as string).replace(/export default function (\w+)/, 'export function Unused() { return <NoteEditor id="x" />; }\nexport default function $1')}`;
+    const r = await checkView({ ...good, 'view.tsx': source }, { gestalts: GESTALTS }, nodePlatform);
+    expect(r.ok).toBe(false);
+    expect(r.report).toContain('view.tsx uses NoteEditor (from @gestalts/kit), which reads source@1, concept@2, concept@3 and writes');
+  }, 60_000);
   it('knows only the gestalts here', async () => {
     const json = JSON.parse(good['view.json'] as string) as { reads: string[] };
     const r = await checkView({ ...good, 'view.json': JSON.stringify({ ...json, reads: [...json.reads, 'nope@1'] }) }, { gestalts: GESTALTS }, nodePlatform);

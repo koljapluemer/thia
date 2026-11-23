@@ -11,4 +11,14 @@ describe('compiling a view', () => {
     expect(compile('import x from "./x";\nexport default function V() { return x; }').ok).toBe(false);
     expect(compile('export function V() { return null; }').ok).toBe(false);
   });
+
+  it('names the kit and learning parts a view uses, not those only typed or unused', () => {
+    const r = compile("import { Modal, type BlobRef, NoteEditor as Editor, Unused } from '@gestalts/kit';\nimport { logPractice } from '@gestalts/learning';\nconst b: BlobRef[] = [];\nexport default function V() { void logPractice; return <Editor id={String(b)} />; }\n");
+    expect(r.ok && r.imports).toEqual({ '@gestalts/kit': ['NoteEditor'], '@gestalts/learning': ['logPractice'] });
+  });
+
+  it('refuses the kit imported other than by name', () => {
+    expect(compile("import * as kit from '@gestalts/kit';\nexport default function V() { return <kit.Modal />; }").ok).toBe(false);
+    expect(compile("export default function V() { void import('@gestalts/kit'); return null; }").ok).toBe(false);
+  });
 });

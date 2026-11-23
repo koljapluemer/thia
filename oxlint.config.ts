@@ -15,6 +15,8 @@ import { defineConfig } from 'oxlint';
  * - `@gestalts/vite` (the build preset, run by Node) imports the view package's compiler, and npm-bundle for pinned
  *   distributions.
  * - `@gestalts/check` (what an agent's work is checked with, in the page and in Node) imports the view and viz packages.
+ * - the build and the check also import what the kit's and learning's parts read and write (each one's `needs.ts`, plain
+ *   data), and nothing else of them.
  * - `@gestalts/workshop` (making a view with an agent) builds on client, host, view and check.
  * - `@gestalts/npm-bundle` (npm packages for views, bundled by a server, run by Node) imports only the view package.
  * - an app (`web/<app>/src`, folder-sync's settings page) imports only the packages
@@ -78,7 +80,10 @@ export default defineConfig({
       { type: 'app', pattern: 'installables/folder-sync/*/src', capture: ['app'] },
       { type: 'app', pattern: 'web/*/src', capture: ['app'] },
     ],
-    'boundaries/files': [{ category: 'runtime', pattern: `**/${host}/frame/runtime.tsx` }],
+    'boundaries/files': [
+      { category: 'runtime', pattern: `**/${host}/frame/runtime.tsx` },
+      { category: 'needs', pattern: '**/packages/{kit,learning}/src/needs.ts' },
+    ],
   },
   rules: {
     'react/rules-of-hooks': 'error',
@@ -100,6 +105,7 @@ export default defineConfig({
             allow: { to: { element: { types: { anyOf: to.length ? to : ['none'] } } } },
           })),
           { from: { file: { categories: 'runtime' } }, allow: { to: { element: { type: 'kit-index' } } } },
+          { from: { element: { types: { anyOf: ['vite', 'check'] } } }, allow: { to: { file: { categories: 'needs' } } } },
         ],
       }],
     },

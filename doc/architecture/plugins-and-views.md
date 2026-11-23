@@ -18,7 +18,16 @@ reads: [note@1]
 writes: [note@1]
 ```
 
-`reads` and `writes` are enforced outside the view. An app lists its plugins by path in `distribution.yml`, as `core`
+`reads` and `writes` are enforced outside the view, and written by hand: everything the view touches, so its author
+and whoever reviews it see that. The kit's and learning's parts run as the view, so what they touch is the view's to
+declare too: each package lists its parts' needs in its `needs.ts` (`NoteEditor` reads notes, sources and concepts and
+writes notes and sources; `Markdown` reads notes for `[[links]]`), and the build, `mise run check` and the workshop's
+check refuse a view that uses a part without declaring them, naming what's missing. A view imports those parts by
+name. `packages/check/src/needs.test.ts` keeps each `needs.ts` exact about reads by following every part's code; writes
+are listed by hand. A call the host refuses anyway is reported as the view's error (`kind: 'access'`), in the log and
+to the workshop.
+
+An app lists its plugins by path in `distribution.yml`, as `core`
 (always there) or `plugins` (installable). An app with areas that need different plugins or models (the web app) has
 `distributions/<name>.yml` instead, one per registry (`virtual:gestalts-plugins/<name>`), sharing one frame runtime.
 

@@ -132,6 +132,12 @@ importers:
 
   packages/check:
     dependencies:
+      '@gestalts/kit':
+        specifier: workspace:*
+        version: link:../kit
+      '@gestalts/learning':
+        specifier: workspace:*
+        version: link:../learning
       '@gestalts/view':
         specifier: workspace:*
         version: link:../view
@@ -154,12 +160,6 @@ importers:
         specifier: 2.8.1
         version: 2.8.1
     devDependencies:
-      '@gestalts/kit':
-        specifier: workspace:*
-        version: link:../kit
-      '@gestalts/learning':
-        specifier: workspace:*
-        version: link:../learning
       '@gestalts/sources':
         specifier: workspace:*
         version: link:../sources
@@ -336,6 +336,12 @@ importers:
       '@gestalts/host':
         specifier: workspace:*
         version: link:../host
+      '@gestalts/kit':
+        specifier: workspace:*
+        version: link:../kit
+      '@gestalts/learning':
+        specifier: workspace:*
+        version: link:../learning
       '@gestalts/npm-bundle':
         specifier: workspace:*
         version: link:../npm-bundle

@@ -92,7 +92,8 @@ export type Answers = {
   openView: boolean;
 };
 
-export type ViewError = { kind: 'error' | 'rejection' | 'render' | 'console' | 'compile'; message: string; stack?: string; at: string };
+/** `access`: the host refused a call the view's `reads`, `writes` or other permissions don't cover, a bug in the view */
+export type ViewError = { kind: 'error' | 'rejection' | 'render' | 'console' | 'compile' | 'access'; message: string; stack?: string; at: string };
 
 export type FromView =
   | { type: 'call'; id: number; call: Call }

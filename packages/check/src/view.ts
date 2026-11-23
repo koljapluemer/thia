@@ -3,7 +3,10 @@
  * imports pinned in it, and the draft's own gestalts (`gestalts/`) and data (`data/`). The app checks the ymls again
  * when it saves them and refuses what isn't valid.
  */
+import { NEEDS as KIT_NEEDS } from '@gestalts/kit/needs';
+import { NEEDS as LEARNING_NEEDS } from '@gestalts/learning/needs';
 import { compile } from '@gestalts/view/compile';
+import { needsProblems } from '@gestalts/view/needs';
 import { parse } from 'yaml';
 import { packageName, remoteLoads, result, versionedImport, versionedMessage, type CheckItem, type CheckResult, type Files, type Platform } from './index.ts';
 
@@ -99,6 +102,13 @@ export async function checkView(files: Files, ctx: ViewContext, platform: Platfo
     return result(items);
   }
   items.push({ ok: true, name: `view.tsx compiles${compiled.npm.length ? ` (from npm: ${compiled.npm.join(', ')})` : ''}` });
+  // the kit's and learning's parts run as the view: what they touch is declared with the rest, by hand
+  const list = (v: unknown) => (Array.isArray(v) ? v.filter((g): g is string => typeof g === 'string') : []);
+  const needs = needsProblems({
+    imports: compiled.imports, reads: list(manifest?.reads), writes: list(manifest?.writes), manifest: 'view.json',
+    needs: { '@gestalts/kit': KIT_NEEDS, '@gestalts/learning': LEARNING_NEEDS },
+  });
+  items.push({ ok: needs.length === 0, name: 'view.json declares what the kit parts it uses read and write', message: needs.join('\n') });
   const versioned = compiled.npm.flatMap((spec) => { const v = versionedImport(spec); return v ? [versionedMessage(spec, v)] : []; });
   const unpinned = [...new Set(compiled.npm.filter((s) => !versionedImport(s)).map(packageName))].filter((n) => typeof npmPinned[n] !== 'string');
   const npmProblems = [...versioned, ...unpinned.map((n) => `view.json: add "${n}" to \`npm\` with an exact version, like {"${n}": "1.2.3"}`)];

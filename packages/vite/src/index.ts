@@ -20,7 +20,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { bundle, isVersion, packageName } from '@gestalts/npm-bundle';
-import { compile } from '@gestalts/view/compile';
+import { NEEDS as KIT_NEEDS } from '@gestalts/kit/needs';
+import { NEEDS as LEARNING_NEEDS } from '@gestalts/learning/needs';
+import { compile, type Compiled } from '@gestalts/view/compile';
+import { needsProblems } from '@gestalts/view/needs';
 import { build, searchForWorkspaceRoot, type Plugin, type PluginOption, type Rollup } from 'vite';
 import { parse } from 'yaml';
 // by its package path: Node loads this file as it is when Vite reads the app's config, and needs no extension so
@@ -34,7 +37,7 @@ const DISTRIBUTIONS = 'distributions';
 const RUNTIME = 'virtual:gestalts-runtime';
 const SOURCES = /^@gestalts-sources;$/m;
 
-type Manifest = { id: string; title: string; version: string; reads?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string> };
+type Manifest = { id: string; title: string; version: string; reads?: string[]; writes?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string> };
 type DistributionFile = { id?: unknown; plugins?: string[]; models?: string[]; outlines?: string[]; grants?: unknown; pinned_npm?: boolean };
 const DISTRIBUTION_KEYS = ['id', 'plugins', 'models', 'outlines', 'grants', 'pinned_npm'];
 /** where npm bundles are kept between builds */
@@ -131,12 +134,31 @@ function readDecks(pluginId: string, root: string) {
   });
 }
 
-function loadPlugin(base: string, path: string) {
-  const root = realpathSync(resolve(base, path));
+/**
+ * What's wrong with how a plugin's `plugin.yml` says what its view reads and writes: every part of the kit and of
+ * learning it uses needs its gestalts declared there too (each package's `needs.ts`), by hand, so its author and
+ * whoever reviews it see everything it touches.
+ */
+export function pluginNeedsProblems(manifest: Pick<Manifest, 'reads' | 'writes'>, compiled: Extract<Compiled, { ok: true }>): string[] {
+  return needsProblems({
+    imports: compiled.imports, reads: manifest.reads ?? [], writes: manifest.writes ?? [], manifest: 'plugin.yml',
+    needs: { '@gestalts/kit': KIT_NEEDS, '@gestalts/learning': LEARNING_NEEDS },
+  });
+}
+
+/** A plugin folder's manifest and its view, compiled. */
+export function readPlugin(root: string): { manifest: Manifest; compiled: Compiled } {
   const manifest = parse(readFileSync(join(root, 'plugin.yml'), 'utf8')) as Manifest;
   const viewFile = join(root, 'view.tsx');
-  const compiled = compile(readFileSync(viewFile, 'utf8'), viewFile);
+  return { manifest, compiled: compile(readFileSync(viewFile, 'utf8'), viewFile) };
+}
+
+function loadPlugin(base: string, path: string) {
+  const root = realpathSync(resolve(base, path));
+  const { manifest, compiled } = readPlugin(root);
   if (!compiled.ok) throw new Error(`${manifest.id}/view.tsx: ${compiled.errors.map((e) => `${e.line ?? '?'}: ${e.message}`).join('; ')}`);
+  const needs = pluginNeedsProblems(manifest, compiled);
+  if (needs.length) throw new Error(`${manifest.id}: ${needs.join('; ')}`);
   if (existsSync(join(root, 'gestalts'))) throw new Error(`${manifest.id}: a plugin doesn't define gestalts; they go in a model package, gestalts/<package>/<name>/v<N>.yml`);
   return { id: manifest.id, root, manifest, decks: readDecks(manifest.id, root), js: compiled.js, npm: compiled.npm, backend: existsSync(join(root, 'backend.py')) };
 }

@@ -80,6 +80,11 @@ how many items), `one_of: [..]`.
 | `@gestalts/sources` | sources: `FIELDS`, `ENTRY_TYPES`, `normalise`, `bibOf`, `parseBibtex`, `renderBibtex`, `match`, `mergeSource` |
 | any npm package | loaded at run time (`d3`, `three`, ...): import it by name (`'d3'`, never `'d3@7.9.0'` or a URL) and list it in `view.json`'s `npm` with its exact version. No types here, so type what you use. It comes without its stylesheets |
 
+Import their parts by name. Parts of the kit and of learning touch data as the view does, so `view.json` declares
+what they read and write too: `NoteEditor` reads `note@1`, `source@1`, `concept@2`, `concept@3` and writes `note@1`,
+`source@1`; `Markdown`, `NoteCard` read `note@1`; `logPractice` writes `practice-event@1` (or `@2`). Each package's
+`src/needs.ts` lists them all, and the `check` names what's missing.
+
 The sources are in `node_modules/@gestalts/*/src` (read-only). Read them when unsure; don't guess signatures.
 
 Style with Tailwind classes and daisyUI components. Keep it responsive: the frame can be narrow.

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Shared learning logic for plugins: FSRS by facet, practice sessions",
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": { ".": "./src/index.ts", "./needs": "./src/needs.ts" },
   "files": ["src"],
   "scripts": { "typecheck": "tsc -p ." },
   "dependencies": { "@gestalts/view": "workspace:*", "iso-639-3": "3.0.1", "ts-fsrs": "6.0.0" },

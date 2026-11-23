@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "yaml": "2.8.1",
+    "@gestalts/kit": "workspace:*",
+    "@gestalts/learning": "workspace:*",
     "@gestalts/npm-bundle": "workspace:*",
     "@gestalts/view": "workspace:*"
   },

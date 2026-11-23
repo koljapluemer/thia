@@ -53,18 +53,22 @@ describe('where a view is', () => {
   it('hears each move, and the last one made before it listened', async () => {
     const { port1, port2 } = new MessageChannel();
     const host = connect(port1);
-    const send = (m: ToView) => port2.postMessage(m);
-    const tick = () => new Promise((r) => setTimeout(r, 0));
+    // until the connection has had each message sent so far: a timer alone may come first when the machine is busy
+    let sent = 0;
+    let arrived = 0;
+    port1.addEventListener('message', () => { arrived++; });
+    const send = (m: ToView) => { sent++; port2.postMessage(m); };
+    const delivered = async () => { while (arrived < sent) await new Promise((r) => setTimeout(r, 1)); };
     send({ type: 'params', params: { note: 'a' } });
     send({ type: 'params', params: { note: 'b' } });
-    await tick();
+    await delivered();
     const heard: string[] = [];
     const stop = host.onParams((p) => heard.push(p.note));
     send({ type: 'params', params: { note: 'c' } });
-    await tick();
+    await delivered();
     stop();
     send({ type: 'params', params: { note: 'd' } });
-    await tick();
+    await delivered();
     expect(heard).toEqual(['b', 'c']);
     port1.close();
     port2.close();
