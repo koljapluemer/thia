@@ -51,7 +51,10 @@ mise run node:dev                                 # the desktop node and its set
 mise run publish-data plugins/<id>/decks/<deck>   # after editing a plugin's deck
 mise run health-data ~/some-folder                # which ymls can't be used, and why
 mise run serve ~/some-folder                      # the node headless with the repo's plugins
+mise run cms                                     # local admin suite
 mise run server:deploy                           # the server and app to its box (web/server/deploy/README.md)
 mise run claude-bridge:install                    # the Claude bridge installed here, as a user gets it
 mise run codex-bridge:install                     # the Codex bridge installed here, as a user gets it
 ```
+
+[Local CMS operations](doc/operations/cms.md)

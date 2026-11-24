@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=gestalts-codex-bridge
-Comment=Lets a website you allow run Codex CLI on this computer
-Exec=gestalts-codex-bridge
-Icon=gestalts-codex-bridge
-Terminal=false
-Categories=Development;

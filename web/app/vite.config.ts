@@ -28,6 +28,6 @@ export default defineConfig(({ command }) => ({
   // its dependency would be optimized then, and the dev server reloads the page, ending the agent's turn
   optimizeDeps: { include: ['@gestalts/check > typescript-js', '@gestalts/check > esbuild-wasm'] },
   // deployed beside the use app (web/site) on one origin, its files under /make/ (the server's Caddyfile serves its
-  // page for /workshop, /review and /runs); in dev it's on its own, from the root. index.html's <base> follows it
+  // page for /workshop and connector consent); in dev it's on its own, from the root. index.html's <base> follows it
   base: command === 'build' ? '/make/' : '/',
 }));

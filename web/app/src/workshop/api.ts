@@ -1,7 +1,7 @@
 /** The workshop server's API (web/server), on this origin under /api, with the session cookie. */
 import type { ViewError } from '@gestalts/view';
 
-export type Me = { email: string; school: string | null; admin: boolean; maintainer: boolean };
+export type Me = { email: string; school: string | null; maintainer: boolean };
 /** What a draft makes: a learning view, a visualization, or a lesson of several views. */
 export type Kind = 'view' | 'viz' | 'sequence';
 export type DraftInfo = { id: string; package: string; kind: Kind; title: string; created: string };
@@ -51,8 +51,6 @@ export type Offer = { about: string; credit?: string; rights: boolean };
 export type Snapshot = { ymls: { id: string; text: string }[]; blobs: Record<string, string> };
 /** Where accepting puts it: `plugin` and `package` for a view, `deck` for both. */
 /** `concepts`: what its deck practises as a whole, concept name (canonical English) to weight */
-export type Target = { plugin?: string; package?: string; deck: string; concepts?: Record<string, number> };
-export type Promoted = { at: string; written: string[]; next: string[]; warnings: string[] };
 
 export const submissionsOf = (source: string) => api<Submission[]>(`/submissions?source=${encodeURIComponent(source)}`);
 export const submitDraft = (id: string, offer: Offer) => api<Submission>(`/drafts/${id}/submit`, { method: 'POST', json: offer });
@@ -65,28 +63,13 @@ export async function writeDraft(id: string, s: Snapshot) {
   }
 }
 
-export const queue = () => api<{ submissions: Submission[]; repo: string | null }>('/admin/submissions');
-export const submission = (id: string) => api<Submission & { ymls: { id: string; text: string }[]; proposed: Target }>(`/admin/submissions/${id}`);
-export const accept = (id: string, t: Target) => api<Promoted>(`/admin/submissions/${id}/accept`, { method: 'POST', json: t });
-export const reject = (id: string, note: string) => api<void>(`/admin/submissions/${id}/reject`, { method: 'POST', json: { note } });
 /** A submission as a read-only deck, for its preview. */
-export const submissionDeck = (id: string) => `${location.origin}/api/admin/submissions/${id}/deck`;
 
 /** Bundles a view's npm imports at the pinned versions; where each is served, as absolute URLs (the frame's origin is `null`). */
 export async function resolveNpm(imports: string[], versions: Record<string, string>): Promise<Record<string, string>> {
   const paths = await api<Record<string, string>>('/npm', { method: 'POST', json: { npm: versions, imports } });
   return Object.fromEntries(Object.entries(paths).map(([spec, path]) => [spec, new URL(path, location.origin).href]));
 }
-
-/** A lesson of several views, checked as a whole: and the account's views it can pick from, with what they practise. */
-export type SequenceReport = {
-  problems: string[]; warnings: string[];
-  /** the account's views and visualizations (a viz practises nothing) */
-  views: { id: string; title: string; kind: 'view' | 'viz'; practises: string[] }[];
-  /** concept ids to names, where a view's concepts have them */
-  concepts: Record<string, string>;
-};
-export const sequenceReport = (id: string) => api<SequenceReport>(`/drafts/${id}/sequence`);
 
 /** The brief a draft was made with (a lesson's plan): kept in this browser until the draft is first opened, which keeps it as its spec. */
 const briefKey = (id: string) => `workshop:brief:${id}`;

@@ -60,7 +60,7 @@ pub fn list(state: &AppState) -> Vec<Value> {
         json!({ "name": "finish", "title": "Finish the request", "description": "Call when you're done with the person's request: a line on what you did.",
           "inputSchema": { "type": "object", "properties": { "draft": draft_param(), "note": { "type": "string" } }, "required": ["draft", "note"], "additionalProperties": false } }),
     ];
-    let Some(kind) = state.agents.reference.kind("view") else { return own.to_vec() };
+    let Some(kind) = state.reference.kind("view") else { return own.to_vec() };
     let drafting = kind.tools(&MCP).into_iter().map(|mut t| {
         let mut schema = t["input_schema"].take();
         schema["properties"]["draft"] = draft_param();
@@ -215,7 +215,7 @@ async fn start_work(state: &AppState, account: &Account, s: &mut Session, sid: &
             end_run(state, &mut old, ended).await;
         }
     }
-    let kind = state.agents.reference.kind(&d.kind).ok_or("not a kind of draft for this")?;
+    let kind = state.reference.kind(&d.kind).ok_or("not a kind of draft for this")?;
     let mut inputs = json!({ "files": loaded.files, "system": kind.system(&MCP).unwrap_or_default() });
     if !loaded.spec.trim().is_empty() { inputs["spec"] = json!(loaded.spec); }
     let client = &s.client;
@@ -275,7 +275,7 @@ async fn on_draft(state: &AppState, account: &Account, s: &mut Session, sid: &st
     if !KINDS.contains(&d.kind.as_str()) {
         return error(format!("“{}” is a {} draft: only views can be worked on from here for now. The person can work on it in thia's workshop.", d.title, d.kind));
     }
-    let Some(kind) = state.agents.reference.kind(&d.kind) else { return error("not a kind of draft for this") };
+    let Some(kind) = state.reference.kind(&d.kind) else { return error("not a kind of draft for this") };
     let loaded = match load(state, &d).await {
         Ok(l) => l,
         Err(e) => return error(format!("The draft couldn't be read: {e}")),

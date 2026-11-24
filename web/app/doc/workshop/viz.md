@@ -1,5 +1,7 @@
 # A visualization's draft
 
+This document describes an earlier Workshop design. See [current Workshop architecture](architecture.md).
+
 A viz is a draft of the workshop ([`architecture.md`](architecture.md)) of kind `viz`: one `viz@1` yml, with the
 draft's id, and its blobs, synced with the server. It's made like a view: its brief and a chat, with either agent.
 

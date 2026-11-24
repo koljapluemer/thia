@@ -4,12 +4,11 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use thia_server::agent::{MODEL, Model};
 use thia_server::worker::WorkerConfig;
 use thia_server::{AppState, Limits, Services, auth, db, now_iso, random_hex, random_token};
 
 #[derive(Parser)]
-#[command(about = "thia's server: accounts, drafts, the agent, publishing, lessons")]
+#[command(about = "thia's server: accounts, drafts, MCP, publishing, lessons")]
 struct Cli {
     /// where everything lives: thia.db, drafts/, lessons/, npm/, runtime/
     #[arg(long, env = "THIA_DATA", default_value = "server-data")]
@@ -36,21 +35,9 @@ enum Command {
         repo: PathBuf,
         #[arg(long, env = "THIA_NODE", default_value = "node")]
         node: String,
-        /// the agent's model
-        #[arg(long, default_value = MODEL)]
-        model: String,
         /// the lesson domain as students reach it, for links
         #[arg(long, env = "THIA_LESSON_ORIGIN", default_value = "http://127.0.0.1:7741")]
         lesson_origin: String,
-        /// a repo checkout to write accepted submissions into (plugins/, gestalts/, the site's distribution); without
-        /// it, submissions queue up and can only be rejected here
-        #[arg(long, env = "THIA_PROMOTE_INTO")]
-        promote_into: Option<PathBuf>,
-        /// where a visualization's check renders it for the server's agent: `page` hands it to the workshop page the
-        /// turn came from (which has to stay open), `worker` renders it in headless Chromium here (playwright-core;
-        /// GESTALTS_CHROMIUM names the browser, else playwright's own)
-        #[arg(long, env = "GESTALTS_VIZ_RENDER", default_value = "page")]
-        viz_render: thia_server::agent::VizRender,
     },
     /// Schools and accounts
     Admin {
@@ -188,7 +175,7 @@ async fn run(cli: Cli) -> Result<(), String> {
             }
             Ok(())
         }
-        Command::Serve { app, lessons, insecure_cookies, repo, node, model, lesson_origin, promote_into, viz_render } => {
+        Command::Serve { app, lessons, insecure_cookies, repo, node, lesson_origin } => {
             let repo = std::fs::canonicalize(&repo).map_err(|e| format!("{}: {e}", repo.display()))?;
             let services = Services {
                 worker: WorkerConfig {
@@ -197,18 +184,8 @@ async fn run(cli: Cli) -> Result<(), String> {
                     template: repo.join("packages/workshop/agent-template"),
                     npm_cache: std::path::absolute(cli.data.join("npm-cache")).map_err(|e| e.to_string())?,
                 },
-                model: Model {
-                    api_key: std::env::var("ANTHROPIC_API_KEY").ok().filter(|k| !k.is_empty()),
-                    base_url: std::env::var("ANTHROPIC_BASE_URL").unwrap_or_else(|_| "https://api.anthropic.com".into()),
-                    model,
-                },
                 lesson_origin,
-                promote_into: promote_into.map(|p| std::fs::canonicalize(&p).map_err(|e| format!("{}: {e}", p.display()))).transpose()?,
-                viz_render,
             };
-            if services.model.api_key.is_none() {
-                eprintln!("no ANTHROPIC_API_KEY: the agent is off");
-            }
             let state = AppState::new(db, cli.data, limits, !insecure_cookies, services)?;
             // a chat host's run ends when no call comes for it a while, whether or not another call comes at all
             let sweeping = state.clone();

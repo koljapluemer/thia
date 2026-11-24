@@ -1,6 +1,6 @@
 [package]
 name = "thia-server"
-description = "thia's server: accounts, drafts synced and validated, the agent, publishing lessons"
+description = "thia's server: accounts, drafts synced and validated, MCP, publishing lessons"
 edition.workspace = true
 version.workspace = true
 
@@ -21,7 +21,6 @@ include_dir = "0.7"
 mime_guess = "2"
 regex = "1"
 similar = "2"
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 rusqlite = { version = "0.37", features = ["bundled"] }
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "net", "signal", "process", "time", "sync", "io-util", "fs"] }
 zip = { version = "9", default-features = false, features = ["deflate"] }

@@ -7,7 +7,7 @@ Wants=network-online.target
 User=thia
 Group=thia
 WorkingDirectory=/opt/thia-server/current
-# ANTHROPIC_API_KEY=…, THIA_LESSON_ORIGIN=https://lektion.example.net
+# THIA_LESSON_ORIGIN=https://lektion.example.net
 EnvironmentFile=/etc/thia-server.env
 Environment=THIA_DATA=/var/lib/thia-server
 Environment=THIA_REPO=/opt/thia-server/current

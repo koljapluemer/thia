@@ -191,7 +191,10 @@ async fn list(State(state): State<AppState>, me: SignedIn) -> ApiResult<Json<Vec
 /// A new, empty draft: its id (its view's or viz's), and the package its own gestalts are named in. The browser
 /// writes the view or viz yml through sync.
 async fn create(State(state): State<AppState>, me: SignedIn, Json(req): Json<NewDraft>) -> ApiResult<(StatusCode, Json<Draft>)> {
-    let kind = Kind::parse(&req.kind).ok_or_else(|| ApiError::BadRequest("kind: view, viz or sequence".into()))?;
+    if req.kind != "view" {
+        return Err(ApiError::BadRequest("only view drafts can be created".into()));
+    }
+    let kind = Kind::View;
     let draft = state.create_draft(&me.0, &req.title, kind, req.moved.map(|m| (m.id, m.package)))?;
     Ok((StatusCode::CREATED, Json(draft)))
 }
@@ -200,7 +203,6 @@ async fn create(State(state): State<AppState>, me: SignedIn, Json(req): Json<New
 async fn delete(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>) -> ApiResult<StatusCode> {
     let (d, _) = state.own_draft(&me, &id)?;
     state.db.delete_draft(&d.id, &now_iso())?;
-    state.drop_session(&d.id);
     let dir = state.draft_dir(&d.id);
     let _ = blocking(move || std::fs::remove_dir_all(dir).map_err(|e| ApiError::Internal(e.to_string()))).await;
     Ok(StatusCode::NO_CONTENT)

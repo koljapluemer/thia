@@ -3,7 +3,7 @@
 #
 # The app's domain has both apps on one origin, so the user's store in the browser is the same for both: the use app
 # (web/site, prerendered, a page per path) at the root, and the make app (web/app) under /make/, whose one page answers
-# /workshop, /review and /runs.
+# /workshop and connector consent.
 
 lehrer.example.de {
 	encode zstd gzip
@@ -15,7 +15,7 @@ lehrer.example.de {
 	handle @mcp {
 		reverse_proxy 127.0.0.1:7740
 	}
-	@make path /workshop /workshop/* /review /review/* /runs /runs/*
+	@make path /workshop /workshop/*
 	handle @make {
 		root * /opt/thia-server/current/web
 		rewrite * /make/index.html

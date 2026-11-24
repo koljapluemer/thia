@@ -1,10 +1,10 @@
 # Publishing to the public site
 
-What the workshop (`/workshop`) makes, a learning view or a visualization, can be offered for the public site. An admin reviews it, and accepting it makes it part of the repo. The site is built
+A learning view made in Workshop (`/workshop`) can be offered for the public site. An admin reviews it, and accepting it makes it part of the repo. The site is built
 from the repo, prerendered page by page, and deployed with the server (`mise run server:deploy`), on the app's domain.
 
 ```
-workshop ──submit──▶ server: submissions/<id>/ + a row ──review (/review)──▶ accept
+workshop ──submit──▶ server: submissions/<id>/ + a row ──review (local CMS)──▶ accept
                                                                                       │
                      web/site (static) ◀──mise run site:build── git commit ◀── plugins/, gestalts/, web/site/distribution.yml
 ```
@@ -66,8 +66,8 @@ account's owner grants the rights. What's sent is the server's own copy of the d
 
 The server (`web/server/src/submissions.rs`) works out the kind from what was sent:
 
-- exactly one `view@3` (or `view@2`) makes it a **view**; it keeps the view and its members
-- exactly one `viz@1` makes it a **viz**
+- exactly one `view@4` (or an older `view@3` or `view@2`) makes it a **view**; it keeps the view and its members
+- historical viz submissions contain a single `viz@1`
 
 It checks the ymls the way draft writes are checked, and checks a view the way publishing checks one (it compiles, and
 its npm is pinned and bundles). The snapshot is kept immutable in `submissions/<id>/`, as a deck with an `index.json`.
@@ -76,35 +76,12 @@ can see what became of each version.
 
 ## Reviewing
 
-`/review` is shown only to admins (`accounts.admin`; `mise run server:admin grant-admin <email>`; the local dev
-account is one). It shows the queue. For each submission it shows what it is and who sent it, its files, and the
-result running from its snapshot mounted read-only, so trying it changes nothing. Rejecting needs a note, which the
-sender sees.
+The [local CMS](../operations/cms.md) reads submission snapshots and records decisions directly against server data. It prepares imports as local Git diffs. A view becomes a plugin and deck, with its custom gestalts and wording in their repo formats. The site distribution registers the plugin and any new model package. The snapshot stays immutable.
 
-Accepting (`web/server/src/promote.rs`) writes into the checkout the server was started with (`--promote-into`, set by
-`server:serve` and `just dev`). Without one, the server only queues and rejects.
-
-- **A view** becomes `plugins/<plugin>/`:
-  - `view.tsx`;
-  - a `plugin.yml` from what the view declares (reads, writes, npm pins);
-  - its data as `decks/<deck>/`, a `deck@3` practising what the reviewer names (concept names, canonical English;
-    one of the draft's by its name, or a new concept), which is how outlines find it.
-  - Its own gestalts become the model package `gestalts/<package>/`, so the draft's package name (`d-<hex>`) is
-    renamed everywhere.
-  - The plugin and the package are added to the site's `distribution.yml`.
-- **A viz** becomes `plugins/vizint/decks/<deck>/`, a `deck@3` the same way.
-- Decks are normalized as `publish-data` does it: blobs named by content, plus `index.json`.
-- Every target gets an `origin.yml` (submission, credit, licence).
-- A later submission from the same draft and account replaces what the earlier one put there; git shows the
-  difference. Anything else already at a target is refused.
-
-What's left is ordinary repo work, listed after accepting: `mise run gestalts:publish` (new definitions are published
-for good), `mise run check`, commit, `mise run site:build`. From then on it's the content team's code, to improve like
-any other.
+Normalize the deck, check and preview the result, and commit it before recording acceptance. Rejection needs a note visible to the sender. The next site release ships accepted changes.
 
 ## Not yet
 
-- deploying the queue
 - automated gates before review (bundle size, network use, performance) and an advisory AI review
 - mapping a lesson's gestalts onto the repo's own instead of keeping its package
 - a description per deck of its own, beyond its concepts' names

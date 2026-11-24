@@ -59,18 +59,6 @@ impl FromRequestParts<AppState> for SignedIn {
     }
 }
 
-/// The signed-in admin, who reviews submissions; 403 for any other account.
-pub struct Admin(pub Account);
-
-impl FromRequestParts<AppState> for Admin {
-    type Rejection = ApiError;
-
-    async fn from_request_parts(parts: &mut Parts, state: &AppState) -> Result<Self, ApiError> {
-        let SignedIn(a) = SignedIn::from_request_parts(parts, state).await?;
-        if a.admin { Ok(Admin(a)) } else { Err(ApiError::Forbidden) }
-    }
-}
-
 fn cookie(state: &AppState, value: &str, max_age: i64) -> HeaderValue {
     let secure = if state.secure_cookies { "; Secure" } else { "" };
     HeaderValue::from_str(&format!("{COOKIE}={value}; Path=/; HttpOnly; SameSite=Lax; Max-Age={max_age}{secure}")).expect("a cookie of base64url is a header value")
@@ -86,7 +74,6 @@ struct Login {
 pub struct Me {
     pub email: String,
     pub school: Option<String>,
-    pub admin: bool,
     pub maintainer: bool,
 }
 
@@ -113,7 +100,7 @@ async fn login(State(state): State<AppState>, Json(req): Json<Login>) -> ApiResu
     let token = random_token(32);
     let expires = gestalts_core::iso_datetime(now_ms() + SESSION_DAYS * 86_400_000);
     state.db.add_session(&token_hash(&token), &account.id, &expires)?;
-    let mut res = Json(Me { email: account.email, school: account.school, admin: account.admin, maintainer: account.maintainer }).into_response();
+    let mut res = Json(Me { email: account.email, school: account.school, maintainer: account.maintainer }).into_response();
     res.headers_mut().insert(header::SET_COOKIE, cookie(&state, &token, SESSION_DAYS * 86_400));
     Ok(res)
 }
@@ -132,7 +119,7 @@ async fn logout(State(state): State<AppState>, headers: HeaderMap) -> ApiResult<
 }
 
 async fn me(SignedIn(a): SignedIn) -> Json<Me> {
-    Json(Me { email: a.email, school: a.school, admin: a.admin, maintainer: a.maintainer })
+    Json(Me { email: a.email, school: a.school, maintainer: a.maintainer })
 }
 
 pub fn routes() -> Router<AppState> {

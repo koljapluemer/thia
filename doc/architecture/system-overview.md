@@ -10,7 +10,7 @@ crates/fs         a folder on disk
 crates/peer       a node's folder over HTTP, a published deck
 crates/wasm       the core in the browser
 crates/node       the local server, watcher, backends
-web/server        thia's server: accounts, drafts synced and validated, the agent, publishing, the lesson domain
+web/server        thia's server: accounts, drafts synced and validated, MCP, publishing, the lesson domain
 packages/view     @gestalts/view: everything a view gets from the app
 packages/kit      @gestalts/kit: the UI kit, for views only (primitives < components < widgets < perspectives); on view and sources. Apps and the host use tailwind + daisyUI
 packages/learning @gestalts/learning: FSRS, practice sessions
@@ -25,8 +25,7 @@ packages/npm-bundle npm packages for views, installed without scripts, bundled a
 packages/viz      @gestalts/viz: interactive visualizations (params, clock, model, scene) and their runtime; imports nothing of ours
 plugins/          the views that live in source: notes, flashcards, sources, concepts
 web/              the web app (app/), the public site (site/), the page the Android app wraps (android/), the server
-installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings), Claude and Codex
-                  bridges (local subscription CLIs for an allowed site, with the site's tools)
+installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings)
 sdk/python        gestalts_backend.py, what a backend.py imports
 ```
 
@@ -41,12 +40,7 @@ every deck opened on it so far mounted read-only (`useHomeRepo` in `packages/hos
 view are in one place; it asks the desktop node, if one runs, for plugin backends, `/net` and `/llm` without syncing
 with it (`bridge` in `Repo.open`), and syncs with it if the user connects. "Guest" switches the site to a store of its
 own for a shared device, deleted when the guest ends it. `web/app` is the **make app**, behind an account:
-`/workshop` (views and visualizations made with an agent), `/review` and `/runs` (admins). Each workshop draft is its own store synced with the server (`web/server`); its agent is the server's, or Claude Code
-through the Claude bridge (`installables/claude-bridge`), whose tool calls come back to the page (the `check` is
-`@gestalts/check`, run there). A conversation belongs to its draft, not to the chat that shows it
-(`packages/workshop/src/turns.ts`): a turn runs on while another draft is open, and shows again, still going, when its
-draft is opened again. Workshop results accepted in review become views of the use app ([[publishing]]); its build also
-plays published lessons on the lesson domain, each on a store of its own there.
+`/workshop` manages, previews, and publishes view drafts. Each draft is its own store synced with `web/server`. Authors edit drafts from Claude or ChatGPT through MCP. The [local CMS](../operations/cms.md) handles catalog review, source edits, and model jobs. The site build plays published lessons on the lesson domain.
 
 ## Data
 

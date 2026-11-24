@@ -1,4 +1,4 @@
-//! thia's server: a sync peer for the accounts' drafts, an agent runner, and publishing.
+//! thia's server: a sync peer for account drafts, MCP, and publishing.
 //!
 //! - **The app** (`app`): accounts behind a session cookie; each draft a folder of ymls, synced by the browser's wasm
 //!   repo over the node's `/sync/*` shapes, with every write validated by the core against the draft's own package
@@ -20,7 +20,6 @@ use gestalts_core::Gestalts;
 use include_dir::{Dir, include_dir};
 use serde::Serialize;
 
-pub mod agent;
 pub mod auth;
 pub mod db;
 pub mod drafting;
@@ -28,10 +27,8 @@ pub mod drafts;
 pub mod lessons;
 pub mod mcp;
 pub mod npm;
-pub mod promote;
 pub mod publish;
 pub mod runs;
-pub mod sequence;
 pub mod submissions;
 pub mod validate;
 pub mod worker;
@@ -122,12 +119,10 @@ pub struct Inner {
     /// writes to drafts, one at a time, so what's checked is what's there when they land
     pub writes: tokio::sync::Mutex<()>,
     pub worker: worker::Worker,
-    pub agents: agent::Agents,
+    pub reference: drafting::contract::Reference,
     /// where lesson links point: the lesson domain, as students reach it
     pub lesson_origin: String,
     pub misses: lessons::Misses,
-    /// the repo checkout accepted submissions are written into; none on a box that only queues them
-    pub promote_into: Option<PathBuf>,
     /// the record of agent runs, `runs/`
     pub runs: runs::Runs,
     /// chat hosts working on drafts over MCP: their sessions, and what the workshop reports for them
@@ -137,11 +132,7 @@ pub struct Inner {
 /// What the server runs besides itself.
 pub struct Services {
     pub worker: worker::WorkerConfig,
-    pub model: agent::Model,
     pub lesson_origin: String,
-    pub promote_into: Option<PathBuf>,
-    /// where a viz's check renders it for the server's agent
-    pub viz_render: agent::VizRender,
 }
 
 #[derive(Clone)]
@@ -162,7 +153,6 @@ impl AppState {
         let all = model_texts(&repo_models())?;
         let all: Vec<&str> = all.iter().map(String::as_str).collect();
         let repo_gestalts = Gestalts::builtin_with(&all)?;
-        let agents = agent::Agents::new(services.model, agent::Reference::new(services.worker.template.clone()), services.viz_render);
         let worker = worker::Worker::new(services.worker.clone());
         let runs = db.with(|c| Ok(runs::Runs::open(c, data.join("runs"), false))).map_err(|e| e.to_string())??;
         Ok(AppState(Arc::new(Inner {
@@ -174,11 +164,10 @@ impl AppState {
             secure_cookies,
             failures: Mutex::default(),
             writes: tokio::sync::Mutex::default(),
+            reference: drafting::contract::Reference::new(services.worker.template.clone()),
             worker,
-            agents,
             lesson_origin: services.lesson_origin,
             misses: lessons::Misses::default(),
-            promote_into: services.promote_into,
             runs,
             mcp: mcp::Mcp::default(),
         })))
@@ -281,7 +270,7 @@ pub fn now_iso() -> String {
 /// The app's routes: its API under `/api`; MCP (`/mcp`) and what signs a chat host in for it (`/oauth/*`,
 /// `/.well-known/*`) at the root.
 pub fn app(state: AppState) -> axum::Router {
-    let api = auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(sequence::routes()).merge(submissions::routes()).merge(runs::routes()).merge(mcp::api_routes());
+    let api = auth::routes().merge(drafts::routes()).merge(npm::routes()).merge(publish::routes()).merge(submissions::routes()).merge(runs::routes()).merge(mcp::api_routes());
     axum::Router::new().nest("/api", api).merge(mcp::public_routes()).with_state(state)
 }
 

@@ -203,17 +203,17 @@ async fn a_host_makes_a_view_and_each_request_is_a_run() {
 
     // two requests, two runs: the second with its own message, ended by finish
     let bea = s.login("bea@school.example").await;
-    let (_, runs, _) = s.call("GET", "/api/admin/runs?backend=mcp", Some(&bea), None).await;
-    let runs = runs["runs"].as_array().unwrap();
-    assert_eq!(runs.len(), 2, "{runs:?}");
-    let last = &runs[0];
-    assert_eq!((last["outcome"].as_str(), last["session"].as_str()), (Some("completed"), Some(h.session.as_str())));
-    assert_eq!((last["tools"].as_i64(), last["toolFailures"].as_i64(), last["filesChanged"].as_i64()), (Some(3), Some(1), Some(1)));
-    assert!(last["checkOk"].is_boolean());
-    let (_, detail, _) = s.call("GET", &format!("/api/admin/runs/{}", last["id"].as_str().unwrap()), Some(&bea), None).await;
-    let start = detail["events"].as_array().unwrap().iter().find(|e| e["type"] == "start").unwrap().clone();
+    let (runs, rel) = s.state.db.with(|db| {
+        let runs = thia_server::runs::rows(db, &Default::default(), 10, false)?;
+        let rel = thia_server::runs::index::load(db, &runs[0].id)?.unwrap().1;
+        Ok((runs, rel))
+    }).unwrap();
+    assert_eq!(runs.len(), 2);
+    assert_eq!(s.call("GET", "/api/admin/runs", Some(&bea), None).await.0, StatusCode::NOT_FOUND);
+    let events = s.state.runs.store.read(&rel).unwrap();
+    let start = events.iter().find(|e| e["type"] == "start").unwrap().clone();
     assert_eq!((start["message"].as_str(), start["backend"]["label"].as_str(), start["newDraft"].as_bool()), (Some("and blue"), Some("claude-ai"), Some(true)));
-    let transports: std::collections::HashSet<&str> = detail["events"].as_array().unwrap().iter().filter_map(|e| e["transport"].as_str()).collect();
+    let transports: std::collections::HashSet<&str> = events.iter().filter_map(|e| e["transport"].as_str()).collect();
     assert!(transports.len() >= 4, "one logical run retains its several transport sessions: {transports:?}");
     assert!(start["inputs"]["files"]["view.tsx"]["$blob"].is_string(), "contents as blobs: {start}");
 
@@ -223,8 +223,8 @@ async fn a_host_makes_a_view_and_each_request_is_a_run() {
     let run = mine["runs"][0]["id"].as_str().unwrap();
     assert_eq!(s.call("POST", &format!("/api/runs/{run}/rating"), Some(&ada), Some(json!({ "score": 4, "comment": "close" }))).await.0, StatusCode::NO_CONTENT);
     assert_eq!(s.call("POST", &format!("/api/runs/{run}/rating"), Some(&bea), Some(json!({ "score": 1 }))).await.0, StatusCode::NOT_FOUND);
-    let (_, rated, _) = s.call("GET", "/api/admin/runs?backend=mcp&rated=yes", Some(&bea), None).await;
-    assert_eq!(rated["runs"][0]["rating"], 4);
+    let rated = s.state.db.with(|db| thia_server::runs::row_of(db, run)).unwrap().unwrap();
+    assert_eq!(rated.rating, Some(4));
 
     // the transport session ends, and nothing more is recorded
     let auth = format!("Bearer {}", h.token);

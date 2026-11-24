@@ -31,7 +31,7 @@ step "dependencies, the core in wasm, the agent template"
 mise run setup
 
 step "the Rust binaries"
-cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-codex-bridge -p thia-server
+cargo build -q -p gestalts-node-desktop -p thia-server
 
 admin() { cargo run -q -p thia-server -- --data server-data admin "$@"; }
 if [[ ! -e server-data/dev-login.txt ]]; then
@@ -39,17 +39,12 @@ if [[ ! -e server-data/dev-login.txt ]]; then
   step "the local account (dev@localhost)"
   if ! password="$(admin reset-password --email dev@localhost 2> /dev/null)"; then
     school="$(admin add-school "Dev school")"
-    password="$(admin add-account --school "$school" --email dev@localhost --admin --maintainer)"
+    password="$(admin add-account --school "$school" --email dev@localhost --maintainer)"
   fi
   printf 'email: dev@localhost\npassword: %s\n' "$password" > server-data/dev-login.txt
   echo "sign in to the workshop with dev@localhost, password in server-data/dev-login.txt"
 fi
-# the local account reviews submissions for the public site (/review) and makes what it ships, also one made before
-if [[ -e server-data/dev-login.txt ]]; then admin grant-admin dev@localhost && admin grant-maintainer dev@localhost; fi
-
-step "optional"
-command -v claude > /dev/null || echo "no claude CLI: the workshop's local agent needs it, and it's the only one that builds visualizations (https://claude.com/claude-code)"
-command -v codex > /dev/null || echo "no codex CLI: install it and sign in to use Codex from the workshop"
-[[ -n "${ANTHROPIC_API_KEY:-}" ]] || echo "no ANTHROPIC_API_KEY: the server's own agent stays off in just dev (the local CLI agent works without it)"
+# allow the local account to use the catalog model packages
+if [[ -e server-data/dev-login.txt ]]; then admin grant-maintainer dev@localhost; fi
 
 printf '\nReady: mise run just dev\n'

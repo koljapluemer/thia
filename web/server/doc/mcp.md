@@ -1,14 +1,8 @@
 # thia from a chat app (MCP)
 
-A person can make and fix views from a conversation in Claude (claude.ai, the desktop and mobile apps) instead of
-the workshop's chat. They add thia as a **custom connector** (Claude: Settings → Connectors → Add custom connector,
-with `https://<app domain>/mcp`; free plans allow one) and allow it once in the workshop. Then Claude works on their
-drafts with the same tools and the same contract as the server's own agent. The person watches the draft in the
-workshop, which syncs every few seconds while Claude works on it, and rates each request there. Claude runs the
-model, the loop and the questions to the person, on the person's own plan, so the agent budget isn't used.
+Add Thia as a custom connector in Claude or ChatGPT using `https://<app domain>/mcp`, then approve access in Workshop. The chat host handles the conversation and edits the drafts through MCP. Workshop shows the preview, brief, recent MCP activity, and publication controls. Use **Chat apps** to copy the connector URL or revoke access.
 
-For now only **views** can be worked on: a viz's built page and still are made in the page after each change, which
-a chat app has no page for.
+MCP currently authors view drafts. The [viz roadmap](../../../doc/roadmap/README.md#viz-authoring-over-mcp) tracks visualization authoring.
 
 ## Endpoints (`src/mcp/`)
 
@@ -22,7 +16,7 @@ a chat app has no page for.
 | `GET /oauth/authorize` | checks the client and its redirect, then sends the browser to `/workshop/connect?<the same query>` |
 | `POST /oauth/token` | `authorization_code` (with `code_verifier`, S256; a code is used once, a wrong verifier spends it) or `refresh_token` (rotated); an access token lasts an hour, a refresh token 30 days |
 | `/api/oauth/client`, `approve`, `deny` | the consent page's (signed in with the cookie): the app's name, then a code back to the app, or `access_denied` |
-| `/api/oauth/connections`, `DELETE …/{client}` | the apps allowed, for Settings, and disconnecting one: its tokens go at once. A new password does the same for every app |
+| `/api/oauth/connections`, `DELETE …/{client}` | the apps allowed, for Chat apps, and disconnecting one: its tokens go at once. A new password does the same for every app |
 | `POST /api/drafts/{id}/diagnostics` | what the workshop's preview reports for the draft's current source (nothing: it runs fine) |
 | `GET /api/drafts/{id}/mcp` | whether a chat app works on the draft now (a call in the last two minutes), and its last ten requests there, to rate |
 

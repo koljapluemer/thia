@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs a desktop package built by the node or bridge package tasks with this machine's own installer:
-# `install-package.sh DIR [NAME]`, for example gestalts-node, gestalts-claude-bridge or gestalts-codex-bridge.
+# `install-package.sh DIR [NAME]`, for example gestalts-node.
 set -euo pipefail
 dir=${1:-target/packages}
 name=${2:-gestalts-node}

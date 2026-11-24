@@ -1,5 +1,7 @@
 # From draft to plugin
 
+This document describes an earlier Workshop design. See [current Workshop architecture](architecture.md).
+
 Status: the learning workshop is now the web app's `/workshop` ([`architecture.md`](architecture.md)). Promotion is built in a minimal form, as review and acceptance
 of submissions from every workshop: see [`doc/architecture/publishing.md`](../../../../doc/architecture/publishing.md).
 What follows is the earlier design, kept for its open points (gates, remixing).

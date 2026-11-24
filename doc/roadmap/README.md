@@ -19,3 +19,7 @@ moves to [[../architecture/README|Architecture]] (or the app's own `doc/`) and o
    a redeploy.
 
 Background for concept modelling is in [[../research/concept-modelling|Concept modelling research]].
+
+## Viz authoring over MCP
+
+Add viz draft tools using the existing viz contract and `viz@1` shape. Move rendering and diagnostics into the worker so chat hosts can iterate without an open Workshop page. Reuse the existing `vizint` player, deck format, and submission snapshot, then restore creation and preview in Workshop. Cover the full MCP path from a render error through a fixed draft and a reviewable snapshot.

@@ -117,37 +117,22 @@ async fn quotas_hold() {
 }
 
 #[tokio::test]
-async fn drafts_of_each_kind() {
+async fn only_view_drafts_can_be_created() {
     let s = Server::new(Limits::default());
     let ada = s.login("ada@school.example").await;
     assert_eq!(s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "x", "kind": "lesson" }))).await.0, StatusCode::BAD_REQUEST, "no such kind");
     let (_, view, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Artikel" }))).await;
     assert_eq!(view["kind"], "view", "a view, unless it says");
-    let (status, viz, _) = s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "Wellen", "kind": "viz" }))).await;
-    assert_eq!((status, viz["kind"].as_str()), (StatusCode::CREATED, Some("viz")));
-    let id = viz["id"].as_str().unwrap();
-    let base = format!("/api/drafts/{id}");
-
-    // a visualization's draft holds its viz, and nothing else
-    let package = viz["package"].as_str().unwrap();
-    let as_view = format!("id: {id}\ngestalt: view@2\ntitle: T\nsource: x\nreads: []\nwrites: []\npackage: {package}\n");
-    assert_eq!(s.call("POST", &format!("{base}/sync/write"), Some(&ada), Some(json!([{ "id": id, "text": as_view }]))).await.0, StatusCode::UNPROCESSABLE_ENTITY);
-    let w = json!([{ "id": id, "text": format!("id: {id}\ngestalt: viz@1\ntitle: Wellen sehen\nspec: Eine Welle.\n") }]);
-    assert_eq!(s.call("POST", &format!("{base}/sync/write"), Some(&ada), Some(w)).await.0, StatusCode::NO_CONTENT);
-    let (_, list, _) = s.call("GET", "/api/drafts", Some(&ada), None).await;
-    let listed = list.as_array().unwrap().iter().find(|d| d["id"] == id).unwrap();
-    assert_eq!((listed["title"].as_str(), listed["kind"].as_str()), (Some("Wellen sehen"), Some("viz")), "the viz's title shows in the list");
-
-
-    // exported as the folder the server keeps
-    let (status, h, zip) = s.bytes("GET", &format!("{base}/export"), &ada, vec![]).await;
-    assert_eq!((status, h[header::CONTENT_TYPE].to_str().unwrap()), (StatusCode::OK, "application/zip"));
-    assert!(zip.starts_with(b"PK"), "a zip");
-    assert!(zip.windows(id.len() + 4).any(|w| w == format!("{id}.yml").as_bytes()), "with the viz's yml in it");
-    let bea = s.login("bea@school.example").await;
-    assert_eq!(s.bytes("GET", &format!("{base}/export"), &bea, vec![]).await.0, StatusCode::NOT_FOUND, "the owner's only");
+    let id = view["id"].as_str().unwrap();
+    for path in [format!("/api/drafts/{id}/agent/status"), format!("/api/drafts/{id}/sequence")] {
+        assert_eq!(s.call("GET", &path, Some(&ada), None).await.0, StatusCode::NOT_FOUND);
+    }
+    for kind in ["viz", "sequence"] {
+        assert_eq!(s.call("POST", "/api/drafts", Some(&ada), Some(json!({ "title": "x", "kind": kind }))).await.0, StatusCode::BAD_REQUEST);
+    }
 
     // moved from a browser: its id and package stay, once
+    let bea = s.login("bea@school.example").await;
     let moved = json!({ "title": "Alt", "moved": { "id": "alt-1a2b3c4d", "package": "d-0123456789ab" } });
     let (status, d, _) = s.call("POST", "/api/drafts", Some(&ada), Some(moved.clone())).await;
     assert_eq!((status, d["id"].as_str(), d["package"].as_str()), (StatusCode::CREATED, Some("alt-1a2b3c4d"), Some("d-0123456789ab")));

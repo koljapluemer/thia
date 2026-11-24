@@ -1,6 +1,5 @@
 # The use app: every view in it, for anyone, without signing in, on the user's own store in this browser (notes, what
-# they practised) with each deck opened on it read-only. Workshop results accepted in review are added here (web/server,
-# promote.rs). Its models are also what published lessons, played under /l/<lesson>, may read besides the core's and
+# they practised) with each deck opened on it read-only. Workshop results accepted through the local CMS are registered here. Its models are also what published lessons, played under /l/<lesson>, may read besides the core's and
 # their own: a superset of the lessons' (web/app/distributions/lessons.yml, checked).
 id: site
 # every view loads only what the build bundled: nothing from elsewhere at run time

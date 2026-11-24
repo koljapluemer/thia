@@ -7,24 +7,22 @@
 //!   workshops that kept drafts in the browser (`make:`, `make-viz:`) or the old lesson area (`teach:`).
 //! - **What it is** follows from what it holds: one `view@4` (or an older one) and its members (`view`), or one `viz@1` (`viz`). A view
 //!   is checked as publishing checks it: it compiles, and its npm packages are pinned and bundle.
-//! - **Review** (admins): the queue, each submission as a read-only deck for a live preview, and accepting
-//!   ([`crate::promote`]) or rejecting with a note the sender sees.
+//! - **Review**: the local CMS reads the snapshot and records the decision directly against server data.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path as FsPath, PathBuf};
 
 use axum::extract::{Path, Query, State};
-use axum::http::{StatusCode, header};
-use axum::response::{IntoResponse, Response};
+use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use gestalts_core::gestalt::DEFINITION_PREFIX;
 use gestalts_core::{Yml, YmlState, blobs_of};
 use gestalts_fs::FsStorage;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::{Admin, SignedIn};
+use crate::auth::SignedIn;
 use crate::db::Submission;
 use crate::publish::{Check, build};
 use crate::db::Account;
@@ -234,6 +232,9 @@ fn rights(o: &Offer) -> ApiResult<()> {
 async fn submit_draft(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(o): Json<Offer>) -> ApiResult<(StatusCode, Json<Submission>)> {
     rights(&o)?;
     let (draft, store) = state.own_draft(&me, &id)?;
+    if draft.kind != "view" {
+        return Err(ApiError::BadRequest("only view drafts can be submitted".into()));
+    }
     let (ymls, blobs) = tokio::task::spawn_blocking(move || -> ApiResult<_> {
         let mut ymls = BTreeMap::new();
         for y in store.list_ymls_sync()? {
@@ -267,119 +268,8 @@ async fn mine(State(state): State<AppState>, me: SignedIn, Query(q): Query<Of>) 
 
 // review
 
-fn found(state: &AppState, id: &str) -> ApiResult<Submission> {
-    if !crate::drafts::valid_draft_id(id) {
-        return Err(ApiError::NotFound);
-    }
-    state.db.submission(id)?.ok_or(ApiError::NotFound)
-}
-
-#[derive(Serialize)]
-struct Queue {
-    submissions: Vec<Submission>,
-    /// accepting writes into this checkout; none, and only rejecting is possible here
-    repo: Option<String>,
-}
-
-async fn list(State(state): State<AppState>, _: Admin) -> ApiResult<Json<Queue>> {
-    Ok(Json(Queue { submissions: state.db.submissions()?, repo: state.promote_into.as_ref().map(|p| p.display().to_string()) }))
-}
-
-#[derive(Serialize)]
-struct Detail {
-    #[serde(flatten)]
-    submission: Submission,
-    /// every yml it holds, for reading
-    ymls: Vec<crate::drafts::YmlEntry>,
-    /// what accepting it would put where, by default
-    proposed: crate::promote::Target,
-}
-
-async fn detail(State(state): State<AppState>, _: Admin, Path(id): Path<String>) -> ApiResult<Json<Detail>> {
-    let s = found(&state, &id)?;
-    let store = FsStorage::new(state.submission_dir(&s.id));
-    let ymls = tokio::task::spawn_blocking(move || -> ApiResult<_> {
-        let mut out = Vec::new();
-        for y in store.list_ymls_sync()? {
-            if let Some(text) = store.read_yml_sync(&y)? {
-                out.push(crate::drafts::YmlEntry { id: y, text });
-            }
-        }
-        Ok(out)
-    })
-    .await
-    .map_err(io)??;
-    let proposed = crate::promote::proposed(&state, &s)?;
-    Ok(Json(Detail { submission: s, ymls, proposed }))
-}
-
-/// The snapshot as a read-only deck (`index.json`, `ymls.json`, `blobs/<name>`), for the review's preview.
-async fn deck(State(state): State<AppState>, _: Admin, Path((id, file)): Path<(String, String)>) -> ApiResult<Response> {
-    let s = found(&state, &id)?;
-    let dir = state.submission_dir(&s.id);
-    let store = FsStorage::new(&dir);
-    let body = tokio::task::spawn_blocking(move || -> ApiResult<Option<(&'static str, Vec<u8>)>> {
-        Ok(match file.as_str() {
-            "index.json" => Some(("application/json", std::fs::read(dir.join("index.json")).map_err(io)?)),
-            "ymls.json" => {
-                let mut all = Vec::new();
-                for y in store.list_ymls_sync()? {
-                    if let Some(text) = store.read_yml_sync(&y)? {
-                        all.push(json!({ "id": y, "text": text }));
-                    }
-                }
-                Some(("application/json", serde_json::to_vec(&all).map_err(io)?))
-            }
-            f => match f.strip_prefix("blobs/") {
-                Some(name) if gestalts_core::yml::valid_key(name) => store.read_blob_sync(name)?.map(|b| ("application/octet-stream", b)),
-                _ => None,
-            },
-        })
-    })
-    .await
-    .map_err(io)??;
-    Ok(match body {
-        Some((ty, bytes)) => ([(header::CONTENT_TYPE, ty)], bytes).into_response(),
-        None => StatusCode::NOT_FOUND.into_response(),
-    })
-}
-
-async fn accept(State(state): State<AppState>, _: Admin, Path(id): Path<String>, Json(t): Json<crate::promote::Target>) -> ApiResult<Json<crate::promote::Promoted>> {
-    let s = found(&state, &id)?;
-    if s.status != "pending" {
-        return Err(ApiError::Conflict(format!("it was {} already", s.status)));
-    }
-    let _guard = state.writes.lock().await;
-    let promoted = crate::promote::promote(&state, &s, &t).await?;
-    state.db.decide_submission(&s.id, "accepted", None, Some(&promoted.at), &now_iso())?;
-    Ok(Json(promoted))
-}
-
-#[derive(Deserialize)]
-struct Reject {
-    note: String,
-}
-
-async fn reject(State(state): State<AppState>, _: Admin, Path(id): Path<String>, Json(r): Json<Reject>) -> ApiResult<StatusCode> {
-    let s = found(&state, &id)?;
-    if s.status != "pending" {
-        return Err(ApiError::Conflict(format!("it was {} already", s.status)));
-    }
-    let note = r.note.trim();
-    if note.is_empty() || note.chars().count() > 2000 {
-        return Err(ApiError::BadRequest("say why, in up to 2000 characters: the sender sees it".into()));
-    }
-    state.db.decide_submission(&s.id, "rejected", Some(note), None, &now_iso())?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/drafts/{id}/submit", post(submit_draft))
         .route("/submissions", get(mine))
-        .route("/admin/submissions", get(list))
-        .route("/admin/submissions/{id}", get(detail))
-        .route("/admin/submissions/{id}/deck/{*file}", get(deck))
-        .route("/admin/submissions/{id}/accept", post(accept))
-        .route("/admin/submissions/{id}/reject", post(reject))
 }

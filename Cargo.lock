@@ -1203,58 +1203,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gestalts-claude-bridge"
-version = "0.1.0"
-dependencies = [
- "auto-launch",
- "axum",
- "base64 0.22.1",
- "clap",
- "directories",
- "futures-util",
- "png",
- "regex",
- "reqwest",
- "rfd",
- "serde",
- "serde_json",
- "sha2",
- "tao",
- "tempfile",
- "tokio",
- "tokio-tungstenite",
- "tower-http",
- "tray-icon",
- "uuid",
-]
-
-[[package]]
-name = "gestalts-codex-bridge"
-version = "0.1.0"
-dependencies = [
- "auto-launch",
- "axum",
- "base64 0.22.1",
- "clap",
- "directories",
- "futures-util",
- "png",
- "regex",
- "reqwest",
- "rfd",
- "serde",
- "serde_json",
- "sha2",
- "tao",
- "tempfile",
- "tokio",
- "tokio-tungstenite",
- "tower-http",
- "tray-icon",
- "uuid",
-]
-
-[[package]]
 name = "gestalts-core"
 version = "0.1.0"
 dependencies = [
@@ -1336,27 +1284,6 @@ dependencies = [
  "serde_json",
  "tao",
  "tray-icon",
-]
-
-[[package]]
-name = "gestalts-ollama-bridge"
-version = "0.1.0"
-dependencies = [
- "axum",
- "clap",
- "directories",
- "futures-util",
- "regex",
- "reqwest",
- "rfd",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "tokio",
- "tokio-tungstenite",
- "tower-http",
- "uuid",
 ]
 
 [[package]]
@@ -3600,7 +3527,6 @@ dependencies = [
  "include_dir",
  "mime_guess",
  "regex",
- "reqwest",
  "rusqlite",
  "serde",
  "serde_json",

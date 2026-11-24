@@ -3,7 +3,7 @@ import { registry } from 'virtual:gestalts-plugins/workshop';
 import { useOpenRepo, type Repo } from '@gestalts/client';
 import { useLang } from '@gestalts/i18n';
 import type { Item } from '@gestalts/view';
-import { VIEWS, VIZ, asDraft, loadMembers, packageOf, toBase64 } from '@gestalts/workshop';
+import { VIEWS, asDraft, loadMembers, toBase64 } from '@gestalts/workshop';
 import { stringify } from 'yaml';
 import * as api from './api';
 
@@ -43,11 +43,6 @@ async function snapshotOf(repo: Repo, items: Item[]): Promise<api.Snapshot> {
 /** One local draft into the account, with its id and package. */
 async function move(repo: Repo, item: Item): Promise<void> {
   const title = String(item.value.title ?? '').trim() || item.id;
-  if (item.gestalt === VIZ) {
-    await api.moveDraft(title, 'viz', { id: item.id, package: packageOf(item.id) });
-    await api.writeDraft(item.id, await snapshotOf(repo, [item]));
-    return;
-  }
   const draft = asDraft(item);
   await api.moveDraft(title, 'view', { id: item.id, package: draft.package });
   // definitions first, so what follows is judged by them
@@ -73,8 +68,7 @@ function Offer({ onMoved }: { onMoved: () => void }) {
     let live = true;
     void (async () => {
       await repo.firstSync.catch(() => undefined);
-      const [views, vizzes] = await Promise.all([repo.query({ gestalt: VIEWS, limit: LIMIT }), repo.query({ gestalt: VIZ, limit: LIMIT })]);
-      const found = [...views.items, ...vizzes.items];
+      const { items: found } = await repo.query({ gestalt: VIEWS, limit: LIMIT });
       if (!found.length) remember('nothing');
       if (live) setItems(found);
     })();

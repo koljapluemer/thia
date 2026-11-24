@@ -38,10 +38,10 @@ submission.
   aliases, lexical first; embeddings from a model the server runs only once matching misses or there are more than
   about 300 concepts besides set members. Decided together with ids independent of names
   ([[01_concept-naming|Concept naming]]).
-- The maker proposes and edits them; an admin confirms at `/review`, which shows new concepts with their closest
+- The maker proposes and edits them; an admin confirms in the local CMS, which shows new concepts with their closest
   existing ones and the outline entries the view will appear under.
 - A "doesn't fit here" report on a view listed under an entry, back into the review queue.
-- The gaps (`outlines/<name>.gaps.json`: entries no view practises) shown in `/review` as candidate briefs.
+- The gaps (`outlines/<name>.gaps.json`: entries no view practises) shown in the local CMS as candidate briefs.
 
 ## Outlines, later
 

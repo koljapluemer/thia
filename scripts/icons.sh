@@ -35,8 +35,5 @@ desktop_source="$(source_for installables/folder-sync/desktop)"
 render "$desktop_source" 256 "$root/installables/folder-sync/desktop/assets/icon.png"
 stamp "$desktop_source" "$root/installables/folder-sync/desktop/assets/icon.source.sha256"
 
-bridge_source="$(source_for installables/claude-bridge)"
-render "$bridge_source" 256 "$root/installables/claude-bridge/assets/icon.png"
-stamp "$bridge_source" "$root/installables/claude-bridge/assets/icon.source.sha256"
 
 echo "Updated web and desktop icons."

@@ -3,7 +3,6 @@
 
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
-use thia_server::agent::Model;
 use thia_server::worker::WorkerConfig;
 use thia_server::{AppState, Limits, Services, auth, db::Db};
 use http_body_util::BodyExt;
@@ -16,32 +15,16 @@ pub struct Server {
 }
 
 /// The repo's own worker and agent template; a model at `model` (none: the agent is off).
-pub fn services(model: Option<String>, cache: &std::path::Path) -> Services {
+pub fn services(cache: &std::path::Path) -> Services {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..").canonicalize().unwrap();
     Services {
         worker: WorkerConfig { node: "node".into(), script: repo.join("web/server/worker/worker.ts"), template: repo.join("packages/workshop/agent-template"), npm_cache: cache.to_owned() },
-        model: Model { api_key: model.as_ref().map(|_| "test-key".into()), base_url: model.unwrap_or_default(), model: "claude-opus-5-5".into() },
         lesson_origin: "https://lessons.example".into(),
-        promote_into: None,
-        viz_render: thia_server::agent::VizRender::Page,
     }
 }
 
 impl Server {
     pub fn new(limits: Limits) -> Self {
-        Self::with_model(limits, None)
-    }
-
-    pub fn with_model(limits: Limits, model: Option<String>) -> Self {
-        Self::build(limits, model, None)
-    }
-
-    /// One that accepts submissions into the checkout at `repo`.
-    pub fn promoting_into(repo: &std::path::Path) -> Self {
-        Self::build(Limits::default(), None, Some(repo.to_owned()))
-    }
-
-    fn build(limits: Limits, model: Option<String>, promote_into: Option<std::path::PathBuf>) -> Self {
         let dir = tempfile::tempdir().unwrap();
         let db = Db::memory().unwrap();
         db.add_school("s1", "A school", "2026-11-20T00:00:00Z").unwrap();
@@ -53,7 +36,7 @@ impl Server {
         db.set_admin("bea@school.example", true).unwrap();
         // cal makes what the public site ships
         db.set_maintainer("cal@school.example", true).unwrap();
-        let services = Services { promote_into, ..services(model, &dir.path().join("npm-cache")) };
+        let services = services(&dir.path().join("npm-cache"));
         let state = AppState::new(db, dir.path().to_owned(), limits, true, services).unwrap();
         Server { state, _dir: dir }
     }

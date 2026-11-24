@@ -1,26 +1,5 @@
-# server
+# Thia server
 
-thia's server: interactive lessons made with an agent, published by link. The app is the web
-app's `/workshop` ([`../app`](../app)), behind an account from here; the server is this folder (`thia-server`), with its worker
-in `worker/`; lessons open on another domain, in the public site's build (`web/site`). It also queues what the
-workshops offer for the public site, for review. See
-[`doc/architecture.md`](doc/architecture.md) and, for the box, [`deploy/`](deploy/README.md).
+The server handles accounts, draft sync and validation, MCP, submission snapshots, and lesson links. The [public site](../site) supplies the player. The [local CMS](../../doc/operations/cms.md) handles submission decisions and run inspection through direct file and SQLite access.
 
-Locally, `mise run just dev` runs it all, with the server's agent if `ANTHROPIC_API_KEY` is set; `mise run just setup`
-made the account `dev@localhost`, an admin and a maintainer (`server-data/dev-login.txt`). Piece by piece, from the repo root:
-
-```sh
-mise run server:admin add-account --email a@b.c                  # prints a password; --admin: reviews submissions,
-                                                                  # --maintainer: every model package, more room
-mise run server:admin add-school "Test"                          # optional: prints its id; associate an account with
-mise run server:admin add-account --school <id> --email t@b.c    # it by passing --school
-mise run server:admin add-account --email a@b.c --password '…'   # optional: choose the password instead of generating it
-ANTHROPIC_API_KEY=… mise run server:serve                        # API on :7740, lessons on :7741; accepts into this checkout
-mise run web:dev                                                  # the app; /workshop, /api from :7740
-```
-
-Published links point at `http://127.0.0.1:7741/l/<lesson>`.
-
-To make lessons with Claude Code on your own computer instead of the server's agent: the Claude bridge
-([`installables/claude-bridge`](../../installables/claude-bridge); `mise run claude-bridge` in development, part of
-`mise run just dev`), then Settings → Claude Code on this computer.
+Use `mise run just dev` for the whole stack or `mise run server:serve` for the API on port 7740 and lessons on port 7741. Use `mise run server:admin add-account --email name@example.com` to create an account. See [MCP](doc/mcp.md) and [deployment](deploy/README.md).

@@ -7,15 +7,13 @@ import { closedCsp, deckSources, type Registry } from '@gestalts/host';
 import type { DeckSource } from '@gestalts/client';
 import { useLang } from '@gestalts/i18n';
 import type { ViewError } from '@gestalts/view';
-import { Chat, Preview, VIEWS, asDraft, buildActions, createDraft, flushing, isStarter, viewWork } from '@gestalts/workshop';
+import { Preview, VIEWS, asDraft, createDraft, flushing, viewWork } from '@gestalts/workshop';
 import tailwind from '@tailwindcss/browser?raw';
 import css from '../app.css?inline';
-import { usePickedBackend, type AgentChoice } from './agent';
 import { Brief, useDebounced } from './Brief';
 import * as api from './api';
 import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
-import { TextPane } from './TextPane';
 import { HostRuns, useHostWork, useReportPreview } from './host';
 
 /**
@@ -28,8 +26,8 @@ const contextOf = (me: api.Me): { registry: Registry; source: { gestalts: string
   ? { registry: workshop, source: { gestalts: workshop.gestalts, decks: deckSources(workshop.plugins.flatMap((p) => p.decks)) } }
   : { registry: lessons, source: { gestalts: lessons.gestalts } });
 
-/** A view's draft: the preview beside the chat that edits it. */
-export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+/** A view's draft: the preview beside its MCP activity and brief. */
+export function DraftPane({ info, me, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; onChanged: () => void; onDeleted: () => void }) {
   const [{ registry, source }] = useState(() => contextOf(me));
   // its text starts in its maker's language
   const { lang } = useLang();
@@ -40,21 +38,19 @@ export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api
   }, [info, registry, lang]);
   return (
     <OpenDraft info={info} source={source} init={init}>
-      {(repo) => <Workbench repo={repo} registry={registry} info={info} agent={agent} onChanged={onChanged} onDeleted={onDeleted} />}
+      {(repo) => <Workbench repo={repo} registry={registry} info={info} onChanged={onChanged} onDeleted={onDeleted} />}
     </OpenDraft>
   );
 }
 
-function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo: Repo; registry: Registry; info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+function Workbench({ repo, registry, info, onChanged, onDeleted }: { repo: Repo; registry: Registry; info: api.DraftInfo; onChanged: () => void; onDeleted: () => void }) {
   const { m } = useLang();
   const items = useHostQuery({ gestalt: VIEWS, ids: [info.id] });
   const draft = useMemo(() => (items[0] ? asDraft(items[0]) : undefined), [items]);
-  const [errors, setErrors] = useState<ViewError[]>([]);
-  // what the preview reports goes with the next turn here, and to the server for a chat app's check
+  // the preview reports diagnostics to MCP
   const report = useReportPreview(info.id, draft?.source);
-  const onError = useCallback((e: ViewError) => { setErrors((es) => [...es, e].slice(-20)); report(e); }, [report]);
+  const onError = useCallback((e: ViewError) => report(e), [report]);
   const host = useHostWork(repo, info.id);
-  const backend = usePickedBackend(agent, info.id);
   const runtime = registry.runtime.version;
   const base = useMemo(() => viewWork(repo, info.id, runtime), [repo, info.id, runtime]);
   const { edit, flush } = useDebounced((spec) => base.setSpec(spec));
@@ -62,11 +58,6 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const csp = useMemo(() => closedCsp({ scripts: [`${location.origin}/api/npm/`] }), []);
   const title = draft?.title;
   useEffect(() => { if (title && title !== info.title) onChanged(); }, [title, info.title, onChanged]);
-  // the chat, or its text to reword and translate (the preview then in that language; an alt-click on its text finds it)
-  const [tab, setTab] = useState<'chat' | 'text'>('chat');
-  const [textLang, setTextLang] = useState<string>();
-  const [picked, setPicked] = useState<string[]>([]);
-  const onPick = useCallback((keys: string[]) => { setPicked(keys); setTab('text'); }, []);
   if (!draft) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
   return (
     <Shell
@@ -81,33 +72,19 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
         </>
       )}
       preview={<Preview repo={repo} draft={draft} runtime={registry.runtime} css={css} tailwind={tailwind} onError={onError} resolveNpm={api.resolveNpm} csp={csp}
-                        textLang={tab === 'text' ? textLang ?? draft.lang : undefined} onPick={onPick} />}
+      />}
       side={(
-        <>
-          <div role="tablist" className="tabs tabs-border shrink-0">
-            <button type="button" role="tab" className={`tab ${tab === 'chat' ? 'tab-active' : ''}`} aria-selected={tab === 'chat'} onClick={() => setTab('chat')}>{m.tab_chat()}</button>
-            <button type="button" role="tab" className={`tab ${tab === 'text' ? 'tab-active' : ''}`} aria-selected={tab === 'text'} onClick={() => setTab('text')}>{m.tab_text()}</button>
-          </div>
-          {tab === 'chat' ? (
-            <>
-              <HostRuns {...host} />
-              <Brief work={work} spec={draft.spec} edit={edit} flush={flush} placeholder={m.view_brief_placeholder()} />
-              <div className="min-h-0 flex-1">
-                <Chat work={work} backend={backend} errors={errors} actions={buildActions(m, draft.spec, !isStarter(draft))} onTurnDone={() => setErrors([])} />
-              </div>
-            </>
-          ) : (
-            <div className="min-h-0 flex-1">
-              <TextPane repo={repo} draft={draft} backend={backend} lang={textLang ?? draft.lang} setLang={setTextLang} picked={picked} />
-            </div>
-          )}
-        </>
+        <div className="min-h-0 space-y-3 overflow-auto p-3">
+          <p className="text-sm">{m.settings_host_where()}</p>
+          <HostRuns {...host} />
+          <Brief work={work} spec={draft.spec} edit={edit} flush={flush} placeholder={m.view_brief_placeholder()} />
+        </div>
       )}
     />
   );
 }
 
-/** Every draft's layout, whatever its kind: what it does in its header, what it shows, and beside it its brief and chat. */
+/** Every draft's layout, whatever its kind: what it does in its header, what it shows, and its brief and activity. */
 export function Shell({ header, preview, side }: { header: ReactNode; preview: ReactNode; side: ReactNode }) {
   return (
     <div className="flex h-full min-h-0 flex-col">

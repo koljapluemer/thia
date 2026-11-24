@@ -34,7 +34,6 @@ const pngSize = (path: string) => {
 };
 const nativeTargets = [
   ['installables/folder-sync/desktop', 'installables/folder-sync/desktop/assets/icon.source.sha256'],
-  ['installables/claude-bridge', 'installables/claude-bridge/assets/icon.source.sha256'],
 ];
 for (const [app, stamp] of nativeTargets) {
   if (readFileSync(stamp, 'utf8').trim() !== hash(sourceFor(app))) fail(`${app}'s generated icons are stale`);
@@ -42,7 +41,6 @@ for (const [app, stamp] of nativeTargets) {
 
 const pngs = new Map([
   ['installables/folder-sync/desktop/assets/icon.png', 256],
-  ['installables/claude-bridge/assets/icon.png', 256],
 ]);
 for (const [path, expected] of pngs) {
   const [width, height] = pngSize(path);
@@ -52,10 +50,4 @@ for (const [path, expected] of pngs) {
 const desktopConfig = readFileSync('installables/folder-sync/desktop/Cargo.toml', 'utf8');
 if (!desktopConfig.includes('icons = ["assets/icon.png"]')) fail('the desktop packager does not reference its icon');
 if (!desktopConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gestalts-node.png"')) fail('the RPM does not install its icon');
-const bridgeConfig = readFileSync('installables/claude-bridge/Cargo.toml', 'utf8');
-if (!bridgeConfig.includes('icons = ["assets/icon.png"]')) fail('the Claude bridge packager does not reference its icon');
-if (!bridgeConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gestalts-claude-bridge.png"')) fail('the Claude bridge RPM does not install its icon');
-const codexBridgeConfig = readFileSync('installables/codex-bridge/Cargo.toml', 'utf8');
-if (!codexBridgeConfig.includes('icons = ["../claude-bridge/assets/icon.png"]')) fail('the Codex bridge packager does not reference its icon');
-if (!codexBridgeConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gestalts-codex-bridge.png"')) fail('the Codex bridge RPM does not install its icon');
 console.log('Web and desktop icons are present and wired into their builds.');

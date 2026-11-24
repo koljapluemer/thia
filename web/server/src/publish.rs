@@ -1,5 +1,4 @@
-//! Publishing a draft as a lesson: data, not a build. A view goes out as itself; a visualization as the vizint view
-//! started on it (`build_viz`); a lesson of several views as each of those under one link (`sequence.rs`). Each version is a folder of static files on the lesson domain
+//! Publishing a view draft as a lesson. Each version is a folder of static files on the lesson domain
 //! (`packages/workshop/src/lesson.ts` has the format), named by what's in it, and a publication points at its current
 //! one. A draft has one publication, so its link stays the same across versions; unpublishing switches the link off.
 //!
@@ -207,82 +206,6 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     Ok(Version { files, blobs, npm: npm_files, definitions })
 }
 
-/// The view a viz is played in, in a lesson as on the public site.
-const VIZ_VIEW: &str = "plugins/vizint/view.tsx";
-
-/// The lesson a viz's draft makes: the vizint view started on it (`params`), and the viz with its page, still and files
-/// as the deck. It has to have been built: its page is what the check in the page (or the worker) passed. With
-/// `GESTALTS_VIZ_RENDER=worker` it's checked and rendered again here, since this server can.
-pub(crate) async fn build_viz(state: &AppState, dir: &std::path::Path, id: &str, runtime: &str) -> ApiResult<Version> {
-    use base64::Engine as _;
-    if crate::lessons::player_page(state, runtime).is_none() {
-        return Err(ApiError::Conflict(UPDATED.into()));
-    }
-    let s = gestalts_fs::FsStorage::new(dir);
-    let text = s.read_yml_sync(id)?.ok_or_else(|| ApiError::BadRequest("the draft has no visualization yet".into()))?;
-    let viz = Yml::parse(id.to_owned(), text.clone());
-    let st = state.gestalts.classify(&viz);
-    if !matches!(st, YmlState::Valid(ref g) if g == "viz@1") {
-        return Err(ApiError::BadRequest("the draft's visualization isn't valid".into()));
-    }
-    if viz.str_field("built").is_none_or(str::is_empty) {
-        return Err(ApiError::Invalid(vec!["it hasn't been built yet: build it, and publish once its check passed".into()]));
-    }
-    let mut blobs = BTreeMap::new();
-    let mut problems = Vec::new();
-    for b in blobs_of(&viz, &st, &state.gestalts).into_iter().filter(|b| gestalts_core::yml::valid_key(b)) {
-        let p = dir.join("blobs").join(&b);
-        if p.is_file() { blobs.insert(b, p); } else { problems.push(format!("its file {b} isn't there")); }
-    }
-    if !problems.is_empty() {
-        return Err(ApiError::Invalid(problems));
-    }
-    if state.agents.viz_render == crate::agent::VizRender::Worker {
-        let m = viz.map().ok_or_else(|| ApiError::BadRequest("the draft's visualization isn't valid".into()))?;
-        let packages: serde_json::Map<String, Value> = m.get("packages").map(strings).unwrap_or_default().iter().filter_map(|p| p.rsplit_once('@')).map(|(n, v)| (n.to_owned(), json!(v))).collect();
-        let files = BTreeMap::from([
-            ("viz.ts".to_owned(), viz.str_field("source").unwrap_or_default().to_owned()),
-            ("package.json".to_owned(), json!({ "dependencies": packages }).to_string()),
-        ]);
-        let mut binary = BTreeMap::new();
-        for f in m.get("files").and_then(|v| v.as_sequence()).into_iter().flatten() {
-            let (Some(file), Some(label)) = (f.get("file").and_then(|x| x.as_str()), f.get("label").and_then(|x| x.as_str())) else { continue };
-            let bytes = std::fs::read(dir.join("blobs").join(file)).map_err(io)?;
-            binary.insert(format!("files/{label}"), base64::engine::general_purpose::STANDARD.encode(bytes));
-        }
-        let (ok, content) = state.worker.check_viz(&files, &binary).await.map_err(ApiError::Internal)?;
-        if !ok {
-            let report = content.first().and_then(|c| c["text"].as_str()).unwrap_or_default();
-            return Err(ApiError::Invalid(report.lines().filter(|l| l.starts_with('✗') || l.starts_with("    ")).map(|l| l.trim().trim_start_matches("✗ ").to_owned()).filter(|l| !l.starts_with("not yet")).collect()));
-        }
-    }
-    let source = std::fs::read_to_string(state.worker.repo().join(VIZ_VIEW)).map_err(|e| ApiError::Internal(format!("{VIZ_VIEW}: {e}")))?;
-    let compiled = state.worker.call("compile", json!({ "source": source })).await.map_err(ApiError::Internal)?;
-    if compiled["ok"] != true || compiled["npm"].as_array().is_some_and(|n| !n.is_empty()) {
-        return Err(ApiError::Internal(format!("{VIZ_VIEW} doesn't compile to a view without npm packages")));
-    }
-    let js = compiled["js"].as_str().unwrap_or_default().as_bytes().to_vec();
-    let view_name = format!("view.{}.js", &hex(&js)[..12]);
-    let mut files = BTreeMap::new();
-    files.insert(view_name.clone(), js);
-    files.insert("ymls.json".to_owned(), serde_json::to_vec(&json!([{ "id": id, "text": text }])).expect("json"));
-    files.insert("index.json".to_owned(), serde_json::to_vec(&json!({ "ymls": [id], "blobs": blobs.keys().collect::<Vec<_>>() })).expect("json"));
-    let manifest = json!({
-        "format": "lesson@1",
-        "title": viz.str_field("title").unwrap_or_default(),
-        "runtime": runtime,
-        "reads": ["viz@1"],
-        "writes": [],
-        "view": view_name,
-        "npm": {},
-        "params": { "viz": id },
-        "published": now_iso(),
-    });
-    files.insert("manifest.json".to_owned(), serde_json::to_vec_pretty(&manifest).expect("json"));
-    let blobs = blobs.into_iter().map(|(b, p)| (format!("blobs/{b}"), p)).collect();
-    Ok(Version { files, blobs, npm: BTreeMap::new(), definitions: BTreeMap::new() })
-}
-
 /// The version's name: a hash of everything in it but when it was published.
 fn version_name(v: &Version) -> ApiResult<String> {
     let mut h = Sha256::new();
@@ -356,9 +279,7 @@ async fn publish(State(state): State<AppState>, me: SignedIn, Path(id): Path<Str
     let _guard = state.writes.lock().await;
     let version = match draft.kind.as_str() {
         "view" => build(&state, &Check { dir: &state.draft_dir(&draft.id), view: &draft.id, package: &draft.package, gestalts: &state.gestalts, lesson: Some(&runtime) }).await?,
-        "viz" => build_viz(&state, &state.draft_dir(&draft.id), &draft.id, &runtime).await?,
-        "sequence" => crate::sequence::build(&state, &me.0, &draft, &runtime).await?,
-        k => return Err(ApiError::Internal(format!("{}: a draft of kind {k}", draft.id))),
+        _ => return Err(ApiError::BadRequest("only view drafts can be published".into())),
     };
     let previous = state.db.publication_of(&draft.id)?;
     let mut warnings = Vec::new();

@@ -101,72 +101,6 @@ description = "folder-sync headless for development on :7727 (scripts/node.sh): 
 depends = ["setup"]
 run = "bash scripts/node.sh"
 
-# --- the claude bridge ---
-
-[tasks.claude-bridge]
-hide = true
-description = "The Claude bridge headless for development on :7737 (scripts/claude-bridge.sh): pages on localhost may use it without asking"
-depends = ["setup"]
-run = "bash scripts/claude-bridge.sh"
-
-[tasks."claude-bridge:package"]
-hide = true
-description = "Claude bridge installers for this OS into target/packages"
-depends = ["icons:check"]
-shell = "bash -c"
-run = """
-set -euo pipefail
-case "$(uname -s)" in
-  Linux)  cargo packager -p gestalts-claude-bridge --release --formats deb,appimage
-          cargo generate-rpm -p installables/claude-bridge -o target/packages ;;
-  Darwin) cargo packager -p gestalts-claude-bridge --release --formats dmg ;;
-  *)      cargo packager -p gestalts-claude-bridge --release --formats nsis ;;
-esac
-"""
-
-[tasks."claude-bridge:install"]
-hide = true
-description = "Build and install the Claude bridge on this machine, the way a user gets it"
-depends = ["claude-bridge:package"]
-run = "bash scripts/install-package.sh target/packages gestalts-claude-bridge"
-
-# --- the codex bridge ---
-
-[tasks.codex-bridge]
-hide = true
-description = "The Codex bridge headless for development on :7739 (scripts/codex-bridge.sh)"
-depends = ["setup"]
-run = "bash scripts/codex-bridge.sh"
-
-[tasks."codex-bridge:package"]
-hide = true
-description = "Codex bridge installers for this OS into target/packages"
-depends = ["icons:check"]
-shell = "bash -c"
-run = """
-set -euo pipefail
-case "$(uname -s)" in
-  Linux)  cargo packager -p gestalts-codex-bridge --release --formats deb,appimage
-          cargo generate-rpm -p installables/codex-bridge -o target/packages ;;
-  Darwin) cargo packager -p gestalts-codex-bridge --release --formats dmg ;;
-  *)      cargo packager -p gestalts-codex-bridge --release --formats nsis ;;
-esac
-"""
-
-[tasks."codex-bridge:install"]
-hide = true
-description = "Build and install the Codex bridge on this machine"
-depends = ["codex-bridge:package"]
-run = "bash scripts/install-package.sh target/packages gestalts-codex-bridge"
-
-# --- the ollama bridge (experimental) ---
-
-[tasks.ollama-bridge]
-hide = true
-description = "The Ollama bridge headless for development on :7738 (scripts/ollama-bridge.sh): a local model for the workshops, experimental"
-depends = ["setup"]
-run = "bash scripts/ollama-bridge.sh"
-
 # --- folder-sync: gestalts-node, the desktop app ---
 
 [tasks."node:dev"]
@@ -282,14 +216,14 @@ run = "pnpm --dir web/site build"
 
 [tasks."server:serve"]
 hide = true
-description = "The server (web/server) on :7740 (API) and :7741 (lessons), data in server-data/, after installing the site's build as the lessons' player; accepts submissions into this checkout (needs ANTHROPIC_API_KEY for the agent)"
+description = "The server (web/server) on :7740 (API) and :7741 (lessons), data in server-data/, after installing the site's build as the lessons' player"
 depends = ["setup"]
 shell = "bash -c"
 run = """
 set -euo pipefail
 pnpm --dir web/site build
 cargo run -q -p thia-server -- --data server-data admin install-player --dist web/site/dist
-cargo run -q -p thia-server -- --data server-data serve --insecure-cookies --promote-into .
+cargo run -q -p thia-server -- --data server-data serve --insecure-cookies
 """
 
 [tasks."server:admin"]
@@ -302,3 +236,7 @@ hide = true
 description = "Build the server, the use and make apps and the player and ship them to THIA_HOST, THIA_PUBLIC_URL the app's URL (web/server/deploy/README.md; needs a committed tree)"
 depends = ["setup"]
 run = "bash scripts/deploy-server.sh"
+
+[tasks.cms]
+description = "Run the local publishing and model admin suite"
+run = "uv run --locked --project cms streamlit run cms/app.py --server.address 127.0.0.1"
