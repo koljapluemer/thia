@@ -1,0 +1,1 @@
+in make workshop, changing which ai backends are active interrupts an ongoing generation. This should not happen; apply settings to the last run (perhaps have a warning showing settings changed and what current state is, in case user wants truly to abort run)

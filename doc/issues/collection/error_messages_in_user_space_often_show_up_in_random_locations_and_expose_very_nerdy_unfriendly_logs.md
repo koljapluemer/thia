@@ -1,0 +1,1 @@
+error messages in user space often show up in random locations, and expose very nerdy unfriendly logs like 'Not saved: GET http://localhost:5173/api/drafts/mse-66d9bc99/health: NetworkError when attempting to fetch resource.'. Please make on coherent system exposing closeable toasts, and make sure error messages are complete yet user friendly
