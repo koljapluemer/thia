@@ -6,7 +6,7 @@
 //!
 //! - `POST /mcp`: JSON-RPC over Streamable HTTP, answered as JSON (no streams): `initialize`, `ping`, `tools/list`,
 //!   `tools/call`. A bearer token from [`oauth`]; a session (`Mcp-Session-Id`) from `initialize` on.
-//! - `DELETE /mcp`: the session ends, and its run with it
+//! - `DELETE /mcp`: the transport session ends; its logical request remains open
 //! - signed in, under `/api/drafts/{id}/`: `POST diagnostics` (what the workshop's preview reports, for `check`),
 //!   `GET mcp` (whether a host works on it now, and its recent runs there)
 
@@ -49,21 +49,25 @@ each request about a draft, call `open_draft` with what they asked: it gives you
 draft's files. Make a new draft with `new_draft` when they want something new. Run `check` before you say a change is \
 done, and when you're done with the request call `finish` with a line on what you did.";
 
-/// A host's session: whose it is, what it said it is, and the run of the request it's on.
+/// A host's transport session: whose it is, what it said it is, and its last logical request.
 pub struct Session {
     pub account: String,
     /// `clientInfo` from `initialize`: `{name, version}`
     pub client: Value,
     last: Instant,
-    pub run: Option<Open>,
+    /// Logical request last opened on this transport session. A host may use a fresh
+    /// transport session for every tool call, so the run itself lives in `Mcp::work`.
+    pub work: Option<String>,
     /// drafts made in this session, so the run that follows says so
     pub created: HashSet<String>,
 }
 
-/// The run of the request a session is on, and its draft.
+/// A logical request, independent of the transport session carrying its calls.
 pub struct Open {
     pub run: ServerRun,
+    pub account: String,
     pub draft: String,
+    pub client: Value,
     pub last: Instant,
 }
 
@@ -76,6 +80,8 @@ pub struct Reported {
 #[derive(Default)]
 pub struct Mcp {
     sessions: Mutex<HashMap<String, Arc<tokio::sync::Mutex<Session>>>>,
+    /// Logical requests, independent of the MCP transport sessions carrying their calls.
+    work: Mutex<HashMap<String, Arc<tokio::sync::Mutex<Open>>>>,
     pub registrations: oauth::Registrations,
     /// by draft: what its preview reported
     diagnostics: Mutex<HashMap<String, Reported>>,
@@ -121,14 +127,24 @@ impl Mcp {
         let mut gone = vec![];
         for (id, s) in all {
             // one in use isn't idle
-            let Ok(mut s) = s.try_lock() else { continue };
-            if s.run.as_ref().is_some_and(|o| o.last.elapsed() > RUN_IDLE) {
-                tools::end_run(state, &mut s, "idle").await;
-            }
+            let Ok(s) = s.try_lock() else { continue };
             if s.last.elapsed() > SESSION_IDLE { gone.push(id); }
         }
-        let mut sessions = lock(&self.sessions);
-        for id in gone { sessions.remove(&id); }
+        {
+            let mut sessions = lock(&self.sessions);
+            for id in gone { sessions.remove(&id); }
+        }
+        let all: Vec<(String, Arc<tokio::sync::Mutex<Open>>)> = lock(&self.work).iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        let mut ended = vec![];
+        for (id, open) in all {
+            let Ok(mut open) = open.try_lock() else { continue };
+            if open.last.elapsed() > RUN_IDLE {
+                tools::end_run(state, &mut open, "idle").await;
+                ended.push(id);
+            }
+        }
+        let mut work = lock(&self.work);
+        for id in ended { work.remove(&id); }
         lock(&self.diagnostics).retain(|_, r| r.at.elapsed() < SESSION_IDLE);
         lock(&self.touched).retain(|_, t| t.0.elapsed() < SESSION_IDLE);
     }
@@ -166,7 +182,7 @@ async fn post_mcp(State(state): State<AppState>, headers: HeaderMap, Bearer(acco
         let asked = msg["params"]["protocolVersion"].as_str().unwrap_or_default();
         let protocol = if PROTOCOLS.contains(&asked) { asked } else { PROTOCOLS[0] };
         let client = json!({ "name": msg["params"]["clientInfo"]["name"].as_str().unwrap_or("MCP"), "version": msg["params"]["clientInfo"]["version"] });
-        let session = Session { account: account.id.clone(), client, last: Instant::now(), run: None, created: HashSet::new() };
+        let session = Session { account: account.id.clone(), client, last: Instant::now(), work: None, created: HashSet::new() };
         lock(&state.mcp.sessions).insert(id.clone(), Arc::new(tokio::sync::Mutex::new(session)));
         let result = json!({
             "protocolVersion": protocol,
@@ -221,14 +237,14 @@ async fn post_mcp(State(state): State<AppState>, headers: HeaderMap, Bearer(acco
     }
 }
 
-/// The host ends its session: the run it was on ends with it.
+/// A transport session ending does not end a logical request: some hosts create and
+/// delete one transport session per tool call. `finish` or idleness ends the run.
 async fn delete_mcp(State(state): State<AppState>, headers: HeaderMap, Bearer(account): Bearer) -> Response {
     let Some(sid) = session_of(&headers) else { return StatusCode::BAD_REQUEST.into_response() };
     let found = lock(&state.mcp.sessions).get(&sid).cloned();
     let Some(session) = found else { return StatusCode::NOT_FOUND.into_response() };
-    let mut s = session.lock().await;
+    let s = session.lock().await;
     if s.account != account.id { return StatusCode::NOT_FOUND.into_response(); }
-    tools::end_run(&state, &mut s, "closed").await;
     drop(s);
     lock(&state.mcp.sessions).remove(&sid);
     StatusCode::NO_CONTENT.into_response()

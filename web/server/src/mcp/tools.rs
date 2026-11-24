@@ -1,7 +1,6 @@
 //! The tools a host calls: the drafting tools every agent has (`crate::drafting`), each naming its draft, and a few
 //! of a host's own (finding and making drafts, opening one for a request, the brief, finishing). Each call on a draft
-//! is part of the run of the request the session is on: opened by `open_draft`, ended by `finish`, the next request,
-//! or idleness (`super::RUN_IDLE`).
+//! is part of a logical request opened by `open_draft`, independent of the transport sessions carrying its calls.
 
 use std::collections::BTreeMap;
 use std::time::Instant;
@@ -72,15 +71,30 @@ pub fn list(state: &AppState) -> Vec<Value> {
     });
     own.into_iter().chain(drafting).map(|mut t| {
         let name = t["name"].as_str().unwrap_or_default().to_owned();
+        if !matches!(name.as_str(), "list_drafts" | "new_draft" | "open_draft") {
+            require_work(&mut t["inputSchema"]);
+        }
         t["annotations"] = annotations(&name);
         t
     }).collect()
 }
 
-/// The run the session is on ends, saying why: `finish`, the next request (`next`), another draft, idleness, the
-/// session's end.
-pub async fn end_run(state: &AppState, s: &mut Session, ended: &str) {
-    if let Some(mut open) = s.run.take()
+fn work_param() -> Value {
+    json!({ "type": "string", "description": "the logical request id returned by open_draft; keep using it even if the MCP connection changes" })
+}
+
+fn require_work(schema: &mut Value) {
+    schema["properties"]["work"] = work_param();
+    let required = schema["required"].as_array_mut().expect("a tool schema has required parameters");
+    if !required.iter().any(|v| v == "work") {
+        let after_draft = required.iter().position(|v| v == "draft").map_or(0, |i| i + 1);
+        required.insert(after_draft, json!("work"));
+    }
+}
+
+/// A logical request ends, saying why.
+pub async fn end_run(state: &AppState, open: &mut Open, ended: &str) {
+    if !open.run.ended()
         && let Err(e) = open.run.add(state, json!({ "type": "end", "outcome": "completed", "waiting": false, "ended": ended })).await {
         eprintln!("mcp: ending run {}: {e}", open.run.id);
     }
@@ -190,36 +204,66 @@ fn api_message(e: ApiError) -> String {
     }
 }
 
-/// Makes sure the session is on a run of this draft: `open_draft` starts one for its request; any other call goes on
-/// with the one it's on, or starts one without a request (the host didn't open the draft first).
-async fn run_for(state: &AppState, account: &Account, s: &mut Session, sid: &str, d: &Draft, loaded: &Loaded, request: Option<&str>) -> Result<(), String> {
-    let same = s.run.as_ref().is_some_and(|o| o.draft == d.id);
-    if same && request.is_none() {
-        return Ok(());
+/// Starts one logical request. It is kept outside the transport session because some
+/// hosts initialize a new MCP session for every tool call.
+async fn start_work(state: &AppState, account: &Account, s: &mut Session, sid: &str, d: &Draft, loaded: &Loaded, request: Option<&str>) -> Result<(String, std::sync::Arc<tokio::sync::Mutex<Open>>), String> {
+    if let Some(previous) = s.work.take() {
+        let old = super::lock(&state.mcp.work).remove(&previous);
+        if let Some(old) = old {
+            let mut old = old.lock().await;
+            let ended = if old.draft == d.id { "next" } else { "other-draft" };
+            end_run(state, &mut old, ended).await;
+        }
     }
-    end_run(state, s, if same { "next" } else { "other-draft" }).await;
     let kind = state.agents.reference.kind(&d.kind).ok_or("not a kind of draft for this")?;
     let mut inputs = json!({ "files": loaded.files, "system": kind.system(&MCP).unwrap_or_default() });
     if !loaded.spec.trim().is_empty() { inputs["spec"] = json!(loaded.spec); }
     let client = &s.client;
     let diagnostics = state.mcp.reported(&d.id).map(|(e, _)| e).unwrap_or_default();
+    let work = crate::random_hex(16);
     let start = json!({
         "purpose": "turn", "draft": d.id, "kind": d.kind,
         "backend": { "id": MCP.id, "label": client["name"] },
-        "message": request, "session": sid, "implicit": request.is_none(), "newDraft": s.created.contains(&d.id),
+        "message": request, "session": sid, "work": work, "implicit": request.is_none(), "newDraft": s.created.contains(&d.id),
         "diagnostics": diagnostics, "gestalts": known_gestalts(state, account), "inputs": inputs,
         "client": client, "provenance": { "provider": { "name": client["name"], "version": client["version"] } },
     });
     let run = ServerRun::start(state, &account.id, start).await?;
-    s.run = Some(Open { run, draft: d.id.clone(), last: Instant::now() });
-    Ok(())
+    let open = std::sync::Arc::new(tokio::sync::Mutex::new(Open {
+        run, account: account.id.clone(), draft: d.id.clone(), client: s.client.clone(), last: Instant::now(),
+    }));
+    super::lock(&state.mcp.work).insert(work.clone(), open.clone());
+    s.work = Some(work.clone());
+    Ok((work, open))
 }
 
-async fn record(state: &AppState, s: &mut Session, e: Value) {
-    if let Some(open) = s.run.as_mut() {
-        open.last = Instant::now();
-        if let Err(err) = open.run.add(state, e).await { eprintln!("mcp: recording run {}: {err}", open.run.id); }
+/// Finds the logical request named by the tool call. Older/cached schemas may omit
+/// `work`; attach only when exactly one live request matches account, draft and client.
+async fn work_for(state: &AppState, account: &Account, s: &mut Session, sid: &str, d: &Draft, loaded: &Loaded, args: &Value) -> Result<(String, std::sync::Arc<tokio::sync::Mutex<Open>>), String> {
+    if let Some(work) = args["work"].as_str().filter(|w| !w.is_empty()) {
+        let open = super::lock(&state.mcp.work).get(work).cloned().ok_or("That request is no longer open: call open_draft again.")?;
+        let valid = {
+            let open = open.lock().await;
+            !open.run.ended() && open.account == account.id && open.draft == d.id
+        };
+        if !valid { return Err("That request does not belong to this account and draft: call open_draft again.".into()); }
+        s.work = Some(work.to_owned());
+        return Ok((work.to_owned(), open));
     }
+    let candidates: Vec<(String, std::sync::Arc<tokio::sync::Mutex<Open>>)> = super::lock(&state.mcp.work).iter()
+        .filter_map(|(id, open)| open.try_lock().ok().filter(|o| !o.run.ended() && o.account == account.id && o.draft == d.id && o.client == s.client).map(|_| (id.clone(), open.clone())))
+        .collect();
+    if candidates.len() == 1 {
+        s.work = Some(candidates[0].0.clone());
+        return Ok(candidates.into_iter().next().unwrap());
+    }
+    start_work(state, account, s, sid, d, loaded, None).await
+}
+
+async fn record(state: &AppState, open: &mut Open, sid: &str, mut e: Value) {
+    open.last = Instant::now();
+    e["transport"] = json!(sid);
+    if let Err(err) = open.run.add(state, e).await { eprintln!("mcp: recording run {}: {err}", open.run.id); }
 }
 
 async fn on_draft(state: &AppState, account: &Account, s: &mut Session, sid: &str, name: &str, args: &Value) -> Value {
@@ -236,14 +280,16 @@ async fn on_draft(state: &AppState, account: &Account, s: &mut Session, sid: &st
         Ok(l) => l,
         Err(e) => return error(format!("The draft couldn't be read: {e}")),
     };
-    let request = (name == "open_draft").then(|| args["request"].as_str().unwrap_or_default().trim()).filter(|r| !r.is_empty());
-    if let Err(e) = run_for(state, account, s, sid, &d, &loaded, request).await {
-        eprintln!("mcp: starting a run on {}: {e}", d.id);
-    }
     state.mcp.touch(&d.id, false);
     match name {
         "open_draft" => {
+            let request = args["request"].as_str().unwrap_or_default().trim();
+            let (work, _) = match start_work(state, account, s, sid, &d, &loaded, (!request.is_empty()).then_some(request)).await {
+                Ok(open) => open,
+                Err(e) => return error(format!("The request couldn't be opened: {e}")),
+            };
             let mut out = String::new();
+            out.push_str(&format!("Request id: {work}. Pass this as `work` to every tool call for this request, including `finish`.\n\n"));
             if args["have_contract"] != true {
                 match kind.system(&MCP) {
                     Ok(system) => out.push_str(&format!("{system}\n\n---\n\n")),
@@ -256,24 +302,39 @@ async fn on_draft(state: &AppState, account: &Account, s: &mut Session, sid: &st
             text(out)
         }
         "finish" => {
+            let (work, open) = match work_for(state, account, s, sid, &d, &loaded, args).await {
+                Ok(open) => open,
+                Err(e) => return error(e),
+            };
+            let mut open = open.lock().await;
+            if open.run.ended() { return error("That request has ended: call open_draft again."); }
             let note = args["note"].as_str().unwrap_or_default().trim().to_owned();
-            if !note.is_empty() { record(state, s, json!({ "type": "text", "text": note })).await; }
-            end_run(state, s, "finish").await;
+            if !note.is_empty() { record(state, &mut open, sid, json!({ "type": "text", "text": note })).await; }
+            end_run(state, &mut open, "finish").await;
+            drop(open);
+            super::lock(&state.mcp.work).remove(&work);
+            if s.work.as_deref() == Some(&work) { s.work = None; }
             text("Done: the person sees it in thia's workshop, and can rate how it went there.")
         }
         _ => {
-            record(state, s, json!({ "type": "tool", "name": name, "summary": summary(name, args) })).await;
+            let (_, open) = match work_for(state, account, s, sid, &d, &loaded, args).await {
+                Ok(open) => open,
+                Err(e) => return error(e),
+            };
+            let mut open = open.lock().await;
+            if open.run.ended() { return error("That request has ended: call open_draft again."); }
+            record(state, &mut open, sid, json!({ "type": "tool", "name": name, "summary": summary(name, args) })).await;
             let t0 = Instant::now();
-            let result = drafting_tool(state, account, s, &d, kind, &loaded, name, args).await;
+            let result = drafting_tool(state, account, &mut open, sid, &d, kind, &loaded, name, args).await;
             let ok = result["isError"] != true;
-            record(state, s, json!({ "type": "tool_result", "name": name, "ok": ok, "ms": t0.elapsed().as_millis() as u64, "content": result["content"] })).await;
+            record(state, &mut open, sid, json!({ "type": "tool_result", "name": name, "ok": ok, "ms": t0.elapsed().as_millis() as u64, "content": result["content"] })).await;
             result
         }
     }
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn drafting_tool(state: &AppState, account: &Account, s: &mut Session, d: &Draft, kind: &crate::drafting::KindRef, loaded: &Loaded, name: &str, args: &Value) -> Value {
+async fn drafting_tool(state: &AppState, account: &Account, open: &mut Open, sid: &str, d: &Draft, kind: &crate::drafting::KindRef, loaded: &Loaded, name: &str, args: &Value) -> Value {
     match name {
         "check" => {
             let known = known_gestalts(state, account);
@@ -295,7 +356,7 @@ async fn drafting_tool(state: &AppState, account: &Account, s: &mut Session, d: 
             match written {
                 Ok(()) => {
                     state.mcp.touch(&d.id, true);
-                    record(state, s, json!({ "type": "spec", "spec": brief })).await;
+                    record(state, open, sid, json!({ "type": "spec", "spec": brief })).await;
                     text("The brief is saved.")
                 }
                 Err(e) => error(format!("The brief wasn't saved: {}", api_message(e))),
@@ -317,14 +378,28 @@ async fn drafting_tool(state: &AppState, account: &Account, s: &mut Session, d: 
             match commit(state, account, d, loaded, &changed).await {
                 Ok(()) => {
                     state.mcp.touch(&d.id, true);
-                    record(state, s, json!({ "type": "files", "files": changed })).await;
+                    record(state, open, sid, json!({ "type": "files", "files": changed })).await;
                     text(format!("{said}; saved"))
                 }
                 Err(problems) => {
-                    record(state, s, json!({ "type": "saved", "problems": problems })).await;
+                    record(state, open, sid, json!({ "type": "saved", "problems": problems })).await;
                     error(format!("Not saved: nothing of this change was written, because:\n- {}", problems.join("\n- ")))
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn drafting_tools_require_the_logical_work_id_once() {
+        let mut schema = json!({ "properties": { "draft": { "type": "string" }, "path": { "type": "string" } }, "required": ["draft", "path"] });
+        require_work(&mut schema);
+        require_work(&mut schema);
+        assert_eq!(schema["properties"]["work"]["type"], "string");
+        assert_eq!(schema["required"], json!(["draft", "work", "path"]));
     }
 }

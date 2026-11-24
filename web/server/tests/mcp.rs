@@ -101,6 +101,13 @@ async fn host<'a>(s: &'a Server, token: &str) -> Host<'a> {
     h
 }
 
+fn work_of(opened: &str) -> String {
+    opened.lines().next()
+        .and_then(|line| line.strip_prefix("Request id: "))
+        .and_then(|id| id.strip_suffix(". Pass this as `work` to every tool call for this request, including `finish`."))
+        .expect("open_draft returns its logical request id").to_owned()
+}
+
 #[tokio::test]
 async fn signing_a_host_in_asks_for_a_token_where_the_metadata_says() {
     let s = Server::new(Limits::default());
@@ -149,6 +156,9 @@ async fn a_host_makes_a_view_and_each_request_is_a_run() {
     for n in ["list_drafts", "new_draft", "open_draft", "write_file", "edit_file", "check", "finish"] {
         assert!(names.contains(&n), "{n}: {names:?}");
     }
+    for tool in list["result"]["tools"].as_array().unwrap().iter().filter(|t| !["list_drafts", "new_draft", "open_draft"].contains(&t["name"].as_str().unwrap())) {
+        assert!(tool["inputSchema"]["required"].as_array().unwrap().iter().any(|p| p == "work"), "{} needs the logical request id", tool["name"]);
+    }
     assert!(!names.contains(&"ask"), "a host asks in its own conversation");
 
     let (ok, made) = h.tool("new_draft", json!({ "title": "Artikel", "lang": "de" })).await;
@@ -158,24 +168,31 @@ async fn a_host_makes_a_view_and_each_request_is_a_run() {
     assert!(ok && opened.contains("view.tsx") && opened.contains("useHost"), "the contract and the files: {opened}");
     let (_, again) = h.tool("open_draft", json!({ "draft": id, "request": "and blue", "have_contract": true })).await;
     assert!(!again.contains("useHost"), "left out when the conversation has it");
+    let work = work_of(&again);
 
-    let (ok, said) = h.tool("write_file", json!({ "draft": id, "path": "view.tsx", "content": VIEW })).await;
+    // OpenAI may create a fresh MCP transport session for every call. The work id
+    // keeps all of these calls in the run opened above.
+    let mut hw = host(&s, tokens["access_token"].as_str().unwrap()).await;
+    let (ok, said) = hw.tool("write_file", json!({ "draft": id, "work": work, "path": "view.tsx", "content": VIEW })).await;
     assert!(ok, "{said}");
     let ada = s.login("ada@school.example").await;
     let (_, read, _) = s.call("POST", &format!("/api/drafts/{id}/sync/read"), Some(&ada), Some(json!({ "ids": [id] }))).await;
     assert!(read[0]["text"].as_str().unwrap().contains("h-full"), "saved in the draft, for the workshop's sync: {read}");
 
     // a write the workshop wouldn't keep isn't kept, and says why
-    let (ok, said) = h.tool("write_file", json!({ "draft": id, "path": "data/haus.yml", "content": "gestalt: d-000000000000/noun@1\nword: Haus\n" })).await;
+    let mut hw = host(&s, tokens["access_token"].as_str().unwrap()).await;
+    let (ok, said) = hw.tool("write_file", json!({ "draft": id, "work": work, "path": "data/haus.yml", "content": "gestalt: d-000000000000/noun@1\nword: Haus\n" })).await;
     assert!(!ok && said.contains("Not saved"), "{said}");
     let (_, hashes, _) = s.call("GET", &format!("/api/drafts/{id}/sync/hashes"), Some(&ada), None).await;
     assert!(hashes.get("haus").is_none());
 
     // the preview's report goes with the check
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/diagnostics"), Some(&ada), Some(json!({ "errors": [{ "kind": "runtime", "message": "x is not defined" }] }))).await.0, StatusCode::NO_CONTENT);
-    let (_, checked) = h.tool("check", json!({ "draft": id })).await;
+    let mut hc = host(&s, tokens["access_token"].as_str().unwrap()).await;
+    let (_, checked) = hc.tool("check", json!({ "draft": id, "work": work })).await;
     assert!(checked.contains("x is not defined"), "{checked}");
-    let (ok, _) = h.tool("finish", json!({ "draft": id, "note": "made it" })).await;
+    let mut hf = host(&s, tokens["access_token"].as_str().unwrap()).await;
+    let (ok, _) = hf.tool("finish", json!({ "draft": id, "work": work, "note": "made it" })).await;
     assert!(ok);
 
     // someone else's draft isn't there for this host
@@ -196,6 +213,8 @@ async fn a_host_makes_a_view_and_each_request_is_a_run() {
     let (_, detail, _) = s.call("GET", &format!("/api/admin/runs/{}", last["id"].as_str().unwrap()), Some(&bea), None).await;
     let start = detail["events"].as_array().unwrap().iter().find(|e| e["type"] == "start").unwrap().clone();
     assert_eq!((start["message"].as_str(), start["backend"]["label"].as_str(), start["newDraft"].as_bool()), (Some("and blue"), Some("claude-ai"), Some(true)));
+    let transports: std::collections::HashSet<&str> = detail["events"].as_array().unwrap().iter().filter_map(|e| e["transport"].as_str()).collect();
+    assert!(transports.len() >= 4, "one logical run retains its several transport sessions: {transports:?}");
     assert!(start["inputs"]["files"]["view.tsx"]["$blob"].is_string(), "contents as blobs: {start}");
 
     // the workshop lists them, and the person rates one
@@ -207,7 +226,7 @@ async fn a_host_makes_a_view_and_each_request_is_a_run() {
     let (_, rated, _) = s.call("GET", "/api/admin/runs?backend=mcp&rated=yes", Some(&bea), None).await;
     assert_eq!(rated["runs"][0]["rating"], 4);
 
-    // the session ends, and nothing more is recorded
+    // the transport session ends, and nothing more is recorded
     let auth = format!("Bearer {}", h.token);
     assert_eq!(s.raw("DELETE", "/mcp", &[("authorization", &auth), ("mcp-session-id", &h.session)], None).await.0, StatusCode::NO_CONTENT);
     assert_eq!(h.rpc("tools/list", json!({})).await.0, StatusCode::NOT_FOUND);

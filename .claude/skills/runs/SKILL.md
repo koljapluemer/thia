@@ -18,8 +18,10 @@ Every workshop turn is recorded (`web/app/doc/workshop/runs.md` says what each e
 Backend ids: `claude-cli` (Claude Code through the bridge), `codex-cli`, `ollama`, `gemini`, `server`, `mcp` (a chat
 app such as claude.ai working on drafts over MCP, `web/server/doc/mcp.md`).
 
-`mcp` runs are recorded by the server, one per request the app opened (`message` is the request; `implicit` when it
-didn't open the draft first), and end by `finish`, the next request, idleness or the session's end (`ended` on `end`).
+`mcp` runs are recorded by the server, one per logical request the app opened (`message` is the request; `implicit`
+when an older client didn't open the draft first), and end by `finish`, the next request on a persistent transport, or
+idleness. A `work` id joins calls when a host uses a new MCP transport session for each tool; events retain that
+transport id for diagnosis.
 They have no usage: tokens and cost are empty, so compare them by check passed, tool failures, refused writes
 (`saved`), wall time and rating. One conversation spans several runs: `--session`, `--by session`. The app and its
 version are `backend.label` and the provider version.

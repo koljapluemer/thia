@@ -15,7 +15,7 @@ a chat app has no page for.
 | | |
 |---|---|
 | `POST /mcp` | JSON-RPC over Streamable HTTP, always answered as JSON (no streams): `initialize` (opens a session, `Mcp-Session-Id`), `ping`, `tools/list`, `tools/call`; a notification gets 202. Protocol versions `2025-11-25`, `2025-06-18`, `2025-03-26`. An unknown session gets 404, and the host initializes again (sessions are in memory: a restart ends them) |
-| `DELETE /mcp` | ends the session, and the run it was on |
+| `DELETE /mcp` | ends that transport session; the logical request remains open for another session |
 | `GET /mcp` | 405: the server sends nothing unasked |
 | `/.well-known/oauth-protected-resource[/mcp]`, `/.well-known/oauth-authorization-server` | where to sign in (RFC 9728, RFC 8414), named after the origin the proxy says (`X-Forwarded-Host`/`-Proto`) |
 | `POST /oauth/register` | dynamic client registration: a public client (`none`, PKCE only) or one with a secret; https redirect URIs, or http on localhost; at most 200 an hour, and clients that never got a token go after a day |
@@ -38,9 +38,12 @@ The drafting tools every agent has (`list_files`, `read_file`, `write_file`, `ed
 
 - `list_drafts`, `new_draft {title, lang}`: a new view draft, made as the workshop makes one (`createDraft`, in the
   worker)
-- `open_draft {draft, request, have_contract?}`: at the start of each request. It gives the contract (the brief, the
-  tools' paragraph and the kind's `CLAUDE.md`, as `KindRef::system` makes it for this driver), unless the conversation
-  has it already. It also gives the draft's files, its brief and what the preview reports
+- `open_draft {draft, request, have_contract?}`: at the start of each request. It gives a logical `work` id, the
+  contract (the brief, the tools' paragraph and the kind's `CLAUDE.md`, as `KindRef::system` makes it for this driver),
+  unless the conversation has it already. It also gives the draft's files, its brief and what the preview reports
+- every following drafting tool and `finish` takes that `work` id. It identifies the request independently of the MCP
+  transport session, since a host may initialize a fresh session for each tool call. Calls from older cached schemas
+  that omit it join only when exactly one live request matches the account, draft and client
 - `set_brief {draft, brief}`: the draft's `spec`
 - `finish {draft, note}`: the request is done
 
@@ -73,13 +76,14 @@ Another chat app, or a page-driven agent the server records, is another `Driver`
 Each request is a run in `runs/`, of backend `mcp`, recorded by the server (`runs/server_run.rs`) in the page's own
 format, so `/runs`, `admin runs` and the `runs` skill read it like any other.
 
-- A run starts at `open_draft`, or at the first call on a draft when the app didn't open it (`implicit`). It ends with
-  `finish` (`ended: finish`), the next `open_draft` (`next`), a call on another draft (`other-draft`), the session's end
-  (`closed`) or 15 minutes without a call (`idle`, the sweeper in `main.rs` and before each request).
-- Its `start` says what was asked (`message`), the session (`session`, also an index column: one conversation spans
-  several runs), `newDraft`, the preview's report, the app (`backend.label`, `provider.name/version` from
+- A run starts at `open_draft`, or at the first call on a draft when an older client didn't open it (`implicit`). It
+  ends with `finish` (`ended: finish`), a new request on the same persistent transport (`next`), a request on another
+  draft (`other-draft`), or 15 minutes without a call (`idle`, swept before each request). Closing a transport session
+  does not end it.
+- Its `start` says what was asked (`message`), its logical `work` id, the transport session that opened it (`session`),
+  `newDraft`, the preview's report, the app (`backend.label`, `provider.name/version` from
   `clientInfo`), and `inputs`: the files, the brief, and the contract as the app got it (`system`).
-- Then `tool` and `tool_result` for each drafting call, `files` for each write saved, `saved` for each refused,
+- Then `tool` and `tool_result` for each drafting call (each names its transport session), `files` for each write saved, `saved` for each refused,
   `spec` for a new brief, the `finish` note as `text`, and `end`.
 - There's no `usage`: the app doesn't say what the model used. Tokens and cost stay empty, and runs are compared by
   check passed, tool failures, refused writes, wall time and rating.
