@@ -78,6 +78,16 @@ describe('saving', () => {
     expect(put).toHaveBeenCalledWith(expect.objectContaining({ gestalt: 'view@4', package: packageOf(id), runtime: 'rt', lang: 'de' }));
   });
 
+  it("keeps its maker's rewordings out of the agent's reach", () => {
+    const override = { id: 'wording-en-override', gestalt: 'wording@1', value: { lang: 'en', layer: 'override', messages: {} } };
+    const d = { ...withMembers, members: [...withMembers.members, override.id] };
+    expect(Object.keys(filesOf(d, [noun, haus, override]))).not.toContain('data/wording-en-override.yml');
+    const c = applyFiles(d, [noun, haus, override], { 'data/wording-en-override.yml': 'gestalt: wording@1\n', 'data/haus.yml': null });
+    expect(c.draft.members).toContain(override.id);
+    expect(c.remove).toEqual(['haus']);
+    expect(c.problems[0]).toContain("its maker's own rewording");
+  });
+
   it('keeps its language as view.json says, and refuses one that isn\'t a tag', () => {
     const json = (lang: unknown, target?: string) => JSON.stringify({ title: 'T', lang, ...(target ? { target_lang: target } : {}), reads: [], writes: [] });
     expect(applyFiles(withMembers, [noun, haus], { 'view.json': json('DE-at', 'vie') }).draft).toMatchObject({ lang: 'de-AT', targetLang: 'vi' });

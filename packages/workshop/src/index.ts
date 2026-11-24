@@ -1,4 +1,4 @@
-export { DEFINITION, VIEW, VIEWS, applyFiles, asDraft, createDraft, definitionId, filesOf, isStarter, loadMembers, packageOf, saveDraft, saveSpec, type Draft, type DraftChange } from './draft';
+export { DEFINITION, VIEW, VIEWS, addMembers, applyFiles, asDraft, createDraft, definitionId, filesOf, isStarter, loadMembers, packageOf, saveDraft, saveSpec, type Draft, type DraftChange } from './draft';
 export { Chat, type Action } from './Chat';
 export { useRunning } from './turns';
 export { buildActions, flushing, viewWork, vizWork, type Settled, type Snapshot, type Work } from './work';
@@ -19,3 +19,4 @@ export type { CompleteRequest } from './agents/types';
 export { NO_RUN, newRun, recordRunsTo, recordedComplete, runId, sha256, startRun, type BlobRef as RunBlobRef, type Envelope, type Run, type RunEvent, type RunSink } from './runs';
 export type { Usage } from './agents/types';
 export { lineDiff, type DiffLine } from './runs/diff';
+export { dropEntry, keepEntry, markReviewed, messageProblem, putWording, type MessageProblem, rowsFor, setEntry, wordingId, wordingsOf, type Gone, type Row, type WordingYml } from './wording';

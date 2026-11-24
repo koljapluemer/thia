@@ -15,6 +15,7 @@ import { Brief, useDebounced } from './Brief';
 import * as api from './api';
 import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
+import { TextPane } from './TextPane';
 
 /**
  * Where a view's draft is tried out: what it would go out in. An account's is a lesson's (the `lessons` distribution:
@@ -57,6 +58,11 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const csp = useMemo(() => closedCsp({ scripts: [`${location.origin}/api/npm/`] }), []);
   const title = draft?.title;
   useEffect(() => { if (title && title !== info.title) onChanged(); }, [title, info.title, onChanged]);
+  // the chat, or its text to reword and translate (the preview then in that language; an alt-click on its text finds it)
+  const [tab, setTab] = useState<'chat' | 'text'>('chat');
+  const [textLang, setTextLang] = useState<string>();
+  const [picked, setPicked] = useState<string[]>([]);
+  const onPick = useCallback((keys: string[]) => { setPicked(keys); setTab('text'); }, []);
   if (!draft) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
   return (
     <Shell
@@ -70,13 +76,26 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
           <DeleteButton id={info.id} title={draft.title} onDeleted={onDeleted} />
         </>
       )}
-      preview={<Preview repo={repo} draft={draft} runtime={registry.runtime} css={css} tailwind={tailwind} onError={onError} resolveNpm={api.resolveNpm} csp={csp} />}
+      preview={<Preview repo={repo} draft={draft} runtime={registry.runtime} css={css} tailwind={tailwind} onError={onError} resolveNpm={api.resolveNpm} csp={csp}
+                        textLang={tab === 'text' ? textLang ?? draft.lang : undefined} onPick={onPick} />}
       side={(
         <>
-          <Brief work={work} spec={draft.spec} edit={edit} flush={flush} placeholder={m.view_brief_placeholder()} />
-          <div className="min-h-0 flex-1">
-            <Chat work={work} backend={backend} errors={errors} actions={buildActions(m, draft.spec, !isStarter(draft))} onTurnDone={() => setErrors([])} />
+          <div role="tablist" className="tabs tabs-border shrink-0">
+            <button type="button" role="tab" className={`tab ${tab === 'chat' ? 'tab-active' : ''}`} aria-selected={tab === 'chat'} onClick={() => setTab('chat')}>{m.tab_chat()}</button>
+            <button type="button" role="tab" className={`tab ${tab === 'text' ? 'tab-active' : ''}`} aria-selected={tab === 'text'} onClick={() => setTab('text')}>{m.tab_text()}</button>
           </div>
+          {tab === 'chat' ? (
+            <>
+              <Brief work={work} spec={draft.spec} edit={edit} flush={flush} placeholder={m.view_brief_placeholder()} />
+              <div className="min-h-0 flex-1">
+                <Chat work={work} backend={backend} errors={errors} actions={buildActions(m, draft.spec, !isStarter(draft))} onTurnDone={() => setErrors([])} />
+              </div>
+            </>
+          ) : (
+            <div className="min-h-0 flex-1">
+              <TextPane repo={repo} draft={draft} lang={textLang ?? draft.lang} setLang={setTextLang} picked={picked} />
+            </div>
+          )}
         </>
       )}
     />

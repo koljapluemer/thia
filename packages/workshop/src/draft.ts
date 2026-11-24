@@ -106,6 +106,10 @@ function viewYml(d: Draft): JsonMap {
   return out;
 }
 
+/** Adds `ids` to the draft's members (ymls written already), keeping the rest as it is. */
+export const addMembers = (repo: Pick<Repo, 'put'>, d: Draft, ids: string[]) =>
+  repo.put(viewYml({ ...d, members: [...d.members, ...ids.filter((id) => !d.members.includes(id))] }));
+
 /** Keeps `spec` as the draft's brief, the rest as it is. */
 export const saveSpec = (repo: Pick<Repo, 'put'>, d: Draft, spec: string) => repo.put(viewYml({ ...d, spec }));
 
@@ -120,6 +124,12 @@ export async function loadMembers(repo: Pick<Repo, 'query'>, draft: Draft): Prom
   return out;
 }
 
+/**
+ * Its maker's rewordings and translations of its text (`wording-<lang>`, `wording-<lang>-override`): the agent doesn't
+ * see them and can't change them; they stay members whatever a turn does. The agent's own text is `wording`.
+ */
+export const isMakers = (id: string) => id.startsWith('wording-');
+
 const DEF_FILE = /^gestalts\/([a-z0-9-]+)@([1-9][0-9]*)\.yml$/;
 const DATA_FILE = /^data\/([^/\\]+)\.yml$/;
 
@@ -130,6 +140,7 @@ export function filesOf(d: Draft, members: Item[]): Record<string, string> {
     'view.json': `${JSON.stringify({ title: d.title, package: d.package, lang: d.lang, ...(d.targetLang ? { target_lang: d.targetLang } : {}), reads: d.reads, writes: d.writes, npm: d.npm }, null, 2)}\n`,
   };
   for (const m of members) {
+    if (isMakers(m.id)) continue;
     if (m.gestalt === DEFINITION) {
       const { id: _id, gestalt: _g, name, version, ...rest } = m.value;
       const short = String(name).split('/').pop();
@@ -211,12 +222,14 @@ export function applyFiles(d: Draft, members: Item[], changed: Record<string, st
       const { id: _id, gestalt: _g, name: _n, version: _v, ...rest } = value;
       const version = Number(def[2]);
       definitions.push({ id: definitionId(d.package, def[1], version), gestalt: DEFINITION, name: `${d.package}/${def[1]}`, version, ...(rest as JsonMap) });
+    } else if (isMakers(datum![1])) {
+      problems.push(`${path}: its maker's own rewording or translation, which only they change: leave it out`);
     } else {
       data.push({ ...(value as JsonMap), id: datum![1] });
     }
   }
   const all = [...definitions, ...data];
-  draft.members = all.map((v) => String(v.id));
+  draft.members = [...all.map((v) => String(v.id)), ...d.members.filter(isMakers)];
   const put = all.filter((v) => { const old = before.get(String(v.id)); return !old || canonical(old.value) !== canonical(v); });
   const remove = members.map((m) => m.id).filter((id) => !draft.members.includes(id));
   const added = draft.members.filter((id) => !before.has(id));

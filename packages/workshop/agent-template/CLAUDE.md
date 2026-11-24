@@ -99,7 +99,7 @@ import { t, formatNumber, parseNumber } from '@gestalts/view';
 - Each key has a `description`: where it shows and what it's for, for whoever rewords or translates it.
 - Keys stay as they are: when you change the view, keep the keys of what's still there (reworded text keeps its
   key), add new ones for new text, and remove those no longer used. Its maker's rewordings and translations hang on
-  the keys.
+  the keys; they aren't among your files, and only the maker changes them.
 - A message is one whole sentence with placeholders (ICU: `{name}`, `{n, plural, one {…} other {…}}`,
   `{x, select, a {…} other {…}}`): never put text together from pieces (`t('a') + name`), and never compare what
   `t()` says.
