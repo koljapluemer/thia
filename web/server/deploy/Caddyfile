@@ -8,7 +8,9 @@
 lehrer.example.de {
 	encode zstd gzip
 	handle /api/* {
-		reverse_proxy 127.0.0.1:7740
+		reverse_proxy 127.0.0.1:7740 {
+			header_up X-Thia-Client-IP {remote_host}
+		}
 	}
 	# chat hosts (claude.ai) reach drafts over MCP, and sign in for it with OAuth
 	@mcp path /mcp /oauth/* /.well-known/oauth-protected-resource /.well-known/oauth-protected-resource/* /.well-known/oauth-authorization-server

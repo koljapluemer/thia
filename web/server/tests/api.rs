@@ -160,3 +160,27 @@ async fn a_maintainer_uses_every_model_package_and_has_more_room() {
         (Some(true), StatusCode::CREATED, StatusCode::NO_CONTENT),
     ]);
 }
+
+#[tokio::test]
+async fn beta_signup_and_encrypted_backups_are_account_scoped_and_revisioned() {
+    let mut s = Server::new(Limits::default());
+    std::sync::Arc::get_mut(&mut s.state.0).unwrap().beta_code = Some("beta-test".into());
+    let mut signup = json!({"email":" Test@example.com ", "password":"a long test password", "code":"wrong"});
+    assert_eq!(s.call("POST", "/api/signup", None, Some(signup.clone())).await.0, StatusCode::FORBIDDEN);
+    signup["code"] = json!("beta-test");
+    let (status, me, cookie) = s.call("POST", "/api/signup", None, Some(signup.clone())).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(me["email"], "test@example.com");
+    assert_eq!(s.call("POST", "/api/signup", None, Some(signup)).await.0, StatusCode::CONFLICT);
+    let cookie = cookie.unwrap();
+    let id = me["id"].as_str().unwrap();
+    let headers = [("cookie", cookie.as_str()), ("x-thia-account", id)];
+    let path = "/api/personal-sync";
+    let payload = || Some(("application/json", json!({"revision":0,"envelope":"opaque"}).to_string()));
+    assert_eq!(s.raw("GET", path, &headers, None).await.2, json!(null));
+    assert_eq!(s.raw("PUT", path, &headers, payload()).await.2, json!(1));
+    assert_eq!(s.raw("PUT", path, &headers, payload()).await.0, StatusCode::CONFLICT);
+    assert_eq!(s.raw("GET", path, &headers, None).await.2, json!({"revision":1,"envelope":"opaque"}));
+    let other = s.login("ada@school.example").await;
+    assert_eq!(s.raw("PUT", path, &[("cookie", &other), ("x-thia-account", id)], payload()).await.0, StatusCode::FORBIDDEN);
+}

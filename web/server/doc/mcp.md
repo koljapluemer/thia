@@ -100,7 +100,7 @@ claude.ai reaches thia only over public https, so a tunnel goes in front of the 
 4. In Claude: Settings → Connectors → Add custom connector, `https://<name>.trycloudflare.com/mcp`, then Connect.
    After a failed try, remove the connector and add it again.
 5. Claude opens thia's consent page on the tunnel's host. Sign in there (the cookie from `localhost` doesn't count
-   there; the dev account is in `server-data/dev-login.txt`) and allow it.
+   there, or sign up with the local beta code) and allow it.
 6. Ask Claude for a view, with the draft open in the workshop (`localhost:5173/workshop` is fine): the preview follows
    within seconds, and Claude's requests are listed above the brief to rate.
 7. `mise run server:admin runs list --backend mcp`, then `runs show <id>`.

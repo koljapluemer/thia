@@ -2,6 +2,13 @@
 
 The app origin serves account sessions, Workshop draft sync, and MCP with OAuth. The lesson origin serves the public player and lesson artifacts from separate browser storage.
 
+Personal sync runs on the app origin under `/api/personal-sync`. It stores one opaque, revisioned backup in
+SQLite per signed-in account. The client uses a separate passphrase to unlock the backup, merges YAML in the
+browser, and replaces the backup only if the revision it read is still current. The browser keeps local data in
+a separate OPFS directory for each account. Guest data stays local unless explicitly imported. Personal sync
+data is outside the MCP tool surface.
+
+
 ## A draft
 
 Each draft has a kind (`drafts.kind`), set when it's made:

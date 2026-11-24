@@ -261,6 +261,50 @@ impl WasmRepo {
         to_js(&self.repo.gestalts().defs())
     }
 
+    /// Merge into temporary storage so a rejected upload cannot advance the local sync base.
+    #[wasm_bindgen(js_name = personalMerge)]
+    pub async fn personal_merge(&self, remote: String, import: bool) -> Result<String, JsError> {
+        use gestalts_core::Memory;
+
+        let dir = self.dir.as_ref().ok_or_else(|| JsError::new("Browser storage required"))?;
+        let local = Memory::default();
+        copy_storage(&*self.writable, &local).await.map_err(err)?;
+        if import {
+            let home = Opfs::open("home").await.map_err(err)?;
+            let original = Memory::default();
+            copy_storage(&home, &original).await.map_err(err)?;
+            gestalts_core::sync(&local, &original, &Memory::default(), &self.repo.gestalts(), &now()).await.map_err(err)?;
+        }
+        let remote = decode_snapshot(&remote).await?;
+        // A referenced blob can arrive after its YAML. Copy it even when the YAML hash is unchanged.
+        for name in remote.list_blobs().await.map_err(err)? {
+            if local.read_blob(&name).await.map_err(err)?.is_none() {
+                if let Some(bytes) = remote.read_blob(&name).await.map_err(err)? {
+                    local.write_blob(&name, &bytes).await.map_err(err)?;
+                }
+            }
+        }
+        let base_dir = Opfs::open(&format!("{dir}-personal-base")).await.map_err(err)?;
+        let base = match base_dir.read_blob("snapshot.json").await.map_err(err)? {
+            Some(raw) => decode_snapshot(std::str::from_utf8(&raw).map_err(|error| JsError::new(&error.to_string()))?).await?,
+            None => Memory::default(),
+        };
+        gestalts_core::sync(&local, &remote, &base, &self.repo.gestalts(), &now()).await.map_err(err)?;
+        encode_snapshot(&local, &self.repo.gestalts()).await
+    }
+
+    #[wasm_bindgen(js_name = personalCommit)]
+    pub async fn personal_commit(&self, snapshot: String) -> Result<(), JsError> {
+        let dir = self.dir.as_ref().ok_or_else(|| JsError::new("Browser storage required"))?;
+        let merged = decode_snapshot(&snapshot).await?;
+        copy_storage(&merged, &*self.writable).await.map_err(err)?;
+        let base = Opfs::open(&format!("{dir}-personal-base")).await.map_err(err)?;
+        if base.read_blob("snapshot.json").await.map_err(err)?.as_deref() != Some(snapshot.as_bytes()) {
+            base.write_blob("snapshot.json", snapshot.as_bytes()).await.map_err(err)?;
+        }
+        self.reload().await
+    }
+
     /// Sync, phase 1 (`gestalts_core::sync`), network only: asks the connector at `connector_url` what changed since
     /// the last sync, and fetches it. Runs alongside the app's writes; `syncMerge` and `syncPush` finish it.
     #[wasm_bindgen(js_name = syncFetch)]
@@ -330,6 +374,55 @@ impl WasmRepo {
         out["timings"] = run.timings.into();
         to_js(&out)
     }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+struct PersonalSnapshot {
+    notes: Vec<(String, String)>,
+    blobs: Vec<(String, Vec<u8>)>,
+}
+
+async fn copy_storage(from: &dyn Storage, to: &dyn Storage) -> gestalts_core::storage::Result<()> {
+    for name in from.list_blobs().await? {
+        if let Some(bytes) = from.read_blob(&name).await? {
+            if to.read_blob(&name).await?.as_ref() != Some(&bytes) {
+                to.write_blob(&name, &bytes).await?;
+            }
+        }
+    }
+    for (id, text) in from.read_all_ymls().await? {
+        if to.read_yml(&id).await?.as_ref() != Some(&text) {
+            to.write_yml(&id, &text).await?;
+        }
+    }
+    Ok(())
+}
+
+async fn decode_snapshot(raw: &str) -> Result<gestalts_core::Memory, JsError> {
+    let snapshot: PersonalSnapshot = serde_json::from_str(raw).map_err(|error| JsError::new(&error.to_string()))?;
+    let memory = gestalts_core::Memory::default();
+    for (name, bytes) in snapshot.blobs {
+        memory.write_blob(&name, &bytes).await.map_err(err)?;
+    }
+    for (id, text) in snapshot.notes {
+        memory.write_yml(&id, &text).await.map_err(err)?;
+    }
+    Ok(memory)
+}
+
+async fn encode_snapshot(storage: &dyn Storage, gestalts: &Gestalts) -> Result<String, JsError> {
+    let notes = storage.read_all_ymls().await.map_err(err)?;
+    let references = gestalts_core::blobs::referenced_blobs(notes.iter().map(|(id, text)| (id.as_str(), text.as_str())), gestalts);
+    let mut blobs = Vec::new();
+    for name in storage.list_blobs().await.map_err(err)? {
+        if references.complete && !references.used.contains(&name) {
+            continue;
+        }
+        if let Some(bytes) = storage.read_blob(&name).await.map_err(err)? {
+            blobs.push((name, bytes));
+        }
+    }
+    serde_json::to_string(&PersonalSnapshot { notes, blobs }).map_err(|error| JsError::new(&error.to_string()))
 }
 
 /// The current time as an ISO datetime, for tombstones and conflict records.

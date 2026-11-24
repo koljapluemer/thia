@@ -33,18 +33,4 @@ mise run setup
 step "the Rust binaries"
 cargo build -q -p gestalts-node-desktop -p thia-server
 
-admin() { cargo run -q -p thia-server -- --data server-data admin "$@"; }
-if [[ ! -e server-data/dev-login.txt ]]; then
-  # the workshop is behind a login: on a dev machine, this account's
-  step "the local account (dev@localhost)"
-  if ! password="$(admin reset-password --email dev@localhost 2> /dev/null)"; then
-    school="$(admin add-school "Dev school")"
-    password="$(admin add-account --school "$school" --email dev@localhost --maintainer)"
-  fi
-  printf 'email: dev@localhost\npassword: %s\n' "$password" > server-data/dev-login.txt
-  echo "sign in to the workshop with dev@localhost, password in server-data/dev-login.txt"
-fi
-# allow the local account to use the catalog model packages
-if [[ -e server-data/dev-login.txt ]]; then admin grant-maintainer dev@localhost; fi
-
 printf '\nReady: mise run just dev\n'

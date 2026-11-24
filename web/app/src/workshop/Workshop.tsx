@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { AccountForm } from '@gestalts/host';
+import { useCallback, useEffect, useState } from 'react';
 import { LayoutTemplate, LogOut, Plus } from 'lucide-react';
 import { useLang } from '@gestalts/i18n';
 import * as api from './api';
@@ -19,37 +20,10 @@ export function Workshop() {
 }
 
 export function Login({ onIn }: { onIn: (m: api.Me) => void }) {
-  const { m } = useLang();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    setBusy(true);
-    setError(undefined);
-    try {
-      onIn(await api.login(email, password));
-    } catch (err) {
-      setError(err instanceof api.ApiError && err.status === 401 ? m.login_mismatch() : err instanceof Error ? err.message : String(err));
-    } finally {
-      setBusy(false);
-    }
-  };
   return (
     <div className="flex min-h-dvh items-center justify-center bg-base-200 p-4">
       <div className="fixed top-2 start-4"><Areas /></div>
-      <form onSubmit={(e) => void submit(e)} className="flex w-full max-w-sm flex-col gap-3 rounded-box bg-base-100 p-6 shadow">
-        <h1 className="text-lg font-semibold">{m.sign_in()}</h1>
-        <label className="flex flex-col gap-1 text-sm">{m.email()}
-          <input className="input w-full" type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">{m.password()}
-          <input className="input w-full" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-        </label>
-        {error && <p role="alert" className="text-sm text-error">{error}</p>}
-        <button type="submit" className="btn btn-primary" disabled={busy}>{m.sign_in()}</button>
-      </form>
+      <AccountForm onIn={onIn} />
     </div>
   );
 }

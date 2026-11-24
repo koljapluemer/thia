@@ -1,3 +1,5 @@
+import { PersonalAccount } from './PersonalAccount';
+import type { PersonalSync } from './personal-sync';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { registry } from 'virtual:gestalts-plugins';
 import type { Repo } from '@gestalts/client';
@@ -19,6 +21,7 @@ const GUEST = 'thia:guest';
 type Home = { repo?: Repo; decks: string[]; error?: string };
 type Value = {
   home: Home;
+  syncStatus?: string;
   /** the folder the views are on: `home`, or a guest's */
   dir: string;
   guest: boolean;
@@ -56,17 +59,61 @@ export function HomeProvider({ children }: { children: ReactNode }) {
   // this device's, once hydrated: the page is the same for everyone until then
   const guestDir = useStored(GUEST);
   const [home, setHome] = useState<Home>({ decks: [] });
-  const dir = guestDir ?? HOME;
+  const [syncing, setSyncing] = useState<PersonalSync | null>(null);
+  const [importLocal, setImportLocal] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string>();
+  const dir = guestDir ?? (syncing ? `account-${syncing.account}` : HOME);
+  const changeSync = useCallback((next: PersonalSync | null, includeLocal = false) => {
+    syncing?.close();
+    setHome({ decks: [] });
+    setSyncStatus(undefined);
+    setImportLocal(includeLocal);
+    setSyncing(next);
+    if (next) setWanted(true);
+  }, [syncing]);
+
+  useEffect(() => () => syncing?.close(), [syncing]);
+
+  useEffect(() => {
+    if (!syncing || !home.repo || guestDir) return;
+    const repo = home.repo;
+    let active = true;
+    const run = () => {
+      void syncing.sync(repo, importLocal).then((finished) => {
+        if (!active || !finished) return;
+        setImportLocal(false);
+        setSyncStatus(`Last synced ${new Date().toLocaleTimeString()}`);
+      }, (error: unknown) => {
+        if (active) setSyncStatus(error instanceof Error ? error.message : String(error));
+      });
+    };
+    run();
+    const timer = window.setInterval(run, 10000);
+    let debounce: number | undefined;
+    const unsubscribe = repo.onWrite(() => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(run, 800);
+    });
+    window.addEventListener('online', run);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.clearTimeout(debounce);
+      unsubscribe();
+      window.removeEventListener('online', run);
+    };
+  }, [syncing, home.repo, importLocal, guestDir]);
 
   const want = useCallback((d?: string) => {
     setWanted(true);
     if (d) setDeck(d);
   }, []);
   const startGuest = useCallback(() => {
+    changeSync(null);
     const next = `guest-${Date.now().toString(36)}`;
     setHome({ decks: [] });
     store.set(GUEST, next);
-  }, []);
+  }, [changeSync]);
   const endGuest = useCallback(() => {
     if (!guestDir) return;
     const old = { dir: guestDir, repo: home.repo };
@@ -76,10 +123,11 @@ export function HomeProvider({ children }: { children: ReactNode }) {
     void forget(old.dir, old.repo);
   }, [guestDir, home.repo]);
 
-  const value = useMemo(() => ({ home, dir, guest: guestDir !== null, want, startGuest, endGuest }), [home, dir, guestDir, want, startGuest, endGuest]);
+  const value = useMemo(() => ({ home, syncStatus, dir, guest: guestDir !== null, want, startGuest, endGuest }), [home, syncStatus, dir, guestDir, want, startGuest, endGuest]);
   return (
     <Context.Provider value={value}>
       {wanted && <Opener key={dir} dir={dir} deck={deck} onHome={setHome} />}
+      {!guestDir && <PersonalAccount syncing={syncing} status={syncStatus} onSync={changeSync} />}
       {children}
     </Context.Provider>
   );
@@ -103,4 +151,9 @@ export function useHome(deck?: string): Value {
 /** Guest mode, without opening the store. */
 export function useGuest(): Pick<Value, 'guest' | 'startGuest' | 'endGuest'> {
   return useContext(Context);
+}
+
+
+export function usePersonalSyncStatus() {
+  return useContext(Context).syncStatus;
 }

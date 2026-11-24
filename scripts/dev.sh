@@ -81,15 +81,14 @@ serve servers node "folder-sync" "http://127.0.0.1:$node" "$node" "plugin backen
   env GESTALTS_NODE_PORT="$node" scripts/node.sh
 servernote="API · lessons on :$serverlessons"
 serve servers serverapi "server" "http://127.0.0.1:$serverapi" "$serverapi" "$servernote" \
-  env THIA_LESSON_ORIGIN="http://127.0.0.1:$serverlessons" cargo run -q -p thia-server -- --data server-data \
+  env THIA_BETA_CODE="${THIA_BETA_CODE:-local-beta}" THIA_LESSON_ORIGIN="http://127.0.0.1:$serverlessons" cargo run -q -p thia-server -- --data server-data \
   serve --insecure-cookies --app "127.0.0.1:$serverapi" --lessons "127.0.0.1:$serverlessons"
 
-if [[ -e server-data/dev-login.txt ]]; then login="lessons sign-in: server-data/dev-login.txt"
-else login="lessons sign-in: your account, or mise run server:admin add-account / reset-password"; fi
+login="sign up in the browser with the local beta code"
 serve apps web "make app" "http://localhost:$web/workshop" "$web" "$login" \
   env VITE_THIA_API="http://127.0.0.1:$serverapi" VITE_SITE="http://localhost:$site/" pnpm --dir web/app dev --port "$web" --strictPort
 serve apps site "use app" "http://localhost:$site/" "$site" "every view, your notes; what's accepted shows here once it's in plugins/" \
-  env VITE_LESSONS="http://127.0.0.1:$serverlessons" VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_MAKE="http://localhost:$web/workshop" \
+  env VITE_THIA_API="http://127.0.0.1:$serverapi" VITE_LESSONS="http://127.0.0.1:$serverlessons" VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_MAKE="http://localhost:$web/workshop" \
   pnpm --dir web/site dev --port "$site" --strictPort
 
 listening() { (exec 3<> "/dev/tcp/127.0.0.1/$1") 2> /dev/null || (exec 3<> "/dev/tcp/::1/$1") 2> /dev/null; }

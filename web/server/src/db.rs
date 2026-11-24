@@ -174,6 +174,26 @@ const MIGRATIONS: &[&str] = &[r"
         expires TEXT NOT NULL
     );
     CREATE INDEX oauth_tokens_by_account ON oauth_tokens(account, client);
+", r"
+    CREATE TABLE accounts_v2 (
+        id TEXT PRIMARY KEY,
+        school TEXT REFERENCES schools(id),
+        email TEXT NOT NULL UNIQUE,
+        password TEXT,
+        token_budget INTEGER NOT NULL,
+        created TEXT NOT NULL,
+        disabled TEXT,
+        admin INTEGER NOT NULL DEFAULT 0,
+        maintainer INTEGER NOT NULL DEFAULT 0
+    );
+    INSERT INTO accounts_v2 SELECT id, school, email, password, token_budget, created, disabled, admin, maintainer FROM accounts;
+    DROP TABLE accounts;
+    ALTER TABLE accounts_v2 RENAME TO accounts;
+    CREATE TABLE personal_sync (
+        account TEXT PRIMARY KEY REFERENCES accounts(id) ON DELETE CASCADE,
+        revision INTEGER NOT NULL,
+        envelope TEXT NOT NULL
+    );
 "];
 
 pub struct Db(Mutex<Connection>);
@@ -229,7 +249,19 @@ impl Db {
         conn.pragma_update(None, "journal_mode", "WAL")?;
         let at: usize = conn.pragma_query_value(None, "user_version", |r| r.get(0))?;
         for (i, m) in MIGRATIONS.iter().enumerate().skip(at) {
-            conn.execute_batch(&format!("BEGIN; {m}; PRAGMA user_version = {}; COMMIT;", i + 1))?;
+            // Rebuilding the parent table requires suspending FK actions while preserving all references.
+            let rebuild_accounts = m.contains("CREATE TABLE accounts_v2");
+            if rebuild_accounts {
+                conn.pragma_update(None, "foreign_keys", false)?;
+            }
+            conn.execute_batch(&format!("BEGIN; {m}; PRAGMA user_version = {};", i + 1))?;
+            if rebuild_accounts && conn.prepare("PRAGMA foreign_key_check")?.exists([])? {
+                return Err(Error::InvalidQuery);
+            }
+            conn.execute_batch("COMMIT")?;
+            if rebuild_accounts {
+                conn.pragma_update(None, "foreign_keys", true)?;
+            }
         }
         Ok(Db(Mutex::new(conn)))
     }

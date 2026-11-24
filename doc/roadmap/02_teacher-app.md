@@ -1,6 +1,6 @@
 # The app for teachers: what's left
 
-From discussions on 2026-11-16, 2026-11-17 and 2026-11-22. Built and documented: accounts made by admins, drafts of
+From discussions on 2026-11-16, 2026-11-17 and 2026-11-22. Built and documented: beta-code email/password signup, drafts of
 each kind on the server, both agents, asking, lessons of several views, previews under the closed CSP with npm from
 our own origin, publishing by link to the player on the lesson domain, unpublishing, "start fresh", a minimal
 submission and review ([`web/server/doc/architecture.md`](../../web/server/doc/architecture.md),

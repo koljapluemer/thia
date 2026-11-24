@@ -4,7 +4,7 @@ import type { WasmRepo } from '../wasm/gestalts.js';
 export const METHODS = [
   'reindex', 'reload', 'collectNodeBlobs', 'isDeleted', 'query', 'get', 'subscribe', 'unsubscribe', 'takeDeltas',
   'subscribeBeliefs', 'takeBeliefDeltas', 'subscribeOutline', 'takeOutlineDeltas', 'put', 'delete', 'health',
-  'readBlob', 'writeBlob', 'gestalts', 'syncFetch', 'syncMerge', 'syncPush',
+  'readBlob', 'writeBlob', 'gestalts', 'personalMerge', 'personalCommit', 'syncFetch', 'syncMerge', 'syncPush',
 ] as const satisfies readonly (keyof WasmRepo)[];
 
 type Method = (typeof METHODS)[number];

@@ -259,7 +259,9 @@ export class Repo {
     const go = async () => {
       const span = log.span(name, { ...data, waitedMs: Date.now() - queuedAt });
       try {
-        const r = await f();
+        const r = this.storageKey.startsWith('gestalts-connector:account-') && navigator.locks
+          ? await navigator.locks.request(this.storageKey, f)
+          : await f();
         span.end();
         return r;
       } catch (e) {
@@ -272,6 +274,16 @@ export class Repo {
     const run = this.queue.then(go, go);
     this.queue = run.catch(() => undefined);
     return run;
+  }
+
+  syncPersonal(exchange: (merge: (remote: string, includeLocal: boolean) => Promise<string>) => Promise<string | undefined>) {
+    return this.serial('personal sync', async () => {
+      const snapshot = await exchange((remote, includeLocal) => this.wasm.personalMerge(remote, includeLocal));
+      if (snapshot !== undefined) {
+        await this.wasm.personalCommit(snapshot);
+        await this.pump();
+      }
+    });
   }
 
   /** One page of what `q` asks for. */
@@ -415,7 +427,15 @@ export class Repo {
     this.afterWrite();
   }
 
+  private readonly writeListeners = new Set<() => void>();
+
+  onWrite(listener: () => void) {
+    this.writeListeners.add(listener);
+    return () => this.writeListeners.delete(listener);
+  }
+
   private afterWrite() {
+    this.writeListeners.forEach((listener) => listener());
     void this.pump();
     if (this.status.mode === 'sync' && this.status.url) {
       clearTimeout(this.syncTimer);

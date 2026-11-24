@@ -3,7 +3,7 @@ import { RefreshCw, UserRound, Wrench } from 'lucide-react';
 import { RepoProvider } from '@gestalts/client';
 import { ConnectorSettings } from '@gestalts/host';
 import { LangPicker, useLang } from '@gestalts/i18n';
-import { HOME_NODE, useGuest, useHome } from './home';
+import { HOME_NODE, useGuest, useHome, usePersonalSyncStatus } from './home';
 
 /** The make app (web/app): the workshop, behind an account. The same origin when deployed. */
 export const MAKE: string = import.meta.env.VITE_MAKE ?? '/workshop';
@@ -35,6 +35,7 @@ function SyncSettings() {
 export function Toolbar() {
   const { m } = useLang();
   const { guest, startGuest } = useGuest();
+  const syncStatus = usePersonalSyncStatus();
   // the store opens only once sync is asked about
   const [syncOpen, setSyncOpen] = useState(false);
   const guestAsk = () => {
@@ -42,6 +43,7 @@ export function Toolbar() {
   };
   return (
     <div className="flex items-center gap-1">
+      {!guest && <button type="button" className="btn btn-sm" title={syncStatus} onClick={() => window.dispatchEvent(new Event('thia:open-account'))}>Sync my progress</button>}
       {!guest && (
         <button type="button" className="btn btn-sm btn-ghost btn-square" title={m.guest_start()} aria-label={m.guest_start()} onClick={guestAsk}>
           <UserRound className="size-4" />

@@ -1,7 +1,7 @@
 /** The workshop server's API (web/server), on this origin under /api, with the session cookie. */
 import type { ViewError } from '@gestalts/view';
 
-export type Me = { email: string; school: string | null; maintainer: boolean };
+export type Me = { id: string; email: string; school: string | null; maintainer: boolean };
 /** What a draft makes: a learning view, a visualization, or a lesson of several views. */
 export type Kind = 'view' | 'viz' | 'sequence';
 export type DraftInfo = { id: string; package: string; kind: Kind; title: string; created: string };
@@ -27,7 +27,6 @@ async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Pr
 }
 
 export const me = () => api<Me>('/me');
-export const login = (email: string, password: string) => api<Me>('/login', { method: 'POST', json: { email, password } });
 export const logout = () => api<void>('/logout', { method: 'POST' });
 export const drafts = () => api<DraftInfo[]>('/drafts');
 export const newDraft = (title: string, kind: Kind) => api<DraftInfo>('/drafts', { method: 'POST', json: { title, kind } });

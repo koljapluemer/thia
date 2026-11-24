@@ -7,3 +7,5 @@ export { AccessError, Bridge, type Scope, type ViewEnv } from './frame/bridge';
 export { deckSources, findPlugin, npmUrlsOf, type DeckEntry, type Distribution, type FrameRuntime, type PluginEntry, type OutlineSummary, type OutlineTree, type OutlineTreeEntry, type PluginManifest, type Registry } from './registry';
 export { useHomeRepo } from './useHomeRepo';
 export { SingleView, ViewFrame, runnable, type Navigate } from './ViewFrame';
+
+export { AccountForm, type Account } from './AccountForm';

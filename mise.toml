@@ -223,12 +223,12 @@ run = """
 set -euo pipefail
 pnpm --dir web/site build
 cargo run -q -p thia-server -- --data server-data admin install-player --dist web/site/dist
-cargo run -q -p thia-server -- --data server-data serve --insecure-cookies
+THIA_BETA_CODE="${THIA_BETA_CODE:-local-beta}" cargo run -q -p thia-server -- --data server-data serve --insecure-cookies
 """
 
 [tasks."server:admin"]
 hide = true
-description = "Accounts on the local server: mise run server:admin add-account --email E [--password P] [--school ID] [--admin], add-school NAME, grant-admin E"
+description = "Accounts on the local server: mise run server:admin add-school NAME, grant-admin E"
 run = "cargo run -q -p thia-server -- --data server-data admin"
 
 [tasks."server:deploy"]

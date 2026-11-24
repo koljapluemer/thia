@@ -114,7 +114,10 @@ pub struct Inner {
     pub limits: Limits,
     /// cookies only over https; off for a local run on http
     pub secure_cookies: bool,
-    /// failed sign-ins by email: how many, and since when
+    /// Shared signup code. Signup is disabled when absent.
+    pub beta_code: Option<String>,
+    pub auth_hash_slots: tokio::sync::Semaphore,
+    /// Auth attempts by email or IP and when the rate-limit window began.
     pub failures: Mutex<HashMap<String, (u32, Instant)>>,
     /// writes to drafts, one at a time, so what's checked is what's there when they land
     pub writes: tokio::sync::Mutex<()>,
@@ -162,6 +165,8 @@ impl AppState {
             repo_gestalts,
             limits,
             secure_cookies,
+            beta_code: std::env::var("THIA_BETA_CODE").ok().filter(|code| !code.is_empty()),
+            auth_hash_slots: tokio::sync::Semaphore::new(4),
             failures: Mutex::default(),
             writes: tokio::sync::Mutex::default(),
             reference: drafting::contract::Reference::new(services.worker.template.clone()),
@@ -267,10 +272,13 @@ pub fn now_iso() -> String {
     gestalts_core::iso_datetime(now_ms())
 }
 
+mod personal_sync;
+
 /// The app's routes: its API under `/api`; MCP (`/mcp`) and what signs a chat host in for it (`/oauth/*`,
 /// `/.well-known/*`) at the root.
+
 pub fn app(state: AppState) -> axum::Router {
-    let api = auth::routes().merge(drafts::routes()).merge(npm::routes()).merge(publish::routes()).merge(submissions::routes()).merge(runs::routes()).merge(mcp::api_routes());
+    let api = auth::routes().merge(personal_sync::routes()).merge(drafts::routes()).merge(npm::routes()).merge(publish::routes()).merge(submissions::routes()).merge(runs::routes()).merge(mcp::api_routes());
     axum::Router::new().nest("/api", api).merge(mcp::public_routes()).with_state(state)
 }
 

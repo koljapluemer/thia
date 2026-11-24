@@ -50,22 +50,6 @@ enum Command {
 enum Admin {
     /// A school; prints its id
     AddSchool { name: String },
-    /// An account, optionally associated with a school; prints a password to hand over
-    AddAccount {
-        #[arg(long)]
-        school: Option<String>,
-        #[arg(long)]
-        email: String,
-        /// use this password instead of generating one
-        #[arg(long)]
-        password: Option<String>,
-        /// may review submissions for the public site
-        #[arg(long)]
-        admin: bool,
-        /// may use every model package in the repo in drafts, with more room
-        #[arg(long)]
-        maintainer: bool,
-    },
     /// Lets an account review submissions for the public site, or (--revoke) no longer
     #[command(name = "grant-admin")]
     Grant {
@@ -121,26 +105,6 @@ async fn run(cli: Cli) -> Result<(), String> {
                     let id = random_hex(8);
                     db.add_school(&id, &name, &now).map_err(|e| e.to_string())?;
                     println!("{id}");
-                }
-                Admin::AddAccount { school, email, password, admin, maintainer } => {
-                    if let Some(school) = &school
-                        && !db.school_exists(school).map_err(|e| e.to_string())?
-                    {
-                        return Err(format!("no school {school}"));
-                    }
-                    let password = password.unwrap_or_else(|| random_token(12));
-                    if password.is_empty() {
-                        return Err("password must not be empty".into());
-                    }
-                    let email = email.trim().to_lowercase();
-                    db.add_account(&random_hex(8), school.as_deref(), &email, &auth::hash_password(&password), limits.token_budget, &now).map_err(|e| e.to_string())?;
-                    if admin {
-                        db.set_admin(&email, true).map_err(|e| e.to_string())?;
-                    }
-                    if maintainer {
-                        db.set_maintainer(&email, true).map_err(|e| e.to_string())?;
-                    }
-                    println!("{password}");
                 }
                 Admin::Grant { email, revoke } => {
                     if !db.set_admin(&email.trim().to_lowercase(), !revoke).map_err(|e| e.to_string())? {
