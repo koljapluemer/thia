@@ -2,12 +2,21 @@
 
 The app origin serves account sessions, Workshop draft sync, and MCP with OAuth. The lesson origin serves the public player and lesson artifacts from separate browser storage.
 
-Personal sync runs on the app origin under `/api/personal-sync`. It stores one opaque, revisioned backup in
-SQLite per signed-in account. The client uses a separate passphrase to unlock the backup, merges YAML in the
-browser, and replaces the backup only if the revision it read is still current. The browser keeps local data in
-a separate OPFS directory for each account. Guest data stays local unless explicitly imported. Personal sync
-data is outside the MCP tool surface.
+Thia uses OPAQUE for account sign-in. The browser derives a wrapping key from the client-only
+export key and unwraps the account's random data key after sign-in. SQLite holds the email,
+OPAQUE record, wrapped key, and one encrypted, revisioned personal snapshot. A password change
+replaces the credential and rewraps the same key in one transaction. Forgotten-password recovery
+is deferred.
 
+The browser merges progress and encrypts the result before uploading to `/api/personal-sync`.
+A write succeeds only if the revision is still current. Each account has a separate local OPFS
+directory. Remembered sign-in stores a device-local wrapped copy of the key in IndexedDB.
+Guest progress stays local unless the user chooses to merge it. Workshop drafts and publications
+use their existing server storage, and MCP has no personal-sync tools.
+
+Database backups contain ciphertext. A compromised app deployment can deliver browser code
+that reads progress or passwords. Access to both the OPAQUE setup and credential records can
+enable offline password guessing.
 
 ## A draft
 

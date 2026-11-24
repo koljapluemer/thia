@@ -43,7 +43,7 @@ export function Toolbar() {
   };
   return (
     <div className="flex items-center gap-1">
-      {!guest && <button type="button" className="btn btn-sm" title={syncStatus} onClick={() => window.dispatchEvent(new Event('thia:open-account'))}>Sync my progress</button>}
+      {!guest && <button type="button" className="btn btn-sm" title={syncStatus} onClick={() => window.dispatchEvent(new Event('thia:open-account'))}>{m.sync_progress()}</button>}
       {!guest && (
         <button type="button" className="btn btn-sm btn-ghost btn-square" title={m.guest_start()} aria-label={m.guest_start()} onClick={guestAsk}>
           <UserRound className="size-4" />

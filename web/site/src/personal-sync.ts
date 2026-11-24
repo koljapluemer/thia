@@ -4,11 +4,16 @@ type Snapshot = { revision: number; envelope: string };
 const EMPTY = '{"notes":[],"blobs":[]}';
 
 async function request(account: string, method = 'GET', body?: Snapshot, signal?: AbortSignal) {
-  const response = await fetch('/api/personal-sync', {
-    method, signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(10000)]) : AbortSignal.timeout(10000), cache: 'no-store',
-    headers: { 'X-Thia-Account': account, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const headers = { 'X-Thia-Account': account };
+  const deadline = AbortSignal.timeout(10000);
+  const common: RequestInit = { signal: signal ? AbortSignal.any([signal, deadline]) : deadline, cache: 'no-store' };
+  const response = await fetch('/api/personal-sync', body ? {
+    ...common, method, headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+  } : { ...common, headers });
+  if (response.status === 401) {
+    window.dispatchEvent(new Event('thia:session-expired'));
+    throw new Error('Sign in again to sync progress.');
+  }
   if (response.status === 409) return undefined;
   if (!response.ok) throw new Error(response.status === 413 ? 'The encrypted backup exceeds the storage limit.' : 'Could not contact personal sync.');
   return await response.json() as Snapshot | number | null;
@@ -26,7 +31,7 @@ export class PersonalSync {
     this.worker.terminate();
   }
 
-  private crypto(operation: 'unlock' | 'read' | 'write', revision: number, value?: string, passphrase?: string) {
+  private crypto(operation: 'unlock' | 'read' | 'write', revision: number, value?: string, key?: Uint8Array) {
     return new Promise<string | undefined>((resolve, reject) => {
       const signal = this.abort.signal;
       if (signal.aborted) { reject(signal.reason); return; }
@@ -41,14 +46,12 @@ export class PersonalSync {
         signal.removeEventListener('abort', cancel);
         reject(new Error('The encryption worker failed to load.'));
       };
-      this.worker.postMessage({ operation, account: this.account, revision, value, passphrase });
+      this.worker.postMessage({ operation, account: this.account, revision, value, key });
     });
   }
 
-  async unlock(passphrase: string) {
-    const latest = await request(this.account, 'GET', undefined, this.abort.signal) as Snapshot | null;
-    if (!latest && passphrase.length < 15) throw new Error('Use a sync passphrase of at least 15 characters.');
-    await this.crypto('unlock', latest?.revision ?? 0, latest?.envelope, passphrase);
+  async unlock(key: Uint8Array) {
+    await this.crypto('unlock', 0, undefined, key);
   }
 
   async sync(repo: Repo, includeLocal: boolean) {

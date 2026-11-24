@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
 use thia_server::worker::WorkerConfig;
-use thia_server::{AppState, Limits, Services, auth, db, now_iso, random_hex, random_token};
+use thia_server::{AppState, Limits, Services, db, now_iso, random_hex};
 
 #[derive(Parser)]
 #[command(about = "thia's server: accounts, drafts, MCP, publishing, lessons")]
@@ -63,11 +63,6 @@ enum Admin {
         email: String,
         #[arg(long)]
         revoke: bool,
-    },
-    /// A new password for an account, signing it out everywhere; prints it
-    ResetPassword {
-        #[arg(long)]
-        email: String,
     },
     /// A build of the site (web/site/dist), which plays lessons, under runtime/<its version>/, for the lessons made
     /// against it; prints the version
@@ -129,13 +124,6 @@ async fn run(cli: Cli) -> Result<(), String> {
                     println!("{n}");
                 }
                 Admin::Runs { command } => thia_server::runs::cli::run(&db, &cli.data, *command, &mut std::io::stdout().lock())?,
-                Admin::ResetPassword { email } => {
-                    let password = random_token(12);
-                    if !db.set_password(&email.trim().to_lowercase(), &auth::hash_password(&password)).map_err(|e| e.to_string())? {
-                        return Err(format!("no account {email}"));
-                    }
-                    println!("{password}");
-                }
             }
             Ok(())
         }

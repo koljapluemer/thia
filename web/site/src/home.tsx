@@ -1,6 +1,7 @@
 import { PersonalAccount } from './PersonalAccount';
 import type { PersonalSync } from './personal-sync';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useLang } from '@gestalts/i18n';
 import { registry } from 'virtual:gestalts-plugins';
 import type { Repo } from '@gestalts/client';
 import { useHomeRepo } from '@gestalts/host';
@@ -54,6 +55,7 @@ export async function forget(dir: string, repo: Repo | undefined) {
  * their own, deleted when they end it.
  */
 export function HomeProvider({ children }: { children: ReactNode }) {
+  const { lang, m } = useLang();
   const [wanted, setWanted] = useState(false);
   const [deck, setDeck] = useState<string>();
   // this device's, once hydrated: the page is the same for everyone until then
@@ -63,14 +65,17 @@ export function HomeProvider({ children }: { children: ReactNode }) {
   const [importLocal, setImportLocal] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string>();
   const dir = guestDir ?? (syncing ? `account-${syncing.account}` : HOME);
+  const currentSync = useRef<PersonalSync | null>(null);
   const changeSync = useCallback((next: PersonalSync | null, includeLocal = false) => {
-    syncing?.close();
-    setHome({ decks: [] });
+    const previous = currentSync.current;
+    currentSync.current = next;
+    previous?.close();
+    if (previous?.account !== next?.account) setHome({ decks: [] });
     setSyncStatus(undefined);
     setImportLocal(includeLocal);
     setSyncing(next);
     if (next) setWanted(true);
-  }, [syncing]);
+  }, []);
 
   useEffect(() => () => syncing?.close(), [syncing]);
 
@@ -81,8 +86,11 @@ export function HomeProvider({ children }: { children: ReactNode }) {
     const run = () => {
       void syncing.sync(repo, importLocal).then((finished) => {
         if (!active || !finished) return;
+        if (importLocal) {
+          try { localStorage.setItem('thia-import-' + syncing.account, 'merged'); } catch { /* storage unavailable */ }
+        }
         setImportLocal(false);
-        setSyncStatus(`Last synced ${new Date().toLocaleTimeString()}`);
+        setSyncStatus(m.last_synced({ time: new Date().toLocaleTimeString(lang) }));
       }, (error: unknown) => {
         if (active) setSyncStatus(error instanceof Error ? error.message : String(error));
       });
@@ -102,7 +110,7 @@ export function HomeProvider({ children }: { children: ReactNode }) {
       unsubscribe();
       window.removeEventListener('online', run);
     };
-  }, [syncing, home.repo, importLocal, guestDir]);
+  }, [syncing, home.repo, importLocal, guestDir, lang, m]);
 
   const want = useCallback((d?: string) => {
     setWanted(true);

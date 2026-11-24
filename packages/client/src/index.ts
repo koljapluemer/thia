@@ -1,3 +1,4 @@
 /** The host's side of the core: the wasm-backed `Repo`, opening and syncing it. */
 export { Repo, contentHash, loadCore, newId, nodeHealth, stableId, stateId, type ConnectorStatus, type DeckSource, type GestaltDef, type Live, type LiveBeliefs, type LiveOutline, type LlmProvider, type LlmProviderId, type LlmSettings, type LlmSettingsChange, type NodeHealth, type RepoSource, type ServiceStatus, type SyncReport, type YmlsIn } from './repo';
 export { RepoProvider, closeOpened, preloadHostQuery, useConnector, useHostQuery, useHostQueryState, useHostRepo, useOpenRepo, useServices } from './react';
+export { hasLocalProgress, signIn, signOut, changePassword, restoreUnlock, clearUnlock, watchAccount, notifyAccountChange, type Account, type AccountUnlock } from './account';

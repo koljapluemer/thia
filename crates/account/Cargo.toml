@@ -1,0 +1,13 @@
+[package]
+name = "gestalts-account"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+opaque-ke = { version = "=4.0.1", features = ["argon2"] }
+sha2.workspace = true
+argon2 = "0.5"
+rand = { version = "0.8", default-features = false, features = ["getrandom"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

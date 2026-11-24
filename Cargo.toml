@@ -1,12 +1,13 @@
 [workspace]
 resolver = "3"
-members = ["crates/merge", "crates/core", "crates/fs", "crates/peer", "crates/wasm", "crates/node", "web/server", "installables/folder-sync/desktop"]
+members = ["crates/account", "crates/merge", "crates/core", "crates/fs", "crates/peer", "crates/wasm", "crates/node", "web/server", "installables/folder-sync/desktop"]
 
 [workspace.package]
 edition = "2024"
 version = "0.1.0"
 
 [workspace.dependencies]
+gestalts-account = { path = "crates/account" }
 gestalts-core = { path = "crates/core" }
 gestalts-merge = { path = "crates/merge" }
 gestalts-fs = { path = "crates/fs" }

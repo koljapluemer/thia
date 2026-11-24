@@ -5,6 +5,8 @@ mod common;
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
 use common::Server;
+use gestalts_account::*;
+use base64::{Engine, engine::general_purpose::STANDARD};
 use thia_server::Limits;
 use serde_json::json;
 use tower::ServiceExt;
@@ -13,8 +15,8 @@ use tower::ServiceExt;
 async fn signing_in_and_out() {
     let s = Server::new(Limits::default());
     assert_eq!(s.call("GET", "/api/me", None, None).await.0, StatusCode::UNAUTHORIZED);
-    assert_eq!(s.call("POST", "/api/login", None, Some(json!({ "email": "ada@school.example", "password": "wrong" }))).await.0, StatusCode::UNAUTHORIZED);
-    assert_eq!(s.call("POST", "/api/login", None, Some(json!({ "email": "nobody@x", "password": "right" }))).await.0, StatusCode::UNAUTHORIZED);
+    assert!(s.login_exchange("ada@school.example", b"wrong").await.1.is_none());
+    assert!(s.login_exchange("nobody@example.com", b"right").await.1.is_none());
     let cookie = s.login(" Ada@School.example ").await;
     let (status, me, _) = s.call("GET", "/api/me", Some(&cookie), None).await;
     assert_eq!((status, me["email"].as_str()), (StatusCode::OK, Some("ada@school.example")));
@@ -39,9 +41,9 @@ async fn an_account_without_a_school_can_sign_in_and_create_a_draft() {
 async fn too_many_wrong_passwords_wait() {
     let s = Server::new(Limits::default());
     for _ in 0..5 {
-        s.call("POST", "/api/login", None, Some(json!({ "email": "ada@school.example", "password": "wrong" }))).await;
+        assert!(s.login_exchange("ada@school.example", b"wrong").await.1.is_none());
     }
-    let (status, _, _) = s.call("POST", "/api/login", None, Some(json!({ "email": "ada@school.example", "password": "right" }))).await;
+    let (status, _) = s.login_exchange("ada@school.example", b"right").await;
     assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
 }
 
@@ -165,13 +167,26 @@ async fn a_maintainer_uses_every_model_package_and_has_more_room() {
 async fn beta_signup_and_encrypted_backups_are_account_scoped_and_revisioned() {
     let mut s = Server::new(Limits::default());
     std::sync::Arc::get_mut(&mut s.state.0).unwrap().beta_code = Some("beta-test".into());
-    let mut signup = json!({"email":" Test@example.com ", "password":"a long test password", "code":"wrong"});
-    assert_eq!(s.call("POST", "/api/signup", None, Some(signup.clone())).await.0, StatusCode::FORBIDDEN);
+    let password = b"a long test password";
+    let email = " Test@example.com ";
+    let start = ClientRegistration::<Profile>::start(&mut OsRng, password).unwrap();
+    let mut signup = json!({"email":email, "message":STANDARD.encode(start.message.serialize()), "code":"wrong"});
+    assert_eq!(s.call("POST", "/api/signup/start", None, Some(signup.clone())).await.0, StatusCode::FORBIDDEN);
     signup["code"] = json!("beta-test");
-    let (status, me, cookie) = s.call("POST", "/api/signup", None, Some(signup.clone())).await;
+    let (status, attempt, _) = s.call("POST", "/api/signup/start", None, Some(signup)).await;
     assert_eq!(status, StatusCode::OK);
+    let response = STANDARD.decode(attempt["message"].as_str().unwrap()).unwrap();
+    let finish = start.state.finish(&mut OsRng, password, RegistrationResponse::deserialize(&response).unwrap(),
+        ClientRegistrationFinishParameters::new(Default::default(), Some(&hardening()))).unwrap();
+    let upload = json!({"challenge":attempt["challenge"], "message":STANDARD.encode(finish.message.serialize()), "wrapped":STANDARD.encode([0; 60])});
+    assert_eq!(s.call("POST", "/api/signup/finish", None, Some(upload.clone())).await.0, StatusCode::NO_CONTENT);
+    assert_eq!(s.call("POST", "/api/signup/finish", None, Some(upload)).await.0, StatusCode::UNAUTHORIZED);
+    let (_, payload) = s.login_exchange(email, password).await;
+    let (status, login, cookie) = s.call("POST", "/api/login/finish", None, payload.clone()).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(s.call("POST", "/api/login/finish", None, payload).await.0, StatusCode::UNAUTHORIZED);
+    let me = &login["account"];
     assert_eq!(me["email"], "test@example.com");
-    assert_eq!(s.call("POST", "/api/signup", None, Some(signup)).await.0, StatusCode::CONFLICT);
     let cookie = cookie.unwrap();
     let id = me["id"].as_str().unwrap();
     let headers = [("cookie", cookie.as_str()), ("x-thia-account", id)];
@@ -183,4 +198,45 @@ async fn beta_signup_and_encrypted_backups_are_account_scoped_and_revisioned() {
     assert_eq!(s.raw("GET", path, &headers, None).await.2, json!({"revision":1,"envelope":"opaque"}));
     let other = s.login("ada@school.example").await;
     assert_eq!(s.raw("PUT", path, &[("cookie", &other), ("x-thia-account", id)], payload()).await.0, StatusCode::FORBIDDEN);
+}
+
+#[tokio::test]
+async fn password_change_replaces_credentials_and_keeps_the_snapshot() {
+    let s = Server::new(Limits::default());
+    let email = "ada@school.example";
+    let cookie = s.login(email).await;
+    let other = s.login(email).await;
+    let headers = [("cookie", cookie.as_str()), ("x-thia-account", "a1")];
+    let snapshot = json!({"revision":0,"envelope":"opaque snapshot"});
+    assert_eq!(s.raw("PUT", "/api/personal-sync", &headers, Some(("application/json", snapshot.to_string()))).await.0, StatusCode::OK);
+
+    let next = b"new password for the account";
+    let login = ClientLogin::<Profile>::start(&mut OsRng, b"right").unwrap();
+    let registration = ClientRegistration::<Profile>::start(&mut OsRng, next).unwrap();
+    let (status, attempt, _) = s.call("POST", "/api/password/change/start", Some(&cookie), Some(json!({
+        "message":STANDARD.encode(login.message.serialize()), "registration":STANDARD.encode(registration.message.serialize()),
+    }))).await;
+    assert_eq!(status, StatusCode::OK);
+    let decode = |field: &str| STANDARD.decode(attempt[field].as_str().unwrap()).unwrap();
+    let login = login.state.finish(&mut OsRng, b"right", CredentialResponse::deserialize(&decode("message")).unwrap(),
+        ClientLoginFinishParameters::new(None, Default::default(), Some(&hardening()))).unwrap();
+    let registration = registration.state.finish(&mut OsRng, next, RegistrationResponse::deserialize(&decode("registration")).unwrap(),
+        ClientRegistrationFinishParameters::new(Default::default(), Some(&hardening()))).unwrap();
+    let finish = json!({
+        "challenge":attempt["challenge"], "message":STANDARD.encode(login.message.serialize()),
+        "registration":STANDARD.encode(registration.message.serialize()), "wrapped":STANDARD.encode([1; 60]), "remember":true,
+    });
+    let (status, me, session) = s.call("POST", "/api/password/change/finish", Some(&cookie), Some(finish.clone())).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(me["generation"], 1);
+    let session = session.unwrap();
+    assert_eq!(s.call("POST", "/api/password/change/finish", Some(&session), Some(finish)).await.0, StatusCode::UNAUTHORIZED);
+    assert_eq!(s.call("GET", "/api/me", Some(&other), None).await.0, StatusCode::UNAUTHORIZED);
+    assert!(s.login_exchange(email, b"right").await.1.is_none());
+    let (_, payload) = s.login_exchange(email, next).await;
+    let (status, body, _) = s.call("POST", "/api/login/finish", None, payload).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(body["wrapped"], STANDARD.encode([1; 60]));
+    assert_eq!(s.raw("GET", "/api/personal-sync", &[("cookie", &session), ("x-thia-account", "a1")], None).await.2,
+        json!({"revision":1,"envelope":"opaque snapshot"}));
 }

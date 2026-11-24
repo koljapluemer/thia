@@ -210,7 +210,7 @@ pub fn run(db: &Db, data: &std::path::Path, cmd: Command, out: &mut impl Write) 
         }
         Command::Note { id, by, text } => {
             let text = super::check_note(&text)?;
-            let (admin, _) = db.account_by_email(&by.trim().to_lowercase()).map_err(|e| e.to_string())?.ok_or(format!("no account {by}"))?;
+            let admin = db.account_by_email(&by.trim().to_lowercase()).map_err(|e| e.to_string())?.ok_or(format!("no account {by}"))?;
             if !admin.admin { return Err(format!("{by} isn't an admin")); }
             if !db.with(|c| Ok(super::note(c, store, &id, &admin.id, text))).map_err(|e| e.to_string())?? { return Err(format!("no run {id}")); }
         }

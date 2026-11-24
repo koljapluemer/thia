@@ -1,5 +1,6 @@
 //! JS API of the gestalts core. Wrapped by `packages/client`; not meant to be used directly.
 
+mod account;
 mod opfs;
 
 use std::cell::RefCell;
@@ -278,10 +279,10 @@ impl WasmRepo {
         let remote = decode_snapshot(&remote).await?;
         // A referenced blob can arrive after its YAML. Copy it even when the YAML hash is unchanged.
         for name in remote.list_blobs().await.map_err(err)? {
-            if local.read_blob(&name).await.map_err(err)?.is_none() {
-                if let Some(bytes) = remote.read_blob(&name).await.map_err(err)? {
-                    local.write_blob(&name, &bytes).await.map_err(err)?;
-                }
+            if local.read_blob(&name).await.map_err(err)?.is_none()
+                && let Some(bytes) = remote.read_blob(&name).await.map_err(err)?
+            {
+                local.write_blob(&name, &bytes).await.map_err(err)?;
             }
         }
         let base_dir = Opfs::open(&format!("{dir}-personal-base")).await.map_err(err)?;
@@ -384,10 +385,10 @@ struct PersonalSnapshot {
 
 async fn copy_storage(from: &dyn Storage, to: &dyn Storage) -> gestalts_core::storage::Result<()> {
     for name in from.list_blobs().await? {
-        if let Some(bytes) = from.read_blob(&name).await? {
-            if to.read_blob(&name).await?.as_ref() != Some(&bytes) {
-                to.write_blob(&name, &bytes).await?;
-            }
+        if let Some(bytes) = from.read_blob(&name).await?
+            && to.read_blob(&name).await?.as_ref() != Some(&bytes)
+        {
+            to.write_blob(&name, &bytes).await?;
         }
     }
     for (id, text) in from.read_all_ymls().await? {

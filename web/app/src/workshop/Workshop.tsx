@@ -1,3 +1,4 @@
+import { signOut as endSession, watchAccount } from '@gestalts/client';
 import { AccountForm } from '@gestalts/host';
 import { useCallback, useEffect, useState } from 'react';
 import { LayoutTemplate, LogOut, Plus } from 'lucide-react';
@@ -13,7 +14,11 @@ import { Areas } from '../router';
  */
 export function Workshop() {
   const [me, setMe] = useState<api.Me | null>();
-  useEffect(() => { api.me().then(setMe, () => setMe(null)); }, []);
+  useEffect(() => {
+    const refresh = () => void api.me().then(setMe, () => setMe(null));
+    refresh();
+    return watchAccount(refresh);
+  }, []);
   if (me === undefined) return <div className="flex h-dvh items-center justify-center"><span className="loading loading-spinner" /></div>;
   if (!me) return <Login onIn={setMe} />;
   return <Drafts me={me} onOut={() => setMe(null)} />;
@@ -52,7 +57,7 @@ function Drafts({ me, onOut }: { me: api.Me; onOut: () => void }) {
       setError(e instanceof Error ? e.message : String(e));
     }
   };
-  const signOut = async () => { await api.logout().catch(() => undefined); onOut(); };
+  const signOut = async () => { try { await endSession(); onOut(); } catch (e) { setError(e instanceof Error ? e.message : String(e)); } };
   const current = list?.find((d) => d.id === selected);
   return (
     <div className="flex h-dvh flex-col bg-base-200">

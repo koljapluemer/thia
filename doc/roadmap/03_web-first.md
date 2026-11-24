@@ -26,8 +26,9 @@ What follows:
 
 ### Accounts sync, and the server can't read what it keeps
 
-Any beta account can opt into personal sync without a school affiliation. The beta stores one encrypted
-snapshot per account. The browser encrypts it using a key wrapped with a separate sync passphrase.
+Any beta account can sync personal progress without a school affiliation. The browser automatically encrypts
+progress after sign-in and the server stores one encrypted snapshot per account. OPAQUE sign-in supplies the
+client-only key that unlocks the backup.
 Workshop drafts use their own sync service.
 
 The model is Firefox Sync's: the browser encrypts before syncing, the server keeps the encrypted records and can't read
@@ -67,9 +68,10 @@ app (`web/app`) under `/make/`; pairing devices and the Android app are gone. Se
 ## Open, in order
 
 1. **Sync: storage or mailbox.** Decides whether the server is a backup, and how a new device gets its data.
-2. **The key.** Derived from a password, a passkey (the PRF extension), or a generated key with a recovery code; and
-   what is encrypted as a unit (a record, a batch of changes), which decides how much metadata the server sees.
-3. **Sign-in.** The beta uses email/password with a shared signup code. Add email verification and self-service password reset after the beta. Resetting a login password leaves the separate sync passphrase unchanged.
+2. **The key.** The beta wraps a random data key with a key derived from the OPAQUE export key. The encrypted unit
+   is one revisioned snapshot per account.
+3. **Sign-in.** The beta uses email and OPAQUE password authentication with a shared signup code. Signed-in
+   password changes rewrap the same data key. Email verification and forgotten-password recovery are deferred.
 4. **The trust model for view code.** Leaning: strict frames only, and the host owns embeds and devices. A view asks
    the host for a YouTube player or a recording, the host renders the embed in its own origin and drives it over the
    bridge; no view gets `same-origin`. Plus a pinned library allowlist (what `view.json` and `packages/npm-bundle`

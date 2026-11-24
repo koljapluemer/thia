@@ -194,6 +194,14 @@ const MIGRATIONS: &[&str] = &[r"
         revision INTEGER NOT NULL,
         envelope TEXT NOT NULL
     );
+", r"
+    ALTER TABLE accounts DROP COLUMN password;
+    DELETE FROM sessions;
+    DELETE FROM oauth_tokens;
+    DELETE FROM oauth_codes;
+    ALTER TABLE accounts ADD COLUMN opaque_record BLOB;
+    ALTER TABLE accounts ADD COLUMN wrapped_key TEXT;
+    ALTER TABLE accounts ADD COLUMN credential_generation INTEGER NOT NULL DEFAULT 0;
 "];
 
 pub struct Db(Mutex<Connection>);
@@ -284,11 +292,11 @@ impl Db {
         self.conn().query_row("SELECT 1 FROM schools WHERE id = ?1", [id], |_| Ok(())).optional().map(|r| r.is_some())
     }
 
-    pub fn add_account(&self, id: &str, school: Option<&str>, email: &str, password_hash: &str, token_budget: i64, now: &str) -> Result<(), Error> {
+    pub fn add_account(&self, id: &str, school: Option<&str>, email: &str, opaque_record: &[u8], token_budget: i64, now: &str) -> Result<(), Error> {
         self.conn()
             .execute(
-                "INSERT INTO accounts (id, school, email, password, token_budget, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                params![id, school, email, password_hash, token_budget, now],
+                "INSERT INTO accounts (id, school, email, opaque_record, token_budget, created) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![id, school, email, opaque_record, token_budget, now],
             )
             .map(drop)
     }
@@ -301,25 +309,11 @@ impl Db {
         self.conn().execute("UPDATE accounts SET maintainer = ?2 WHERE email = ?1", params![email, maintainer]).map(|n| n == 1)
     }
 
-    pub fn set_password(&self, email: &str, password_hash: &str) -> Result<bool, Error> {
-        let conn = self.conn();
-        let n = conn.execute("UPDATE accounts SET password = ?2 WHERE email = ?1", params![email, password_hash])?;
-        // a new password signs every session out
-        conn.execute("DELETE FROM sessions WHERE account IN (SELECT id FROM accounts WHERE email = ?1)", [email])?;
-        // and every chat host it allowed
-        conn.execute("DELETE FROM oauth_tokens WHERE account IN (SELECT id FROM accounts WHERE email = ?1)", [email])?;
-        Ok(n == 1)
-    }
-
-    /// The account and its password hash, if it may sign in.
-    pub fn account_by_email(&self, email: &str) -> Result<Option<(Account, Option<String>)>, Error> {
-        self.conn()
-            .query_row(
-                "SELECT id, school, email, token_budget, admin, maintainer, password FROM accounts WHERE email = ?1 AND disabled IS NULL",
-                [email],
-                |r| Ok((Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)?, maintainer: r.get(5)? }, r.get(6)?)),
-            )
-            .optional()
+    pub fn account_by_email(&self, email: &str) -> Result<Option<Account>, Error> {
+        self.conn().query_row(
+            "SELECT id, school, email, token_budget, admin, maintainer FROM accounts WHERE email = ?1 AND disabled IS NULL",
+            [email], |r| Ok(Account { id: r.get(0)?, school: r.get(1)?, email: r.get(2)?, token_budget: r.get(3)?, admin: r.get(4)?, maintainer: r.get(5)? }),
+        ).optional()
     }
 
     pub fn add_session(&self, token_hash: &str, account: &str, expires: &str) -> Result<(), Error> {
@@ -566,8 +560,8 @@ mod tests {
         .unwrap();
 
         let db = Db::migrate(conn).unwrap();
-        assert_eq!(db.account_by_email("old@example.com").unwrap().unwrap().0.school.as_deref(), Some("s"));
-        db.add_account("new", None, "new@example.com", "hash", 1, "now").unwrap();
-        assert_eq!(db.account_by_email("new@example.com").unwrap().unwrap().0.school, None);
+        assert_eq!(db.account_by_email("old@example.com").unwrap().unwrap().school.as_deref(), Some("s"));
+        db.add_account("new", None, "new@example.com", b"record", 1, "now").unwrap();
+        assert_eq!(db.account_by_email("new@example.com").unwrap().unwrap().school, None);
     }
 }

@@ -4,7 +4,9 @@
 use axum::body::Body;
 use axum::http::{Request, StatusCode, header};
 use thia_server::worker::WorkerConfig;
-use thia_server::{AppState, Limits, Services, auth, db::Db};
+use thia_server::{AppState, Limits, Services, db::Db};
+use gestalts_account::*;
+use base64::{Engine, engine::general_purpose::STANDARD};
 use http_body_util::BodyExt;
 use serde_json::{Value, json};
 use tower::ServiceExt;
@@ -28,16 +30,25 @@ impl Server {
         let dir = tempfile::tempdir().unwrap();
         let db = Db::memory().unwrap();
         db.add_school("s1", "A school", "2026-11-20T00:00:00Z").unwrap();
-        for (id, email) in [("a1", "ada@school.example"), ("a2", "bea@school.example"), ("a3", "cal@school.example")] {
-            db.add_account(id, Some("s1"), email, &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
-        }
-        db.add_account("a4", None, "independent@example.com", &auth::hash_password("right"), 1_000_000, "2026-11-20T00:00:00Z").unwrap();
-        // bea reviews
-        db.set_admin("bea@school.example", true).unwrap();
-        // cal makes what the public site ships
-        db.set_maintainer("cal@school.example", true).unwrap();
         let services = services(&dir.path().join("npm-cache"));
         let state = AppState::new(db, dir.path().to_owned(), limits, true, services).unwrap();
+        let setup = ServerSetup::<Profile>::deserialize(&std::fs::read(dir.path().join("opaque-setup-v1")).unwrap()).unwrap();
+        for (id, school, email) in [
+            ("a1", Some("s1"), "ada@school.example"),
+            ("a2", Some("s1"), "bea@school.example"),
+            ("a3", Some("s1"), "cal@school.example"),
+            ("a4", None, "independent@example.com"),
+        ] {
+            let start = ClientRegistration::start(&mut OsRng, b"right").unwrap();
+            let response = ServerRegistration::start(&setup, start.message, email.as_bytes()).unwrap();
+            let finish = start.state.finish(&mut OsRng, b"right", response.message,
+                ClientRegistrationFinishParameters::new(Default::default(), Some(&hardening()))).unwrap();
+            let record = ServerRegistration::finish(finish.message).serialize();
+            state.db.add_account(id, school, email, &record, 1_000_000, "2026-11-20T00:00:00Z").unwrap();
+        }
+        state.db.with(|db| db.execute("UPDATE accounts SET wrapped_key=?1", [STANDARD.encode([0; 60])])).unwrap();
+        state.db.set_admin("bea@school.example", true).unwrap();
+        state.db.set_maintainer("cal@school.example", true).unwrap();
         Server { state, _dir: dir }
     }
 
@@ -89,10 +100,26 @@ impl Server {
         (status, headers, res.into_body().collect().await.unwrap().to_bytes().to_vec())
     }
 
+    pub async fn login_exchange(&self, email: &str, password: &[u8]) -> (StatusCode, Option<Value>) {
+        let start = ClientLogin::<Profile>::start(&mut OsRng, password).unwrap();
+        let (status, body, _) = self.call("POST", "/api/login/start", None, Some(json!({
+            "email": email, "message": STANDARD.encode(start.message.serialize()),
+        }))).await;
+        if status != StatusCode::OK { return (status, None); }
+        let response = STANDARD.decode(body["message"].as_str().unwrap()).unwrap();
+        let finish = start.state.finish(&mut OsRng, password, CredentialResponse::deserialize(&response).unwrap(),
+            ClientLoginFinishParameters::new(None, Default::default(), Some(&hardening())));
+        let payload = finish.ok().map(|finish| json!({
+            "challenge": body["challenge"], "message": STANDARD.encode(finish.message.serialize()),
+        }));
+        (status, payload)
+    }
+
     pub async fn login(&self, email: &str) -> String {
-        let (status, _, cookie) = self.call("POST", "/api/login", None, Some(json!({ "email": email, "password": "right" }))).await;
+        let (_, payload) = self.login_exchange(email, b"right").await;
+        assert!(payload.is_some());
+        let (status, _, cookie) = self.call("POST", "/api/login/finish", None, payload).await;
         assert_eq!(status, StatusCode::OK);
         cookie.unwrap()
     }
 }
-

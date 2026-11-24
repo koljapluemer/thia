@@ -24,7 +24,11 @@ client address for auth rate limits. Use `admin grant-admin <email>` or `admin g
 for operators who need those privileges.
 
 Personal sync backups live in SQLite and are included in the daily backup. Each account can store one encrypted
-snapshot up to 16 MiB including its envelope. Thia cannot recover a forgotten sync passphrase.
+snapshot up to 16 MiB including its envelope. Thia cannot recover synced progress after a forgotten password.
+The nightly backup excludes `opaque-setup-v1`. After the first start, back up that file from the server data
+directory to a separate restricted location. Restore the matching setup alongside the database before starting the
+server. Deploy both frontend builds and the server from the same release. Prototype login credentials and
+passphrase backups are disposable. Use a fresh account for the new beta flow.
 Set up the [local CMS SSH command](../../../doc/operations/cms.md#ssh-setup) for production run inspection and submission decisions.
 
 Every player a deploy installs stays (`/var/lib/thia-server/runtime/`), so lessons published against an older

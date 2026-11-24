@@ -27,7 +27,6 @@ async function api<T>(path: string, init?: RequestInit & { json?: unknown }): Pr
 }
 
 export const me = () => api<Me>('/me');
-export const logout = () => api<void>('/logout', { method: 'POST' });
 export const drafts = () => api<DraftInfo[]>('/drafts');
 export const newDraft = (title: string, kind: Kind) => api<DraftInfo>('/drafts', { method: 'POST', json: { title, kind } });
 /** A draft that was kept in this browser, moved to the account: its id and package stay. */

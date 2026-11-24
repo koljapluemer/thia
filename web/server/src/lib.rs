@@ -116,7 +116,7 @@ pub struct Inner {
     pub secure_cookies: bool,
     /// Shared signup code. Signup is disabled when absent.
     pub beta_code: Option<String>,
-    pub auth_hash_slots: tokio::sync::Semaphore,
+    pub auth: auth::OpaqueAuth,
     /// Auth attempts by email or IP and when the rate-limit window began.
     pub failures: Mutex<HashMap<String, (u32, Instant)>>,
     /// writes to drafts, one at a time, so what's checked is what's there when they land
@@ -158,6 +158,7 @@ impl AppState {
         let repo_gestalts = Gestalts::builtin_with(&all)?;
         let worker = worker::Worker::new(services.worker.clone());
         let runs = db.with(|c| Ok(runs::Runs::open(c, data.join("runs"), false))).map_err(|e| e.to_string())??;
+        let auth = auth::OpaqueAuth::open(&db, &data)?;
         Ok(AppState(Arc::new(Inner {
             db,
             data,
@@ -166,7 +167,7 @@ impl AppState {
             limits,
             secure_cookies,
             beta_code: std::env::var("THIA_BETA_CODE").ok().filter(|code| !code.is_empty()),
-            auth_hash_slots: tokio::sync::Semaphore::new(4),
+            auth,
             failures: Mutex::default(),
             writes: tokio::sync::Mutex::default(),
             reference: drafting::contract::Reference::new(services.worker.template.clone()),
@@ -276,7 +277,6 @@ mod personal_sync;
 
 /// The app's routes: its API under `/api`; MCP (`/mcp`) and what signs a chat host in for it (`/oauth/*`,
 /// `/.well-known/*`) at the root.
-
 pub fn app(state: AppState) -> axum::Router {
     let api = auth::routes().merge(personal_sync::routes()).merge(drafts::routes()).merge(npm::routes()).merge(publish::routes()).merge(submissions::routes()).merge(runs::routes()).merge(mcp::api_routes());
     axum::Router::new().nest("/api", api).merge(mcp::public_routes()).with_state(state)
