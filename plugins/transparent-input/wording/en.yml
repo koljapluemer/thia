@@ -1,0 +1,85 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  no_subtitles:
+    text: "No subtitles found for this video ({reason})."
+    description: "an error when a video has no subtitles; reason is YouTube's"
+  yt_status:
+    text: "YouTube answered {status}"
+    description: "the reason when YouTube refused; status is its HTTP status"
+  yt_none:
+    text: "it has no subtitles"
+    description: "the reason when a video simply has none"
+  subtitles_status:
+    text: "YouTube answered {status} for the subtitles"
+    description: "an error loading subtitles; status is YouTube's HTTP status"
+  subtitles_empty:
+    text: "The subtitles are empty."
+    description: "an error when the subtitles have no text"
+  cards_in:
+    text: "Cards in"
+    description: "before the language the word cards are translated into"
+  cards_lang:
+    text: "Language of the cards"
+    description: "label of that language field"
+  not_youtube:
+    text: "That isn't a YouTube link."
+    description: "an error when what was pasted is no YouTube link"
+  title:
+    text: "Watch with vocabulary"
+    description: "the heading of the list of videos"
+  paste:
+    text: "Paste a YouTube link"
+    description: "the box a video's link is pasted into"
+  link:
+    text: "YouTube link"
+    description: "label of that box"
+  look_up:
+    text: "Look up"
+    description: "button: finds the video and its subtitles"
+  needs_app:
+    text: "Adding videos needs the gestalter desktop app. Videos added there play here too."
+    description: "shown where videos can't be added"
+  subtitles:
+    text: "Subtitles"
+    description: "before the choice of subtitle language"
+  auto:
+    text: "{name} (auto)"
+    description: "a subtitle track YouTube made itself; name is its language"
+  watch:
+    text: "Watch"
+    description: "button: adds the video and plays it"
+  no_videos:
+    text: "No videos yet."
+    description: "shown when the list of videos is empty"
+  no_track:
+    text: "This video no longer has {language} subtitles."
+    description: "an error when the subtitles used before are gone; language is their name"
+  needs_llm:
+    text: "Set up an LLM provider in the app's LLM menu to gloss the rest."
+    description: "shown when no model is there to make the rest of the word cards"
+  gloss_failed:
+    text: "Couldn't save the glosses: {error}"
+    description: "an error saving word cards; error says why"
+  record_failed:
+    text: "Couldn't record a word: {error}"
+    description: "an error saving that a word was seen; error says why"
+  all_videos:
+    text: "All videos"
+    description: "icon button above the video: back to the list"
+  fullscreen:
+    text: "Fullscreen, with cards"
+    description: "tooltip of the fullscreen button"
+  fullscreen_label:
+    text: "Fullscreen"
+    description: "label of the fullscreen button"
+  progress_of:
+    text: "{glossed} of {total, plural, one {# segment} other {# segments}} glossed"
+    description: "below the video: how many parts have word cards so far"
+  progress:
+    text: "{glossed, plural, one {# segment} other {# segments}} glossed"
+    description: "the same, while the number of parts isn't known yet"
+  progress_none:
+    text: "Nothing glossed yet"
+    description: "the same, before any"

@@ -1,4 +1,5 @@
 import type { JsonMap } from '@gestalts/view';
+import { m, useAt } from '../primitives/words';
 import { Markdown } from '../primitives';
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -16,7 +17,8 @@ export function noteHeadline(v: JsonMap): string {
 
 /** A note's headline (`noteHeadline`) rendered as one line of Markdown; "(empty)" when there's none. */
 export function NoteTitle({ value, className = '', onOpen }: { value: JsonMap; className?: string; onOpen?: (id: string) => void }) {
+  const at = useAt();
   const text = noteHeadline(value);
-  if (!text) return <span className={`text-base-content/60 ${className}`}>(empty)</span>;
+  if (!text) return <span className={`text-base-content/60 ${className}`}>{m.kit_empty({}, at)}</span>;
   return <Markdown inline text={text} onOpen={onOpen} className={className} />;
 }

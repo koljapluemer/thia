@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ArrowLeft, Eye } from 'lucide-react';
 import { Credits, Markdown } from '@gestalts/kit';
 import { logPractice, usePracticeSession, type EventDetails, type PracticeLog } from '@gestalts/learning';
-import { useBeliefs, useDoc, useParams, useQuery, useWrite, type Belief, type JsonMap, type QueryResult } from '@gestalts/view';
+import { t, useBeliefs, useDoc, useParams, useQuery, useWrite, type Belief, type JsonMap, type QueryResult } from '@gestalts/view';
 
 /**
  * Multiple-choice drills, one deck per topic. A topic is an `item-model@1`, its questions the `multiple-choice@1`s
@@ -60,7 +60,7 @@ function Shell({ mode, instruction, onBack, children }: { mode: string; instruct
     <div className="h-full overflow-y-auto">
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col gap-4 p-4">
         <div className="flex items-center gap-2">
-          {onBack && <button type="button" className="btn btn-ghost btn-sm btn-square" title="Back" aria-label="Back" onClick={onBack}><ArrowLeft className="size-4" /></button>}
+          {onBack && <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('back')} aria-label={t('back')} onClick={onBack}><ArrowLeft className="size-4" /></button>}
           <h1 className="text-lg font-semibold">{mode}</h1>
         </div>
         {instruction && <p className="text-sm text-base-content/70">{instruction}</p>}
@@ -124,7 +124,7 @@ function Question({ id, onShown, onAnswered, onNext }: { id: string; onShown: ()
         <Markdown text={str(doc.value.prompt)} className="text-3xl" />
       </div>
       {!revealed ? (
-        <button type="button" className="btn btn-primary" onClick={() => setRevealed(true)}><Eye className="size-4" /> Reveal answers</button>
+        <button type="button" className="btn btn-primary" onClick={() => setRevealed(true)}><Eye className="size-4" /> {t('reveal')}</button>
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {options.map((o, i) => {
@@ -159,7 +159,7 @@ function Drill({ model, log, onBack }: { model: Model; log: PracticeLog; onBack:
     <Shell mode={model.title} onBack={onBack}>
       {items.loading || items.hasMore ? <div className="flex flex-1 items-center justify-center"><span className="loading loading-spinner" /></div>
         : ids.length ? <Questions ids={ids} log={log} />
-          : <p className="text-center text-base-content/60">No questions in this topic.</p>}
+          : <p className="text-center text-base-content/60">{t('no_questions')}</p>}
     </Shell>
   );
 }
@@ -178,8 +178,8 @@ function Questions({ ids, log }: { ids: string[]; log: PracticeLog }) {
     <>
       {error && (
         <div role="alert" className="alert alert-error text-sm">
-          <span>Couldn't save your last answer: {error}</span>
-          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>Dismiss</button>
+          <span>{t('not_saved', { error })}</span>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>{t('dismiss')}</button>
         </div>
       )}
       <Question key={current} id={current} onShown={log.shown} onAnswered={answered} onNext={next} />
@@ -205,7 +205,7 @@ export default function MathDrills() {
   if (model) return <Drill key={model.id} model={model} log={log} onBack={() => setParams({})} />;
 
   return (
-    <Shell mode="Math Drills" instruction={models.length ? 'Which topic?' : 'No math decks here yet.'}>
+    <Shell mode={t('title')} instruction={models.length ? t('which_topic') : t('no_decks')}>
       {models.map((m) => (
         <button key={m.id} type="button" className="btn h-auto flex-col items-stretch gap-2 py-3 font-normal" onClick={() => setParams({ model: m.id })}>
           <span>{m.title}</span>

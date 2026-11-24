@@ -1,0 +1,40 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  not_saved:
+    text: "Couldn't save your last answer: {error}"
+    description: "an alert when an answer could not be saved; error says why"
+  dismiss:
+    text: "Dismiss"
+    description: "closes that alert"
+  caught_up:
+    text: "All caught up."
+    description: "heading when nothing is due"
+  nothing_due:
+    text: "Nothing due right now."
+    description: "below that heading"
+  check_again:
+    text: "Check again"
+    description: "button: looks again for something due"
+  empty:
+    text: "No exercises here yet."
+    description: "shown when there is nothing to practise"
+  try:
+    text: "Try to pronounce this"
+    description: "above the letter or word to say"
+  show:
+    text: "Show Pronunciation"
+    description: "button: shows and plays how it is said"
+  again:
+    text: "Again"
+    description: "rating button after the answer: not known"
+  hard:
+    text: "Hard"
+    description: "rating button after the answer: known, with effort"
+  good:
+    text: "Good"
+    description: "rating button after the answer: known"
+  easy:
+    text: "Easy"
+    description: "rating button after the answer: known at once"

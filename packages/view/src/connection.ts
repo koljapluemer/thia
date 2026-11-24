@@ -12,7 +12,11 @@ export interface ViewHost {
   onOutline(sub: number, f: (d: OutlineDelta) => void): () => void;
   /** Calls `f` with the view's params each time the app moves it elsewhere. */
   onParams(f: (params: Record<string, string>) => void): () => void;
+  /** Calls `f` with its text each time it changes while it runs (reworded). */
+  onWording?(f: (wording: Record<string, string>, lang: string) => void): () => void;
   report(error: ViewError): void;
+  /** Says which keys of its text show where its maker alt-clicked. */
+  pick?(keys: string[]): void;
 }
 
 /** The host at the other end of `port`. */
@@ -28,6 +32,7 @@ export function connect(port: MessagePort): ViewHost {
   // pages are whole, so only the last one matters
   const earlyOutline = new Map<number, OutlineDelta>();
   const moved = new Set<(params: Record<string, string>) => void>();
+  const reworded = new Set<(wording: Record<string, string>, lang: string) => void>();
   // a move can arrive before anything listens (while the view mounts): the last one is handed over then
   let unheard: Record<string, string> | undefined;
   const send = (m: FromView) => port.postMessage(m);
@@ -49,6 +54,10 @@ export function connect(port: MessagePort): ViewHost {
       const l = outlineListeners.get(m.delta.sub);
       if (l) l(m.delta);
       else earlyOutline.set(m.delta.sub, m.delta);
+      return;
+    }
+    if (m.type === 'wording') {
+      reworded.forEach((f) => f(m.wording, m.lang));
       return;
     }
     if (m.type === 'params') {
@@ -91,6 +100,11 @@ export function connect(port: MessagePort): ViewHost {
       if (unheard) { f(unheard); unheard = undefined; }
       return () => { moved.delete(f); };
     },
+    onWording(f) {
+      reworded.add(f);
+      return () => { reworded.delete(f); };
+    },
     report: (error) => send({ type: 'error', error }),
+    pick: (keys) => send({ type: 'pick', keys }),
   };
 }

@@ -7,16 +7,18 @@ use common::Server;
 use thia_server::Limits;
 use serde_json::{Value, json};
 
-const VIEW: &str = "export default function View() { return <div className=\"h-full\">Hallo</div>; }\n";
+const VIEW: &str = "import { t } from '@gestalts/view';\nexport default function View() { return <div className=\"h-full\">{t('hi')}</div>; }\n";
+/** its text, in German */
+const WORDING: &str = "id: wording\ngestalt: wording@1\nlang: de\nlayer: source\nmessages:\n  hi: { text: Hallo, description: the greeting }\n";
 
 /// An account's draft with its own gestalt and one yml of it; its id and the cookie of its owner.
 async fn draft(s: &Server, email: &str, title: &str) -> (String, String, String) {
     let cookie = s.login(email).await;
     let (_, d, _) = s.call("POST", "/api/drafts", Some(&cookie), Some(json!({ "title": title }))).await;
     let (id, p) = (d["id"].as_str().unwrap().to_owned(), d["package"].as_str().unwrap().to_owned());
-    let view = format!("id: {id}\ngestalt: view@4\ntitle: {title}\nsource: {VIEW:?}\nreads: [{p}/noun@1, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [gestalt-{p}.noun.1, haus]\nlang: de\n");
+    let view = format!("id: {id}\ngestalt: view@4\ntitle: {title}\nsource: {VIEW:?}\nreads: [{p}/noun@1, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [gestalt-{p}.noun.1, haus, wording]\nlang: de\n");
     let noun = format!("id: gestalt-{p}.noun.1\ngestalt: gestalt@1\nname: {p}/noun\nversion: 1\nfields:\n  word: {{ type: string, required: true }}\n");
-    let w = json!([{ "id": id, "text": view }, { "id": format!("gestalt-{p}.noun.1"), "text": noun }, { "id": "haus", "text": format!("id: haus\ngestalt: {p}/noun@1\nword: Haus\n") }, { "id": "tried", "text": "id: tried\ngestalt: note@1\n" }]);
+    let w = json!([{ "id": id, "text": view }, { "id": format!("gestalt-{p}.noun.1"), "text": noun }, { "id": "haus", "text": format!("id: haus\ngestalt: {p}/noun@1\nword: Haus\n") }, { "id": "wording", "text": WORDING }, { "id": "tried", "text": "id: tried\ngestalt: note@1\n" }]);
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&cookie), Some(w)).await.0, StatusCode::NO_CONTENT);
     (id, p, cookie)
 }
@@ -69,10 +71,10 @@ async fn an_accounts_draft_is_queued_as_a_snapshot_for_admins_only() {
     assert!(ids.contains(&"haus") && !ids.contains(&"tried"), "the view and its members only: {ids:?}");
     assert_eq!(detail["proposed"], json!({ "plugin": "artikel", "package": "artikel", "deck": "artikel" }));
 
-    // as a deck, for the preview
+    // as a deck, for the preview: the view, its gestalt, its yml and its wording (what it tried out stays out)
     let (status, index, _) = s.call("GET", &format!("/api/admin/submissions/{sid}/deck/index.json"), Some(&bea), None).await;
-    assert_eq!((status, index["ymls"].as_array().unwrap().len()), (StatusCode::OK, 3));
-    assert_eq!(s.call("GET", &format!("/api/admin/submissions/{sid}/deck/ymls.json"), Some(&bea), None).await.1.as_array().unwrap().len(), 3);
+    assert_eq!((status, index["ymls"].as_array().unwrap().len()), (StatusCode::OK, 4));
+    assert_eq!(s.call("GET", &format!("/api/admin/submissions/{sid}/deck/ymls.json"), Some(&bea), None).await.1.as_array().unwrap().len(), 4);
     assert_eq!(s.call("GET", &format!("/api/admin/submissions/{sid}/deck/index.json"), Some(&ada), None).await.0, StatusCode::FORBIDDEN);
 
     // a server without a checkout only rejects
@@ -102,7 +104,11 @@ async fn an_accepted_view_becomes_a_plugin_with_its_own_package_and_deck() {
     assert_eq!(p["at"], "plugins/artikel");
 
     let r = repo.path();
-    assert!(read(r, "plugins/artikel/view.tsx").contains("Hallo"));
+    assert!(read(r, "plugins/artikel/view.tsx").contains("t('hi')"));
+    // its text: the plugin's wording, not a yml of its deck
+    let wording = read(r, "plugins/artikel/wording/de.yml");
+    assert!(wording.contains("layer: source") && wording.contains("Hallo") && !wording.contains("gestalt:"), "{wording}");
+    assert!(!repo.path().join("plugins/artikel/decks/nomen/notes/wording.yml").exists());
     let manifest = read(r, "plugins/artikel/plugin.yml");
     assert!(manifest.contains("id: artikel") && manifest.contains("artikel/noun@1") && !manifest.contains(&package), "{manifest}");
     assert!(manifest.contains("lang: de"), "the view's language: {manifest}");

@@ -1,0 +1,28 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  search:
+    text: "Search"
+    description: "the search box above the list of notes"
+  new:
+    text: "New note"
+    description: "icon button next to the search: makes a new note"
+  nothing_found:
+    text: "Nothing found."
+    description: "in the list when a search finds nothing"
+  no_notes:
+    text: "No notes yet."
+    description: "in the list when there are no notes at all"
+  back:
+    text: "Back to the list"
+    description: "icon button above a note on narrow screens"
+  delete:
+    text: "Delete"
+    description: "button above a note: asks whether to delete it"
+  delete_title:
+    text: "Delete this note?"
+    description: "the question asked before deleting"
+  delete_text:
+    text: "This cannot be undone."
+    description: "below that question"

@@ -1,0 +1,40 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  zoom_in:
+    text: "Vergrößern"
+    source: 074418ee3ce7e58f
+  zoom_out:
+    text: "Verkleinern"
+    source: 1f15538f4cd350f9
+  reset:
+    text: "Ansicht zurücksetzen"
+    source: fd7478e4afad3d12
+  find_near:
+    text: "Finde {name} in seiner Umgebung"
+    source: 29698e970f50348a
+  find_world:
+    text: "Finde {name} auf der Weltkarte"
+    source: d88499504f09cb84
+  no_idea:
+    text: "Keine Ahnung"
+    source: 1c7096dd023fca1d
+  which_country:
+    text: "Welches Land ist das?"
+    source: 88e54a00965d40f7
+  which_highlighted:
+    text: "Welches Land ist hervorgehoben?"
+    source: 3a7c9401795f1287
+  loading:
+    text: "Wird geladen…"
+    source: 367721d224c80eb4
+  none_enabled:
+    text: "Noch keine Länder ausgewählt."
+    source: 6ae4ebf41f7c994f
+  not_saved:
+    text: "Deine letzte Antwort ließ sich nicht speichern: {error}"
+    source: a436cbca7ebdf7db
+  dismiss:
+    text: "Schließen"
+    source: 0d61ecd0675222ef

@@ -593,6 +593,7 @@ const BUILTIN: &[&str] = &[
     include_str!("../../../gestalts/conflict/v1.yml"),
     include_str!("../../../gestalts/gestalt/v1.yml"),
     include_str!("../../../gestalts/sequence/v1.yml"),
+    include_str!("../../../gestalts/wording/v1.yml"),
 ];
 
 impl Gestalts {
@@ -832,6 +833,16 @@ mod tests {
         assert!(matches!(state("l", "id: l\ngestalt: concept-link@1\nfrom: a\nto: b\nweight: 0.5\nkind: similar\nsource: deck\n"), YmlState::Valid(_)));
         invalid("l", "id: l\ngestalt: concept-link@1\nfrom: a\nto: b\nweight: 1.5\n");
         invalid("l", "id: l\ngestalt: concept-link@1\nfrom: a\nweight: 0.5\n");
+    }
+
+    #[test]
+    fn a_wording_is_one_layer_of_a_views_text() {
+        let ok = "id: w\ngestalt: wording@1\nlang: de\nlayer: machine\nmessages:\n  next: { text: Weiter, source: 0123abcd }\n  left: { text: 'noch {n}' }\n";
+        assert!(matches!(state("w", ok), YmlState::Valid(_)));
+        assert!(matches!(state("w", "id: w\ngestalt: wording@1\nlang: en\nlayer: source\nmessages:\n  next: { text: Next, description: goes on to the next card }\n"), YmlState::Valid(_)));
+        invalid("w", "id: w\ngestalt: wording@1\nlang: de\nlayer: mine\nmessages: {}\n");
+        invalid("w", "id: w\ngestalt: wording@1\nlang: de\nlayer: source\nmessages:\n  next: { label: Weiter }\n");
+        invalid("w", "id: w\ngestalt: wording@1\nlayer: source\nmessages: {}\n");
     }
 
     #[test]

@@ -1,0 +1,23 @@
+name: wording
+version: 1
+description: >-
+  A view's own text in one language, as one layer: its buttons, headings, help and generic feedback, never its
+  content (questions, answers and vocabulary are ymls of their own). `messages` are by key, each an ICU message
+  (`{name}`, `{n, plural, one {# card} other {# cards}}`). The `source` layer is the text its maker wrote, in the
+  view's own `lang`, each key with a `description` of where it shows; `machine` is translated from it, `reviewed` was
+  checked by a person, `override` is its maker's rewording. A view shows override, then reviewed, then machine, then
+  the source. Every entry but the source's names the hash of the source text it was written against (`source`), and
+  is not used once that text changes; `catalog` is the hash of the whole source a translation was made from.
+fields:
+  lang: { type: string, required: true }
+  layer: { type: string, required: true, one_of: [source, machine, reviewed, override] }
+  catalog: { type: string }
+  messages:
+    type: map
+    required: true
+    values:
+      type: map
+      fields:
+        text: { type: string, required: true }
+        description: { type: text }
+        source: { type: string }

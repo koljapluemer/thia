@@ -1,0 +1,34 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  saved_no_notes:
+    text: "Gespeichert. Hier gibt es keine Notizen-Ansicht, um sie zu bearbeiten."
+    source: 978918992b39ee41
+  saved:
+    text: "Gespeichert."
+    source: 161272e3b261fe89
+  placeholder:
+    text: "Was geht dir durch den Kopf?"
+    source: 3b10859d558a01db
+  remove:
+    text: "Entfernen"
+    source: d6abf7f44a9d2eb8
+  attach:
+    text: "Anhängen"
+    source: 9e260c091a90bcb0
+  save_edit:
+    text: "Speichern und bearbeiten"
+    source: 41852c189154d73d
+  save_edit_title:
+    text: "Speichern und in den Notizen öffnen, um mehr hinzuzufügen"
+    source: 20f5febcb82539c9
+  save_next:
+    text: "Speichern und weiter"
+    source: 27b80445dbabd0f5
+  save_next_title:
+    text: "Speichern und die nächste schreiben (Strg+Enter)"
+    source: 5e9520caf6c5f98d
+  attach_title:
+    text: "Dateien anhängen"
+    source: 93ba9d62cb859a6e

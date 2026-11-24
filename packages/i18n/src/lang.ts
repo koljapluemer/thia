@@ -4,8 +4,7 @@
  * length: nothing here assumes two letters.
  */
 
-/** Where a language's speakers read next, beyond dropping subtags: Mauritian Creole speakers read French. */
-const NEXT: Record<string, string> = { mfe: 'fr', rcf: 'fr', crs: 'fr', ht: 'fr', lb: 'de', gsw: 'de', bar: 'de', nds: 'de' };
+import { NEXT } from '@gestalts/view/locale';
 
 /** `tag` in canonical form, or undefined if it isn't one. */
 export function canonical(tag: string): string | undefined {

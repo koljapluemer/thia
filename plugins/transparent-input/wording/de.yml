@@ -1,0 +1,85 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  no_subtitles:
+    text: "Für dieses Video gibt es keine Untertitel ({reason})."
+    source: 838b657ba3f6bddc
+  yt_status:
+    text: "YouTube antwortete mit {status}"
+    source: d10b25eade980cc7
+  yt_none:
+    text: "es hat keine Untertitel"
+    source: 92aa5a9d59c592b4
+  subtitles_status:
+    text: "YouTube antwortete auf die Untertitel mit {status}"
+    source: 81b13a1be2156b4c
+  subtitles_empty:
+    text: "Die Untertitel sind leer."
+    source: 5baf0579b4ada604
+  cards_in:
+    text: "Karten auf"
+    source: fdbaf91284f5b718
+  cards_lang:
+    text: "Sprache der Karten"
+    source: 6b081dd7570f538a
+  not_youtube:
+    text: "Das ist kein YouTube-Link."
+    source: 2e8b44742ddbd2f7
+  title:
+    text: "Mit Vokabeln schauen"
+    source: e185cc239ffbcf6c
+  paste:
+    text: "YouTube-Link einfügen"
+    source: 1437dc0310b4bfdc
+  link:
+    text: "YouTube-Link"
+    source: 7b0baf03f1113228
+  look_up:
+    text: "Nachschlagen"
+    source: c7c9b66824819f82
+  needs_app:
+    text: "Videos hinzufügen geht nur mit der gestalter-Desktop-App. Dort hinzugefügte Videos laufen auch hier."
+    source: b076eccb338af9b3
+  subtitles:
+    text: "Untertitel"
+    source: 981480d942702585
+  auto:
+    text: "{name} (automatisch)"
+    source: 55a7f641a1f73dae
+  watch:
+    text: "Ansehen"
+    source: 881a6817b63254dc
+  no_videos:
+    text: "Noch keine Videos."
+    source: 4c62cc33e01c4118
+  no_track:
+    text: "Dieses Video hat keine Untertitel auf {language} mehr."
+    source: e16870607c3c9714
+  needs_llm:
+    text: "Richte im LLM-Menü der App einen Anbieter ein, um den Rest zu erklären."
+    source: c6441ad3936245c6
+  gloss_failed:
+    text: "Die Erklärungen ließen sich nicht speichern: {error}"
+    source: 2e6df18c3d0a2ee8
+  record_failed:
+    text: "Ein Wort ließ sich nicht festhalten: {error}"
+    source: 21272c8ef4ab23eb
+  all_videos:
+    text: "Alle Videos"
+    source: 26495635bd03dfd2
+  fullscreen:
+    text: "Vollbild, mit Karten"
+    source: 38d32696d4a198ae
+  fullscreen_label:
+    text: "Vollbild"
+    source: b22d020df8ffcb51
+  progress_of:
+    text: "{glossed} von {total, plural, one {# Abschnitt} other {# Abschnitten}} erklärt"
+    source: abd2528007e5547c
+  progress:
+    text: "{glossed, plural, one {# Abschnitt} other {# Abschnitte}} erklärt"
+    source: 3e45ead7688897e5
+  progress_none:
+    text: "Noch nichts erklärt"
+    source: 742406ac95e7d560

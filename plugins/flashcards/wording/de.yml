@@ -1,0 +1,37 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  not_saved:
+    text: "Deine letzte Antwort ließ sich nicht speichern: {error}"
+    source: a436cbca7ebdf7db
+  dismiss:
+    text: "Schließen"
+    source: 0d61ecd0675222ef
+  caught_up:
+    text: "Alles erledigt."
+    source: d81db7b42867fb56
+  nothing_due:
+    text: "Gerade ist nichts fällig."
+    source: dc508a4dc220c0b0
+  check_again:
+    text: "Erneut schauen"
+    source: 20fa9ff865094bc8
+  empty:
+    text: "Noch keine Lernkarten."
+    source: 18e66c80fc10e560
+  reveal:
+    text: "Aufdecken"
+    source: c06b7b09feab76c3
+  again:
+    text: "Nochmal"
+    source: e6392c386c232bc5
+  hard:
+    text: "Schwer"
+    source: 7f6de329874fee2b
+  good:
+    text: "Gut"
+    source: b34762c95d4e5a00
+  easy:
+    text: "Leicht"
+    source: 6670b332d660bdd1

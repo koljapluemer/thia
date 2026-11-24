@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { ArrowLeft, ArrowRight, Check, Mic, Play, RotateCcw, Square, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Credits, Markdown } from '@gestalts/kit';
 import { facetOf, fsrsStates, getScheduler, lessonPlan, logPractice, mainConcept, rankNew, Rating, ratingOf, review, saveReview, useLocalReviews, usePracticeSession, type FsrsStates, type Grade, type PracticeLog } from '@gestalts/learning';
-import { useBeliefs, useCapabilities, useDoc, useParams, useQuery, useWrite, type Belief, type Item, type QueryResult } from '@gestalts/view';
+import { formatNumber, t, useBeliefs, useCapabilities, useDoc, useParams, useQuery, useWrite, type Belief, type Item, type QueryResult } from '@gestalts/view';
 
 /**
  * Learn to say everyday things in another language (after laminla): see what you want to say, say it aloud, check,
@@ -123,7 +123,7 @@ function useRecorder() {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError('The microphone isn\'t available.');
+      setError(t('no_mic'));
       return;
     }
     const chunks: Blob[] = [];
@@ -206,7 +206,7 @@ function Shell({ mode, progress, instruction, onBack, children }: { mode: string
     <div className="h-full overflow-y-auto">
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col gap-4 p-4">
         <div className="flex items-center gap-2">
-          {onBack && <button type="button" className="btn btn-ghost btn-sm btn-square" title="Back" aria-label="Back" onClick={onBack}><ArrowLeft className="size-4" /></button>}
+          {onBack && <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('back')} aria-label={t('back')} onClick={onBack}><ArrowLeft className="size-4" /></button>}
           <h1 className="text-lg font-semibold">{mode}</h1>
         </div>
         {progress !== undefined && (
@@ -285,37 +285,37 @@ function Recall({ id, language, canRecord, recorder, onRated, progress, mode, on
   const check = () => { if (recorder.recording) recorder.stop(); setPhase('check'); };
   if (phase === 'recall') {
     return (
-      <Shell mode={mode} progress={progress} instruction={`Do you remember how to say this in ${language}?`} onBack={onBack}>
+      <Shell mode={mode} progress={progress} instruction={t('remember', { language })} onBack={onBack}>
         <Phrase id={id} reveal={false} />
         <div className="flex flex-col gap-3">
           {recorder.error && <p className="text-center text-sm text-error">{recorder.error}</p>}
           {canRecord && recorder.recording && (
-            <div className="flex items-center gap-3"><Levels levels={recorder.levels} /><button type="button" className="btn btn-square" title="Stop recording" aria-label="Stop recording" onClick={recorder.stop}><Check className="size-4" /></button></div>
+            <div className="flex items-center gap-3"><Levels levels={recorder.levels} /><button type="button" className="btn btn-square" title={t('stop_recording')} aria-label={t('stop_recording')} onClick={recorder.stop}><Check className="size-4" /></button></div>
           )}
-          {canRecord && !recorder.recording && !recorder.url && <button type="button" className="btn btn-primary" onClick={() => void recorder.start()}><Mic className="size-4" /> Say it</button>}
+          {canRecord && !recorder.recording && !recorder.url && <button type="button" className="btn btn-primary" onClick={() => void recorder.start()}><Mic className="size-4" /> {t('say_it')}</button>}
           {canRecord && recorder.url && (
             <div className="flex gap-3">
-              <PlayButton url={recorder.url} label="Your take" />
-              <button type="button" className="btn btn-square" title="Record again" aria-label="Record again" onClick={() => { recorder.reset(); void recorder.start(); }}><RotateCcw className="size-4" /></button>
+              <PlayButton url={recorder.url} label={t('your_take')} />
+              <button type="button" className="btn btn-square" title={t('record_again')} aria-label={t('record_again')} onClick={() => { recorder.reset(); void recorder.start(); }}><RotateCcw className="size-4" /></button>
             </div>
           )}
-          <button type="button" className={canRecord && !recorder.url ? 'btn' : 'btn btn-primary'} onClick={check}><ArrowRight className="size-4" /> {canRecord && recorder.url ? 'Check' : 'Reveal'}</button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setGaveUp(true); check(); }}>I have no idea</button>
+          <button type="button" className={canRecord && !recorder.url ? 'btn' : 'btn btn-primary'} onClick={check}><ArrowRight className="size-4" /> {canRecord && recorder.url ? t('check') : t('reveal')}</button>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setGaveUp(true); check(); }}>{t('no_idea')}</button>
         </div>
       </Shell>
     );
   }
   return (
-    <Shell mode={mode} progress={progress} instruction={gaveUp ? 'This is how it goes.' : 'Did you get it right?'} onBack={onBack}>
+    <Shell mode={mode} progress={progress} instruction={gaveUp ? t('how_it_goes') : t('right_q')} onBack={onBack}>
       <Phrase id={id} reveal />
       <div className="flex flex-col gap-3">
-        {recorder.url && !gaveUp && <PlayButton url={recorder.url} label="Your take" />}
+        {recorder.url && !gaveUp && <PlayButton url={recorder.url} label={t('your_take')} />}
         {gaveUp ? (
-          <button type="button" className="btn btn-primary" onClick={() => onRated(false)}><ArrowRight className="size-4" /> Next</button>
+          <button type="button" className="btn btn-primary" onClick={() => onRated(false)}><ArrowRight className="size-4" /> {t('next')}</button>
         ) : (
           <div className="grid grid-cols-2 gap-3">
-            <button type="button" className="btn btn-soft btn-error" onClick={() => onRated(false)}><ThumbsDown className="size-4" /> Wrong</button>
-            <button type="button" className="btn btn-soft btn-success" onClick={() => onRated(true)}><ThumbsUp className="size-4" /> Right</button>
+            <button type="button" className="btn btn-soft btn-error" onClick={() => onRated(false)}><ThumbsDown className="size-4" /> {t('wrong')}</button>
+            <button type="button" className="btn btn-soft btn-success" onClick={() => onRated(true)}><ThumbsUp className="size-4" /> {t('right')}</button>
           </div>
         )}
       </div>
@@ -347,8 +347,8 @@ export default function Phrasebook() {
 
   const alert = (error || rating.error) && (
     <div role="alert" className="alert alert-error text-sm">
-      <span>{error ?? `Couldn't save your last answer: ${rating.error}`}</span>
-      {rating.error && <button type="button" className="btn btn-sm btn-ghost" onClick={rating.dismiss}>Dismiss</button>}
+      <span>{error ?? t('not_saved', { error: rating.error })}</span>
+      {rating.error && <button type="button" className="btn btn-sm btn-ghost" onClick={rating.dismiss}>{t('dismiss')}</button>}
     </div>
   );
 
@@ -357,7 +357,7 @@ export default function Phrasebook() {
   if (!lang || !cards.length) {
     const langs = [...new Set(graph.cards.map((c) => c.lang))].sort();
     return (
-      <Shell mode="Phrasebook" instruction={langs.length ? 'Which language?' : 'No phrase decks here yet.'}>
+      <Shell mode={t('title')} instruction={langs.length ? t('which_language') : t('no_decks')}>
         {alert}
         {langs.map((l) => {
           const d = graph.decks.find((x) => graph.cards.some((c) => c.lang === l && x.members.includes(c.id)));
@@ -378,14 +378,14 @@ export default function Phrasebook() {
   const learned = cards.filter((c) => states.has(facetOf(c.id))).length;
   const sources = [...new Map(cards.flatMap((c) => (Array.isArray(c.sources) ? c.sources : [])).map((s) => [JSON.stringify(s), s])).values()];
   return (
-    <Shell mode={deck?.title ?? language} instruction={`${due} due · ${learned} learned · ${cards.length - learned} new`} onBack={() => go({})}>
+    <Shell mode={deck?.title ?? language} instruction={t('counts', { due, learned, new: cards.length - learned })} onBack={() => go({})}>
       {alert}
       <div className="flex flex-1 flex-col justify-center gap-3">
-        <button type="button" className="btn btn-primary" disabled={!due} onClick={() => go({ lang, screen: 'lesson' })}>Practice</button>
-        <button type="button" className="btn" disabled={learned === cards.length} onClick={() => go({ lang, screen: 'learn' })}>Learn new</button>
-        <button type="button" className="btn" onClick={() => go({ lang, screen: 'progress' })}>What you can do</button>
+        <button type="button" className="btn btn-primary" disabled={!due} onClick={() => go({ lang, screen: 'lesson' })}>{t('practice')}</button>
+        <button type="button" className="btn" disabled={learned === cards.length} onClick={() => go({ lang, screen: 'learn' })}>{t('learn_new')}</button>
+        <button type="button" className="btn" onClick={() => go({ lang, screen: 'progress' })}>{t('can_do')}</button>
       </div>
-      {!canRecord && <p className="text-center text-xs text-base-content/60">Recording isn't available here: you'll reveal instead of saying it aloud.</p>}
+      {!canRecord && <p className="text-center text-xs text-base-content/60">{t('no_recording')}</p>}
       <Credits sources={sources} className="text-center" />
     </Shell>
   );
@@ -406,9 +406,9 @@ function Lesson({ cards, states, beliefs, language, canRecord, recorder, onRate,
   const missed = useRef(new Set<string>());
   if (!queue.length) {
     return (
-      <Shell mode="Practice" progress={1} instruction={total ? `${right} of ${done} right the first time.` : 'Nothing due right now.'} onBack={onBack}>
+      <Shell mode={t('practice')} progress={1} instruction={total ? t('first_time', { right, done }) : t('nothing_due')} onBack={onBack}>
         {alert}
-        <div className="flex flex-1 items-center justify-center"><button type="button" className="btn btn-primary" onClick={onBack}>Done</button></div>
+        <div className="flex flex-1 items-center justify-center"><button type="button" className="btn btn-primary" onClick={onBack}>{t('done')}</button></div>
       </Shell>
     );
   }
@@ -419,7 +419,7 @@ function Lesson({ cards, states, beliefs, language, canRecord, recorder, onRate,
     if (!ok) missed.current.add(id);
     setQueue((q) => (ok || q.length === 1 ? q.slice(1) : [...q.slice(1), id]));
   };
-  return <>{alert}<Recall key={`${id}:${queue.length}`} id={id} language={language} canRecord={canRecord} recorder={recorder} progress={total ? 1 - queue.length / total : 1} mode="Practice" onBack={onBack} onRated={onRated} /></>;
+  return <>{alert}<Recall key={`${id}:${queue.length}`} id={id} language={language} canRecord={canRecord} recorder={recorder} progress={total ? 1 - queue.length / total : 1} mode={t('practice')} onBack={onBack} onRated={onRated} /></>;
 }
 
 /** New phrases, those mostly made of what's known first: study one, say it, wait, recall it. */
@@ -440,9 +440,9 @@ function Learn({ cards, states, beliefs, graph, language, canRecord, recorder, o
 
   if (!current) {
     return (
-      <Shell mode="Learn" instruction="You've seen every phrase here." onBack={onBack}>
+      <Shell mode={t('learn')} instruction={t('seen_all')} onBack={onBack}>
         {alert}
-        <div className="flex flex-1 items-center justify-center"><button type="button" className="btn btn-primary" onClick={onBack}>Done</button></div>
+        <div className="flex flex-1 items-center justify-center"><button type="button" className="btn btn-primary" onClick={onBack}>{t('done')}</button></div>
       </Shell>
     );
   }
@@ -454,29 +454,29 @@ function Learn({ cards, states, beliefs, graph, language, canRecord, recorder, o
   if (step === 'study') {
     const ready = !canRecord || takes.length >= TAKES;
     return (
-      <Shell mode="Learn" instruction={`Say the ${language} until you know it by heart.`} onBack={onBack}>
+      <Shell mode={t('learn')} instruction={t('say_until', { language })} onBack={onBack}>
         {alert}
         <Phrase id={current} reveal />
         {(known || why.length > 0) && (
           <p className="text-center text-xs text-base-content/70">
-            {known ? 'Another way to say something you know.' : 'You already know part of this:'} {why.length > 0 && why.join(', ')}
+            {known ? t('another_way') : t('part_known')} {why.length > 0 && why.join(', ')}
           </p>
         )}
         <div className="flex flex-col gap-3">
-          {takes.map((u, i) => <PlayButton key={u} url={u} label={`Take ${i + 1}`} />)}
+          {takes.map((u, i) => <PlayButton key={u} url={u} label={t('take', { n: i + 1 })} />)}
           {recorder.error && <p className="text-center text-sm text-error">{recorder.error}</p>}
           {canRecord && recorder.recording && (
-            <div className="flex items-center gap-3"><Levels levels={recorder.levels} /><button type="button" className="btn btn-square" title="Stop recording" aria-label="Stop recording" onClick={recorder.stop}><Check className="size-4" /></button></div>
+            <div className="flex items-center gap-3"><Levels levels={recorder.levels} /><button type="button" className="btn btn-square" title={t('stop_recording')} aria-label={t('stop_recording')} onClick={recorder.stop}><Check className="size-4" /></button></div>
           )}
-          {canRecord && !recorder.recording && !ready && <button type="button" className="btn btn-primary" onClick={() => void recorder.start(addTake)}><Mic className="size-4" /> Say it ({takes.length + 1} of {TAKES})</button>}
-          {ready && <button type="button" className="btn btn-primary" onClick={() => { onSeen(current); setStep('wait'); }}><Check className="size-4" /> Done</button>}
+          {canRecord && !recorder.recording && !ready && <button type="button" className="btn btn-primary" onClick={() => void recorder.start(addTake)}><Mic className="size-4" /> {t('say_n', { n: takes.length + 1, total: TAKES })}</button>}
+          {ready && <button type="button" className="btn btn-primary" onClick={() => { onSeen(current); setStep('wait'); }}><Check className="size-4" /> {t('done')}</button>}
         </div>
       </Shell>
     );
   }
   if (step === 'wait') {
     return (
-      <Shell mode="Learn" progress={0} instruction="Now from memory, in a moment." onBack={onBack}>
+      <Shell mode={t('learn')} progress={0} instruction={t('from_memory')} onBack={onBack}>
         <div className="flex flex-1 items-center justify-center"><span className="loading loading-dots loading-lg" /></div>
       </Shell>
     );
@@ -490,7 +490,7 @@ function Learn({ cards, states, beliefs, graph, language, canRecord, recorder, o
   return (
     <>
       {alert}
-      <Recall key={current} id={current} language={language} canRecord={canRecord} recorder={recorder} progress={0.5} mode="Learn" onBack={onBack}
+      <Recall key={current} id={current} language={language} canRecord={canRecord} recorder={recorder} progress={0.5} mode={t('learn')} onBack={onBack}
               onRated={(ok) => { void onRate(current, ok ? Rating.Good : Rating.Again); next(); }} />
     </>
   );
@@ -506,7 +506,7 @@ function Bar({ belief }: { belief?: Belief }) {
   const lo = belief ? sigmoid(belief.mean - belief.sd) : 0;
   const hi = belief ? sigmoid(belief.mean + belief.sd) : 1;
   return (
-    <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-base-300" title={belief ? `${Math.round(p * 100)}% · from ${belief.evidence} answers` : 'nothing yet'}>
+    <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-base-300" title={belief ? t('bar', { p: formatNumber(p, { style: 'percent', maximumFractionDigits: 0 }), n: belief.evidence }) : t('nothing_yet')}>
       <div className="absolute inset-y-0 bg-primary/30" style={{ insetInlineStart: `${lo * 100}%`, width: `${(hi - lo) * 100}%` }} />
       <div className="absolute inset-y-0 start-0 rounded-full bg-primary" style={{ width: `${p * 100}%` }} />
     </div>
@@ -522,7 +522,7 @@ function Section({ title, rows }: { title: string; rows: Row[] }) {
         <div key={r.id} className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between gap-3 text-sm">
             <span>{r.label}</span>
-            <span className="text-xs text-base-content/60">{r.belief?.evidence ? `${r.belief.evidence}×` : 'not yet'}{r.also.length > 0 && ` · also ${r.also.join(', ')}`}</span>
+            <span className="text-xs text-base-content/60">{r.belief?.evidence ? t('times', { n: r.belief.evidence }) : t('not_yet')}{r.also.length > 0 && <> · {t('also', { list: r.also.join(', ') })}</>}</span>
           </div>
           <Bar belief={r.belief} />
         </div>
@@ -557,13 +557,13 @@ function Progress({ lang, language, graph, cards, beliefs, onBack }: { lang: str
     };
   }, [lang, language, graph, cards, beliefs]);
   return (
-    <Shell mode="What you can do" instruction={`In ${language}, estimated from everything you practised.`} onBack={onBack}>
+    <Shell mode={t('can_do')} instruction={t('estimated', { language })} onBack={onBack}>
       <Section title={language} rows={rows.language} />
-      <Section title="What you can do" rows={rows.functions} />
-      <Section title="Where" rows={rows.situations} />
-      <Section title={`Pieces of ${language}`} rows={rows.pieces} />
-      <Section title="In every language" rows={rows.shared} />
-      <Section title="Phrases" rows={rows.phrases} />
+      <Section title={t('can_do')} rows={rows.functions} />
+      <Section title={t('where')} rows={rows.situations} />
+      <Section title={t('pieces', { language })} rows={rows.pieces} />
+      <Section title={t('everywhere')} rows={rows.shared} />
+      <Section title={t('phrases')} rows={rows.phrases} />
     </Shell>
   );
 }

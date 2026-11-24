@@ -1,98 +1,57 @@
 /**
- * oxlint's `i18n` plugin (`oxlint.config.ts`, `jsPlugins`): the rules of `src/i18n-rules.ts` over this repo's code.
- * `react/jsx-no-literals` (built in) refuses bare JSX text and text attributes; these cover what it doesn't:
- *
- * - `i18n/no-text-expression`: a string in a JSX expression (`{'Save'}`, `{busy ? '…' : 'Move'}`)
- * - `i18n/logical-direction`: Tailwind's `ml-`, `text-left` and the like, which don't turn around for right-to-left
- * - `i18n/locale-aware`: `toLocaleString()` or `new Intl.NumberFormat()` without a language
+ * oxlint's `i18n` plugin (`oxlint.config.ts`, `jsPlugins`): the rules of `src/i18n-scan.ts`, the same the check runs
+ * over an agent's view, over this repo's code. `react/jsx-no-literals` (built in) refuses bare JSX text and text
+ * attributes; these cover the rest (see `Rule`). A plugin's view (`plugins/<id>/view.tsx`) is a view: its `t()` keys
+ * are checked against its source wording (`wording/*.yml`), and so are the numbers it reads and shows.
  */
-import { INTL_FORMATS, LOCALE_METHODS, MESSAGES, PHYSICAL_STYLE, isText, physicalClasses } from '../src/i18n-rules.ts';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import ts from 'typescript-js';
+import { parse } from 'yaml';
+import { scanI18n, type Finding, type Rule } from '../src/i18n-scan.ts';
 
-type Node = { type: string; [k: string]: any }; // eslint-disable-line @typescript-eslint/no-explicit-any
-type Context = { report(d: { node: Node; message: string }): void };
+type Context = { filename: string; sourceCode: { text: string }; report(d: { message: string; loc: { start: { line: number; column: number }; end: { line: number; column: number } } }): void };
 
-/** The strings an expression shows as itself: a literal, a template without holes, either branch of `?:`, the right of `&&`/`||`/`??`. */
-function shown(e: Node | null | undefined): Node[] {
-  if (!e) return [];
-  if (e.type === 'Literal' && typeof e.value === 'string') return [e];
-  if (e.type === 'TemplateLiteral' && e.expressions.length === 0) return [e];
-  if (e.type === 'ConditionalExpression') return [...shown(e.consequent), ...shown(e.alternate)];
-  if (e.type === 'LogicalExpression') return shown(e.right);
-  return [];
+const VIEW = /[\\/]plugins[\\/][^\\/]+[\\/]view\.tsx$/;
+
+/** The keys of a plugin's source wording; null if it has none. */
+function sourceKeys(viewFile: string): Set<string> | null {
+  const dir = join(dirname(viewFile), 'wording');
+  if (!existsSync(dir)) return null;
+  for (const f of readdirSync(dir).filter((x) => x.endsWith('.yml'))) {
+    const w = parse(readFileSync(join(dir, f), 'utf8')) as { layer?: string; messages?: Record<string, unknown> } | null;
+    if (w?.layer === 'source') return new Set(Object.keys(w.messages ?? {}));
+  }
+  return null;
 }
-const textOf = (n: Node): string => (n.type === 'Literal' ? String(n.value) : n.quasis.map((q: Node) => q.value.cooked ?? '').join(''));
 
-/** The string parts of a className expression: literals, template parts, and those inside calls (`clsx(...)`) and branches. */
-function classParts(e: Node | null | undefined, out: Node[] = []): Node[] {
-  if (!e) return out;
-  if (e.type === 'Literal' && typeof e.value === 'string') out.push(e);
-  else if (e.type === 'TemplateLiteral') { out.push(...e.quasis); e.expressions.forEach((x: Node) => classParts(x, out)); }
-  else if (e.type === 'ConditionalExpression') { classParts(e.consequent, out); classParts(e.alternate, out); }
-  else if (e.type === 'LogicalExpression' || e.type === 'BinaryExpression') { classParts(e.left, out); classParts(e.right, out); }
-  else if (e.type === 'CallExpression') e.arguments.forEach((x: Node) => classParts(x, out));
-  else if (e.type === 'ArrayExpression') e.elements.forEach((x: Node) => classParts(x, out));
-  else if (e.type === 'JSXExpressionContainer') classParts(e.expression, out);
-  return out;
+// one scan per file, whichever rule asks first
+let last: { file: string; text: string; findings: Finding[] } | undefined;
+function findings(context: Context): Finding[] {
+  const file = context.filename;
+  const text = context.sourceCode.text;
+  if (last?.file === file && last.text === text) return last.findings;
+  const view = VIEW.test(file);
+  last = { file, text, findings: scanI18n(ts, text, file, { view, keys: view ? sourceKeys(file) : undefined }) };
+  return last.findings;
 }
-const classText = (n: Node): string => (n.type === 'TemplateElement' ? n.value.cooked ?? '' : String(n.value));
 
-const noTextExpression = {
+const rule = (name: Rule) => ({
   create(context: Context) {
     return {
-      JSXExpressionContainer(node: Node & { parent?: Node }) {
-        // children only: attributes are jsx-no-literals' (text ones) or not text at all (className, href)
-        if (node.parent?.type !== 'JSXElement' && node.parent?.type !== 'JSXFragment') return;
-        for (const s of shown(node.expression)) if (isText(textOf(s))) context.report({ node: s, message: MESSAGES.text(textOf(s)) });
-      },
-    };
-  },
-};
-
-const logicalDirection = {
-  create(context: Context) {
-    return {
-      JSXAttribute(node: Node) {
-        const name = node.name?.name;
-        if (name === 'style' && node.value?.expression?.type === 'ObjectExpression') {
-          for (const p of node.value.expression.properties) {
-            const key = p.type === 'Property' && !p.computed ? (p.key.name ?? p.key.value) : undefined;
-            if (key && PHYSICAL_STYLE[key]) context.report({ node: p, message: MESSAGES.physical(key, PHYSICAL_STYLE[key]) });
-            if (key === 'textAlign' && p.value.type === 'Literal' && (p.value.value === 'left' || p.value.value === 'right')) {
-              context.report({ node: p, message: MESSAGES.physical(`textAlign: '${p.value.value}'`, p.value.value === 'left' ? "'start'" : "'end'") });
-            }
-          }
-          return;
-        }
-        if (name !== 'className' && name !== 'class') return;
-        for (const part of classParts(node.value)) {
-          for (const { found, use } of physicalClasses(classText(part))) context.report({ node: part, message: MESSAGES.physical(found, use) });
+      Program() {
+        for (const f of findings(context)) {
+          if (f.rule !== name) continue;
+          context.report({ message: f.message, loc: { start: { line: f.line, column: f.column }, end: { line: f.endLine, column: f.endColumn } } });
         }
       },
     };
   },
-};
+});
 
-const localeAware = {
-  create(context: Context) {
-    const unset = (args: Node[]) => !args.length || (args[0].type === 'Identifier' && args[0].name === 'undefined') || (args[0].type === 'ArrayExpression' && args[0].elements.length === 0);
-    return {
-      CallExpression(node: Node) {
-        const c = node.callee;
-        if (c.type === 'MemberExpression' && !c.computed && LOCALE_METHODS.includes(c.property.name) && unset(node.arguments)) {
-          context.report({ node, message: MESSAGES.locale(`${c.property.name}()`) });
-        }
-      },
-      NewExpression(node: Node) {
-        const c = node.callee;
-        if (c.type === 'MemberExpression' && c.object.type === 'Identifier' && c.object.name === 'Intl' && INTL_FORMATS.includes(c.property.name) && unset(node.arguments)) {
-          context.report({ node, message: MESSAGES.locale(`new Intl.${c.property.name}()`) });
-        }
-      },
-    };
-  },
-};
+const RULES: Rule[] = ['no-text-expression', 'logical-direction', 'locale-aware', 't-key', 'no-compare-text', 'no-concat-text', 'number-format'];
 
 export default {
   meta: { name: 'i18n' },
-  rules: { 'no-text-expression': noTextExpression, 'logical-direction': logicalDirection, 'locale-aware': localeAware },
+  rules: Object.fromEntries(RULES.map((r) => [r, rule(r)])),
 };

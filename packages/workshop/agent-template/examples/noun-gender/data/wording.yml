@@ -1,0 +1,10 @@
+gestalt: wording@1
+lang: de
+layer: source
+messages:
+  empty:
+    text: Noch keine Nomen.
+    description: shown instead of the exercise when the view has no nouns
+  next:
+    text: Weiter
+    description: after an answer, goes on to the next noun

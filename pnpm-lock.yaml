@@ -234,6 +234,9 @@ importers:
 
   packages/i18n:
     dependencies:
+      '@gestalts/view':
+        specifier: workspace:*
+        version: link:../view
       lucide-react:
         specifier: 1.66.0
         version: 1.66.0(@types/react@19.3.0)(react@19.3.1)
@@ -274,6 +277,9 @@ importers:
       '@codemirror/view':
         specifier: 6.43.15
         version: 6.43.15
+      '@gestalts/i18n':
+        specifier: workspace:*
+        version: link:../i18n
       '@gestalts/sources':
         specifier: workspace:*
         version: link:../sources

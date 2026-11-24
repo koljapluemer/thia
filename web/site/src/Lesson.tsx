@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { registry } from 'virtual:gestalts-plugins';
 import { closedCsp } from '@gestalts/host';
+import { asWording, type Wording } from '@gestalts/view/wording';
 import { useLang } from '@gestalts/i18n';
 import { LESSON_ID, SEQUENCE_LESSON, parseManifest, parseSequenceManifest, type LessonManifest } from '@gestalts/workshop/lesson';
 import { Notice, RunPage, Spinner, type Run } from './Run';
@@ -11,7 +12,7 @@ import { SequencePage, type LoadedSequence } from './Sequence';
  * its ymls as the deck it opens on. Unlisted: only who has the link finds it. The view runs under the closed CSP. A
  * lesson of several views (`lesson@2`) is each of its views so, played as a sequence.
  */
-type Loaded = { id: string; manifest: LessonManifest; base: string; js: string };
+type Loaded = { id: string; manifest: LessonManifest; base: string; js: string; wording?: Wording[] };
 type Any = { kind: 'one'; lesson: Loaded } | { kind: 'sequence'; lesson: LoadedSequence };
 
 class Gone extends Error {}
@@ -21,12 +22,15 @@ export function lessonId(path: string): string | null {
   return m && LESSON_ID.test(m[1]) ? m[1] : null;
 }
 
-/** A `lesson@1` folder: its manifest and view. */
-async function loadView(base: string, raw: unknown): Promise<{ manifest: LessonManifest; base: string; js: string }> {
+/** A `lesson@1` folder: its manifest, its view and the view's text. */
+async function loadView(base: string, raw: unknown): Promise<{ manifest: LessonManifest; base: string; js: string; wording?: Wording[] }> {
   const manifest = parseManifest(raw);
-  const view = await fetch(base + manifest.view);
+  const [view, wording] = await Promise.all([fetch(base + manifest.view), manifest.wording ? fetch(base + manifest.wording) : undefined]);
   if (!view.ok) throw new Error(`the lesson's view couldn't be loaded (${view.status})`);
-  return { manifest, base, js: await view.text() };
+  // its text, each layer; a lesson without it shows its keys, so one that won't load is an error
+  if (wording && !wording.ok) throw new Error(`the lesson's text couldn't be loaded (${wording.status})`);
+  const layers = wording ? ((await wording.json()) as Record<string, unknown>[]).flatMap((w) => asWording(w) ?? []) : undefined;
+  return { manifest, base, js: await view.text(), ...(layers ? { wording: layers } : {}) };
 }
 
 async function load(id: string): Promise<Any> {
@@ -77,7 +81,7 @@ export function Lesson({ id }: { id: string }) {
 }
 
 function Loaded({ lesson }: { lesson: Loaded }) {
-  const { id, manifest, base, js } = lesson;
+  const { id, manifest, base, js, wording } = lesson;
   const run = useMemo<Run>(() => ({
     title: manifest.title,
     // as the player named them, so what students did before stays theirs
@@ -95,6 +99,7 @@ function Loaded({ lesson }: { lesson: Loaded }) {
     },
     params: manifest.params,
     csp: closedCsp({ scripts: [`${location.origin}/npm/`] }),
-  }), [id, manifest, base, js]);
+    wording,
+  }), [id, manifest, base, js, wording]);
   return <RunPage run={run} />;
 }

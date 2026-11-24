@@ -7,4 +7,5 @@ export { connect, type ViewHost } from './connection';
 export { fixtureHost, type Fixture } from './fixture';
 export { PROTOCOL, type Answers, type Call, type Capabilities, type FromView, type LlmReply, type LlmRequest, type NetReply, type NetRequest, type ServiceReply, type ToView, type ViewError, type ViewInit } from './protocol';
 export { logger, type Logger, type Span } from './log';
+export { formatNumber, operators, parseNumber, t } from './wording';
 export type * from './types';

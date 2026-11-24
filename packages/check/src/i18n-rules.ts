@@ -8,7 +8,7 @@
  * Text that's the same in every language: punctuation, symbols, the product's name. Anything else a person reads comes
  * from the messages (the app) or the wording (a view).
  */
-export const ALLOWED_TEXT = ['thia', 'gestalts-node', '·', '–', '—', '/', '…', '×', '÷', ':', ',', '.', '(', ')', '+', '-', '=', '%', '?', '!', '→', '←', '↑', '↓', '✓', '✗', '#', '$', '≈', '|', '*', '&', '@'];
+export const ALLOWED_TEXT = ['', 'thia', 'gestalts-node', 'BibTeX', '·', '–', '—', '/', '…', '×', '÷', ':', ',', '.', '(', ')', '+', '-', '=', '%', '?', '!', '→', '←', '↑', '↓', '✓', '✗', '#', '$', '≈', '|', '*', '&', '@'];
 
 /** The attributes a person reads or hears. */
 export const TEXT_ATTRIBUTES = ['aria-label', 'title', 'alt', 'placeholder', 'label', 'aria-description', 'aria-placeholder', 'aria-roledescription', 'aria-valuetext'];
@@ -65,5 +65,12 @@ export const INTL_FORMATS = ['NumberFormat', 'DateTimeFormat', 'RelativeTimeForm
 export const MESSAGES = {
   text: (t: string) => `“${t.trim().slice(0, 40)}” is text a person reads: take it from the messages (the app) or t() (a view), in their language`,
   physical: (found: string, use: string) => `${found} is left or right whatever the language: use ${use}, which turns around for right-to-left text`,
-  locale: (what: string) => `${what} without a locale formats in the device's language, not the page's: pass the language (useLang().lang, or useLocale().locale in a view)`,
+  locale: (what: string) => `${what} without a locale formats in the device's language, not the page's: pass the language (useLang().lang; in a view, formatNumber from @gestalts/view, or useLocale().locale)`,
+  tLiteral: 't() takes its key as a literal string, so its wording can be checked and reworded: t(\'next\'), never t(name)',
+  tNoWording: 'there is no wording for t(): put the view\'s text in its source wording (a view\'s data/wording.yml; a plugin\'s wording/<lang>.yml)',
+  tMissing: (key: string) => `${key} isn't in the view's wording: add it there, with its text and a description of where it shows`,
+  compare: 'code that compares what t() says breaks when its text is reworded or translated: compare keys or values, never text',
+  concat: 'text put together from pieces can\'t be reordered in another language: one message with placeholders instead (`{n} of {total}`)',
+  parse: (fn: string) => `${fn} reads what was typed the English way (German 3,5 is three and a half): parseNumber from @gestalts/view reads it the person's way`,
+  fixed: (fn: string) => `${fn}() writes numbers the English way: formatNumber(n, { maximumFractionDigits: … }) from @gestalts/view writes them the person's way`,
 };

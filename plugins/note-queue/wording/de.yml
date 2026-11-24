@@ -1,0 +1,10 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  empty:
+    text: "Noch keine Notizen für die Warteschlange."
+    source: cdff2fe716062b6a
+  next:
+    text: "Weiter"
+    source: cb3caabd61cbc874

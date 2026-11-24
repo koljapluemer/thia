@@ -1,0 +1,25 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  flag_alt:
+    text: "the flag to name"
+    description: "alt text of the flag shown in a question"
+  not_saved:
+    text: "Couldn't save your last answer: {error}"
+    description: "an alert when an answer could not be saved; error says why"
+  dismiss:
+    text: "Dismiss"
+    description: "closes that alert"
+  nothing_due:
+    text: "Nothing due right now."
+    description: "shown when no flag needs practice now"
+  check_again:
+    text: "Check again"
+    description: "below that: looks again for a flag to practise"
+  title:
+    text: "Whose flag is this?"
+    description: "the heading over each question"
+  no_flags:
+    text: "No flags yet."
+    description: "shown when there are fewer than two flags to practise"

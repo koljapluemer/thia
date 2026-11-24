@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeftRight, BookPlus, Pencil, Trash2, Unlink } from 'lucide-react';
 import { AddSource, ConceptPicker, ConfirmDialog, ListInput, Modal, NotePicker, SOURCE_LABEL, byline, newId, sourceTitle } from '@gestalts/kit';
-import { useBeliefs, useParams, useQuery, useRead, useWrite, type Item, type JsonMap } from '@gestalts/view';
+import { formatNumber, t, useBeliefs, useLocale, useParams, useQuery, useRead, useWrite, type Item, type JsonMap } from '@gestalts/view';
 
 const CONCEPTS = ['concept@2', 'concept@3'];
 const NOTE = 'note@1';
@@ -59,14 +59,14 @@ function Sources({ relationships, concept, onChange }: {
               {[byline(s.value), r.label !== SOURCE_LABEL ? r.label.replace(/^source\s*/, '') : ''].filter(Boolean).join(' · ')}
             </span>
           </span>
-          <button type="button" className="btn btn-ghost btn-xs btn-square" title="Detach the source from this note" onClick={() => onChange(relationships.filter((_, j) => j !== i))}><Unlink className="size-3" /></button>
-          <button type="button" className="btn btn-ghost btn-xs btn-square" title="Delete the source" onClick={() => setDeleting({ source: s, index: i })}><Trash2 className="size-3" /></button>
+          <button type="button" className="btn btn-ghost btn-xs btn-square" title={t('detach_source')} aria-label={t('detach_source')} onClick={() => onChange(relationships.filter((_, j) => j !== i))}><Unlink className="size-3" /></button>
+          <button type="button" className="btn btn-ghost btn-xs btn-square" title={t('delete_source')} aria-label={t('delete_source')} onClick={() => setDeleting({ source: s, index: i })}><Trash2 className="size-3" /></button>
         </li>
       ))}
     </ul>
     {deleting && (
-      <ConfirmDialog title={`Delete ${sourceTitle(deleting.source.value)}?`} onClose={() => setDeleting(undefined)} onConfirm={remove}>
-        Other notes about this source will stay, pointing at nothing. This cannot be undone.
+      <ConfirmDialog title={t('delete_named', { name: sourceTitle(deleting.source.value) })} confirmLabel={t('delete')} onClose={() => setDeleting(undefined)} onConfirm={remove}>
+        {t('delete_source_text')}
       </ConfirmDialog>
     )}
   </>;
@@ -150,26 +150,26 @@ function NoteGroup({ id, note, concept, onCreated, onGone, onError }: {
   const rels = relationsOf(note?.value);
   return (
     <section className="flex flex-col gap-2 rounded-box border border-base-300 p-3">
-      <input className="input input-sm w-full" aria-label="How this relates to the concept" placeholder={LABEL} value={label}
+      <input className="input input-sm w-full" aria-label={t('how_relates')} placeholder={t('sheds_light')} value={label}
              onChange={(e) => edit({ label: e.target.value })} />
       {main.includes('\n')
         // written elsewhere over several lines: an input would drop the line breaks on the first edit
-        ? <textarea className="textarea textarea-lg w-full" aria-label="The note" rows={main.split('\n').length} value={main} onChange={(e) => edit({ main: e.target.value })} />
-        : <input className="input input-lg w-full" aria-label="The note" placeholder={written ? '' : 'Something about this concept…'} value={main} onChange={(e) => edit({ main: e.target.value })} />}
+        ? <textarea className="textarea textarea-lg w-full" aria-label={t('the_note')} rows={main.split('\n').length} value={main} onChange={(e) => edit({ main: e.target.value })} />
+        : <input className="input input-lg w-full" aria-label={t('the_note')} placeholder={written ? '' : t('note_placeholder')} value={main} onChange={(e) => edit({ main: e.target.value })} />}
       <Sources relationships={rels} concept={concept} onChange={(r) => void save(r)} />
       <div className="flex items-center gap-1">
-        <button type="button" className="btn btn-ghost btn-sm" title="Add a source" onClick={() => setAdding(true)}><BookPlus className="size-4" /> Source</button>
+        <button type="button" className="btn btn-ghost btn-sm" title={t('add_source')} onClick={() => setAdding(true)}><BookPlus className="size-4" /> {t('source')}</button>
         <span className="flex-1" />
         {dirty && <span className="text-xs text-base-content/50">…</span>}
         {(written || main || label) && <>
-          <button type="button" className="btn btn-ghost btn-sm btn-square" title="Detach: the note stays, unrelated to this concept" onClick={() => void detach()}><Unlink className="size-4" /></button>
-          <button type="button" className="btn btn-ghost btn-sm btn-square" title="Delete the note" onClick={() => written ? setConfirming(true) : void remove()}><Trash2 className="size-4" /></button>
+          <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('detach_note')} aria-label={t('detach_note')} onClick={() => void detach()}><Unlink className="size-4" /></button>
+          <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('delete_note')} aria-label={t('delete_note')} onClick={() => written ? setConfirming(true) : void remove()}><Trash2 className="size-4" /></button>
         </>}
       </div>
       {adding && <AddSource attached={new Set(rels.map((r) => r.to))} onAdd={addSources} onClose={() => setAdding(false)} />}
       {confirming && (
-        <ConfirmDialog title="Delete this note?" onClose={() => setConfirming(false)} onConfirm={remove}>
-          This cannot be undone.
+        <ConfirmDialog title={t('delete_note_title')} confirmLabel={t('delete')} onClose={() => setConfirming(false)} onConfirm={remove}>
+          {t('cannot_undo')}
         </ConfirmDialog>
       )}
     </section>
@@ -186,13 +186,13 @@ function AttachNote({ concept, onAttached, onError }: { concept: string; onAttac
     try {
       // the whole note as it is now: the search shows only some of its props
       const n = (await read.page({ gestalt: NOTE, ids: [picked.id], limit: 1 })).items[0];
-      if (!n) throw new Error('That note is gone.');
+      if (!n) throw new Error(t('note_gone'));
       const rels = relationsOf(n.value);
       if (!rels.some((r) => r.to === concept)) await write.put({ ...n.value, relationships: [...rels, { to: concept, label: LABEL }] });
       onAttached(n.id);
     } catch (e) { onError(e); }
   };
-  return <NotePicker unrelatedTo={concept} placeholder="Attach an existing note…" onPick={(n) => void attach(n)} />;
+  return <NotePicker unrelatedTo={concept} placeholder={t('attach_note')} onPick={(n) => void attach(n)} />;
 }
 
 /** Every note relating to the concept, from whenever it was written, and one empty one at the end to write the next. */
@@ -240,7 +240,7 @@ function Aliases({ concept, onError }: { concept: Item; onError: (e: unknown) =>
     const { aliases: _old, ...rest } = concept.value;
     write.put(aliases.length ? { ...rest, aliases } : rest).catch(onError);
   };
-  return <ListInput className="px-4 pb-2" label="Alias" prefix="also" exclude={[name]} value={strings(concept.value.aliases)} onChange={save} />;
+  return <ListInput className="px-4 pb-2" label={t('alias')} prefix={t('also')} exclude={[name]} value={strings(concept.value.aliases)} onChange={save} />;
 }
 
 // ---- how it relates, and how well it's known ----
@@ -255,8 +255,8 @@ function LinkList({ title, rows, names, onOpen }: { title: string; rows: LinkRow
       <ul className="flex flex-wrap gap-1">
         {rows.map((r) => (
           <li key={r.id}>
-            <button type="button" className="badge badge-outline gap-1 hover:badge-primary" title={[r.kind, r.source && `claimed by ${r.source}`].filter(Boolean).join(' · ')} onClick={() => onOpen(r.other)}>
-              {names.get(r.other) ?? r.other} <span className="text-base-content/50">{r.weight}</span>
+            <button type="button" className="badge badge-outline gap-1 hover:badge-primary" title={[r.kind, r.source && t('claimed_by', { source: r.source })].filter(Boolean).join(' · ')} onClick={() => onOpen(r.other)}>
+              {names.get(r.other) ?? r.other} <span className="text-base-content/50">{formatNumber(r.weight)}</span>
             </button>
           </li>
         ))}
@@ -277,23 +277,26 @@ function Relations({ concept, set, onOpen }: { concept: string; set?: string; on
   const names = new Map(items.map((c) => [c.id, str(c.value.name)]));
   const { beliefs } = useBeliefs([concept]);
   const b = beliefs.get(concept);
+  const { locale } = useLocale();
+  const p = b && formatNumber(b.p, { style: 'percent', maximumFractionDigits: 0 });
+  const last = b?.lastAt && new Date(b.lastAt).toLocaleDateString(locale);
   return (
     <section className="flex flex-col gap-2 rounded-box border border-base-300 p-3">
       {b && (
-        <p className="text-sm" title={`logit ${b.mean.toFixed(2)} ± ${b.sd.toFixed(2)}`}>
+        <p className="text-sm" title={t('logit', { mean: formatNumber(b.mean, { maximumFractionDigits: 2 }), sd: formatNumber(b.sd, { maximumFractionDigits: 2 }) })}>
           {b.evidence || b.lastAt
-            ? <>Known about <strong>{Math.round(b.p * 100)}%</strong>, from {b.evidence} answer{b.evidence === 1 ? '' : 's'} on it{b.lastAt ? `, last ${b.lastAt.slice(0, 10)}` : ''}.</>
-            : <span className="text-base-content/60">Not practised yet.</span>}
-          {b.members && <> {b.members.known} of its members known.</>}
+            ? (last ? t('known_last', { p, n: b.evidence, date: last }) : t('known', { p, n: b.evidence }))
+            : <span className="text-base-content/60">{t('not_practised')}</span>}
+          {b.members && <> {t('members_known', { n: b.members.known })}</>}
         </p>
       )}
       {set && (
         <p className="text-sm">
-          One of <button type="button" className="badge badge-outline hover:badge-primary" onClick={() => onOpen(set)}>{names.get(set) ?? set}</button>
+          {t('one_of')} <button type="button" className="badge badge-outline hover:badge-primary" onClick={() => onOpen(set)}>{names.get(set) ?? set}</button>
         </p>
       )}
-      <LinkList title="Says something about" rows={outRows} names={names} onOpen={onOpen} />
-      <LinkList title="Is said something about by" rows={inRows} names={names} onOpen={onOpen} />
+      <LinkList title={t('says_about')} rows={outRows} names={names} onOpen={onOpen} />
+      <LinkList title={t('said_about')} rows={inRows} names={names} onOpen={onOpen} />
     </section>
   );
 }
@@ -334,16 +337,16 @@ function Concept({ concept, onOpen, onClosed }: { concept: Item; onOpen: (id: st
         <div className="flex items-center gap-1 p-2">
           {renaming === null
             ? <h1 className="min-w-0 truncate px-2 text-xl font-semibold">{name}</h1>
-            : <input className="input min-w-0 flex-1 text-xl font-semibold" aria-label="Name" autoFocus value={renaming}
+            : <input className="input min-w-0 flex-1 text-xl font-semibold" aria-label={t('name')} autoFocus value={renaming}
                      onChange={(e) => setRenaming(e.target.value)} onBlur={rename}
                      onKeyDown={(e) => {
                        if (e.key === 'Enter') e.currentTarget.blur();
                        if (e.key === 'Escape') { cancelled.current = true; e.currentTarget.blur(); }
                      }} />}
-          <button type="button" className="btn btn-ghost btn-sm btn-square" title="Go to another concept" onClick={() => setSwitching(true)}><ArrowLeftRight className="size-4" /></button>
+          <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('switch')} aria-label={t('switch')} onClick={() => setSwitching(true)}><ArrowLeftRight className="size-4" /></button>
           <span className="flex-1" />
-          {renaming === null && <button type="button" className="btn btn-ghost btn-sm btn-square" title="Rename" onClick={() => setRenaming(name)}><Pencil className="size-4" /></button>}
-          <button type="button" className="btn btn-ghost btn-sm btn-square" title="Delete the concept" onClick={() => setConfirming(true)}><Trash2 className="size-4" /></button>
+          {renaming === null && <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('rename')} aria-label={t('rename')} onClick={() => setRenaming(name)}><Pencil className="size-4" /></button>}
+          <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('delete_concept')} aria-label={t('delete_concept')} onClick={() => setConfirming(true)}><Trash2 className="size-4" /></button>
         </div>
         <Aliases concept={concept} onError={fail} />
       </header>
@@ -360,8 +363,8 @@ function Concept({ concept, onOpen, onClosed }: { concept: Item; onOpen: (id: st
         </Modal>
       )}
       {confirming && (
-        <ConfirmDialog title={`Delete “${name}”?`} onClose={() => setConfirming(false)} onConfirm={remove}>
-          Its notes will stay, no longer related to it, and its links will be deleted. This cannot be undone.
+        <ConfirmDialog title={t('delete_concept_title', { name })} confirmLabel={t('delete')} onClose={() => setConfirming(false)} onConfirm={remove}>
+          {t('delete_concept_text')}
         </ConfirmDialog>
       )}
     </div>

@@ -5,6 +5,7 @@ import { useOpenRepo, type Repo } from '@gestalts/client';
 import { FrameView, closedCsp, type RunnableView, type ViewEnv } from '@gestalts/host';
 import { useLang, type Messages } from '@gestalts/i18n';
 import type { Belief, JsonMap } from '@gestalts/view';
+import type { Wording } from '@gestalts/view/wording';
 import type { LessonManifest, SequenceManifest } from '@gestalts/workshop/lesson';
 import { decide, type Step } from '@gestalts/workshop/sequence';
 import tailwind from '@tailwindcss/browser?raw';
@@ -14,7 +15,7 @@ import { Notice, Spinner } from './Run';
 import { store } from './store';
 
 /** A lesson of several views as loaded: its manifest, and each view with where its deck is. */
-export type LoadedSequence = { id: string; manifest: SequenceManifest; views: { manifest: LessonManifest; base: string; js: string }[] };
+export type LoadedSequence = { id: string; manifest: SequenceManifest; views: { manifest: LessonManifest; base: string; js: string; wording?: Wording[] }[] };
 
 /**
  * Where a learner is: the step, whether its detour is playing, the steps skipped and those that got a detour, each
@@ -194,5 +195,5 @@ function StepFrame({ repo, n, view, stateKey, onDone }: { repo: Repo; n: number;
     done: () => { done.current(); return true; },
   }), [stateKey]);
   const csp = useMemo(() => closedCsp({ scripts: [`${location.origin}/npm/`] }), []);
-  return <FrameView repo={repo} view={runnable} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} csp={csp} />;
+  return <FrameView repo={repo} view={runnable} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} csp={csp} wording={view.wording} />;
 }

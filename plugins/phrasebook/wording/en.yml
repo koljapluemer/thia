@@ -1,0 +1,142 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  no_mic:
+    text: "The microphone isn't available."
+    description: "an error when recording can't start"
+  back:
+    text: "Back"
+    description: "icon button at the top: back"
+  remember:
+    text: "Do you remember how to say this in {language}?"
+    description: "the task above a phrase; language is the one learned"
+  stop_recording:
+    text: "Stop recording"
+    description: "icon button while recording"
+  say_it:
+    text: "Say it"
+    description: "button: starts recording"
+  your_take:
+    text: "Your take"
+    description: "button: plays what was recorded"
+  record_again:
+    text: "Record again"
+    description: "icon button: records again"
+  check:
+    text: "Check"
+    description: "button: shows how it goes, after recording"
+  reveal:
+    text: "Reveal"
+    description: "button: shows how it goes, without recording"
+  no_idea:
+    text: "I have no idea"
+    description: "button: gives up and shows how it goes"
+  how_it_goes:
+    text: "This is how it goes."
+    description: "the task, after giving up"
+  right_q:
+    text: "Did you get it right?"
+    description: "the task, after the answer is shown"
+  next:
+    text: "Next"
+    description: "button: goes on"
+  wrong:
+    text: "Wrong"
+    description: "button: says it wasn't right"
+  right:
+    text: "Right"
+    description: "button: says it was right"
+  not_saved:
+    text: "Couldn't save your last answer: {error}"
+    description: "an alert when an answer could not be saved; error says why"
+  dismiss:
+    text: "Dismiss"
+    description: "closes that alert"
+  title:
+    text: "Phrasebook"
+    description: "heading of the list of languages"
+  which_language:
+    text: "Which language?"
+    description: "below that heading"
+  no_decks:
+    text: "No phrase decks here yet."
+    description: "below that heading when there are none"
+  counts:
+    text: "{due} due · {learned} learned · {new} new"
+    description: "under a language's heading: how many phrases are due, learned, new"
+  practice:
+    text: "Practice"
+    description: "button and heading: practising what is due"
+  learn_new:
+    text: "Learn new"
+    description: "button: learning phrases not seen yet"
+  can_do:
+    text: "What you can do"
+    description: "button and heading: what is known"
+  no_recording:
+    text: "Recording isn't available here: you'll reveal instead of saying it aloud."
+    description: "shown where the microphone can't be used"
+  first_time:
+    text: "{right} of {done} right the first time."
+    description: "after practising: how it went"
+  nothing_due:
+    text: "Nothing due right now."
+    description: "when there is nothing to practise"
+  done:
+    text: "Done"
+    description: "button: back to the language"
+  learn:
+    text: "Learn"
+    description: "heading while learning new phrases"
+  seen_all:
+    text: "You've seen every phrase here."
+    description: "when there is nothing new to learn"
+  say_until:
+    text: "Say the {language} until you know it by heart."
+    description: "the task while learning; language is the one learned"
+  another_way:
+    text: "Another way to say something you know."
+    description: "above a new phrase that is a variant of a known one"
+  part_known:
+    text: "You already know part of this:"
+    description: "above a new phrase, before what of it is known"
+  take:
+    text: "Take {n}"
+    description: "button: plays one of the recordings made"
+  say_n:
+    text: "Say it ({n} of {total})"
+    description: "button: records once more; how many of the takes"
+  from_memory:
+    text: "Now from memory, in a moment."
+    description: "while waiting before recalling the phrase"
+  bar:
+    text: "{p} · from {n, plural, one {# answer} other {# answers}}"
+    description: "tooltip of a bar: how well it is known"
+  nothing_yet:
+    text: "nothing yet"
+    description: "tooltip of a bar with no answers"
+  times:
+    text: "{n}×"
+    description: "how many answers on it"
+  not_yet:
+    text: "not yet"
+    description: "in place of that, with no answers"
+  also:
+    text: "also {list}"
+    description: "other ways it is said"
+  estimated:
+    text: "In {language}, estimated from everything you practised."
+    description: "below the heading of what is known"
+  where:
+    text: "Where"
+    description: "heading: the situations"
+  pieces:
+    text: "Pieces of {language}"
+    description: "heading: the words and constructions"
+  everywhere:
+    text: "In every language"
+    description: "heading: what is the same in every language"
+  phrases:
+    text: "Phrases"
+    description: "heading: the phrases"

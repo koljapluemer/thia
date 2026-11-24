@@ -1,0 +1,25 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  flag_alt:
+    text: "die Flagge, die zu benennen ist"
+    source: e21dd50706505550
+  not_saved:
+    text: "Deine letzte Antwort ließ sich nicht speichern: {error}"
+    source: a436cbca7ebdf7db
+  dismiss:
+    text: "Schließen"
+    source: 0d61ecd0675222ef
+  nothing_due:
+    text: "Gerade ist nichts fällig."
+    source: dc508a4dc220c0b0
+  check_again:
+    text: "Erneut schauen"
+    source: 20fa9ff865094bc8
+  title:
+    text: "Wessen Flagge ist das?"
+    source: b9a29f8b1aec2ad8
+  no_flags:
+    text: "Noch keine Flaggen."
+    source: 954f63dcb49af178

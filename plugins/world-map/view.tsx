@@ -2,7 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffec
 import { CircleHelp, Minus, Plus, RotateCcw } from 'lucide-react';
 import { Credits, usePanZoom, type PanZoomTransform } from '@gestalts/kit';
 import { fsrsStates, getScheduler, logPractice, Rating, review, saveReview, useLocalReviews, usePracticeSession, type Facet, type FsrsStates, type ReviewState, type Scheduler } from '@gestalts/learning';
-import { useBlobUrl, useQuery, useWrite, type Item, type JsonMap, type QueryResult } from '@gestalts/view';
+import { t, useBlobUrl, useQuery, useWrite, type Item, type JsonMap, type QueryResult } from '@gestalts/view';
 
 /**
  * Where the countries of the world are, on a map. Five kinds of exercise, each a `map-exercise@1` made by an
@@ -267,11 +267,11 @@ const WorldMapCanvas = forwardRef<CanvasHandle, CanvasProps>(function WorldMapCa
       <div className="pointer-events-none absolute top-1/2 end-3 flex -translate-y-1/2 flex-col gap-2">
         {!isTouchDevice && (
           <>
-            <button type="button" className={button} disabled={!canZoomIn} aria-label="Zoom in" onClick={() => panZoom.scaleBy(ZOOM_BUTTON_FACTOR, ZOOM_TRANSITION_MS)}><Plus size={20} aria-hidden="true" /></button>
-            <button type="button" className={button} disabled={!canZoomOut} aria-label="Zoom out" onClick={() => panZoom.scaleBy(1 / ZOOM_BUTTON_FACTOR, ZOOM_TRANSITION_MS)}><Minus size={20} aria-hidden="true" /></button>
+            <button type="button" className={button} disabled={!canZoomIn} aria-label={t('zoom_in')} title={t('zoom_in')} onClick={() => panZoom.scaleBy(ZOOM_BUTTON_FACTOR, ZOOM_TRANSITION_MS)}><Plus size={20} aria-hidden="true" /></button>
+            <button type="button" className={button} disabled={!canZoomOut} aria-label={t('zoom_out')} title={t('zoom_out')} onClick={() => panZoom.scaleBy(1 / ZOOM_BUTTON_FACTOR, ZOOM_TRANSITION_MS)}><Minus size={20} aria-hidden="true" /></button>
           </>
         )}
-        <button type="button" className={button} disabled={isAtInitialView} aria-label="Reset view" onClick={() => panZoom.transformTo(start, ZOOM_TRANSITION_MS)}><RotateCcw size={20} aria-hidden="true" /></button>
+        <button type="button" className={button} disabled={isAtInitialView} aria-label={t('reset')} title={t('reset')} onClick={() => panZoom.transformTo(start, ZOOM_TRANSITION_MS)}><RotateCcw size={20} aria-hidden="true" /></button>
       </div>
     </div>
   );
@@ -351,12 +351,12 @@ function FindExercise({ geo, next, onShown, onSubmitted }: { geo: Geometry; next
           highlightCountry={highlight.country} highlightColor={highlight.color} onCountryClicked={handleClick} />
       </div>
       <Instruction correct={isCorrect}>
-        <p className="text-sm font-medium">{neighborhood ? `Find ${name} in its neighborhood` : `Find ${name} on the world map`}</p>
+        <p className="text-sm font-medium">{neighborhood ? t('find_near', { name }) : t('find_world', { name })}</p>
       </Instruction>
       {!isCorrect && !gaveUp && (
         <BottomBar>
           <button type="button" className="btn btn-outline pointer-events-auto bg-base-100/90 shadow-sm backdrop-blur" onClick={handleGiveUp}>
-            <CircleHelp size={18} aria-hidden="true" /> I have no idea
+            <CircleHelp size={18} aria-hidden="true" /> {t('no_idea')}
           </button>
         </BottomBar>
       )}
@@ -412,7 +412,7 @@ function ChoiceExercise({ geo, next, onShown, onSubmitted }: { geo: Geometry; ne
           : <WorldMapCanvas geo={geo} targetCountry={next.country} zoom={next.zoom} panIndex={next.panIndex} highlightCountry={next.country} />}
       </div>
       <Instruction correct={isCorrect}>
-        <p className="text-sm font-medium">{identify ? 'Which country is this?' : 'Which country is highlighted?'}</p>
+        <p className="text-sm font-medium">{identify ? t('which_country') : t('which_highlighted')}</p>
       </Instruction>
       <ChoiceButtons geo={geo} options={options} selected={selected} isCorrect={isCorrect} onSelect={handleSelect} />
     </div>
@@ -463,7 +463,7 @@ function GroupSequenceExercise({ geo, next, onShown, onStep, onSubmitted }: { ge
         <WorldMapCanvas geo={geo} groupCountries={next.countries} highlightCountry={currentCountry} markerCountry={currentCountry} />
       </div>
       <Instruction correct={isCorrect}>
-        <p className="text-sm font-medium">Which country is this?</p>
+        <p className="text-sm font-medium">{t('which_country')}</p>
         <p className="text-xs text-base-content/60">{stepIndex + 1} / {next.countries.length}</p>
       </Instruction>
       <ChoiceButtons geo={geo} options={options} selected={selected} isCorrect={isCorrect} onSelect={handleSelect} />
@@ -712,8 +712,8 @@ export default function WorldMap() {
   const shown = useCallback(() => log.shown(), [log]);
 
   let body: ReactNode;
-  if (!loaded || !geo || !current) body = <Centered>Loading…</Centered>;
-  else if (!current.next) body = <Centered><p>No countries enabled yet.</p></Centered>;
+  if (!loaded || !geo || !current) body = <Centered>{t('loading')}</Centered>;
+  else if (!current.next) body = <Centered><p>{t('none_enabled')}</p></Centered>;
   else {
     const next = current.next;
     const key = current.n;
@@ -727,8 +727,8 @@ export default function WorldMap() {
       {body}
       {error && (
         <div role="alert" className="alert alert-error absolute inset-x-3 top-3 text-sm">
-          <span>Couldn't save your last answer: {error}</span>
-          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>Dismiss</button>
+          <span>{t('not_saved', { error })}</span>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>{t('dismiss')}</button>
         </div>
       )}
       <div className="pointer-events-none absolute bottom-0 start-0 px-2 leading-tight"><Credits sources={credit} className="pointer-events-auto" /></div>

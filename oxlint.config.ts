@@ -6,7 +6,8 @@ import { ALLOWED_TEXT, TEXT_ATTRIBUTES } from './packages/check/src/i18n-rules.t
  * - `@gestalts/viz` (what an interactive visualization is written with, and its runtime) imports nothing of ours.
  * - `@gestalts/view` (what a view gets from the app) imports nothing of ours; `@gestalts/learning` only the view package;
  *   `@gestalts/sources` nothing of ours.
- * - `@gestalts/kit` imports only the view and sources packages, in layers: primitives < components < widgets < perspectives.
+ * - `@gestalts/kit` imports only the view, sources and i18n packages (its own text, in the view's language), in layers:
+ *   primitives < components < widgets < perspectives.
  * - a plugin's `view.tsx` imports only the view package, the kit (its index), learning and sources, never another plugin, the
  *   client or the host.
  * - the kit is for views only: the frame runtime (`packages/host/src/frame/runtime.tsx`, everything a frame loads) is the one
@@ -20,7 +21,7 @@ import { ALLOWED_TEXT, TEXT_ATTRIBUTES } from './packages/check/src/i18n-rules.t
  *   data), and nothing else of them.
  * - `@gestalts/workshop` (making a view with an agent) builds on client, host, view, check and i18n.
  * - `@gestalts/npm-bundle` (npm packages for views, bundled by a server, run by Node) imports only the view package.
- * - `@gestalts/i18n` (the app's own text in each language, and which language a page is in) imports nothing of ours;
+ * - `@gestalts/i18n` (the app's own text in each language, and which language a page is in) imports only the view package;
  *   the apps, the host and the workshop import it.
  * - an app (`web/<app>/src`, folder-sync's settings page) imports only the packages
  *   (client, host, view, learning, sources, workshop, check, i18n) and its own files, never another app or a plugin;
@@ -51,14 +52,14 @@ const allowed: Record<string, string[]> = {
   sources: [],
   viz: [],
   client: ['view'],
-  ...Object.fromEntries(Object.entries(kitBelow).map(([t, below]) => [t, ['view', 'sources', ...below]])),
+  ...Object.fromEntries(Object.entries(kitBelow).map(([t, below]) => [t, ['view', 'sources', 'i18n', ...below]])),
   plugin: ['view', 'kit-index', 'learning', 'sources'],
   debug: ['client', 'view', 'i18n'],
   host: ['client', 'view', 'learning', 'sources', 'debug', 'i18n'],
   workshop: ['client', 'host', 'view', 'check', 'i18n'],
   check: ['view', 'viz'],
   'npm-bundle': ['view'],
-  i18n: [],
+  i18n: ['view'],
   app: ['client', 'host', 'view', 'learning', 'sources', 'workshop', 'check', 'i18n'],
 };
 
@@ -108,8 +109,12 @@ export default defineConfig({
   overrides: [{
     // the apps' and the host's text, in every language they have; the admins' run diagnostics (web/app/src/runs) are
     // a developer's tool, in English
-    files: ['web/*/src/**/*.tsx', 'packages/host/src/**/*.tsx', 'packages/workshop/src/**/*.tsx', 'installables/*/*/src/**/*.tsx'],
+    files: ['web/*/src/**/*.tsx', 'packages/host/src/**/*.tsx', 'packages/workshop/src/**/*.tsx', 'installables/*/*/src/**/*.tsx', 'packages/kit/src/**/*.tsx', 'plugins/*/view.tsx'],
     rules: { 'react/jsx-no-literals': noLiterals, 'i18n/no-text-expression': 'error', 'i18n/locale-aware': 'error' },
+  }, {
+    // a view's text is its wording (t()), each key in it; it reads and writes numbers the person's way
+    files: ['plugins/*/view.tsx'],
+    rules: { 'i18n/t-key': 'error', 'i18n/no-compare-text': 'error', 'i18n/no-concat-text': 'error', 'i18n/number-format': 'error' },
   }, {
     // everything that lays text out: it turns around for right-to-left languages
     files: ['**/*.tsx'],

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Credits, Markdown } from '@gestalts/kit';
 import { FLASHCARD_DUE_PREFERENCE, facetOf, fsrsStates, getScheduler, logPractice, nextItem, Rating, ratingOf, review, saveReview, useLocalReviews, usePracticeSession, type FsrsStates, type Grade } from '@gestalts/learning';
-import { useBlobUrl, useDoc, useQuery, useWrite, type Item, type QueryResult } from '@gestalts/view';
+import { t, useBlobUrl, useDoc, useQuery, useWrite, type Item, type QueryResult } from '@gestalts/view';
 
-const GRADES: { grade: Grade; label: string; className: string }[] = [
-  { grade: Rating.Again, label: 'Again', className: 'btn-error' },
-  { grade: Rating.Hard, label: 'Hard', className: 'btn-warning' },
-  { grade: Rating.Good, label: 'Good', className: 'btn-success' },
-  { grade: Rating.Easy, label: 'Easy', className: 'btn-info' },
+const GRADES: { grade: Grade; label: () => string; className: string }[] = [
+  { grade: Rating.Again, label: () => t('again'), className: 'btn-error' },
+  { grade: Rating.Hard, label: () => t('hard'), className: 'btn-warning' },
+  { grade: Rating.Good, label: () => t('good'), className: 'btn-success' },
+  { grade: Rating.Easy, label: () => t('easy'), className: 'btn-info' },
 ];
 
 const blobNamed = (card: Item, label: string) => ((card.value.blobs ?? []) as { file: string; label: string }[]).find((b) => b.label === label)?.file;
@@ -54,20 +54,20 @@ export default function Flashcards() {
 
   const alert = saveError && (
     <div role="alert" className="alert alert-error m-4 text-sm">
-      <span>Couldn't save your last answer: {saveError}</span>
-      <button type="button" className="btn btn-sm btn-ghost" onClick={() => setSaveError(null)}>Dismiss</button>
+      <span>{t('not_saved', { error: saveError })}</span>
+      <button type="button" className="btn btn-sm btn-ghost" onClick={() => setSaveError(null)}>{t('dismiss')}</button>
     </div>
   );
 
-  if (!cards.loading && !cards.items.length) return <p className="p-8 text-center text-base-content/60">No flashcards yet.</p>;
+  if (!cards.loading && !cards.items.length) return <p className="p-8 text-center text-base-content/60">{t('empty')}</p>;
   if (!current.picked) return <div className="flex justify-center p-8"><span className="loading loading-spinner" /></div>;
   if (!current.id || !cards.items.some((c) => c.id === current.id)) {
     return (
       <div className="flex flex-col items-center gap-3 p-8 text-center">
         {alert}
-        <p className="text-lg font-semibold">All caught up.</p>
-        <p className="text-base-content/60">Nothing due right now.</p>
-        <button type="button" className="btn btn-sm" onClick={() => pick(states, null, new Date())}>Check again</button>
+        <p className="text-lg font-semibold">{t('caught_up')}</p>
+        <p className="text-base-content/60">{t('nothing_due')}</p>
+        <button type="button" className="btn btn-sm" onClick={() => pick(states, null, new Date())}>{t('check_again')}</button>
       </div>
     );
   }
@@ -94,7 +94,7 @@ function Card({ id, onShown, onRate }: { id: string; onShown: () => void; onRate
         {context && <Markdown text={context} className="text-sm text-base-content/70" />}
         {frontImage && <img src={frontImage} alt="" className="rounded-box max-h-72 self-center object-contain" />}
         {!revealed ? (
-          <button type="button" className="btn btn-primary" onClick={() => setRevealed(true)}>Reveal</button>
+          <button type="button" className="btn btn-primary" onClick={() => setRevealed(true)}>{t('reveal')}</button>
         ) : (
           <>
             <div className="divider my-0" />
@@ -106,7 +106,7 @@ function Card({ id, onShown, onRate }: { id: string; onShown: () => void; onRate
             <div className="grid w-full grid-cols-4 gap-2">
               {GRADES.map((g) => (
                 <button key={g.grade} type="button" disabled={busy} className={`btn btn-sm btn-soft ${g.className}`}
-                        onClick={() => { setBusy(true); void onRate(card, g.grade).finally(() => setBusy(false)); }}>{g.label}</button>
+                        onClick={() => { setBusy(true); void onRate(card, g.grade).finally(() => setBusy(false)); }}>{g.label()}</button>
               ))}
             </div>
           </>

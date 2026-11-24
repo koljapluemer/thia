@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FrameView, type FrameRuntime, type RunnableView, type ViewEnv } from '@gestalts/host';
-import type { Repo } from '@gestalts/client';
+import { useHostQuery, type Repo } from '@gestalts/client';
 import type { JsonMap, ViewError } from '@gestalts/view';
 import { compile } from '@gestalts/view/compile';
+import { WORDING, asWording, type Wording } from '@gestalts/view/wording';
 import type { Draft } from './draft';
 
 // a preview shows one view, and nothing else to open
@@ -17,11 +18,18 @@ export type ResolveNpm = (imports: string[], versions: Record<string, string>) =
  * the app's views are styled with. With `resolveNpm`, its npm imports come from where that says (else esm.sh); with
  * `csp`, the frame runs under that policy, as a published lesson does.
  */
-export function Preview({ repo, draft, runtime, css, tailwind, onError, resolveNpm, csp }: {
+export function Preview({ repo, draft, runtime, css, tailwind, onError, resolveNpm, csp, textLang, onPick }: {
   repo: Repo; draft: Draft; runtime: FrameRuntime; css: string; tailwind?: string; onError: (e: ViewError) => void;
   resolveNpm?: ResolveNpm; csp?: string;
+  /** its text in this language, as its maker previews a translation; else the app's */
+  textLang?: string;
+  /** its maker is rewording it: an alt-click on its text names the keys showing there */
+  onPick?: (keys: string[]) => void;
 }) {
   const compiled = useMemo(() => compile(draft.source), [draft.source]);
+  // its text, each layer, as its members have it (a draft has few)
+  const wordingItems = useHostQuery({ gestalt: WORDING, ids: draft.members, limit: 50 });
+  const wording = useMemo<Wording[]>(() => wordingItems.flatMap((i) => asWording(i.value) ?? []), [wordingItems]);
   const npmKey = compiled.ok ? JSON.stringify([compiled.npm, draft.npm]) : '';
   const [npm, setNpm] = useState<{ key: string; urls?: Record<string, string>; error?: string }>();
   useEffect(() => {
@@ -45,5 +53,5 @@ export function Preview({ repo, draft, runtime, css, tailwind, onError, resolveN
     : undefined), [compiled, npmUrls, draft.id, draft.title, draft.lang, draft.reads, draft.writes]);
   if (failure) return <div role="alert" className="alert alert-error m-4 font-mono text-sm whitespace-pre-wrap">{failure}</div>;
   if (waiting || !runnable) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
-  return <FrameView key={runnable.js} repo={repo} view={runnable} runtime={runtime} css={css} tailwind={tailwind} params={{}} state={STATE} env={ENV} onError={onError} csp={csp} />;
+  return <FrameView key={runnable.js} repo={repo} view={runnable} runtime={runtime} css={css} tailwind={tailwind} params={{}} state={STATE} env={ENV} onError={onError} csp={csp} wording={wording} textLang={textLang} onPick={onPick} />;
 }

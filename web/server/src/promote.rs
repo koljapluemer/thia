@@ -314,8 +314,20 @@ fn promote_view(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Ap
         definitions.insert(rename(id), renamed);
     }
 
+    // its text: the plugin's wording/, the source as <lang>.yml, each other layer as <lang>-<layer>.yml
+    let wording_of = |t: &str| Yml::parse(String::new(), t.to_owned()).gestalt() == Some("wording@1");
+    for (id, text) in ymls.iter().filter(|(id, t)| *id != &view.id && wording_of(t)) {
+        let mut doc: Mapping = serde_yaml_ng::from_str(text).map_err(io)?;
+        doc.shift_remove("id");
+        doc.shift_remove("gestalt");
+        let lang = doc.get("lang").and_then(Value::as_str).filter(|l| name_ok(&l.to_lowercase())).ok_or_else(|| ApiError::Internal(format!("{id}: a wording without a language")))?.to_owned();
+        let layer = doc.get("layer").and_then(Value::as_str).unwrap_or("source").to_owned();
+        let file = if layer == "source" { format!("{lang}.yml") } else { format!("{lang}-{layer}.yml") };
+        w.write(format!("{at}/wording/{file}"), serde_yaml_ng::to_string(&doc).expect("yaml").as_bytes())?;
+    }
+
     // its data: the deck
-    let data: BTreeMap<String, String> = ymls.iter().filter(|(id, _)| !id.starts_with(DEFINITION_PREFIX) && *id != &view.id).map(|(id, t)| (id.clone(), rename(t))).collect();
+    let data: BTreeMap<String, String> = ymls.iter().filter(|(id, t)| !id.starts_with(DEFINITION_PREFIX) && *id != &view.id && !wording_of(t)).map(|(id, t)| (id.clone(), rename(t))).collect();
     let mut deck = data.clone();
     let deck_id = format!("deck-{plugin}-{}", t.deck);
     // a view from before languages were recorded (view@3) was written in English

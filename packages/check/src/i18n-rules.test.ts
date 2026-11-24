@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { isText, physicalClasses } from './i18n-rules';
+import { isText, physicalClasses } from './i18n-rules.ts';
 
 describe('text a person reads', () => {
   it('is any letters, but not punctuation, numbers or the name', () => {

@@ -1,0 +1,61 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  not_text:
+    text: "{name}: not plain text"
+    description: "a file skipped in an upload; name is the file"
+  empty_file:
+    text: "{name}: empty"
+    description: "a file skipped because it holds nothing"
+  upload_title:
+    text: "Upload a folder"
+    description: "heading of the upload dialog"
+  upload_about:
+    text: "Its plain text files, not those in folders inside it."
+    description: "below that heading: what is taken"
+  progress:
+    text: "{done} of {of}"
+    description: "while uploading: files done so far"
+  added:
+    text: "{added, plural, one {# added} other {# added}}."
+    description: "after an upload: how many files were new"
+  added_there:
+    text: "{added, plural, one {# added} other {# added}}, {there} already here."
+    description: "the same, when some were here already"
+  skipped:
+    text: "Skipped:"
+    description: "before the list of files that were left out"
+  from_file:
+    text: "Notes from this file"
+    description: "heading of the notes made from the file shown"
+  upload:
+    text: "Upload folder"
+    description: "button: opens the upload dialog"
+  left_title:
+    text: "Files in the inbox, this one included"
+    description: "tooltip of the count of files left"
+  left:
+    text: "{n} left"
+    description: "how many files are in the inbox"
+  inbox_empty:
+    text: "Nothing in the inbox. Upload a folder."
+    description: "shown when there are no files"
+  defer:
+    text: "Defer"
+    description: "button: shows another file; this one stays"
+  defer_title:
+    text: "Another file; this one stays for later"
+    description: "tooltip of that button"
+  delete:
+    text: "Delete"
+    description: "button: deletes the file"
+  delete_title:
+    text: "Delete this file; notes made from it stay"
+    description: "tooltip of that button"
+  save_new:
+    text: "Save and new note"
+    description: "button: keeps the note and starts another from the same file"
+  save_new_title:
+    text: "Keep this note and start another from the same file"
+    description: "tooltip of that button"

@@ -6,7 +6,11 @@
   "exports": {
     ".": "./src/index.ts",
     "./compile": "./src/compile.ts",
-    "./needs": "./src/needs.ts"
+    "./needs": "./src/needs.ts",
+    "./locale": "./src/locale.ts",
+    "./wording": "./src/wording.ts",
+    "./icu": "./src/icu.ts",
+    "./wording-check": "./src/wording-check.ts"
   },
   "files": [
     "src"

@@ -60,7 +60,7 @@ export function ViewFrame({ registry, css, tailwind, view: id, params, stateKey,
   }), [repo, plugin, stateKey, setTitle, setParams, navigate]);
   const view = useMemo(() => (plugin ? runnable(plugin) : undefined), [plugin]);
   if (!view) return <p className="p-8 text-center text-base-content/60">{m.view_missing({ id })}</p>;
-  return <FrameView repo={repo} view={view} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} hidden={hidden} csp={csp} />;
+  return <FrameView repo={repo} view={view} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} hidden={hidden} csp={csp} wording={plugin?.wording} />;
 }
 
 /**

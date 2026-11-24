@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, Expand } from 'lucide-react';
 import { facetOf, fsrsStates, iso639_3, practiceEvent, type FsrsStates } from '@gestalts/learning';
-import { useCapabilities, useDoc, useLlm, useNet, useQuery, useViewState, useWrite, type Item, type JsonMap, type NetResponse, type QueryResult } from '@gestalts/view';
+import { t, useCapabilities, useDoc, useLlm, useLocale, useNet, useQuery, useViewState, useWrite, type Item, type JsonMap, type NetResponse, type QueryResult } from '@gestalts/view';
 
 /**
  * Watch a YouTube video with cards for the words worth knowing as they come up (after transparent-input). Subtitles
@@ -63,10 +63,10 @@ type PlayerResponse = {
 /** The video's title and subtitle tracks, as YouTube's own apps ask for them. */
 export async function lookUpVideo(net: Net, videoId: string): Promise<{ title: string | null; tracks: SubtitleTrack[] }> {
   let title: string | null = null;
-  let reason = 'it has no subtitles';
+  let reason = t('yt_none');
   for (const { url, client } of CLIENTS) {
     const r = await net({ url, method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ context: { client }, videoId, contentCheckOk: true, racyCheckOk: true }) });
-    if (r.status !== 200) { reason = `YouTube answered ${r.status}`; continue; }
+    if (r.status !== 200) { reason = t('yt_status', { status: r.status }); continue; }
     const data = JSON.parse(r.text()) as PlayerResponse;
     title ??= data.videoDetails?.title ?? null;
     const tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
@@ -75,15 +75,15 @@ export async function lookUpVideo(net: Net, videoId: string): Promise<{ title: s
     }
     if (data.playabilityStatus?.reason) reason = data.playabilityStatus.reason;
   }
-  throw new Error(`No subtitles found for this video (${reason}).`);
+  throw new Error(t('no_subtitles', { reason }));
 }
 
 export async function fetchCues(net: Net, track: SubtitleTrack): Promise<RawCue[]> {
   const url = track.baseUrl.replace(/[&?]fmt=[^&]*/g, '') + '&fmt=json3';
   const r = await net({ url });
-  if (r.status !== 200) throw new Error(`YouTube answered ${r.status} for the subtitles`);
+  if (r.status !== 200) throw new Error(t('subtitles_status', { status: r.status }));
   const cues = parseJson3(JSON.parse(r.text()) as Parameters<typeof parseJson3>[0]);
-  if (!cues.length) throw new Error('The subtitles are empty.');
+  if (!cues.length) throw new Error(t('subtitles_empty'));
   return cues;
 }
 
@@ -139,9 +139,12 @@ export function buildMetaSegments(cues: RawCue[]): MetaSegment[] {
 export type Gloss = { surface: string; flemma: string; translation: string };
 export type GlossedSegment = MetaSegment & { glosses: Gloss[] };
 
-const languageNames = new Intl.DisplayNames(['en'], { type: 'language' });
-export function languageName(code: string): string {
-  try { return languageNames.of(code) ?? code; } catch { return code; }
+const namers = new Map<string, Intl.DisplayNames>();
+/** A language's name in `lang` (English unless said: what a model is told). */
+export function languageName(code: string, lang = 'en'): string {
+  let n = namers.get(lang);
+  if (!n) { n = new Intl.DisplayNames([lang], { type: 'language' }); namers.set(lang, n); }
+  try { return n.of(code) ?? code; } catch { return code; }
 }
 
 export function glossPrompt(segment: string, language: string, native: string): string {
@@ -339,16 +342,16 @@ export default function TransparentInput() {
     : <Library native={native} setNative={setNative} onOpen={setOpen} />;
 }
 
-/** Every language the browser can name by a two-letter code, by name. Other codes (`gsw`, `pt-BR`) can be typed. */
-export function knownLanguages(): { code: string; name: string }[] {
-  const names = new Intl.DisplayNames(['en'], { type: 'language', fallback: 'none' });
+/** Every language the browser can name by a two-letter code, by name in `lang`. Other codes (`gsw`, `pt-BR`) can be typed. */
+export function knownLanguages(lang = 'en'): { code: string; name: string }[] {
+  const names = new Intl.DisplayNames([lang], { type: 'language', fallback: 'none' });
   const letters = 'abcdefghijklmnopqrstuvwxyz';
   const out: { code: string; name: string }[] = [];
   for (const a of letters) for (const b of letters) {
     const name = names.of(a + b);
     if (name) out.push({ code: a + b, name });
   }
-  return out.sort((x, y) => x.name.localeCompare(y.name));
+  return out.sort((x, y) => x.name.localeCompare(y.name, lang));
 }
 
 /** The language code meant by what was typed: a known language's name, or any well-formed code. */
@@ -360,24 +363,25 @@ export function languageFromInput(input: string, known: { code: string; name: st
   try { return Intl.getCanonicalLocales(s)[0] ?? null; } catch { return null; }
 }
 
-const LANGUAGES = knownLanguages();
-
+/** The language the word cards are in: picked by its name, in the view's language. */
 function NativePicker({ native, setNative }: { native: string; setNative: (n: string) => void }) {
+  const { lang } = useLocale();
+  const languages = useMemo(() => knownLanguages(lang), [lang]);
   const [draft, setDraft] = useState<string | null>(null);
   const commit = () => {
-    const code = draft === null ? null : languageFromInput(draft, LANGUAGES);
+    const code = draft === null ? null : languageFromInput(draft, languages);
     if (code) setNative(code);
     setDraft(null);
   };
   return (
     <label className="flex items-center gap-2 text-sm">
-      Cards in
-      <input className="input input-sm w-44" list="transparent-input-languages" value={draft ?? languageName(native)}
+      {t('cards_in')}
+      <input className="input input-sm w-44" list="transparent-input-languages" value={draft ?? languageName(native, lang)}
              onFocus={() => setDraft('')} onChange={(e) => setDraft(e.target.value)} onBlur={commit}
              onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') { setDraft(null); e.currentTarget.blur(); } }}
-             placeholder={languageName(native)} aria-label="Language of the cards" />
+             placeholder={languageName(native, lang)} aria-label={t('cards_lang')} />
       <datalist id="transparent-input-languages">
-        {LANGUAGES.map((l) => <option key={l.code} value={l.name} />)}
+        {languages.map((l) => <option key={l.code} value={l.name} />)}
       </datalist>
     </label>
   );
@@ -385,6 +389,7 @@ function NativePicker({ native, setNative }: { native: string; setNative: (n: st
 
 function Library({ native, setNative, onOpen }: { native: string; setNative: (n: string) => void; onOpen: (id: string) => void }) {
   const sources = useQuery({ gestalt: 'media-source@1', order: { field: 'title' }, limit: 200 });
+  const { lang } = useLocale();
   const { capabilities } = useCapabilities();
   const net = useNet();
   const write = useWrite();
@@ -396,7 +401,7 @@ function Library({ native, setNative, onOpen }: { native: string; setNative: (n:
 
   const lookUp = async () => {
     const videoId = videoIdFrom(input);
-    if (!videoId) { setError("That isn't a YouTube link."); return; }
+    if (!videoId) { setError(t('not_youtube')); return; }
     setBusy(true); setError(undefined); setFound(undefined);
     try {
       const v = await lookUpVideo(net, videoId);
@@ -420,31 +425,31 @@ function Library({ native, setNative, onOpen }: { native: string; setNative: (n:
     <div className="h-full overflow-y-auto p-4">
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold">Watch with vocabulary</h2>
+          <h2 className="text-lg font-semibold">{t('title')}</h2>
           <NativePicker native={native} setNative={setNative} />
         </div>
         {capabilities?.net ? (
           // no <form>: view frames don't allow form submission, and a blocked submit fails silently
           <div className="flex gap-2">
-            <input className="input input-sm flex-1" placeholder="Paste a YouTube link" value={input} onChange={(e) => setInput(e.target.value)}
-                   onKeyDown={(e) => { if (e.key === 'Enter' && !busy && input.trim()) void lookUp(); }} aria-label="YouTube link" />
+            <input className="input input-sm flex-1" placeholder={t('paste')} value={input} onChange={(e) => setInput(e.target.value)}
+                   onKeyDown={(e) => { if (e.key === 'Enter' && !busy && input.trim()) void lookUp(); }} aria-label={t('link')} />
             <button type="button" className="btn btn-sm btn-primary" disabled={busy || !input.trim()} onClick={() => void lookUp()}>
-              {busy ? <span className="loading loading-spinner loading-xs" /> : 'Look up'}
+              {busy ? <span className="loading loading-spinner loading-xs" /> : t('look_up')}
             </button>
           </div>
-        ) : capabilities && <p className="text-sm text-base-content/60">Adding videos needs the gestalter desktop app. Videos added there play here too.</p>}
+        ) : capabilities && <p className="text-sm text-base-content/60">{t('needs_app')}</p>}
         {error && <div role="alert" className="alert alert-error text-sm">{error}</div>}
         {found && (
           <div className="card card-border bg-base-100">
             <div className="card-body gap-3">
               <p className="font-semibold">{found.title ?? found.videoId}</p>
               <label className="flex items-center gap-2 text-sm">
-                Subtitles
+                {t('subtitles')}
                 <select className="select select-sm w-auto" value={language} onChange={(e) => setLanguage(e.target.value)}>
-                  {found.tracks.map((t) => <option key={t.baseUrl} value={t.languageCode}>{t.name}{t.asr ? ' (auto)' : ''}</option>)}
+                  {found.tracks.map((track) => <option key={track.baseUrl} value={track.languageCode}>{track.asr ? t('auto', { name: track.name }) : track.name}</option>)}
                 </select>
               </label>
-              <button type="button" className="btn btn-sm btn-primary self-start" onClick={() => void add()}>Watch</button>
+              <button type="button" className="btn btn-sm btn-primary self-start" onClick={() => void add()}>{t('watch')}</button>
             </div>
           </div>
         )}
@@ -453,12 +458,12 @@ function Library({ native, setNative, onOpen }: { native: string; setNative: (n:
             <li key={s.id}>
               <button type="button" className="btn btn-ghost btn-sm h-auto w-full justify-start py-2 text-start font-normal" onClick={() => onOpen(s.id)}>
                 <span className="flex-1">{String(s.value.title ?? s.value.external_id)}</span>
-                <span className="text-xs text-base-content/60">{languageName(String(s.value.language))}</span>
+                <span className="text-xs text-base-content/60">{languageName(String(s.value.language), lang)}</span>
               </button>
             </li>
           ))}
         </ul>
-        {!sources.loading && !sources.items.length && <p className="text-center text-sm text-base-content/60">No videos yet.</p>}
+        {!sources.loading && !sources.items.length && <p className="text-center text-sm text-base-content/60">{t('no_videos')}</p>}
       </div>
     </div>
   );
@@ -486,6 +491,7 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
   const write = useWrite();
   const net = useNet();
   const llm = useLlm();
+  const { lang } = useLocale();
   const { capabilities } = useCapabilities();
 
   // --- the glossed track: what's stored, plus what this session adds
@@ -523,13 +529,13 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
     (async () => {
       const { tracks } = await lookUpVideo(net, videoId);
       const track = tracks.find((t) => t.languageCode === language && !t.asr) ?? tracks.find((t) => t.languageCode === language);
-      if (!track) throw new Error(`This video no longer has ${languageName(language)} subtitles.`);
+      if (!track) throw new Error(t('no_track', { language: languageName(language, lang) }));
       const metas = buildMetaSegments(await fetchCues(net, track));
       if (!live) return;
       setStatus((st) => ({ ...st, total: metas.length }));
       const done = (start: number) => addedRef.current.has(start) || storedRef.current.some((s) => s.start === start);
       if (!capabilities.llm) {
-        if (metas.some((m) => !done(m.start))) setStatus((st) => ({ ...st, error: 'Set up an LLM provider in the app\'s LLM menu to gloss the rest.', fatal: true }));
+        if (metas.some((m) => !done(m.start))) setStatus((st) => ({ ...st, error: t('needs_llm'), fatal: true }));
         return;
       }
       const glosser = new Glosser(metas, done, async (m) => {
@@ -545,13 +551,13 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
         save.current = save.current.then(() => write.put({
           id: trackId, gestalt: 'glossed-track@1', source: source.id, language, native, segment_count: metas.length, model: answer.model,
           segments: all as unknown as JsonMap[],
-        })).catch((e: unknown) => setStatus((st) => ({ ...st, error: `Couldn't save the glosses: ${e instanceof Error ? e.message : String(e)}` })));
+        })).catch((e: unknown) => setStatus((st) => ({ ...st, error: t('gloss_failed', { error: e instanceof Error ? e.message : String(e) }) })));
         return glosses;
       }, (message, fatal) => { if (live) setStatus((st) => ({ ...st, error: message, fatal: st.fatal || fatal })); });
       timer = setInterval(() => { const p = playerRef.current; if (p) glosser.tick(p.currentTime()); }, 500);
     })().catch((e: unknown) => { if (live) setStatus((st) => ({ ...st, error: e instanceof Error ? e.message : String(e), fatal: true })); });
     return () => { live = false; clearInterval(timer); };
-  }, [trackId, capabilities, net, llm, write, videoId, language, native, source.id]);
+  }, [trackId, capabilities, net, llm, write, videoId, language, native, source.id, lang]);
 
   // --- what the learner knows
   const cards = useAll(useQuery({ gestalt: 'flashcard@1', fields: ['concepts'], limit: 500 }));
@@ -589,7 +595,7 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
   const pendingLinks = useRef(new Set<string>());
   const sourceRef = useRef(source);
   useEffect(() => { sourceRef.current = source; }, [source]);
-  const recordFailed = useCallback((e: unknown) => setStatus((st) => ({ ...st, error: `Couldn't record a word: ${e instanceof Error ? e.message : String(e)}` })), []);
+  const recordFailed = useCallback((e: unknown) => setStatus((st) => ({ ...st, error: t('record_failed', { error: e instanceof Error ? e.message : String(e) }) })), []);
 
   const record = useCallback(async (g: Gloss) => {
     const name = conceptName(language, g.flemma);
@@ -670,9 +676,9 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
     <div className="h-full overflow-y-auto p-3">
       <div className="mx-auto flex max-w-4xl flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" className="btn btn-ghost btn-sm btn-square" title="All videos" aria-label="All videos" onClick={onBack}><ArrowLeft className="size-4" /></button>
+          <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('all_videos')} aria-label={t('all_videos')} onClick={onBack}><ArrowLeft className="size-4" /></button>
           <h2 className="min-w-0 flex-1 truncate font-semibold" title={title}>{title}</h2>
-          <span className="text-sm text-base-content/60">{languageName(language)}</span>
+          <span className="text-sm text-base-content/60">{languageName(language, lang)}</span>
           <NativePicker native={native} setNative={setNative} />
         </div>
         <div ref={wrapRef} className="relative aspect-video w-full overflow-hidden rounded-box bg-black">
@@ -681,7 +687,7 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
           <div className="pointer-events-none absolute top-2 start-2 flex max-w-[70%] flex-col items-start gap-1.5">
             {shown.map((c) => <WordCard key={c.key} card={c} />)}
           </div>
-          <button type="button" className="btn btn-xs btn-square absolute end-2 bottom-12 border-0 bg-black/60 text-white hover:bg-black/80" title="Fullscreen, with cards" aria-label="Fullscreen" onClick={fullscreen}>
+          <button type="button" className="btn btn-xs btn-square absolute end-2 bottom-12 border-0 bg-black/60 text-white hover:bg-black/80" title={t('fullscreen')} aria-label={t('fullscreen_label')} onClick={fullscreen}>
             <Expand className="size-3" />
           </button>
         </div>
@@ -702,7 +708,7 @@ function WordCard({ card: c }: { card: ShownCard }) {
 }
 
 function StatusLine({ glossed, total, status: s }: { glossed: number; total: number | null; status: Status }) {
-  const progress = total ? `${glossed} of ${total} segments glossed` : glossed ? `${glossed} segments glossed` : 'Nothing glossed yet';
+  const progress = total ? t('progress_of', { glossed, total }) : glossed ? t('progress', { glossed }) : t('progress_none');
   return (
     <p className="text-xs text-base-content/60">
       {progress}{s.model && ` · ${s.model}`}

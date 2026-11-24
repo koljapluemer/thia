@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Clock, FolderUp, Plus, Trash2 } from 'lucide-react';
 import { Modal, NoteEditor, NoteTitle, newId } from '@gestalts/kit';
-import { useQuery, useRead, useViewState, useWrite } from '@gestalts/view';
+import { t, useQuery, useRead, useViewState, useWrite } from '@gestalts/view';
 
 const TEXT = 'inbox/text@1';
 const NOTE = 'note@1';
@@ -32,8 +32,8 @@ function Upload({ onClose }: { onClose: () => void }) {
       try {
         const bytes = new Uint8Array(await f.arrayBuffer());
         let text: string;
-        try { text = decoder.decode(bytes); } catch { out.skipped.push(`${f.name}: not plain text`); return null; }
-        if (!text.trim()) { out.skipped.push(`${f.name}: empty`); return null; }
+        try { text = decoder.decode(bytes); } catch { out.skipped.push(t('not_text', { name: f.name })); return null; }
+        if (!text.trim()) { out.skipped.push(t('empty_file', { name: f.name })); return null; }
         return { id: await write.stableId('inbox-text', `${f.name}\n${await write.contentHash(bytes)}`), name: f.name, text };
       } catch (e) {
         out.skipped.push(`${f.name}: ${message(e)}`);
@@ -66,24 +66,24 @@ function Upload({ onClose }: { onClose: () => void }) {
   return (
     <Modal onClose={onClose}>
       <div className="flex flex-col gap-3 p-4">
-        <h2 className="font-semibold">Upload a folder</h2>
-        <p className="text-base-content/70">Its plain text files, not those in folders inside it.</p>
+        <h2 className="font-semibold">{t('upload_title')}</h2>
+        <p className="text-base-content/70">{t('upload_about')}</p>
         <input type="file" multiple className="file-input w-full" disabled={busy}
                ref={(el) => el?.setAttribute('webkitdirectory', '')} onChange={(e) => void upload(e.target.files)} />
         {progress && (
           <div className="flex items-center gap-3" role="status">
             <progress className="progress flex-1" value={progress.done} max={progress.of || 1} />
-            <span className="whitespace-nowrap">{progress.done} of {progress.of}</span>
+            <span className="whitespace-nowrap">{t('progress', { done: progress.done, of: progress.of })}</span>
           </div>
         )}
         {result && (
           <p role="status" className="text-success">
-            {result.added} added{result.there ? `, ${result.there} already here` : ''}.
+            {result.there ? t('added_there', { added: result.added, there: result.there }) : t('added', { added: result.added })}
           </p>
         )}
         {result && result.skipped.length > 0 && (
           <div role="alert" className="alert alert-warning flex-col items-start gap-1">
-            <span>Skipped:</span>
+            <span>{t('skipped')}</span>
             <ul>{result.skipped.map((s) => <li key={s}>{s}</li>)}</ul>
           </div>
         )}
@@ -98,7 +98,7 @@ function MadeNotes({ ids, open, onOpen }: { ids: string[]; open: string; onOpen:
   if (!items.length) return null;
   return (
     <section className="border-t border-base-300 p-3">
-      <h3 className="mb-1 font-semibold">Notes from this file</h3>
+      <h3 className="mb-1 font-semibold">{t('from_file')}</h3>
       <ul className="menu w-full p-0">
         {items.map((n) => (
           <li key={n.id}>
@@ -165,7 +165,7 @@ export default function NoteInbox() {
   };
 
   const uploadButton = (
-    <button type="button" className="btn btn-sm btn-ghost" onClick={() => setUploading(true)}><FolderUp className="size-4" /> Upload folder</button>
+    <button type="button" className="btn btn-sm btn-ghost" onClick={() => setUploading(true)}><FolderUp className="size-4" /> {t('upload')}</button>
   );
   const empty = !current && !drawn.loading && !drawn.items.some((i) => !removed.has(i.id));
 
@@ -173,29 +173,29 @@ export default function NoteInbox() {
     <div className="flex h-full min-h-0 flex-col bg-base-100">
       <div className="flex items-center gap-2 border-b border-base-300 p-2">
         <span className="min-w-0 flex-1 truncate font-semibold">{file ? String(file.value.name) : ''}</span>
-        {drawn.total !== undefined && <span className="whitespace-nowrap text-base-content/60" title="Files in the inbox, this one included">{drawn.total} left</span>}
+        {drawn.total !== undefined && <span className="whitespace-nowrap text-base-content/60" title={t('left_title')}>{t('left', { n: drawn.total })}</span>}
         {uploadButton}
       </div>
       {error && <div role="alert" className="alert alert-error m-2 whitespace-pre-wrap">{error}</div>}
       {empty ? (
         <div className="flex flex-1 flex-col items-center justify-center gap-3 p-8 text-base-content/60">
-          <p>Nothing in the inbox. Upload a folder.</p>
+          <p>{t('inbox_empty')}</p>
           {uploadButton}
         </div>
       ) : file && (
         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-2 md:overflow-hidden">
           <div className="flex min-h-0 flex-col border-base-300 md:border-e">
             <div className="flex gap-2 border-b border-base-300 p-2">
-              <button type="button" className="btn btn-sm" title="Another file; this one stays for later" onClick={() => leave(file.id)}><Clock className="size-4" /> Defer</button>
-              <button type="button" className="btn btn-sm btn-ghost" title="Delete this file; notes made from it stay" onClick={() => void remove(file.id)}><Trash2 className="size-4" /> Delete</button>
+              <button type="button" className="btn btn-sm" title={t('defer_title')} onClick={() => leave(file.id)}><Clock className="size-4" /> {t('defer')}</button>
+              <button type="button" className="btn btn-sm btn-ghost" title={t('delete_title')} onClick={() => void remove(file.id)}><Trash2 className="size-4" /> {t('delete')}</button>
             </div>
             <pre className="min-h-0 flex-1 overflow-y-auto p-3 font-sans whitespace-pre-wrap">{String(file.value.text ?? '')}</pre>
             <MadeNotes ids={strings(file.value.notes)} open={noteId} onOpen={setNoteId} />
           </div>
           <div className="flex min-h-0 flex-col">
             <div className="flex justify-end border-b border-base-300 p-2">
-              <button type="button" className="btn btn-sm btn-primary" title="Keep this note and start another from the same file" onClick={() => setNoteId(newId())}>
-                <Plus className="size-4" /> Save and new note
+              <button type="button" className="btn btn-sm btn-primary" title={t('save_new_title')} onClick={() => setNoteId(newId())}>
+                <Plus className="size-4" /> {t('save_new')}
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">

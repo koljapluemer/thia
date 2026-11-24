@@ -41,7 +41,8 @@ fn reply(content: Value, stop: &str) -> Value {
             "usage": { "input_tokens": 100, "output_tokens": 50, "cache_read_input_tokens": 1000, "cache_creation_input_tokens": 0 } })
 }
 
-const VIEW: &str = "export default function View() {\n  return <div className=\"h-full\">Hallo</div>;\n}\n";
+// no text of its own: the check refuses text written into a view (it goes in its wording)
+const VIEW: &str = "export default function View() {\n  return <div className=\"h-full\" />;\n}\n";
 
 /// What the turn said, without what's only for its record (usage, raw answers, tool results, throttles).
 async fn events(s: &Server, cookie: &str, base: &str, job: &str) -> Vec<Value> {

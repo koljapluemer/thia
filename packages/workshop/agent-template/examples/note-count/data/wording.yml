@@ -1,0 +1,13 @@
+gestalt: wording@1
+lang: en
+layer: source
+messages:
+  new_note:
+    text: A new idea
+    description: the box a new note is typed into, as its placeholder and label
+  add:
+    text: Add
+    description: the button that keeps what was typed as a new note
+  more:
+    text: More
+    description: below the list, loads the next notes

@@ -1,0 +1,70 @@
+{
+  "kit_close": "Close",
+  "kit_cancel": "Cancel",
+  "kit_delete": "Delete",
+  "kit_empty": "(empty)",
+  "kit_list_edit": "Edit: {what}",
+  "kit_list_remove": "Remove: {what}",
+  "kit_list_add": "Add: {what}",
+  "kit_nothing_found": "Nothing found.",
+  "kit_find_note": "Find a note…",
+  "kit_find_concept": "Find or create a concept…",
+  "kit_create": "Create “{name}”",
+  "kit_how_relates": "How it relates",
+  "kit_related": "related",
+  "kit_gone": "(gone)",
+  "kit_open_note": "Open the note in a new browser tab",
+  "kit_open_concept": "Open the concept in a new browser tab",
+  "kit_open_source": "Open the source in a new browser tab",
+  "kit_kind_note": "note",
+  "kit_kind_concept": "concept",
+  "kit_kind_source": "source",
+  "kit_detach": "Detach: both stay, unrelated",
+  "kit_relationships": "Relationships",
+  "kit_add_source": "Add a source",
+  "kit_source": "Source",
+  "kit_link": "Link a note or concept, or name a new note…",
+  "kit_new_note": "New note “{text}”",
+  "kit_files": "Files",
+  "kit_label": "Label",
+  "kit_remove": "Remove",
+  "kit_title": "Title",
+  "kit_main": "Main",
+  "kit_extra": "Extra",
+  "kit_alias": "Alias",
+  "kit_aliases": "aliases",
+  "kit_tag": "Tag",
+  "kit_tags": "tags",
+  "kit_open": "Open",
+  "kit_paste_bibtex": "Paste BibTeX: @article\\{…\\}",
+  "kit_from_clipboard": "From clipboard",
+  "kit_from_clipboard_title": "Add the BibTeX in the clipboard",
+  "kit_add": "Add",
+  "kit_source_have": "A source you have",
+  "kit_source_new": "A new one, from BibTeX",
+  "kit_find_source": "Find a source…",
+  "kit_clipboard_unreadable": "The clipboard can't be read here: press Ctrl+V instead.",
+  "kit_no_bibtex": "No BibTeX entry found.",
+  "kit_added": "Added {source}.",
+  "kit_added_maybe": "Added {source} (maybe the same as {other}).",
+  "kit_from": "From",
+  "kit_was_here": "{source} was here.",
+  "kit_was_here_filled": "{source} was here: filled {fields}.",
+  "kit_to_decide": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{count} to decide.",
+        "n=other": "{count} to decide."
+      }
+    }
+  ],
+  "kit_no_such_note": "no such note",
+  "kit_click_to_open": "{label} (Ctrl/⌘-click to open)"
+}

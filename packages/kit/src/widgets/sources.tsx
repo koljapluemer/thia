@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { ClipboardPaste } from 'lucide-react';
 import { bibOf, match, mergeSource, normalise, parseBibtex, titleWords, type Bib, type Candidate } from '@gestalts/sources';
-import { useDoc, useQuery, useRead, useWrite, type JsonMap, type Query } from '@gestalts/view';
+import { useDoc, useLocale, useQuery, useRead, useWrite, type JsonMap, type Query } from '@gestalts/view';
+import { inLang } from '@gestalts/i18n/messages';
+import { m, useAt } from '../primitives/words';
 import { Modal } from '../components';
 import { useDebounced } from '../primitives';
 
@@ -53,8 +55,9 @@ export async function sourceCandidates(read: Read, bib: Bib): Promise<Candidate<
   return match(bib, [...seen.values()]);
 }
 
-export async function clipboardText(): Promise<string> {
-  try { return await navigator.clipboard.readText(); } catch { throw new Error("The clipboard can't be read here: press Ctrl+V instead."); }
+/** What's in the clipboard; an error saying so, in `lang`, where it can't be read. */
+export async function clipboardText(lang = 'en'): Promise<string> {
+  try { return await navigator.clipboard.readText(); } catch { throw new Error(m.kit_clipboard_unreadable({}, inLang(lang))); }
 }
 
 export type Ingested = {
@@ -72,15 +75,17 @@ const quoted = (b: { title?: string; key: string }) => `'${b.title ?? b.key}'`;
 
 /**
  * BibTeX straight into the sources: each entry that is (likely) one already here fills in that one's missing fields,
- * every other entry becomes a new source. Differences to an existing one are left to decide.
+ * every other entry becomes a new source. Differences to an existing one are left to decide. What happened is said
+ * in `lang`.
  */
-export async function ingestBibtex(read: Read, write: Write, text: string): Promise<Ingested> {
+export async function ingestBibtex(read: Read, write: Write, text: string, lang = 'en'): Promise<Ingested> {
+  const at = inLang(lang);
   const said: string[] = [];
   const ids: string[] = [];
   let ok = true;
   let show: Ingested['show'];
   const entries = parseBibtex(text);
-  if (!entries.length) return { ok: false, said: ['No BibTeX entry found.'], ids };
+  if (!entries.length) return { ok: false, said: [m.kit_no_bibtex({}, at)], ids };
   for (const raw of entries) {
     let bib: Bib;
     try { bib = normalise({ ...raw }); } catch (e) { ok = false; said.push(`${raw.key}: ${message(e)}`); continue; }
@@ -90,14 +95,15 @@ export async function ingestBibtex(read: Read, write: Write, text: string): Prom
       const item = (await read.page({ gestalt: SOURCE, ids: [same.source.id], limit: 1 })).items[0];
       const r = mergeSource(bibOf(item.value), bib, []);
       if (r.filled.length) await write.put({ ...item.value, ...bibJson(r.value) });
-      said.push(`${quoted(r.value)} was here${r.filled.length ? `: filled ${r.filled.join(', ')}` : ''}${r.conflicts.length ? `; ${r.conflicts.length} to decide` : ''}.`);
+      said.push(r.filled.length ? m.kit_was_here_filled({ source: quoted(r.value), fields: r.filled.join(', ') }, at) : m.kit_was_here({ source: quoted(r.value) }, at));
+      if (r.conflicts.length) said.push(m.kit_to_decide({ count: r.conflicts.length }, at));
       ids.push(item.id);
       if (r.conflicts.length) show = { id: item.id, incoming: bib };
       else if (!show?.incoming) show = { id: item.id };
     } else {
       const key = await freeKey(read, bib.key);
       const saved = await write.put({ gestalt: SOURCE, ...bibJson({ ...bib, key }) });
-      said.push(`Added ${quoted(bib)}${found[0] ? ` (maybe the same as ${quoted(found[0].source)})` : ''}.`);
+      said.push(found[0] ? m.kit_added_maybe({ source: quoted(bib), other: quoted(found[0].source) }, at) : m.kit_added({ source: quoted(bib) }, at));
       ids.push(saved.id);
       if (!show?.incoming) show = { id: saved.id };
     }
@@ -110,6 +116,8 @@ export async function ingestBibtex(read: Read, write: Write, text: string): Prom
 export function BibtexPaste({ onIngested }: { onIngested: (r: Ingested) => void }) {
   const read = useRead();
   const write = useWrite();
+  const { lang } = useLocale();
+  const at = inLang(lang);
   const [text, setText] = useState('');
   const [status, setStatus] = useState<{ ok: boolean; text: string }>();
   const [busy, setBusy] = useState(false);
@@ -117,23 +125,23 @@ export function BibtexPaste({ onIngested }: { onIngested: (r: Ingested) => void 
     setBusy(true);
     setStatus(undefined);
     try {
-      const r = await ingestBibtex(read, write, bibtex);
+      const r = await ingestBibtex(read, write, bibtex, lang);
       setStatus({ ok: r.ok, text: r.said.join(' ') });
       if (r.ids.length) { setText(''); onIngested(r); }
     } catch (e) { setStatus({ ok: false, text: message(e) }); } finally { setBusy(false); }
   };
   return (
     <div className="flex flex-col gap-2">
-      <textarea className="textarea textarea-sm w-full font-mono" rows={4} placeholder="Paste BibTeX: @article{…}" value={text}
+      <textarea className="textarea textarea-sm w-full font-mono" rows={4} placeholder={m.kit_paste_bibtex({}, at)} aria-label={m.kit_paste_bibtex({}, at)} value={text}
                 onChange={(e) => setText(e.target.value)}
                 onPaste={(e) => { const t = e.clipboardData.getData('text/plain'); if (t.includes('@')) { e.preventDefault(); void run(t); } }} />
       <div className="flex items-center gap-2">
-        <button type="button" className="btn btn-sm" disabled={busy} title="Add the BibTeX in the clipboard"
-                onClick={() => void clipboardText().then(run, (e: unknown) => setStatus({ ok: false, text: message(e) }))}>
-          {busy ? <span className="loading loading-spinner loading-xs" /> : <ClipboardPaste className="size-4" />} From clipboard
+        <button type="button" className="btn btn-sm" disabled={busy} title={m.kit_from_clipboard_title({}, at)}
+                onClick={() => void clipboardText(lang).then(run, (e: unknown) => setStatus({ ok: false, text: message(e) }))}>
+          {busy ? <span className="loading loading-spinner loading-xs" /> : <ClipboardPaste className="size-4" />} {m.kit_from_clipboard({}, at)}
         </button>
         <span className="flex-1" />
-        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !text.trim()} onClick={() => void run(text)}>Add</button>
+        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !text.trim()} onClick={() => void run(text)}>{m.kit_add({}, at)}</button>
       </div>
       {status && <p role={status.ok ? 'status' : 'alert'} className={`text-sm break-words ${status.ok ? 'text-base-content/70' : 'text-error'}`}>{status.text}</p>}
     </div>
@@ -141,14 +149,15 @@ export function BibtexPaste({ onIngested }: { onIngested: (r: Ingested) => void 
 }
 
 /** Finding a source by its title, authors, key or aliases. */
-export function SourceSearch({ exclude, onPick, placeholder = 'Find a source…' }: { exclude?: Set<string>; onPick: (id: string) => void; placeholder?: string }) {
+export function SourceSearch({ exclude, onPick, placeholder }: { exclude?: Set<string>; onPick: (id: string) => void; placeholder?: string }) {
+  const at = useAt();
   const [search, setSearch] = useState('');
   const text = useDebounced(search, 150).trim();
   const { items, loading } = useQuery(text ? { gestalt: SOURCE, text, limit: 8, fields: ['title', 'key', 'author', 'editor', 'date'] } : null);
   const found = items.filter((s) => !exclude?.has(s.id));
   return (
     <div className="flex flex-col gap-1">
-      <input className="input input-sm w-full" type="search" placeholder={placeholder} value={search} onChange={(e) => setSearch(e.target.value)} />
+      <input className="input input-sm w-full" type="search" placeholder={placeholder ?? m.kit_find_source({}, at)} aria-label={placeholder ?? m.kit_find_source({}, at)} value={search} onChange={(e) => setSearch(e.target.value)} />
       {found.map((s) => (
         <button key={s.id} type="button" className="btn btn-ghost btn-sm h-auto justify-start py-1 text-start font-normal" onClick={() => { onPick(s.id); setSearch(''); }}>
           <span className="min-w-0 flex-1">
@@ -157,7 +166,7 @@ export function SourceSearch({ exclude, onPick, placeholder = 'Find a source…'
           </span>
         </button>
       ))}
-      {text && !loading && !found.length && <p className="px-2 text-sm text-base-content/60">Nothing found.</p>}
+      {text && !loading && !found.length && <p className="px-2 text-sm text-base-content/60">{m.kit_nothing_found({}, at)}</p>}
     </div>
   );
 }
@@ -167,15 +176,16 @@ export function SourceSearch({ exclude, onPick, placeholder = 'Find a source…'
  * left out of the search; `onAdd` gets the ids picked.
  */
 export function AddSource({ attached, onAdd, onClose }: { attached: Set<string>; onAdd: (ids: string[]) => void; onClose: () => void }) {
+  const at = useAt();
   return (
     <Modal onClose={onClose}>
       <div className="flex flex-col gap-4 p-4 pt-0">
         <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold">A source you have</h3>
+          <h3 className="text-sm font-semibold">{m.kit_source_have({}, at)}</h3>
           <SourceSearch exclude={attached} onPick={(id) => onAdd([id])} />
         </section>
         <section className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold">A new one, from BibTeX</h3>
+          <h3 className="text-sm font-semibold">{m.kit_source_new({}, at)}</h3>
           <BibtexPaste onIngested={(r) => onAdd(r.ids)} />
         </section>
       </div>
@@ -194,9 +204,11 @@ const creditsOf = (v: unknown): Credit[] => (Array.isArray(v) ? v.filter((c): c 
 
 function CreditLine({ credit }: { credit: Credit }) {
   const source = useDoc(SOURCE, credit.to);
+  const at = useAt();
   if (!source) return null;
   const v = source.value;
-  const how = credit.label ? credit.label[0].toUpperCase() + credit.label.slice(1) : 'From';
+  // the label is the credit's own (content, in its deck's language), "From" the kit's
+  const how = credit.label ? credit.label[0].toUpperCase() + credit.label.slice(1) : m.kit_from({}, at);
   const by = strings(v.organization)[0] || byline(v);
   const url = str(v.url);
   const title = <cite>{sourceTitle(v)}</cite>;

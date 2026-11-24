@@ -19,6 +19,10 @@ export type ViewInit = {
   lang: string;
   /** the person's locale (BCP 47), for numbers and dates: German `3,5` is three and a half */
   locale: string;
+  /** its own text, in `lang`, by key: what `t()` shows (its wording, resolved by the app) */
+  wording?: Record<string, string>;
+  /** its maker is rewording it: an alt-click on its text says which keys show there (`pick`) */
+  picking?: boolean;
 };
 
 export type ServiceReply = { status: number; contentType: string; body: Uint8Array };
@@ -103,7 +107,9 @@ export type FromView =
   | { type: 'call'; id: number; call: Call }
   | { type: 'error'; error: ViewError }
   /** how far the frame has got starting the view, for the log */
-  | { type: 'stage'; stage: string };
+  | { type: 'stage'; stage: string }
+  /** the keys of its text where its maker alt-clicked, while rewording it (`picking`) */
+  | { type: 'pick'; keys: string[] };
 
 export type ToView =
   | { type: 'reply'; id: number; ok: true; value: Json | Uint8Array | object }
@@ -112,4 +118,6 @@ export type ToView =
   | { type: 'beliefs'; delta: BeliefDelta }
   | { type: 'outline'; delta: OutlineDelta }
   /** the view was moved elsewhere (`openView` from another view, or the app) */
-  | { type: 'params'; params: Record<string, string> };
+  | { type: 'params'; params: Record<string, string> }
+  /** its text changed (reworded while it runs), in `lang` */
+  | { type: 'wording'; wording: Record<string, string>; lang: string };

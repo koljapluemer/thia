@@ -4,13 +4,15 @@
   "type": "module",
   "description": "The app's own text in every language it has (Paraglide), which language a page is in, and the picker",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./messages": "./src/messages.ts"
   },
   "scripts": {
     "prepare": "node scripts/compile.ts",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
+    "@gestalts/view": "workspace:*",
     "lucide-react": "1.66.0"
   },
   "peerDependencies": {

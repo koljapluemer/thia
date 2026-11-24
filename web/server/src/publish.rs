@@ -120,10 +120,25 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     let gestalts = draft_gestalts(c.gestalts, c.package, texts.iter().filter(|(_, t)| t.contains(GESTALT)).map(|(i, t)| (i.clone(), t.clone())));
     let mut definitions = BTreeMap::new();
     let mut blobs = BTreeMap::new();
+    // its own text, each layer: shipped beside the manifest, as the player shows it, not among the ymls (a lesson of
+    // several views keeps all of theirs in one store, where each view's wording would take another's id)
+    let mut wording = Vec::new();
+    let mut wording_ids = Vec::new();
     for (id, text) in &texts {
         let y = Yml::parse(id.clone(), text.clone());
         let st = gestalts.classify(&y);
         match &st {
+            YmlState::Valid(g) if g == "wording@1" => {
+                if let Some(m) = y.map() {
+                    let mut v = serde_json::to_value(m).map_err(|e| ApiError::Internal(e.to_string()))?;
+                    if let Some(o) = v.as_object_mut() {
+                        o.remove("id");
+                        o.remove("gestalt");
+                    }
+                    wording.push(v);
+                    wording_ids.push(id.clone());
+                }
+            }
             YmlState::Valid(g) if g == GESTALT => {
                 if let Ok(d) = gestalts.definition(&y) {
                     definitions.insert(d.id(), d.structure_hash());
@@ -159,8 +174,9 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     }
 
     let js = compiled["js"].as_str().unwrap_or_default().as_bytes().to_vec();
-    let ymls: Vec<Value> = texts.iter().map(|(id, text)| json!({ "id": id, "text": text })).collect();
-    let index = json!({ "ymls": texts.keys().collect::<Vec<_>>(), "blobs": blobs.keys().collect::<Vec<_>>() });
+    let shipped: BTreeMap<&String, &String> = texts.iter().filter(|(id, _)| !wording_ids.contains(id)).collect();
+    let ymls: Vec<Value> = shipped.iter().map(|(id, text)| json!({ "id": id, "text": text })).collect();
+    let index = json!({ "ymls": shipped.keys().collect::<Vec<_>>(), "blobs": blobs.keys().collect::<Vec<_>>() });
     let mut files = BTreeMap::new();
     let view_name = format!("view.{}.js", &hex(&js)[..12]);
     files.insert(view_name.clone(), js);
@@ -181,6 +197,10 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
     let mut manifest = manifest;
     if let Some(t) = view.str_field("target_lang") {
         manifest["target_lang"] = json!(t);
+    }
+    if !wording.is_empty() {
+        files.insert("wording.json".to_owned(), serde_json::to_vec(&wording).expect("json"));
+        manifest["wording"] = json!("wording.json");
     }
     files.insert("manifest.json".to_owned(), serde_json::to_vec_pretty(&manifest).expect("json"));
     let blobs = blobs.into_iter().map(|(b, p)| (format!("blobs/{b}"), p)).collect();

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { logPractice, usePracticeSession, type EventRating, type PracticeLog } from '@gestalts/learning';
-import { useBeliefs, useDoc, useQuery, useViewState, useWrite, type QueryResult } from '@gestalts/view';
+import { formatNumber, t, useBeliefs, useDoc, useQuery, useViewState, useWrite, type QueryResult } from '@gestalts/view';
 
 /**
  * Type Vietnamese words as shown, three a line, with the system's Vietnamese keyboard: sam-learns-things'
@@ -258,23 +258,23 @@ function Practice({ words, weightOf, method, log }: { words: Word[]; weightOf: (
     <div className="flex flex-col items-center justify-center gap-6 p-4">
       {error && (
         <div role="alert" className="alert alert-error max-w-3xl">
-          <span>Couldn't save your last line: {error}</span>
-          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>Dismiss</button>
+          <span>{t('not_saved', { error })}</span>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>{t('dismiss')}</button>
         </div>
       )}
 
       <div className="stats shadow bg-base-100">
         <div className="stat place-items-center">
-          <div className="stat-title">WPM</div>
-          <div className="stat-value text-primary">{stats.wpm}</div>
+          <div className="stat-title">{t('wpm')}</div>
+          <div className="stat-value text-primary">{formatNumber(stats.wpm)}</div>
         </div>
         <div className="stat place-items-center">
-          <div className="stat-title">Accuracy</div>
-          <div className="stat-value text-secondary">{stats.accuracy}%</div>
+          <div className="stat-title">{t('accuracy')}</div>
+          <div className="stat-value text-secondary">{formatNumber(stats.accuracy / 100, { style: 'percent' })}</div>
         </div>
         <div className="stat place-items-center">
-          <div className="stat-title">Time</div>
-          <div className="stat-value">{`${stats.elapsedSeconds}s`}</div>
+          <div className="stat-title">{t('time')}</div>
+          <div className="stat-value">{t('seconds', { n: stats.elapsedSeconds })}</div>
         </div>
       </div>
 
@@ -288,17 +288,18 @@ function Practice({ words, weightOf, method, log }: { words: Word[]; weightOf: (
       </div>
 
       <input ref={inputRef} type="text" lang="vi" translate="no" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
-             className="input input-bordered input-lg w-full max-w-3xl text-center" placeholder="Start typing..." autoFocus />
+             className="input input-bordered input-lg w-full max-w-3xl text-center" placeholder={t('start')} aria-label={t('start')} autoFocus />
     </div>
   );
 }
 
 // ---------- the view ----------
 
-const METHODS: { value: Method; label: string }[] = [
-  { value: 'off', label: 'Off' },
-  { value: 'telex', label: 'TELEX' },
-  { value: 'vni', label: 'VNI' },
+// TELEX and VNI are names, the same in every language
+const METHODS: { value: Method; label: () => string }[] = [
+  { value: 'off', label: () => t('off') },
+  { value: 'telex', label: () => 'TELEX' },
+  { value: 'vni', label: () => 'VNI' },
 ];
 
 export default function VietnameseTypingPractice() {
@@ -332,18 +333,18 @@ export default function VietnameseTypingPractice() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="flex flex-col items-center gap-2 p-4">
-        <span className="text-sm opacity-70">Keystroke input method</span>
+        <span className="text-sm opacity-70">{t('method')}</span>
         <div className="join">
           {METHODS.map((option) => (
             <button key={option.value} type="button" className={`btn join-item ${method === option.value ? 'btn-primary' : ''}`}
-                    onClick={() => setMethod(option.value)}>{option.label}</button>
+                    onClick={() => setMethod(option.value)}>{option.label()}</button>
           ))}
         </div>
       </div>
       {!loaded ? (
         <div className="flex min-h-64 items-center justify-center w-full"><span className="loading loading-spinner loading-lg" /></div>
       ) : words.length < WORDS_PER_LINE * 2 ? (
-        <div className="alert alert-error max-w-3xl mx-auto"><span>No words to practise.</span></div>
+        <div className="alert alert-error max-w-3xl mx-auto"><span>{t('no_words')}</span></div>
       ) : (
         <Practice words={words} weightOf={liveWeight} method={method} log={log} />
       )}

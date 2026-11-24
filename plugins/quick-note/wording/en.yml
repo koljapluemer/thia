@@ -1,0 +1,34 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  saved_no_notes:
+    text: "Saved. There's no Notes view here to edit it in."
+    description: "after Save and Edit, where the notes view isn't in the app"
+  saved:
+    text: "Saved."
+    description: "after a note was saved"
+  placeholder:
+    text: "What's on your mind?"
+    description: "the empty note box"
+  remove:
+    text: "Remove"
+    description: "the × on an attached file"
+  attach:
+    text: "Attach"
+    description: "button: adds files to the note"
+  save_edit:
+    text: "Save and Edit"
+    description: "button: saves the note and opens it in the notes view"
+  save_edit_title:
+    text: "Save, and open it in Notes to add more"
+    description: "tooltip of that button"
+  save_next:
+    text: "Save and Next"
+    description: "button: saves the note and empties the box for the next"
+  save_next_title:
+    text: "Save, and write the next one (Ctrl+Enter)"
+    description: "tooltip of that button"
+  attach_title:
+    text: "Attach files"
+    description: "heading of the dialog that picks files"

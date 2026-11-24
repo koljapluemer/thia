@@ -24,7 +24,7 @@ for (const deck of readdirSync(decksDir)) {
   describe(`the ${deck} deck`, () => {
     it('lists everything in its deck yml, each named after its id', () => {
       for (const f of readdirSync(dir)) expect((parse(readFileSync(join(dir, f), 'utf8')) as Yml).id).toBe(f.replace(/\.yml$/, ''));
-      const d = of('deck@3')[0];
+      const d = of('deck@4')[0];
       expect(new Set(d.members)).toEqual(new Set(ymls.filter((y) => y !== d).map((y) => y.id)));
     });
 

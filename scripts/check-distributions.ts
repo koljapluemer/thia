@@ -1,6 +1,6 @@
 // Every app's distribution.yml (or distributions/<name>.yml) names plugins from the repo's plugins/ (or the app's own
 // plugins/), model packages from the repo's gestalts/ and outlines from the repo's outlines/, never another app's files:
-// the contract no import checker sees. Every deck on the public site says what it practises (`deck@3`), so outlines can
+// the contract no import checker sees. Every deck on the public site says what it practises and its language (`deck@4`), so outlines can
 // find it. Exits non-zero, listing what's wrong.
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -54,7 +54,7 @@ for (const file of distributions(web)) {
         const notes = join(decks, deck.name, 'notes');
         const gestaltOf = (f: string) => /^gestalt:\s*(\S+)/m.exec(readFileSync(join(notes, f), 'utf8'))?.[1];
         const kinds = existsSync(notes) ? readdirSync(notes).filter((f) => f.startsWith('deck-')).map(gestaltOf) : [];
-        if (!kinds.includes('deck@3')) problems.push(`${relative(root, file)}: ${relative(root, join(decks, deck.name))} is on the site, so its deck yml is a deck@3 saying what it practises`);
+        if (!kinds.includes('deck@4')) problems.push(`${relative(root, file)}: ${relative(root, join(decks, deck.name))} is on the site, so its deck yml is a deck@4 saying what it practises and its language`);
       }
     }
   }
@@ -76,4 +76,4 @@ const missing = lessons.filter((m) => !site.includes(m));
 if (missing.length) problems.push(`the site (web/site/distribution.yml) plays published lessons, so it needs their models too: ${missing.join(', ')}`);
 for (const p of problems) console.error(p);
 if (problems.length) process.exit(1);
-console.log('distributions: every plugin in plugins/, every model in gestalts/, every outline in outlines/, every site deck a deck@3');
+console.log('distributions: every plugin in plugins/, every model in gestalts/, every outline in outlines/, every site deck a deck@4');

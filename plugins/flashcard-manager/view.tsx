@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { ConfirmDialog, MarkdownEditor, storeFile } from '@gestalts/kit';
-import { useBlobUrl, useDoc, useQuery, useViewState, useWrite, type Item, type JsonMap } from '@gestalts/view';
+import { t, useBlobUrl, useDoc, useQuery, useViewState, useWrite, type Item, type JsonMap } from '@gestalts/view';
 
 type Blob = { file: string; label: string };
 type Draft = { front: string; context: string; back: string; extra: string; sources: unknown[]; tags: string; aliases: string; blobs: Blob[]; concepts: Record<string, number> };
 
 const PAGE = 40;
-const SLOTS: { label: string; title: string; accept: string }[] = [
-  { label: 'front', title: 'Front image', accept: 'image/*' },
-  { label: 'back', title: 'Back image', accept: 'image/*' },
-  { label: 'audio', title: 'Audio', accept: 'audio/*' },
+const SLOTS: { label: string; title: () => string; accept: string }[] = [
+  { label: 'front', title: () => t('front_image'), accept: 'image/*' },
+  { label: 'back', title: () => t('back_image'), accept: 'image/*' },
+  { label: 'audio', title: () => t('audio'), accept: 'audio/*' },
 ];
 
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
@@ -68,17 +68,17 @@ function List({ selected, onSelect, onNew }: { selected: string | null; onSelect
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-2 border-b border-base-300 p-2">
-        <input className="input input-sm min-w-0 flex-1" type="search" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button type="button" className="btn btn-sm btn-primary btn-square" title="New flashcard" onClick={onNew}><Plus className="size-4" /></button>
+        <input className="input input-sm min-w-0 flex-1" type="search" placeholder={t('search')} aria-label={t('search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button type="button" className="btn btn-sm btn-primary btn-square" title={t('new')} aria-label={t('new')} onClick={onNew}><Plus className="size-4" /></button>
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {items.map((c) => (
           <li key={c.id}>
-            <button type="button" className={`w-full truncate px-3 py-3 text-start hover:bg-base-200 ${c.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(c.id)}>{str(c.value.front).trim().split('\n')[0] || '(empty)'}</button>
+            <button type="button" className={`w-full truncate px-3 py-3 text-start hover:bg-base-200 ${c.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(c.id)}>{str(c.value.front).trim().split('\n')[0] || t('empty')}</button>
           </li>
         ))}
         {hasMore && <li ref={end} className="flex justify-center p-3"><span className="loading loading-spinner loading-sm" /></li>}
-        {!loading && !items.length && <li className="p-6 text-center text-base-content/60">{text.trim() ? 'Nothing found.' : 'No flashcards yet.'}</li>}
+        {!loading && !items.length && <li className="p-6 text-center text-base-content/60">{text.trim() ? t('nothing_found') : t('no_cards')}</li>}
       </ul>
     </div>
   );
@@ -92,7 +92,7 @@ function BlobSlot({ title, accept, file, onFile, onClear }: { title: string; acc
       {url && (accept === 'audio/*' ? <audio controls src={url} className="w-full" /> : <img src={url} alt="" className="rounded-box max-h-32 self-start object-contain" />)}
       <div className="flex items-center gap-2">
         <input type="file" accept={accept} aria-label={title} className="file-input file-input-sm min-w-0 flex-1" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ''; }} />
-        {file && <button type="button" className="btn btn-ghost btn-sm btn-square" title={`Remove ${title.toLowerCase()}`} onClick={onClear}><Trash2 className="size-4" /></button>}
+        {file && <button type="button" className="btn btn-ghost btn-sm btn-square" title={t('remove_slot', { what: title })} aria-label={t('remove_slot', { what: title })} onClick={onClear}><Trash2 className="size-4" /></button>}
       </div>
     </div>
   );
@@ -110,17 +110,17 @@ function Concepts({ value, onChange, onError }: { value: Record<string, number>;
   const strength = (raw: string) => Math.min(1, Math.max(0, Number(raw) || 0));
   return (
     <section className="flex flex-col gap-1">
-      <h3 className="text-sm font-semibold">Concepts</h3>
+      <h3 className="text-sm font-semibold">{t('concepts')}</h3>
       {ids.map((id) => (
         <div key={id} className="flex items-center gap-2">
           <span className="min-w-0 flex-1 truncate text-sm">{str(attached.find((c) => c.id === id)?.value.name) || id}</span>
-          <input className="input input-xs w-20" type="number" min={0} max={1} step={0.05} aria-label="Strength, 0 to 1" value={value[id]} onChange={(e) => onChange({ ...value, [id]: strength(e.target.value) })} />
-          <button type="button" className="btn btn-ghost btn-xs btn-square" title="Remove" onClick={() => { const { [id]: _gone, ...rest } = value; onChange(rest); }}><Trash2 className="size-3" /></button>
+          <input className="input input-xs w-20" type="number" min={0} max={1} step={0.05} aria-label={t('strength')} value={value[id]} onChange={(e) => onChange({ ...value, [id]: strength(e.target.value) })} />
+          <button type="button" className="btn btn-ghost btn-xs btn-square" title={t('remove')} aria-label={t('remove')} onClick={() => { const { [id]: _gone, ...rest } = value; onChange(rest); }}><Trash2 className="size-3" /></button>
         </div>
       ))}
-      <input className="input input-sm w-full" placeholder="Find or create a concept…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <input className="input input-sm w-full" placeholder={t('find_concept')} aria-label={t('find_concept')} value={search} onChange={(e) => setSearch(e.target.value)} />
       {text && found.map((c) => <button key={c.id} type="button" className="btn btn-ghost btn-xs justify-start truncate font-normal" onClick={() => add(c.id)}>{str(c.value.name)}</button>)}
-      {text && !found.some((c) => c.value.name === text) && <button type="button" className="btn btn-ghost btn-xs justify-start truncate font-normal" onClick={() => void create()}>Create “{text}”</button>}
+      {text && !found.some((c) => c.value.name === text) && <button type="button" className="btn btn-ghost btn-xs justify-start truncate font-normal" onClick={() => void create()}>{t('create', { name: text })}</button>}
     </section>
   );
 }
@@ -163,31 +163,31 @@ function Editor({ card, onBack, onSaved, onDeleted }: { card?: Item; onBack: () 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-1 border-b border-base-300 p-2">
-        <button type="button" className="btn btn-sm btn-ghost md:hidden" title="Back to the list" onClick={onBack}><ArrowLeft className="size-4" /></button>
+        <button type="button" className="btn btn-sm btn-ghost md:hidden" title={t('back')} aria-label={t('back')} onClick={onBack}><ArrowLeft className="size-4" /></button>
         <span className="flex-1" />
-        {saved && <span className="text-sm text-base-content/60">Saved</span>}
-        {card && <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirming(true)}><Trash2 className="size-4" /> Delete</button>}
-        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !draft.front.trim()} onClick={() => void save()}>Save</button>
+        {saved && <span className="text-sm text-base-content/60">{t('saved')}</span>}
+        {card && <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirming(true)}><Trash2 className="size-4" /> {t('delete')}</button>}
+        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !draft.front.trim()} onClick={() => void save()}>{t('save')}</button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
         {error && <div role="alert" className="alert alert-error text-sm whitespace-pre-wrap">{error}</div>}
-        <MarkdownEditor value={draft.front} onChange={(front: string) => set({ front })} placeholder="Front" />
-        <MarkdownEditor value={draft.context} onChange={(context: string) => set({ context })} placeholder="Context, small print with the front" minHeight="2rem" />
-        <MarkdownEditor value={draft.back} onChange={(back: string) => set({ back })} placeholder="Back" />
-        <MarkdownEditor value={draft.extra} onChange={(extra: string) => set({ extra })} placeholder="Extra, shown after the reveal" minHeight="3rem" />
+        <MarkdownEditor value={draft.front} onChange={(front: string) => set({ front })} placeholder={t('front')} />
+        <MarkdownEditor value={draft.context} onChange={(context: string) => set({ context })} placeholder={t('context')} minHeight="2rem" />
+        <MarkdownEditor value={draft.back} onChange={(back: string) => set({ back })} placeholder={t('back_side')} />
+        <MarkdownEditor value={draft.extra} onChange={(extra: string) => set({ extra })} placeholder={t('extra')} minHeight="3rem" />
         <div className="grid gap-3 md:grid-cols-3">
           {SLOTS.map((s) => (
-            <BlobSlot key={s.label} title={s.title} accept={s.accept} file={draft.blobs.find((b) => b.label === s.label)?.file}
+            <BlobSlot key={s.label} title={s.title()} accept={s.accept} file={draft.blobs.find((b) => b.label === s.label)?.file}
                       onFile={(f) => void attach(s.label, f)} onClear={() => set({ blobs: draft.blobs.filter((b) => b.label !== s.label) })} />
           ))}
         </div>
-        <input className="input input-sm w-full" placeholder="Tags, comma separated" value={draft.tags} onChange={(e) => set({ tags: e.target.value })} />
-        <input className="input input-sm w-full" placeholder="Aliases, comma separated" value={draft.aliases} onChange={(e) => set({ aliases: e.target.value })} />
+        <input className="input input-sm w-full" placeholder={t('tags')} aria-label={t('tags')} value={draft.tags} onChange={(e) => set({ tags: e.target.value })} />
+        <input className="input input-sm w-full" placeholder={t('aliases')} aria-label={t('aliases')} value={draft.aliases} onChange={(e) => set({ aliases: e.target.value })} />
         <Concepts value={draft.concepts} onChange={(concepts) => set({ concepts })} onError={fail} />
       </div>
       {confirming && (
-        <ConfirmDialog title="Delete this flashcard?" onClose={() => setConfirming(false)} onConfirm={remove}>
-          Its review progress will also be deleted. This cannot be undone.
+        <ConfirmDialog title={t('delete_title')} confirmLabel={t('delete')} onClose={() => setConfirming(false)} onConfirm={remove}>
+          {t('delete_text')}
         </ConfirmDialog>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Credits } from '@gestalts/kit';
 import { facetOf, fsrsStates, getScheduler, logPractice, nextItem, Rating, rate, saveReview, useLocalReviews, usePracticeSession, type FsrsStates, type PracticeLog } from '@gestalts/learning';
-import { useBlobUrl, useQuery, useWrite, type QueryResult } from '@gestalts/view';
+import { t, useBlobUrl, useQuery, useWrite, type QueryResult } from '@gestalts/view';
 
 /**
  * Whose flag is this? A `flag@1`, and two names: its own and another flag's. The other is one it is confused with
@@ -85,7 +85,7 @@ function Exercise({ q, preload, onShown, onFirstPick, onNext }: {
     <>
       <div className="flex flex-1 items-center justify-center">
         <div className="flex aspect-[4/3] w-full max-w-sm items-center justify-center overflow-hidden rounded-box border border-base-300">
-          {url ? <img src={url} alt="the flag to name" className="max-h-full max-w-full object-contain" /> : <span className="loading loading-spinner" />}
+          {url ? <img src={url} alt={t('flag_alt')} className="max-h-full max-w-full object-contain" /> : <span className="loading loading-spinner" />}
         </div>
         {preloadUrl && <img src={preloadUrl} alt="" className="hidden" />}
       </div>
@@ -144,13 +144,13 @@ function Drill({ flags, stored, log }: { flags: Flag[]; stored: FsrsStates; log:
     <>
       {error && (
         <div role="alert" className="alert alert-error text-sm">
-          <span>Couldn't save your last answer: {error}</span>
-          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>Dismiss</button>
+          <span>{t('not_saved', { error })}</span>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>{t('dismiss')}</button>
         </div>
       )}
       {current.q
         ? <Exercise key={current.n} q={current.q} preload={upcoming?.flag.image} onShown={log.shown} onFirstPick={(r, ms) => { void firstPick(r, ms); }} onNext={next} />
-        : <Centered><p>Nothing due right now.</p><button type="button" className="btn btn-sm" onClick={again}>Check again</button></Centered>}
+        : <Centered><p>{t('nothing_due')}</p><button type="button" className="btn btn-sm" onClick={again}>{t('check_again')}</button></Centered>}
       <Credits sources={current.q?.flag.sources ?? flags[0]?.sources} className="text-center" />
     </>
   );
@@ -173,9 +173,9 @@ export default function FlagsPractice() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col gap-4 p-4">
-        <h1 className="text-lg font-semibold">Whose flag is this?</h1>
+        <h1 className="text-lg font-semibold">{t('title')}</h1>
         {!loaded ? <Centered><span className="loading loading-spinner" /></Centered>
-          : flags.length < 2 ? <Centered><p>No flags yet.</p></Centered>
+          : flags.length < 2 ? <Centered><p>{t('no_flags')}</p></Centered>
             : <Drill flags={flags} stored={stored} log={log} />}
       </div>
     </div>

@@ -1,0 +1,34 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  not_saved:
+    text: "Deine letzte Zeile ließ sich nicht speichern: {error}"
+    source: 4bbc4ee6089d2c85
+  dismiss:
+    text: "Schließen"
+    source: 0d61ecd0675222ef
+  wpm:
+    text: "WPM"
+    source: 20ffb122209a2d8b
+  accuracy:
+    text: "Genauigkeit"
+    source: 059f10211f827768
+  time:
+    text: "Zeit"
+    source: 209130459d923c3e
+  seconds:
+    text: "{n} s"
+    source: 01fb9775dc88aa83
+  start:
+    text: "Fang an zu tippen…"
+    source: 5b0a33d79fd12a04
+  method:
+    text: "Eingabemethode"
+    source: 1516c9107abc8ca4
+  off:
+    text: "Aus"
+    source: d19f08694b6fee22
+  no_words:
+    text: "Keine Wörter zum Üben."
+    source: 3535b7f2f7ad5627

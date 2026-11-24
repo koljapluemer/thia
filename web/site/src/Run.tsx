@@ -5,6 +5,7 @@ import { useOpenRepo, type DeckSource, type Repo } from '@gestalts/client';
 import { FrameView, type RunnableView, type ViewEnv } from '@gestalts/host';
 import { useLang } from '@gestalts/i18n';
 import type { JsonMap } from '@gestalts/view';
+import type { Wording } from '@gestalts/view/wording';
 import tailwind from '@tailwindcss/browser?raw';
 import css from './app.css?inline';
 import { forget } from './home';
@@ -24,6 +25,8 @@ export type Run = {
   csp?: string;
   /** a way back, where there's somewhere to go back to */
   back?: () => void;
+  /** the view's own text, each layer */
+  wording?: Wording[];
 };
 
 /**
@@ -95,7 +98,7 @@ function Frame({ repo, run }: { repo: Repo; run: Run }) {
     },
     openView: () => false,
   }), [run.keys.state]);
-  return <FrameView repo={repo} view={run.view} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} csp={run.csp} />;
+  return <FrameView repo={repo} view={run.view} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} csp={run.csp} wording={run.wording} />;
 }
 
 export function Spinner() {

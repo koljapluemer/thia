@@ -3,6 +3,7 @@ import { markdown } from '@codemirror/lang-markdown';
 import { EditorView, placeholder as placeholderText } from '@codemirror/view';
 import { CodeMirrorHost } from './CodeMirrorHost';
 import { referenceCompletion, referenceLinks, type ReferenceCandidate } from './markdownCompletion';
+import { m, useAt } from './words';
 
 type Props = {
   value: string;
@@ -29,6 +30,7 @@ type Props = {
 /** A Markdown field: `[[` completion, references marked and openable, pasted or dropped files handed on. */
 export function MarkdownEditor({ value, onChange, onSave, search, onOpen, labelOf, onFiles, onView, onBlur, placeholder, minHeight = '6rem', autofocus }: Props) {
   // the extensions are made once; they reach the latest props through this holder, kept current by the effect
+  const at = useAt();
   const [props] = useState(() => new Latest({ search, onOpen, labelOf, onFiles, onBlur }));
   useEffect(() => { props.set({ search, onOpen, labelOf, onFiles, onBlur }); });
   const [extensions] = useState(() => [
@@ -39,6 +41,8 @@ export function MarkdownEditor({ value, onChange, onSave, search, onOpen, labelO
     referenceLinks({
       onOpen: onOpen ? (t) => props.current.onOpen?.(t) : undefined,
       labelOf: (t) => props.current.labelOf?.(t),
+      // in the view's language when the editor is made (a view's language doesn't change while it runs)
+      words: { open: m.kit_open({}, at), missing: m.kit_no_such_note({}, at), clickToOpen: (label) => m.kit_click_to_open({ label }, at) },
     }),
     EditorView.domEventHandlers({
       paste: (e) => handFiles(e.clipboardData?.files, e, props.current.onFiles),

@@ -1,0 +1,34 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  not_saved:
+    text: "Couldn't save your last line: {error}"
+    description: "an alert when a typed line could not be saved; error says why"
+  dismiss:
+    text: "Dismiss"
+    description: "closes that alert"
+  wpm:
+    text: "WPM"
+    description: "title of the words-per-minute figure"
+  accuracy:
+    text: "Accuracy"
+    description: "title of the share of letters typed right"
+  time:
+    text: "Time"
+    description: "title of the time spent"
+  seconds:
+    text: "{n} s"
+    description: "the time spent, in seconds"
+  start:
+    text: "Start typing…"
+    description: "the empty box the words are typed into"
+  method:
+    text: "Keystroke input method"
+    description: "above the choice of how marks are typed (off, TELEX, VNI)"
+  off:
+    text: "Off"
+    description: "the choice: no help with typing marks"
+  no_words:
+    text: "No words to practise."
+    description: "shown when the deck has too few words"

@@ -1,1 +1,1 @@
-{"title": "der, die, das", "lang": "de", "package": "d-example", "reads": ["d-example/noun@1", "practice-event@1"], "writes": ["practice-event@1"], "npm": {}}
+{"title": "der, die, das", "lang": "de", "target_lang": "de", "package": "d-example", "reads": ["d-example/noun@1", "practice-event@1"], "writes": ["practice-event@1"], "npm": {}}

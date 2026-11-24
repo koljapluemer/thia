@@ -1,0 +1,166 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  hint_name:
+    text: "One per line: family, given"
+    description: "placeholder of a names field (authors, editors)"
+  hint_list:
+    text: "One per line"
+    description: "placeholder of a list field"
+  hint_date:
+    text: "2020, 2020-05 or 2020-05-17"
+    description: "placeholder of a date field"
+  differs:
+    text: "The pasted BibTeX differs here: take its value?"
+    description: "heading of the fields where pasted BibTeX differs"
+  keep_mine:
+    text: "Keep all mine"
+    description: "button: keeps every value as it is"
+  apply:
+    text: "Apply"
+    description: "button: takes the ticked values"
+  claim_placeholder:
+    text: "A claim this source makes"
+    description: "the empty field for a new claim"
+  add_claim:
+    text: "Add claim"
+    description: "button: keeps the claim as a note about the source"
+  claims:
+    text: "Claims"
+    description: "heading of the notes about the source"
+  edit_note:
+    text: "Edit the note"
+    description: "icon button on a claim"
+  detach:
+    text: "Detach: the note stays, unrelated to this source"
+    description: "icon button on a claim"
+  more:
+    text: "More"
+    description: "loads more of a list"
+  attach_note:
+    text: "Attach an existing note…"
+    description: "the box an existing note is found in"
+  strength_title:
+    text: "How strongly it comes up in this source"
+    description: "tooltip of a concept's slider"
+  strength:
+    text: "How strongly it comes up"
+    description: "label of that slider"
+  source_gone:
+    text: "That source is gone."
+    description: "an error when the source was deleted meanwhile"
+  concepts:
+    text: "Concepts"
+    description: "heading of what the source is about"
+  open_concept:
+    text: "Open in the concept explorer"
+    description: "tooltip of a concept's name"
+  remove_concept:
+    text: "Remove the concept from this source"
+    description: "icon button beside a concept"
+  add_concept:
+    text: "Add a concept it's about…"
+    description: "the box a concept is found in"
+  filled:
+    text: "Filled {fields}."
+    description: "after pasting BibTeX: the fields it filled in"
+  key_taken:
+    text: "Another source has the key '{key}'."
+    description: "an error saving a source whose key is taken"
+  saved_as:
+    text: "Saved, as '{key}': '{wanted}' was taken."
+    description: "after saving a new source under another key"
+  saved:
+    text: "Saved."
+    description: "after saving"
+  one_entry:
+    text: "Expected one BibTeX entry, found {n}."
+    description: "an error when the clipboard holds no or several entries"
+  nothing_new:
+    text: "Nothing new in the BibTeX."
+    description: "after pasting BibTeX that adds nothing"
+  back:
+    text: "Back to the list"
+    description: "icon button above a source on narrow screens"
+  update_title:
+    text: "Update this source from the BibTeX in the clipboard"
+    description: "tooltip of the BibTeX button"
+  delete:
+    text: "Delete"
+    description: "icon button: asks whether to delete the source"
+  save:
+    text: "Save"
+    description: "button: saves the source"
+  title:
+    text: "Title"
+    description: "the field for the source's title"
+  key:
+    text: "key"
+    description: "the BibTeX key's label"
+  type:
+    text: "type"
+    description: "the BibTeX entry type's label"
+  add_field:
+    text: "Add a field"
+    description: "label of the choice of another BibTeX field"
+  add_field_option:
+    text: "Add a field…"
+    description: "the first option of that choice"
+  alias:
+    text: "Alias"
+    description: "what one other name of the source is called"
+  aliases:
+    text: "aliases"
+    description: "before the other names"
+  alias_placeholder:
+    text: "Another way you'd look for it…"
+    description: "the field for another name"
+  tag:
+    text: "Tag"
+    description: "what one tag is called"
+  tags:
+    text: "tags"
+    description: "before the tags"
+  extra:
+    text: "Extra"
+    description: "the field for anything else"
+  save_first:
+    text: "Save the source to add concepts and claims about it."
+    description: "in place of concepts and claims before the source is saved"
+  delete_title:
+    text: "Delete this source?"
+    description: "the question asked before deleting"
+  delete_text:
+    text: "Notes about it will stay, pointing at nothing. This cannot be undone."
+    description: "below that question"
+  written:
+    text: "{n, plural, one {# source} other {# sources}} written to {path}"
+    description: "after exporting"
+  unchanged:
+    text: "{n, plural, one {# source} other {# sources}} unchanged in {path}"
+    description: "after exporting when the file was already so"
+  export:
+    text: "Export .bib"
+    description: "the export section's heading"
+  export_where:
+    text: "Where to write the .bib"
+    description: "label of the path field"
+  write:
+    text: "Write"
+    description: "button: writes the file"
+  search:
+    text: "Search"
+    description: "the search box above the list"
+  paste_title:
+    text: "Add the BibTeX in the clipboard (or press Ctrl+V)"
+    description: "icon button above the list"
+  new:
+    text: "New source"
+    description: "icon button: makes a new source"
+  nothing_found:
+    text: "Nothing found."
+    description: "in the list when a search finds nothing"
+  no_sources:
+    text: "No sources yet."
+    description: "in the list when there are none"

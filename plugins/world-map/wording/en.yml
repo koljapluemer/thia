@@ -1,0 +1,40 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  zoom_in:
+    text: "Zoom in"
+    description: "map button"
+  zoom_out:
+    text: "Zoom out"
+    description: "map button"
+  reset:
+    text: "Reset view"
+    description: "map button: back to the whole map"
+  find_near:
+    text: "Find {name} in its neighborhood"
+    description: "the task: click a country on a map of its region; name is the country"
+  find_world:
+    text: "Find {name} on the world map"
+    description: "the task: click a country on the world map; name is the country"
+  no_idea:
+    text: "I have no idea"
+    description: "button: gives up and shows where it is"
+  which_country:
+    text: "Which country is this?"
+    description: "the task: name the country shown"
+  which_highlighted:
+    text: "Which country is highlighted?"
+    description: "the task: name the highlighted country"
+  loading:
+    text: "Loading…"
+    description: "while the map loads"
+  none_enabled:
+    text: "No countries enabled yet."
+    description: "shown when no country is to be practised"
+  not_saved:
+    text: "Couldn't save your last answer: {error}"
+    description: "an alert when an answer could not be saved; error says why"
+  dismiss:
+    text: "Dismiss"
+    description: "closes that alert"

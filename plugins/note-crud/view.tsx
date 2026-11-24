@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { ConfirmDialog, NoteEditor, NoteTitle, newId, useDebounced } from '@gestalts/kit';
-import { useDoc, useParams, useQuery, useViewState, useWrite } from '@gestalts/view';
+import { t, useDoc, useParams, useQuery, useViewState, useWrite } from '@gestalts/view';
 
 const LIST_FIELDS = ['title', 'main'];
 const PAGE = 40;
@@ -21,8 +21,8 @@ function List({ selected, onSelect, onNew }: { selected: string | null; onSelect
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-2 border-b border-base-300 p-2">
-        <input className="input input-sm min-w-0 flex-1" type="search" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button type="button" className="btn btn-sm btn-primary btn-square" title="New note" onClick={onNew}><Plus className="size-4" /></button>
+        <input className="input input-sm min-w-0 flex-1" type="search" placeholder={t('search')} aria-label={t('search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button type="button" className="btn btn-sm btn-primary btn-square" title={t('new')} aria-label={t('new')} onClick={onNew}><Plus className="size-4" /></button>
       </div>
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {items.map((n) => (
@@ -31,7 +31,7 @@ function List({ selected, onSelect, onNew }: { selected: string | null; onSelect
           </li>
         ))}
         {hasMore && <li ref={end} className="flex justify-center p-3"><span className="loading loading-spinner loading-sm" /></li>}
-        {!loading && !items.length && <li className="p-6 text-center text-sm text-base-content/60">{text.trim() ? 'Nothing found.' : 'No notes yet.'}</li>}
+        {!loading && !items.length && <li className="p-6 text-center text-sm text-base-content/60">{text.trim() ? t('nothing_found') : t('no_notes')}</li>}
       </ul>
     </div>
   );
@@ -45,14 +45,14 @@ function Open({ id, onBack, onDeleted }: { id: string; onBack: () => void; onDel
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-1 border-b border-base-300 p-2">
-        <button type="button" className="btn btn-sm btn-ghost md:hidden" title="Back to the list" onClick={onBack}><ArrowLeft className="size-4" /></button>
+        <button type="button" className="btn btn-sm btn-ghost md:hidden" title={t('back')} aria-label={t('back')} onClick={onBack}><ArrowLeft className="size-4" /></button>
         <span className="flex-1" />
-        {note && <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirming(true)}><Trash2 className="size-4" /> Delete</button>}
+        {note && <button type="button" className="btn btn-sm btn-ghost" onClick={() => setConfirming(true)}><Trash2 className="size-4" /> {t('delete')}</button>}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto"><NoteEditor id={id} autoFocus /></div>
       {confirming && note && (
-        <ConfirmDialog title="Delete this note?" onClose={() => setConfirming(false)} onConfirm={async () => { await write.remove(note.id); onDeleted(); }}>
-          This cannot be undone.
+        <ConfirmDialog title={t('delete_title')} confirmLabel={t('delete')} onClose={() => setConfirming(false)} onConfirm={async () => { await write.remove(note.id); onDeleted(); }}>
+          {t('delete_text')}
         </ConfirmDialog>
       )}
     </div>

@@ -1,0 +1,142 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  no_mic:
+    text: "Das Mikrofon ist nicht verfügbar."
+    source: a3209557ae947fc3
+  back:
+    text: "Zurück"
+    source: 2af5412f4ce18695
+  remember:
+    text: "Weißt du noch, wie man das auf {language} sagt?"
+    source: 2c18c40f33d9b3ec
+  stop_recording:
+    text: "Aufnahme beenden"
+    source: 8f03c90fd363203b
+  say_it:
+    text: "Sag es"
+    source: 6fa448488cf79a19
+  your_take:
+    text: "Deine Aufnahme"
+    source: f29115ee55320fb7
+  record_again:
+    text: "Nochmal aufnehmen"
+    source: bad899f9e48be803
+  check:
+    text: "Prüfen"
+    source: cca3c9ccc2e899ba
+  reveal:
+    text: "Aufdecken"
+    source: c06b7b09feab76c3
+  no_idea:
+    text: "Keine Ahnung"
+    source: 1c7096dd023fca1d
+  how_it_goes:
+    text: "So geht es."
+    source: 6a98703f68f55d32
+  right_q:
+    text: "Hattest du es richtig?"
+    source: 855a711663d65bd6
+  next:
+    text: "Weiter"
+    source: cb3caabd61cbc874
+  wrong:
+    text: "Falsch"
+    source: 02aedd51ab747b12
+  right:
+    text: "Richtig"
+    source: a48464be45a66f9a
+  not_saved:
+    text: "Deine letzte Antwort ließ sich nicht speichern: {error}"
+    source: a436cbca7ebdf7db
+  dismiss:
+    text: "Schließen"
+    source: 0d61ecd0675222ef
+  title:
+    text: "Sprachführer"
+    source: f66695fcabc40b9a
+  which_language:
+    text: "Welche Sprache?"
+    source: 688b509291ad7299
+  no_decks:
+    text: "Hier gibt es noch keine Sprachführer."
+    source: 7cda777416b44649
+  counts:
+    text: "{due} fällig · {learned} gelernt · {new} neu"
+    source: bf3903accfb66764
+  practice:
+    text: "Üben"
+    source: 2abdd1ad95ef7829
+  learn_new:
+    text: "Neues lernen"
+    source: 986549a8689106af
+  can_do:
+    text: "Was du kannst"
+    source: 17261fd004d7e152
+  no_recording:
+    text: "Aufnehmen geht hier nicht: Du deckst auf, statt es laut zu sagen."
+    source: e5ac91b02bb86b38
+  first_time:
+    text: "{right} von {done} beim ersten Mal richtig."
+    source: 0a4836e91b2bffde
+  nothing_due:
+    text: "Gerade ist nichts fällig."
+    source: dc508a4dc220c0b0
+  done:
+    text: "Fertig"
+    source: 6bfec704d7626c55
+  learn:
+    text: "Lernen"
+    source: e52fcc6a769fb485
+  seen_all:
+    text: "Du hast jeden Satz hier gesehen."
+    source: 0efdc5a00ea7ad19
+  say_until:
+    text: "Sag es auf {language}, bis du es auswendig kannst."
+    source: b5f205e82711a524
+  another_way:
+    text: "Eine andere Art, etwas zu sagen, das du kennst."
+    source: c9f8f5beffe2c4cc
+  part_known:
+    text: "Einen Teil davon kennst du schon:"
+    source: c802b61224b4a474
+  take:
+    text: "Aufnahme {n}"
+    source: 09cc2e931c10384c
+  say_n:
+    text: "Sag es ({n} von {total})"
+    source: 5954e8dc15c10f09
+  from_memory:
+    text: "Jetzt aus dem Gedächtnis, gleich."
+    source: 397b067d8701b82e
+  bar:
+    text: "{p} · aus {n, plural, one {# Antwort} other {# Antworten}}"
+    source: 127ae21c7ccfb241
+  nothing_yet:
+    text: "noch nichts"
+    source: a2f89edf9bfa9827
+  times:
+    text: "{n}×"
+    source: fadc766107a75921
+  not_yet:
+    text: "noch nicht"
+    source: 6aed58635087e925
+  also:
+    text: "auch {list}"
+    source: 7b61620d25b8f2de
+  estimated:
+    text: "Auf {language}, geschätzt aus allem, was du geübt hast."
+    source: 7ca74fd809d73b3c
+  where:
+    text: "Wo"
+    source: e6c0740fc695ecba
+  pieces:
+    text: "Bausteine: {language}"
+    source: 1d55122e9a03fab3
+  everywhere:
+    text: "In jeder Sprache"
+    source: 480e856a4039847c
+  phrases:
+    text: "Sätze"
+    source: f2968c9e2f7fc785

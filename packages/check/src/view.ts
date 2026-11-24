@@ -7,6 +7,9 @@ import { NEEDS as KIT_NEEDS } from '@gestalts/kit/needs';
 import { NEEDS as LEARNING_NEEDS } from '@gestalts/learning/needs';
 import { compile } from '@gestalts/view/compile';
 import { needsProblems } from '@gestalts/view/needs';
+import { WORDING, asWording } from '@gestalts/view/wording';
+import { wordingProblems } from '@gestalts/view/wording-check';
+import { scanI18n } from './i18n-scan.ts';
 import { parse } from 'yaml';
 import { packageName, remoteLoads, result, versionedImport, versionedMessage, type CheckItem, type CheckResult, type Files, type Platform } from './index.ts';
 
@@ -129,6 +132,32 @@ export async function checkView(files: Files, ctx: ViewContext, platform: Platfo
         + '\n    Style with Tailwind and daisyUI; for maths, the kit\'s `Markdown` renders $…$ and $$…$$; npm packages are bundled, but without their stylesheets.',
     });
   }
+
+  // its text: none written into the code, every key in its wording, and the wording whole
+  const wordings = Object.keys(files).filter((p) => /^data\/wording[^/]*\.yml$/.test(p)).sort().flatMap((p) => {
+    try {
+      const v = parse(text(p) ?? '') as Record<string, unknown>;
+      return isMap(v) && v.gestalt === WORDING ? [{ name: p, wording: asWording(v) }] : [];
+    } catch { return []; }
+  });
+  const broken = wordings.filter((w) => !w.wording).map((w) => `${w.name}: a wording has lang, layer and messages ({key: {text, description}})`);
+  const whole = wordingProblems(wordings.flatMap((w) => (w.wording ? [{ name: w.name, wording: w.wording }] : [])));
+  const sourceWording = wordings.find((w) => w.wording?.layer === 'source')?.wording;
+  if (sourceWording && typeof manifest?.lang === 'string' && sourceWording.lang !== manifest.lang) whole.problems.push(`data/wording.yml: its lang ${sourceWording.lang} isn't view.json's (${manifest.lang})`);
+  const used = new Set<string>();
+  const ts = (await import('typescript-js')).default;
+  const findings = scanI18n(ts, source, 'view.tsx', { view: true, keys: sourceWording ? new Set(Object.keys(sourceWording.messages)) : null, used });
+  const unused = sourceWording ? Object.keys(sourceWording.messages).filter((k) => !used.has(k)) : [];
+  items.push({
+    ok: findings.length === 0,
+    name: 'its text is in its wording, numbers as the person writes them, left and right as start and end',
+    message: findings.map((f) => `view.tsx:${f.line}:${f.column + 1}: ${f.message}`).join('\n'),
+  });
+  items.push({
+    ok: broken.length + whole.problems.length === 0,
+    name: `its wording${unused.length ? ` (not used: ${unused.join(', ')})` : ''}`,
+    message: [...broken, ...whole.problems, ...whole.warnings].join('\n'),
+  });
 
   // npm packages arrive at run time: their types can't be here
   const npm = compiled.npm;

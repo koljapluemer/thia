@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { X } from 'lucide-react';
+import { m, useAt } from '../primitives/words';
 
 const fold = (s: string) => s.trim().toLowerCase();
 
@@ -14,6 +15,7 @@ export function cleanList(next: string[], exclude: string[] = []): string[] {
 
 /** One entry: a chip, edited in place on a click; emptied, it goes. */
 function Chip({ value, label, onSave, onRemove }: { value: string; label: string; onSave: (v: string) => void; onRemove: () => void }) {
+  const at = useAt();
   const [editing, setEditing] = useState<string | null>(null);
   const cancelled = useRef(false);
   const done = () => {
@@ -33,8 +35,8 @@ function Chip({ value, label, onSave, onRemove }: { value: string; label: string
   }
   return (
     <span className="badge badge-ghost gap-0.5 pe-0.5">
-      <button type="button" className="cursor-text" title={`Edit the ${label.toLowerCase()}`} onClick={() => setEditing(value)}>{value}</button>
-      <button type="button" className="btn btn-ghost btn-xs btn-circle size-4 min-h-0" title={`Remove the ${label.toLowerCase()}`} onClick={onRemove}><X className="size-3" /></button>
+      <button type="button" className="cursor-text" title={m.kit_list_edit({ what: label }, at)} onClick={() => setEditing(value)}>{value}</button>
+      <button type="button" className="btn btn-ghost btn-xs btn-circle size-4 min-h-0" title={m.kit_list_remove({ what: label }, at)} aria-label={m.kit_list_remove({ what: label }, at)} onClick={onRemove}><X className="size-3" /></button>
     </span>
   );
 }
@@ -54,6 +56,7 @@ export function ListInput({ value, onChange, label, placeholder, exclude, prefix
   prefix?: string;
   className?: string;
 }) {
+  const at = useAt();
   const [adding, setAdding] = useState('');
   const save = (next: string[]) => {
     const clean = cleanList(next, exclude);
@@ -70,7 +73,7 @@ export function ListInput({ value, onChange, label, placeholder, exclude, prefix
       {value.map((a, i) => (
         <Chip key={`${a}:${i}`} value={a} label={label} onSave={(v) => save(value.map((x, j) => (j === i ? v : x)))} onRemove={() => save(value.filter((_, j) => j !== i))} />
       ))}
-      <input className="input input-ghost input-sm w-36" aria-label={`Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}`} placeholder={placeholder ?? `Add ${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label.toLowerCase()}…`} value={adding}
+      <input className="input input-ghost input-sm w-36" aria-label={m.kit_list_add({ what: label }, at)} placeholder={placeholder ?? `${m.kit_list_add({ what: label }, at)}…`} value={adding}
              onChange={(e) => { if (e.target.value.endsWith(',')) add(e.target.value); else setAdding(e.target.value); }}
              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(adding); } if (e.key === 'Escape') setAdding(''); }}
              onBlur={() => add(adding)} />

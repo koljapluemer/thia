@@ -7,7 +7,7 @@ import {
   ENTRY_TYPES, FIELD_NAMES, FIELDS, bibOf, isEntryType, mergeSource, normalise, parseBibtex, renderBibtex, slug,
   type Bib, type EntryType, type FieldName, type MergeConflict,
 } from '@gestalts/sources';
-import { useCapabilities, useDoc, useHost, useParams, useQuery, useRead, useService, useViewState, useWrite, type Item, type JsonMap } from '@gestalts/view';
+import { formatNumber, t, useCapabilities, useDoc, useHost, useLocale, useParams, useQuery, useRead, useService, useViewState, useWrite, type Item, type JsonMap } from '@gestalts/view';
 
 const SOURCE = 'source@1';
 const NOTE = 'note@1';
@@ -90,8 +90,8 @@ const shown = (d: Draft): FieldName[] => {
   return FIELD_NAMES.filter((f) => want.has(f));
 };
 
-const HINT: Partial<Record<string, string>> = {
-  name: 'One per line: family, given', list: 'One per line', date: '2020, 2020-05 or 2020-05-17', range: '12--34',
+const HINT: Partial<Record<string, () => string>> = {
+  name: () => t('hint_name'), list: () => t('hint_list'), date: () => t('hint_date'), range: () => '12--34',
 };
 
 function FieldInput({ field, value, onChange }: { field: FieldName; value: string; onChange: (v: string) => void }) {
@@ -100,8 +100,8 @@ function FieldInput({ field, value, onChange }: { field: FieldName; value: strin
     <label className="flex flex-col gap-1">
       <span className="text-xs font-semibold text-base-content/70">{field}</span>
       {many(field)
-        ? <textarea className="textarea textarea-sm w-full" rows={Math.max(2, value.split('\n').length)} placeholder={HINT[type]} value={value} onChange={(e) => onChange(e.target.value)} />
-        : <input className="input input-sm w-full" inputMode={type === 'integer' ? 'numeric' : undefined} placeholder={HINT[type]} value={value} onChange={(e) => onChange(e.target.value)} />}
+        ? <textarea className="textarea textarea-sm w-full" rows={Math.max(2, value.split('\n').length)} placeholder={HINT[type]?.()} value={value} onChange={(e) => onChange(e.target.value)} />
+        : <input className="input input-sm w-full" inputMode={type === 'integer' ? 'numeric' : undefined} placeholder={HINT[type]?.()} value={value} onChange={(e) => onChange(e.target.value)} />}
     </label>
   );
 }
@@ -113,7 +113,7 @@ function Repaste({ conflicts, take, onTake, onApply, onCancel }: {
   const show = (v: unknown) => (Array.isArray(v) ? v.join('; ') : String(v));
   return (
     <section className="flex flex-col gap-2 rounded-box border border-warning p-3">
-      <h3 className="text-sm font-semibold">The pasted BibTeX differs here: take its value?</h3>
+      <h3 className="text-sm font-semibold">{t('differs')}</h3>
       {conflicts.map((c) => (
         <label key={c.field} className="flex items-start gap-2 text-sm">
           <input type="checkbox" className="checkbox checkbox-sm mt-0.5" checked={take.includes(c.field)} onChange={(e) => onTake(c.field, e.target.checked)} />
@@ -125,8 +125,8 @@ function Repaste({ conflicts, take, onTake, onApply, onCancel }: {
         </label>
       ))}
       <div className="flex justify-end gap-2">
-        <button type="button" className="btn btn-sm btn-ghost" onClick={onCancel}>Keep all mine</button>
-        <button type="button" className="btn btn-sm btn-primary" onClick={onApply}>Apply</button>
+        <button type="button" className="btn btn-sm btn-ghost" onClick={onCancel}>{t('keep_mine')}</button>
+        <button type="button" className="btn btn-sm btn-primary" onClick={onApply}>{t('apply')}</button>
       </div>
     </section>
   );
@@ -156,9 +156,9 @@ function NewClaim({ source, onError }: { source: string; onError: (e: unknown) =
   };
   return (
     <div className="flex flex-col gap-2 rounded-box border border-base-300 p-2">
-      <MarkdownEditor value={main} onChange={setMain} placeholder="A claim this source makes" minHeight="3rem" onSave={() => { if (main.trim()) void add(); }} />
+      <MarkdownEditor value={main} onChange={setMain} placeholder={t('claim_placeholder')} minHeight="3rem" onSave={() => { if (main.trim()) void add(); }} />
       <div className="flex justify-end">
-        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !main.trim()} onClick={() => void add()}><Plus className="size-4" /> Add claim</button>
+        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !main.trim()} onClick={() => void add()}><Plus className="size-4" /> {t('add_claim')}</button>
       </div>
     </div>
   );
@@ -182,7 +182,7 @@ function Claims({ source }: { source: string }) {
   const rows = items.flatMap((n) => relationsOf(n).flatMap((r, i) => (r.to === source ? [{ n, r, i }] : [])));
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold">Claims</h3>
+      <h3 className="text-sm font-semibold">{t('claims')}</h3>
       {error && <div role="alert" className="alert alert-error text-sm">{error}</div>}
       {rows.map(({ n, r, i }) => (
         <div key={`${n.id}:${i}`} className="flex flex-col gap-2 rounded-box border border-base-300 p-2">
@@ -190,14 +190,14 @@ function Claims({ source }: { source: string }) {
           <div className="flex items-center gap-1">
             {r.label !== DEFAULT_LABEL && <span className="text-xs text-base-content/60">{r.label}</span>}
             <span className="flex-1" />
-            <button type="button" className="btn btn-ghost btn-xs" title="Edit the note" onClick={() => setEditing(n.id)}><Pencil className="size-3" /></button>
-            <button type="button" className="btn btn-ghost btn-xs" title="Detach: the note stays, unrelated to this source" onClick={() => void detach(n, i)}><Unlink className="size-3" /></button>
+            <button type="button" className="btn btn-ghost btn-xs" title={t('edit_note')} aria-label={t('edit_note')} onClick={() => setEditing(n.id)}><Pencil className="size-3" /></button>
+            <button type="button" className="btn btn-ghost btn-xs" title={t('detach')} aria-label={t('detach')} onClick={() => void detach(n, i)}><Unlink className="size-3" /></button>
           </div>
         </div>
       ))}
-      {hasMore && <button type="button" className="btn btn-ghost btn-sm" onClick={more}>More</button>}
+      {hasMore && <button type="button" className="btn btn-ghost btn-sm" onClick={more}>{t('more')}</button>}
       <NewClaim source={source} onError={fail} />
-      <NotePicker unrelatedTo={source} placeholder="Attach an existing note…" onPick={(n) => void attach(n)} />
+      <NotePicker unrelatedTo={source} placeholder={t('attach_note')} onPick={(n) => void attach(n)} />
       {editing && <Modal onClose={() => setEditing(undefined)}><NoteEditor key={editing} id={editing} /></Modal>}
     </section>
   );
@@ -222,11 +222,11 @@ function Strength({ value, onSave }: { value: number; onSave: (v: number) => voi
   const v = moved ?? value;
   const done = () => { setHeld(false); if (moved === null || moved === value) setMoved(null); else onSave(moved); };
   return (
-    <label className="flex shrink-0 items-center gap-2" title="How strongly it comes up in this source">
-      <input type="range" className="range range-xs w-28" min={0} max={1} step={0.1} value={v} aria-label="How strongly it comes up"
-             onPointerDown={() => setHeld(true)} onChange={(e) => setMoved(Number(e.target.value))}
+    <label className="flex shrink-0 items-center gap-2" title={t('strength_title')}>
+      <input type="range" className="range range-xs w-28" min={0} max={1} step={0.1} value={v} aria-label={t('strength')}
+             onPointerDown={() => setHeld(true)} onChange={(e) => setMoved(e.target.valueAsNumber)}
              onPointerUp={done} onKeyUp={done} onBlur={() => { if (held || moved !== null) done(); }} />
-      <span className="w-8 text-end text-xs tabular-nums text-base-content/60">{v.toFixed(1)}</span>
+      <span className="w-8 text-end text-xs tabular-nums text-base-content/60">{formatNumber(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</span>
     </label>
   );
 }
@@ -246,7 +246,7 @@ function Concepts({ source }: { source: Item }) {
     setError(undefined);
     try {
       const now = (await read.page({ gestalt: SOURCE, ids: [source.id], limit: 1 })).items[0];
-      if (!now) throw new Error('That source is gone.');
+      if (!now) throw new Error(t('source_gone'));
       const next = f(conceptsOf(now.value));
       const { concepts: _old, ...rest } = now.value;
       await write.put(Object.keys(next).length ? { ...rest, concepts: next } : rest);
@@ -254,20 +254,20 @@ function Concepts({ source }: { source: Item }) {
   };
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="text-sm font-semibold">Concepts</h3>
+      <h3 className="text-sm font-semibold">{t('concepts')}</h3>
       {error && <div role="alert" className="alert alert-error text-sm">{error}</div>}
       {ids.map((id) => (
         <div key={id} className="flex items-center gap-2">
-          <button type="button" className="link link-hover min-w-0 flex-1 text-start text-sm break-words" title="Open in the concept explorer"
+          <button type="button" className="link link-hover min-w-0 flex-1 text-start text-sm break-words" title={t('open_concept')}
                   onClick={() => void openView('concept-explorer', { concept: id })}>
             {names.get(id) ?? <code className="text-xs text-base-content/50">{id}</code>}
           </button>
           <Strength value={map[id]} onSave={(v) => void change((m) => ({ ...m, [id]: v }))} />
-          <button type="button" className="btn btn-ghost btn-xs btn-square" title="Remove the concept from this source"
+          <button type="button" className="btn btn-ghost btn-xs btn-square" title={t('remove_concept')} aria-label={t('remove_concept')}
                   onClick={() => void change((m) => { const { [id]: _gone, ...rest } = m; return rest; })}><X className="size-3" /></button>
         </div>
       ))}
-      <ConceptPicker exclude={new Set(ids)} placeholder="Add a concept it's about…" onPick={(id) => void change((m) => (id in m ? m : { ...m, [id]: STRENGTH }))} />
+      <ConceptPicker exclude={new Set(ids)} placeholder={t('add_concept')} onPick={(id) => void change((m) => (id in m ? m : { ...m, [id]: STRENGTH }))} />
     </section>
   );
 }
@@ -287,13 +287,14 @@ function Editor({ source, incoming, onBack, onSaved, onDeleted }: {
   source?: Item; incoming?: Bib; onBack: () => void; onSaved: (saved: Item) => void; onDeleted: () => void;
 }) {
   const write = useWrite();
+  const { lang } = useLocale();
   const read = useRead();
   const [start] = useState(() => {
     const draft = draftOf(source?.value ?? { entrytype: 'misc' });
     if (!incoming) return { draft };
     try {
       const m = mergeInto(draft, incoming, []);
-      return { draft: m.draft, notice: m.filled.length ? `Filled ${m.filled.join(', ')}.` : undefined, pending: m.conflicts.length ? { incoming, conflicts: m.conflicts, take: m.conflicts.map((c) => c.field).filter((f) => f !== 'key') } : undefined };
+      return { draft: m.draft, notice: m.filled.length ? t('filled', { fields: m.filled.join(', ') }) : undefined, pending: m.conflicts.length ? { incoming, conflicts: m.conflicts, take: m.conflicts.map((c) => c.field).filter((f) => f !== 'key') } : undefined };
     } catch (e) { return { draft, error: message(e) }; }
   });
   const [draft, setDraft] = useState<Draft>(start.draft);
@@ -313,10 +314,10 @@ function Editor({ source, incoming, onBack, onSaved, onDeleted }: {
     try {
       const bib = bibOfDraft(d);
       const key = await freeKey(read, bib.key, source?.id);
-      if (key !== bib.key && source) throw new Error(`Another source has the key '${bib.key}'.`);
+      if (key !== bib.key && source) throw new Error(t('key_taken', { key: bib.key }));
       const saved = await write.put(sourceValue(source?.id, { ...bib, key }, d, source?.value));
       setDraft((d) => ({ ...d, key }));
-      setNotice((n) => (key !== bib.key ? `Saved, as '${key}': '${bib.key}' was taken.` : n ?? 'Saved.'));
+      setNotice((n) => (key !== bib.key ? t('saved_as', { key, wanted: bib.key }) : n ?? t('saved')));
       onSaved(saved);
     } catch (e) { fail(e); } finally { setBusy(false); }
   };
@@ -332,11 +333,11 @@ function Editor({ source, incoming, onBack, onSaved, onDeleted }: {
     setError(undefined);
     try {
       const entries = parseBibtex(text);
-      if (entries.length !== 1) throw new Error(`Expected one BibTeX entry, found ${entries.length}.`);
+      if (entries.length !== 1) throw new Error(t('one_entry', { n: entries.length }));
       const incomingBib = normalise({ ...entries[0] });
       const m = mergeInto(draft, incomingBib, []);
       setDraft(m.draft);
-      setNotice(m.filled.length ? `Filled ${m.filled.join(', ')}.` : m.conflicts.length ? undefined : 'Nothing new in the BibTeX.');
+      setNotice(m.filled.length ? t('filled', { fields: m.filled.join(', ') }) : m.conflicts.length ? undefined : t('nothing_new'));
       setPending(m.conflicts.length ? { incoming: incomingBib, conflicts: m.conflicts, take: m.conflicts.map((c) => c.field).filter((f) => f !== 'key') } : undefined);
       if (m.filled.length) void save(m.draft);
     } catch (e) { fail(e); }
@@ -358,12 +359,12 @@ function Editor({ source, incoming, onBack, onSaved, onDeleted }: {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-1 border-b border-base-300 p-2">
-        <button type="button" className="btn btn-sm btn-ghost md:hidden" title="Back to the list" onClick={onBack}><ArrowLeft className="size-4" /></button>
-        <button type="button" className="btn btn-sm btn-ghost" title="Update this source from the BibTeX in the clipboard" onClick={() => void clipboardText().then(merge, fail)}><ClipboardPaste className="size-4" /> BibTeX</button>
+        <button type="button" className="btn btn-sm btn-ghost md:hidden" title={t('back')} aria-label={t('back')} onClick={onBack}><ArrowLeft className="size-4" /></button>
+        <button type="button" className="btn btn-sm btn-ghost" title={t('update_title')} onClick={() => void clipboardText(lang).then(merge, fail)}><ClipboardPaste className="size-4" /> BibTeX</button>
         <span className="flex-1" />
         {notice && <span className="truncate text-sm text-base-content/60">{notice}</span>}
-        {source && <button type="button" className="btn btn-sm btn-ghost" title="Delete" onClick={() => setConfirming(true)}><Trash2 className="size-4" /></button>}
-        <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void save()}>Save</button>
+        {source && <button type="button" className="btn btn-sm btn-ghost" title={t('delete')} aria-label={t('delete')} onClick={() => setConfirming(true)}><Trash2 className="size-4" /></button>}
+        <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void save()}>{t('save')}</button>
       </div>
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
         {error && <div role="alert" className="alert alert-error text-sm whitespace-pre-wrap">{error}</div>}
@@ -372,14 +373,14 @@ function Editor({ source, incoming, onBack, onSaved, onDeleted }: {
                    onTake={(f, on) => setPending({ ...pending, take: on ? [...pending.take, f] : pending.take.filter((x) => x !== f) })} />
         )}
 
-        <input className="input w-full" placeholder="Title" value={draft.title} onChange={(e) => set({ title: e.target.value })} />
+        <input className="input w-full" placeholder={t('title')} aria-label={t('title')} value={draft.title} onChange={(e) => set({ title: e.target.value })} />
         <div className="grid grid-cols-2 gap-2">
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-base-content/70">key</span>
+            <span className="text-xs font-semibold text-base-content/70">{t('key')}</span>
             <input className="input input-sm w-full font-mono" placeholder={slug(draft.title).slice(0, 40) || 'doe2020'} value={draft.key} onChange={(e) => set({ key: e.target.value })} />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-xs font-semibold text-base-content/70">type</span>
+            <span className="text-xs font-semibold text-base-content/70">{t('type')}</span>
             <select className="select select-sm w-full" value={draft.entrytype} onChange={(e) => { if (isEntryType(e.target.value)) set({ entrytype: e.target.value }); }}>
               {Object.keys(ENTRY_TYPES).map((t) => <option key={t} value={t}>{t}</option>)}
             </select>
@@ -389,19 +390,19 @@ function Editor({ source, incoming, onBack, onSaved, onDeleted }: {
           {fields.map((f) => <FieldInput key={f} field={f} value={draft.fields[f] ?? ''} onChange={(v) => setField(f, v)} />)}
         </div>
         {more.length > 0 && (
-          <select className="select select-sm w-full md:w-60" aria-label="Add a field" value={adding} onChange={(e) => { const f = e.target.value as FieldName; setAdding(''); if (f) set({ added: [...draft.added, f] }); }}>
-            <option value="">Add a field…</option>
+          <select className="select select-sm w-full md:w-60" aria-label={t('add_field')} value={adding} onChange={(e) => { const f = e.target.value as FieldName; setAdding(''); if (f) set({ added: [...draft.added, f] }); }}>
+            <option value="">{t('add_field_option')}</option>
             {more.map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
         )}
-        <ListInput label="Alias" prefix="aliases" placeholder="Another way you'd look for it…" value={draft.aliases} onChange={(aliases) => set({ aliases })} />
-        <ListInput label="Tag" prefix="tags" value={draft.tags} onChange={(tags) => set({ tags })} />
-        <MarkdownEditor value={draft.extra} onChange={(extra: string) => set({ extra })} placeholder="Extra" minHeight="3rem" />
-        {source ? <><Concepts source={source} /><Claims source={source.id} /></> : <p className="text-sm text-base-content/60">Save the source to add concepts and claims about it.</p>}
+        <ListInput label={t('alias')} prefix={t('aliases')} placeholder={t('alias_placeholder')} value={draft.aliases} onChange={(aliases) => set({ aliases })} />
+        <ListInput label={t('tag')} prefix={t('tags')} value={draft.tags} onChange={(tags) => set({ tags })} />
+        <MarkdownEditor value={draft.extra} onChange={(extra: string) => set({ extra })} placeholder={t('extra')} minHeight="3rem" />
+        {source ? <><Concepts source={source} /><Claims source={source.id} /></> : <p className="text-sm text-base-content/60">{t('save_first')}</p>}
       </div>
       {confirming && (
-        <ConfirmDialog title="Delete this source?" onClose={() => setConfirming(false)} onConfirm={remove}>
-          Notes about it will stay, pointing at nothing. This cannot be undone.
+        <ConfirmDialog title={t('delete_title')} confirmLabel={t('delete')} onClose={() => setConfirming(false)} onConfirm={remove}>
+          {t('delete_text')}
         </ConfirmDialog>
       )}
     </div>
@@ -427,15 +428,15 @@ function Export() {
     try {
       const items = await read.all({ gestalt: SOURCE });
       const r = await service<{ path: string; written: boolean }>('/export', { path, text: renderBibtex(items.map((i) => bibOf(i.value))) });
-      setStatus({ ok: true, text: `${items.length} sources ${r.written ? 'written to' : 'unchanged in'} ${r.path}` });
+      setStatus({ ok: true, text: r.written ? t('written', { n: items.length, path: r.path }) : t('unchanged', { n: items.length, path: r.path }) });
     } catch (e) { setStatus({ ok: false, text: message(e) }); } finally { setBusy(false); }
   };
   return (
     <details className="border-t border-base-300 p-2">
-      <summary className="cursor-pointer text-sm"><Download className="inline size-4" /> Export .bib</summary>
+      <summary className="cursor-pointer text-sm"><Download className="inline size-4" /> {t('export')}</summary>
       <div className="mt-2 flex gap-2">
-        <input className="input input-sm min-w-0 flex-1 font-mono" aria-label="Where to write the .bib" value={path} onChange={(e) => setPath(e.target.value)} />
-        <button type="button" className="btn btn-sm" disabled={busy || !path.trim()} onClick={() => void run()}>Write</button>
+        <input className="input input-sm min-w-0 flex-1 font-mono" aria-label={t('export_where')} value={path} onChange={(e) => setPath(e.target.value)} />
+        <button type="button" className="btn btn-sm" disabled={busy || !path.trim()} onClick={() => void run()}>{t('write')}</button>
       </div>
       {status && <p className={`mt-1 text-xs break-words ${status.ok ? 'text-base-content/60' : 'text-error'}`}>{status.text}</p>}
     </details>
@@ -461,11 +462,11 @@ function List({ selected, status, busy, onSelect, onNew, onPaste }: {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-2 border-b border-base-300 p-2">
-        <input className="input input-sm min-w-0 flex-1" type="search" placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <button type="button" className="btn btn-sm btn-square" title="Add the BibTeX in the clipboard (or press Ctrl+V)" disabled={busy} onClick={onPaste}>
+        <input className="input input-sm min-w-0 flex-1" type="search" placeholder={t('search')} aria-label={t('search')} value={search} onChange={(e) => setSearch(e.target.value)} />
+        <button type="button" className="btn btn-sm btn-square" title={t('paste_title')} aria-label={t('paste_title')} disabled={busy} onClick={onPaste}>
           {busy ? <span className="loading loading-spinner loading-xs" /> : <ClipboardPaste className="size-4" />}
         </button>
-        <button type="button" className="btn btn-sm btn-primary btn-square" title="New source" onClick={onNew}><Plus className="size-4" /></button>
+        <button type="button" className="btn btn-sm btn-primary btn-square" title={t('new')} aria-label={t('new')} onClick={onNew}><Plus className="size-4" /></button>
       </div>
       {status && <p role={status.ok ? 'status' : 'alert'} className={`border-b border-base-300 px-3 py-2 text-sm break-words ${status.ok ? 'text-base-content/70' : 'text-error'}`}>{status.text}</p>}
       <ul className="min-h-0 flex-1 overflow-y-auto">
@@ -478,7 +479,7 @@ function List({ selected, status, busy, onSelect, onNew, onPaste }: {
           </li>
         ))}
         {hasMore && <li ref={end} className="flex justify-center p-3"><span className="loading loading-spinner loading-sm" /></li>}
-        {!loading && !items.length && <li className="p-6 text-center text-base-content/60">{text.trim() ? 'Nothing found.' : 'No sources yet.'}</li>}
+        {!loading && !items.length && <li className="p-6 text-center text-base-content/60">{text.trim() ? t('nothing_found') : t('no_sources')}</li>}
       </ul>
       {capabilities?.backend && <Export />}
     </div>
@@ -492,6 +493,7 @@ type Pane = { kind: 'none' } | { kind: 'new' } | { kind: 'source'; id: string; i
  * every other entry becomes a new source. Says what it did; differences to decide open with that source.
  */
 function useIngest(open: (id: string, incoming?: Bib) => void) {
+  const { lang } = useLocale();
   const read = useRead();
   const write = useWrite();
   const [status, setStatus] = useState<Status>();
@@ -500,7 +502,7 @@ function useIngest(open: (id: string, incoming?: Bib) => void) {
     setBusy(true);
     setStatus(undefined);
     try {
-      const r = await ingestBibtex(read, write, text);
+      const r = await ingestBibtex(read, write, text, lang);
       setStatus({ ok: r.ok, text: r.said.join(' ') });
       if (r.show) open(r.show.id, r.show.incoming);
     } catch (e) { setStatus({ ok: false, text: message(e) }); } finally { setBusy(false); }
@@ -525,7 +527,8 @@ export default function SourceManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- follows the param only
   }, [selected]);
   const { ingest, status, busy, fail } = useIngest(open);
-  const fromClipboard = () => void clipboardText().then(ingest, fail);
+  const { lang } = useLocale();
+  const fromClipboard = () => void clipboardText(lang).then(ingest, fail);
   // Ctrl+V anywhere but in a field adds what's pasted
   const latest = useRef(ingest);
   useEffect(() => { latest.current = ingest; });

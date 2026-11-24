@@ -1,7 +1,7 @@
 /**
  * A distribution's outlines (`outlines:` in `distribution.yml`, each a folder in the repo's `outlines/`): which views
  * are found under each entry, worked out once per build by the core (`outline_index`, through the wasm), from the
- * outlines' ymls and only the `deck@3` and concept ymls of the distribution's decks. The site gets a summary per
+ * outlines' ymls and only the deck ymls (`deck@3`, `deck@4`) and concept ymls of the distribution's decks. The site gets a summary per
  * outline in its registry and the whole tree as `outlines/<name>.json`, loaded only by the outline's page; entries
  * no view practises, and leaves nobody said anything about, are `outlines/<name>.gaps.json`, for whoever writes the
  * next view.
@@ -78,7 +78,7 @@ export async function buildOutlines(outlines: OutlineDir[], decks: { source: str
     decks: decks.map((d) => ({ source: d.source, ymls: ymlsOf(d.dir, (f, t) => f.startsWith('concept-') || /^gestalt:\s*deck@\d+\s*$/m.test(t)) })),
   };
   const index = JSON.parse((await loadCore()).outlineIndex(JSON.stringify(input))) as Index;
-  for (const s of index.skipped) console.warn(`outlines: ${s} is no deck@3, so no outline finds it`);
+  for (const s of index.skipped) console.warn(`outlines: ${s} says nothing it practises (no deck@3 or deck@4), so no outline finds it`);
   return index.outlines.map(({ unpractised, unmapped, ...o }) => {
     console.log(`outlines: ${o.name}: ${o.leavesWithViews} of ${o.leaves} leaves with views; ${unpractised.length} entries no view practises, ${unmapped.length} leaves without concepts`);
     const summary: OutlineSummary = {

@@ -1,0 +1,166 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  status_root:
+    text: "Die Wurzel"
+    source: 3fe39b753912a06f
+  status_attached:
+    text: "Im Zettelkasten"
+    source: b163ec3846323f0e
+  status_floating:
+    text: "Eingeordnet, aber ohne Weg zur Wurzel"
+    source: 57efb6ab770af3db
+  status_unplaced:
+    text: "Noch nicht eingeordnet"
+    source: c5cbd77046eb1ed2
+  status_excluded:
+    text: "Aus dem Zettelkasten herausgehalten"
+    source: 665b4502706f334e
+  mark_parent_missing:
+    text: "Ihr Platz ist eine Notiz, die es (nicht mehr) gibt."
+    source: 74893ce8a611bdcd
+  mark_parent_unplaced:
+    text: "Ihr Platz ist eine Notiz, die noch nicht eingeordnet ist."
+    source: f02b00c3803a7bc0
+  mark_parent_excluded:
+    text: "Ihr Platz ist eine Notiz, die aus dem Zettelkasten herausgehalten wird."
+    source: 11b0dd1c2e6d07e4
+  mark_cycle:
+    text: "Ihre Plätze drehen sich im Kreis."
+    source: 746f8b4eb5725dca
+  mark_placed_twice:
+    text: "Sie ist an mehr als einem Platz eingeordnet."
+    source: f5bc6ec21d129f38
+  mark_fork:
+    text: "Eine andere Notiz folgt schon auf dieselbe Notiz."
+    source: e768bd74a469e3e0
+  mark_extra_root:
+    text: "Es gibt schon eine Wurzel."
+    source: 245d234bd595f7d4
+  mark_root_placed:
+    text: "Die Wurzel ist auch irgendwo eingeordnet; dieser Platz wird ignoriert."
+    source: 5a345e643a520527
+  mark_excluded_placed:
+    text: "Sie soll herausgehalten werden, ist aber eingeordnet."
+    source: 8dc13a85243a734a
+  note_gone:
+    text: "Diese Notiz gibt es nicht mehr."
+    source: 5d1442e6c330d41b
+  all_placed:
+    text: "Jede Notiz ist eingeordnet oder herausgehalten."
+    source: c28cddd395d07fd6
+  title:
+    text: "Zettelkasten"
+    source: da01fabc39d8dddc
+  no_root:
+    text: "Noch keine Wurzel. Mach eine Notiz zur Wurzel, um anzufangen: Alles andere wird danach oder darunter eingeordnet."
+    source: 1f447980bbdfcdd3
+  next:
+    text: "Weiter"
+    source: cb3caabd61cbc874
+  edit:
+    text: "Bearbeiten"
+    source: 76cbeae0d5a5f1d0
+  edit_title:
+    text: "In den Notizen bearbeiten"
+    source: 8c4c52c2a1ced7cf
+  drag:
+    text: "Auf eine Notiz im Baum oder in der Suche ziehen, um sie dort einzuordnen"
+    source: 8d8affec5facd919
+  skip:
+    text: "Überspringen"
+    source: 51603bbb78e4824a
+  next_unplaced:
+    text: "Nächste nicht eingeordnete"
+    source: b9779c6d5e42736a
+  unplace:
+    text: "Herausnehmen"
+    source: f9f7d3468bf07062
+  keep_out:
+    text: "Heraushalten"
+    source: 4caa3491c1afaae8
+  let_in:
+    text: "Hereinlassen"
+    source: b16ece18e1a9189d
+  make_root:
+    text: "Zur Wurzel machen"
+    source: d7b9e944eb73dc03
+  how_move:
+    text: "Um sie zu verschieben, wähle eine Notiz im Baum oder in der Suche, oder zieh die Notiz darauf: Sie kommt danach oder beginnt einen Zweig darunter."
+    source: 5e221c38b4483f72
+  how_place:
+    text: "Um sie einzuordnen, wähle eine Notiz im Baum oder in der Suche, oder zieh die Notiz darauf: Sie kommt danach oder beginnt einen Zweig darunter."
+    source: 6a1ad3106048531b
+  unplace_title:
+    text: "Diese Notiz herausnehmen?"
+    source: f77424a7aa60d96a
+  unplace_text:
+    text: "Was von ihr abzweigt, schwebt, bis sie wieder eingeordnet ist."
+    source: 19b08c61da2b76e4
+  missing_note:
+    text: "eine fehlende Notiz"
+    source: 213fca85901fa794
+  place_first:
+    text: "Erst diese Notiz einordnen"
+    source: 061ee8b6f3cec6a9
+  keep_after:
+    text: "Behalten: nach"
+    source: ae8bb53fba3606ba
+  keep_under:
+    text: "Behalten: unter"
+    source: d58ae903fa9e76e2
+  not_root:
+    text: "Nicht die Wurzel"
+    source: 8c845dca1a513bf5
+  remove_place:
+    text: "Platz entfernen"
+    source: 2fdefa6d792d5c6b
+  let_it_in:
+    text: "Hereinlassen"
+    source: 3179520d1aae663a
+  search:
+    text: "Suchen, wo sie hingehört"
+    source: e884afb9b1bed9eb
+  nothing_found:
+    text: "Nichts gefunden."
+    source: b4656a91a3863581
+  itself:
+    text: "Das ist die Notiz selbst."
+    source: 4dfc37f29d784faa
+  below_itself:
+    text: "Das ist unter der Notiz selbst eingeordnet."
+    source: 57cf487ef521c050
+  place_first_why:
+    text: "{status}: erst einordnen."
+    source: 7dc667189e202625
+  already_here:
+    text: "Sie ist schon hier."
+    source: 5c850a07fb630853
+  has_follower:
+    text: "Auf diese folgt schon eine andere Notiz: Ordne sie nach jener ein, oder zweig hier ab."
+    source: f5c85c6d11b8da8f
+  after_this:
+    text: "Danach"
+    source: a6261c3a28873afd
+  branch_this:
+    text: "Hier abzweigen"
+    source: ff4db6802c89b2c1
+  nothing_to_place:
+    text: "Nichts einzuordnen."
+    source: e5ede381dbe9963f
+  hide:
+    text: "Was daran hängt, ausblenden"
+    source: 97d8540118168d73
+  show:
+    text: "Was daran hängt, zeigen"
+    source: acc3abfeac005bad
+  attention:
+    text: "Braucht Aufmerksamkeit"
+    source: 7ffe2587acd6aa2f
+  more:
+    text: "Mehr"
+    source: 6b29418dc0c36e68
+  focus:
+    text: "Fokus"
+    source: 2e743eccff954c97

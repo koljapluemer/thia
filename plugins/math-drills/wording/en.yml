@@ -1,0 +1,28 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  back:
+    text: "Back"
+    description: "icon button at the top of a topic: back to the list of topics"
+  reveal:
+    text: "Reveal answers"
+    description: "below a question: shows the answers to pick from"
+  no_questions:
+    text: "No questions in this topic."
+    description: "shown in a topic that has none"
+  not_saved:
+    text: "Couldn't save your last answer: {error}"
+    description: "an alert when an answer could not be saved; error says why"
+  dismiss:
+    text: "Dismiss"
+    description: "closes that alert"
+  title:
+    text: "Math Drills"
+    description: "the heading over the list of topics"
+  which_topic:
+    text: "Which topic?"
+    description: "below the heading: asks to pick a topic"
+  no_decks:
+    text: "No math decks here yet."
+    description: "below the heading when there are no topics"

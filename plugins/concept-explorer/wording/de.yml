@@ -1,0 +1,106 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  detach_source:
+    text: "Die Quelle von dieser Notiz lösen"
+    source: 74ae380f1bfca60c
+  delete_source:
+    text: "Die Quelle löschen"
+    source: 95f63de9bd2cadce
+  delete_named:
+    text: "{name} löschen?"
+    source: 2283de69ecbb2a46
+  delete_source_text:
+    text: "Andere Notizen zu dieser Quelle bleiben und zeigen dann ins Leere. Das lässt sich nicht rückgängig machen."
+    source: 20cd3f8d644db2ef
+  how_relates:
+    text: "Wie das mit dem Begriff zusammenhängt"
+    source: 03f890a204351b2e
+  sheds_light:
+    text: "beleuchtet"
+    source: ea85f31032931e6f
+  the_note:
+    text: "Die Notiz"
+    source: 527da3cde58f8c85
+  note_placeholder:
+    text: "Etwas zu diesem Begriff…"
+    source: f82e24f7604490e8
+  add_source:
+    text: "Quelle hinzufügen"
+    source: a0ab3ab9f59e535c
+  source:
+    text: "Quelle"
+    source: 702859812fc6e810
+  detach_note:
+    text: "Lösen: Die Notiz bleibt, ohne Bezug zu diesem Begriff"
+    source: 51947b473f6265b0
+  delete_note:
+    text: "Die Notiz löschen"
+    source: bf5fdba875d6c4ee
+  delete_note_title:
+    text: "Diese Notiz löschen?"
+    source: c501f66c28b5ece4
+  cannot_undo:
+    text: "Das lässt sich nicht rückgängig machen."
+    source: 43ef169b5f5c7ffe
+  note_gone:
+    text: "Diese Notiz gibt es nicht mehr."
+    source: 5d1442e6c330d41b
+  attach_note:
+    text: "Eine vorhandene Notiz anhängen…"
+    source: 1d873e9b2dec0376
+  alias:
+    text: "Alias"
+    source: cdc39600b4240587
+  also:
+    text: "auch"
+    source: 7fb0dbf37b99ddb7
+  logit:
+    text: "Logit {mean} ± {sd}"
+    source: aa6ac76ac153e969
+  known:
+    text: "Zu etwa {p} gekonnt, nach {n, plural, one {# Antwort} other {# Antworten}} dazu."
+    source: 628c9b13fc0aa500
+  known_last:
+    text: "Zu etwa {p} gekonnt, nach {n, plural, one {# Antwort} other {# Antworten}} dazu, zuletzt am {date}."
+    source: e8f0a0e192a2f5f4
+  not_practised:
+    text: "Noch nicht geübt."
+    source: 097e497243c8378d
+  members_known:
+    text: "{n} seiner Elemente gekonnt."
+    source: f1d3e1c766409dc1
+  one_of:
+    text: "Eins von"
+    source: d98ae43928be4417
+  says_about:
+    text: "Sagt etwas aus über"
+    source: 8cbc391d11b64b46
+  said_about:
+    text: "Darüber sagen etwas aus"
+    source: 95e4fcf99fffae75
+  claimed_by:
+    text: "behauptet von {source}"
+    source: bdd369b94185488a
+  name:
+    text: "Name"
+    source: 583eacff906b63bf
+  switch:
+    text: "Zu einem anderen Begriff"
+    source: effba784a66d1302
+  rename:
+    text: "Umbenennen"
+    source: 4b9ab5c6746f8223
+  delete_concept:
+    text: "Den Begriff löschen"
+    source: dbfbe7e04ff65007
+  delete_concept_title:
+    text: "„{name}“ löschen?"
+    source: 075e6506f80ad795
+  delete_concept_text:
+    text: "Seine Notizen bleiben, ohne Bezug zu ihm, und seine Verknüpfungen werden gelöscht. Das lässt sich nicht rückgängig machen."
+    source: 6808d3ce19ea6266
+  delete:
+    text: "Löschen"
+    source: 5cd41daf77b3849f

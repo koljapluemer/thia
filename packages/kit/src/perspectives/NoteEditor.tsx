@@ -5,6 +5,7 @@ import { ListInput } from '../components';
 import { MarkdownEditor } from '../primitives';
 import { AddSource, ItemPicker, NoteTitle, SOURCE_LABEL, byline, sourceTitle, storeFile } from '../widgets';
 import { blobsOf, type BlobRef } from './NoteCard';
+import { m, useAt } from '../primitives/words';
 
 const NOTE = 'note@1';
 const SOURCE = 'source@1';
@@ -42,7 +43,7 @@ export function patched(base: JsonMap, patch: Patch): JsonMap {
 const hasContent = (v: JsonMap) => Object.keys(v).some((k) => k !== 'id' && k !== 'gestalt');
 
 /** The views that edit what a note relates to, by its gestalt, and the param that says which one. */
-const EDITOR: Record<string, { view: string; param: string; kind: string; Icon: typeof StickyNote }> = {
+const EDITOR: Record<string, { view: string; param: string; kind: 'note' | 'concept' | 'source'; Icon: typeof StickyNote }> = {
   [NOTE]: { view: 'note-crud', param: 'note', kind: 'note', Icon: StickyNote },
   ...Object.fromEntries(CONCEPTS.map((g) => [g, { view: 'concept-explorer', param: 'concept', kind: 'concept', Icon: Lightbulb }])),
   [SOURCE]: { view: 'source-manager', param: 'source', kind: 'source', Icon: BookOpen },
@@ -125,27 +126,31 @@ function RelationshipRow({ r, target, known, onLabel, onDetach }: {
   r: Relationship; target?: Item; known: boolean; onLabel: (label: string) => void; onDetach: () => void;
 }) {
   const { openView } = useHost();
+  const at = useAt();
   const editor = target ? EDITOR[target.gestalt] : undefined;
   const Icon = editor?.Icon;
+  const kind = editor && { note: m.kit_kind_note, concept: m.kit_kind_concept, source: m.kit_kind_source }[editor.kind]({}, at);
+  const openTitle = editor && { note: m.kit_open_note, concept: m.kit_open_concept, source: m.kit_open_source }[editor.kind]({}, at);
   return (
     <div className="flex items-center gap-2">
-      <BlurInput className="input input-sm w-36 shrink-0" aria-label="How it relates" placeholder={RELATED} value={r.label === RELATED ? '' : r.label}
+      <BlurInput className="input input-sm w-36 shrink-0" aria-label={m.kit_how_relates({}, at)} placeholder={m.kit_related({}, at)} value={r.label === RELATED ? '' : r.label}
                  onCommit={(l) => onLabel(l.trim() || RELATED)} />
-      <span className="flex w-5 shrink-0 justify-center text-base-content/60" title={editor?.kind}>{Icon && <Icon className="size-4" />}</span>
+      <span className="flex w-5 shrink-0 justify-center text-base-content/60" title={kind}>{Icon && <Icon className="size-4" />}</span>
       <span className="flex min-w-0 flex-1 items-baseline">
-        {target ? <TargetName item={target} /> : <span className="text-base-content/60">{known ? '(gone) ' : ''}<code>{r.to}</code></span>}
+        {target ? <TargetName item={target} /> : <span className="text-base-content/60">{known && <>{m.kit_gone({}, at)} </>}<code>{r.to}</code></span>}
       </span>
       {editor && (
-        <button type="button" className="btn btn-ghost btn-xs btn-square" title={`Open the ${editor.kind} in a new browser tab`}
+        <button type="button" className="btn btn-ghost btn-xs btn-square" title={openTitle} aria-label={openTitle}
                 onClick={() => void openView(editor.view, { [editor.param]: r.to }, { newTab: true })}><ExternalLink className="size-3" /></button>
       )}
-      <button type="button" className="btn btn-ghost btn-xs btn-square" title="Detach: both stay, unrelated" onClick={onDetach}><Unlink className="size-3" /></button>
+      <button type="button" className="btn btn-ghost btn-xs btn-square" title={m.kit_detach({}, at)} aria-label={m.kit_detach({}, at)} onClick={onDetach}><Unlink className="size-3" /></button>
     </div>
   );
 }
 
 /** A note's relationships: each to something named, with a label (`related` when left empty). */
 function Relationships({ self, value, onChange }: { self: string; value: Relationship[]; onChange: (r: Relationship[]) => void }) {
+  const at = useAt();
   const targets = useTargets(value.map((r) => r.to));
   const [adding, setAdding] = useState(false);
   const linked = new Set(value.map((r) => r.to));
@@ -155,7 +160,7 @@ function Relationships({ self, value, onChange }: { self: string; value: Relatio
   };
   return (
     <section className="flex flex-col gap-2">
-      <h3 className="font-semibold">Relationships</h3>
+      <h3 className="font-semibold">{m.kit_relationships({}, at)}</h3>
       {value.map((r, i) => (
         <RelationshipRow key={`${r.to}:${i}`} r={r} target={targets?.get(r.to)} known={!!targets}
                          onLabel={(label) => onChange(value.map((x, j) => (j === i ? { ...x, label } : x)))}
@@ -163,7 +168,7 @@ function Relationships({ self, value, onChange }: { self: string; value: Relatio
       ))}
       <div className="flex items-start gap-2">
         <LinkSearch exclude={new Set([...linked, self])} onPick={(id) => add([id], RELATED)} />
-        <button type="button" className="btn btn-ghost btn-sm" title="Add a source" onClick={() => setAdding(true)}><BookPlus className="size-4" /> Source</button>
+        <button type="button" className="btn btn-ghost btn-sm" title={m.kit_add_source({}, at)} onClick={() => setAdding(true)}><BookPlus className="size-4" /> {m.kit_source({}, at)}</button>
       </div>
       {adding && <AddSource attached={linked} onAdd={(ids) => { setAdding(false); add(ids, SOURCE_LABEL); }} onClose={() => setAdding(false)} />}
     </section>
@@ -176,14 +181,15 @@ function Relationships({ self, value, onChange }: { self: string; value: Relatio
  */
 function LinkSearch({ exclude, onPick }: { exclude: Set<string>; onPick: (id: string) => void }) {
   const write = useWrite();
+  const at = useAt();
   const fold = (s: string) => s.trim().toLowerCase();
   const named = (i: Item, text: string) => fold(str(isConcept(i.gestalt) ? i.value.name : i.value.title)) === fold(text);
   return (
     <ItemPicker
-      placeholder="Link a note or concept, or name a new note…" exclude={exclude} onPick={(i) => onPick(i.id)}
+      placeholder={m.kit_link({}, at)} exclude={exclude} onPick={(i) => onPick(i.id)}
       create={{
         offer: (text, found) => !found.some((i) => named(i, text)),
-        label: (text) => <>New note “{text}”</>,
+        label: (text) => m.kit_new_note({ text }, at),
         run: async (text) => onPick((await write.put({ gestalt: NOTE, title: text })).id),
       }}
       // concepts first: there are few, and a name typed in full is most likely meant
@@ -200,6 +206,7 @@ function LinkSearch({ exclude, onPick }: { exclude: Set<string>; onPick: (id: st
 /** The files a note carries, each with a label. */
 function Files({ blobs, onChange, onError }: { blobs: BlobRef[]; onChange: (b: BlobRef[]) => void; onError: (e: string) => void }) {
   const write = useWrite();
+  const at = useAt();
   const attach = async (files: FileList | null) => {
     const added: BlobRef[] = [];
     for (const f of Array.from(files ?? [])) {
@@ -212,12 +219,12 @@ function Files({ blobs, onChange, onError }: { blobs: BlobRef[]; onChange: (b: B
   };
   return (
     <section className="flex flex-col gap-1">
-      <h3 className="font-semibold">Files</h3>
+      <h3 className="font-semibold">{m.kit_files({}, at)}</h3>
       {blobs.map((b, i) => (
         <div key={b.file} className="flex items-center gap-2">
-          <BlurInput className="input input-sm w-32" aria-label="Label" value={b.label} onCommit={(label) => onChange(blobs.map((x, j) => (j === i ? { ...x, label } : x)))} />
+          <BlurInput className="input input-sm w-32" aria-label={m.kit_label({}, at)} value={b.label} onCommit={(label) => onChange(blobs.map((x, j) => (j === i ? { ...x, label } : x)))} />
           <code className="min-w-0 flex-1 truncate">{b.file}</code>
-          <button type="button" className="btn btn-ghost btn-xs btn-square" title="Remove" onClick={() => onChange(blobs.filter((_, j) => j !== i))}><Trash2 className="size-3" /></button>
+          <button type="button" className="btn btn-ghost btn-xs btn-square" title={m.kit_remove({}, at)} aria-label={m.kit_remove({}, at)} onClick={() => onChange(blobs.filter((_, j) => j !== i))}><Trash2 className="size-3" /></button>
         </div>
       ))}
       <input type="file" multiple className="file-input file-input-sm w-full" onChange={(e) => { void attach(e.target.files); e.target.value = ''; }} />
@@ -275,15 +282,16 @@ function Fields({ id, note, onCreated, autoFocus }: { id: string; note?: Item; o
   }, []);
 
   const set = (patch: Patch) => void commit(patch);
+  const at = useAt();
   return (
     <div className="flex flex-col gap-3 p-3 text-sm">
       {error && <div role="alert" className="alert alert-error whitespace-pre-wrap">{error}</div>}
-      <input className="input input-sm w-full" placeholder="Title" value={texts.title} autoFocus={autoFocus} onChange={(e) => type('title', e.target.value)}
+      <input className="input input-sm w-full" placeholder={m.kit_title({}, at)} aria-label={m.kit_title({}, at)} value={texts.title} autoFocus={autoFocus} onChange={(e) => type('title', e.target.value)}
              onBlur={() => leave('title')} onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }} />
-      <MarkdownEditor value={texts.main} onChange={(v: string) => type('main', v)} onBlur={() => leave('main')} onSave={() => leave('main')} placeholder="Main" />
-      <MarkdownEditor value={texts.extra} onChange={(v: string) => type('extra', v)} onBlur={() => leave('extra')} onSave={() => leave('extra')} placeholder="Extra" minHeight="3rem" />
-      <ListInput label="Alias" prefix="aliases" value={strings(saved.aliases)} onChange={(aliases) => set({ aliases })} />
-      <ListInput label="Tag" prefix="tags" value={strings(saved.tags)} onChange={(tags) => set({ tags })} />
+      <MarkdownEditor value={texts.main} onChange={(v: string) => type('main', v)} onBlur={() => leave('main')} onSave={() => leave('main')} placeholder={m.kit_main({}, at)} />
+      <MarkdownEditor value={texts.extra} onChange={(v: string) => type('extra', v)} onBlur={() => leave('extra')} onSave={() => leave('extra')} placeholder={m.kit_extra({}, at)} minHeight="3rem" />
+      <ListInput label={m.kit_alias({}, at)} prefix={m.kit_aliases({}, at)} value={strings(saved.aliases)} onChange={(aliases) => set({ aliases })} />
+      <ListInput label={m.kit_tag({}, at)} prefix={m.kit_tags({}, at)} value={strings(saved.tags)} onChange={(tags) => set({ tags })} />
       <Relationships self={id} value={relationsOf(saved)} onChange={(relationships) => set({ relationships })} />
       <Files blobs={blobsOf(saved)} onChange={(blobs) => set({ blobs })} onError={setError} />
     </div>

@@ -4,9 +4,10 @@ A plugin is a folder:
 
 ```
 my-plugin/
-  plugin.yml      # id, version, title; optional description, reads, writes, tags, requires
+  plugin.yml      # id, version, title, lang; optional description, reads, writes, tags, requires, target_lang
   view.tsx        # one React file; its default export is the view
-  decks/<id>/              # optional: ymls it ships, one deck yml among them (`deck@3` on the public site)
+  wording/<lang>.yml       # its own text (wording@1 without `gestalt`): the source in its lang, translations
+  decks/<id>/              # optional: ymls it ships, one deck yml among them (`deck@4` on the public site)
   backend.py               # optional; see Backends
 ```
 
@@ -26,6 +27,14 @@ check refuse a view that uses a part without declaring them, naming what's missi
 name. `packages/check/src/needs.test.ts` keeps each `needs.ts` exact about reads by following every part's code; writes
 are listed by hand. A call the host refuses anyway is reported as the view's error (`kind: 'access'`), in the log and
 to the workshop.
+
+A view's own text is its wording, never its code: `t('key', values)` from `@gestalts/view` shows a key's ICU message
+in the person's language where the view has a wording in it (else its source's), and `formatNumber` and
+`parseNumber` write and read numbers the person's way. The host resolves the layers (`resolveWording`: override >
+reviewed > machine > source, stale entries left out) and sends the text in `ViewInit.wording` with its `lang`;
+rewording while it runs (the workshop) is a `wording` message, with no new frame. The build refuses a plugin whose
+wordings don't hold together, and oxlint (`i18n/*`, `react/jsx-no-literals`) text written into a view, a `t()` key
+its source doesn't have, and numbers parsed or shown the English way; the check does the same for an agent's view.
 
 An app lists its plugins by path in `distribution.yml`, as `core`
 (always there) or `plugins` (installable). An app with areas that need different plugins or models (the web app) has

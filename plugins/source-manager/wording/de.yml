@@ -1,0 +1,166 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  hint_name:
+    text: "Eine pro Zeile: Nachname, Vorname"
+    source: 019eca7642f50ede
+  hint_list:
+    text: "Eins pro Zeile"
+    source: dacab8df93478bf0
+  hint_date:
+    text: "2020, 2020-05 oder 2020-05-17"
+    source: 6a90db24515bcaab
+  differs:
+    text: "Das eingefügte BibTeX weicht hier ab: seinen Wert übernehmen?"
+    source: 0c9ceee213063f7f
+  keep_mine:
+    text: "Alle meine behalten"
+    source: 12fc229d5b20cdac
+  apply:
+    text: "Übernehmen"
+    source: b71e914826438dae
+  claim_placeholder:
+    text: "Eine Aussage dieser Quelle"
+    source: 2b96f2f1115ff50f
+  add_claim:
+    text: "Aussage hinzufügen"
+    source: 719548175e63e3a1
+  claims:
+    text: "Aussagen"
+    source: 8355a6a1fe085f5a
+  edit_note:
+    text: "Die Notiz bearbeiten"
+    source: 58bae699b9e3dbf8
+  detach:
+    text: "Lösen: Die Notiz bleibt, ohne Bezug zu dieser Quelle"
+    source: a68c435c8ff8aec0
+  more:
+    text: "Mehr"
+    source: 6b29418dc0c36e68
+  attach_note:
+    text: "Eine vorhandene Notiz anhängen…"
+    source: 1d873e9b2dec0376
+  strength_title:
+    text: "Wie stark es in dieser Quelle vorkommt"
+    source: 5a7338175ed6a480
+  strength:
+    text: "Wie stark es vorkommt"
+    source: d96e9d7bdf4ce845
+  source_gone:
+    text: "Diese Quelle gibt es nicht mehr."
+    source: 626ea6e501d35e96
+  concepts:
+    text: "Begriffe"
+    source: 2353957129fc4ae9
+  open_concept:
+    text: "Im Begriffs-Explorer öffnen"
+    source: daabdb2345108376
+  remove_concept:
+    text: "Den Begriff von dieser Quelle entfernen"
+    source: a3090e94a1f57b4d
+  add_concept:
+    text: "Einen Begriff hinzufügen, um den es geht…"
+    source: 695875c82a575098
+  filled:
+    text: "Ergänzt: {fields}."
+    source: 324392f75ea7dfe4
+  key_taken:
+    text: "Eine andere Quelle hat schon den Schlüssel '{key}'."
+    source: b2886bd5cabe3444
+  saved_as:
+    text: "Gespeichert, als '{key}': '{wanted}' war vergeben."
+    source: b524b867c11c811c
+  saved:
+    text: "Gespeichert."
+    source: 161272e3b261fe89
+  one_entry:
+    text: "Ein BibTeX-Eintrag erwartet, {n} gefunden."
+    source: 73163d6c94711257
+  nothing_new:
+    text: "Nichts Neues im BibTeX."
+    source: 3f6e7ded3761c556
+  back:
+    text: "Zurück zur Liste"
+    source: 83c47911885339d8
+  update_title:
+    text: "Diese Quelle aus dem BibTeX in der Zwischenablage aktualisieren"
+    source: 0b3f5947bc44922e
+  delete:
+    text: "Löschen"
+    source: 5cd41daf77b3849f
+  save:
+    text: "Speichern"
+    source: 287f0ee1b6bf83bf
+  title:
+    text: "Titel"
+    source: 6eb3fc72e566f506
+  key:
+    text: "Schlüssel"
+    source: d9e6d5434bd2f508
+  type:
+    text: "Typ"
+    source: cf25b2ec6a35fb36
+  add_field:
+    text: "Feld hinzufügen"
+    source: 161c97107e46bcd8
+  add_field_option:
+    text: "Feld hinzufügen…"
+    source: 05346a022dc51008
+  alias:
+    text: "Alias"
+    source: cdc39600b4240587
+  aliases:
+    text: "Aliasse"
+    source: 6a0bd604ebb8cf05
+  alias_placeholder:
+    text: "Wie du sie sonst suchen würdest…"
+    source: 109f37493d9fe1ca
+  tag:
+    text: "Schlagwort"
+    source: d1b2c3cc05c3547f
+  tags:
+    text: "Schlagwörter"
+    source: 5e10dacd97bc25c9
+  extra:
+    text: "Zusatz"
+    source: a7c768627d4cc584
+  save_first:
+    text: "Speichere die Quelle, um Begriffe und Aussagen dazu hinzuzufügen."
+    source: 0eb7e4da0d3e7a48
+  delete_title:
+    text: "Diese Quelle löschen?"
+    source: 13a22e5317591e79
+  delete_text:
+    text: "Notizen dazu bleiben und zeigen dann ins Leere. Das lässt sich nicht rückgängig machen."
+    source: ea1858d71fe96d3b
+  written:
+    text: "{n, plural, one {# Quelle} other {# Quellen}} geschrieben nach {path}"
+    source: 8b901af600de33ca
+  unchanged:
+    text: "{n, plural, one {# Quelle} other {# Quellen}} unverändert in {path}"
+    source: 22b0c33aea19e09f
+  export:
+    text: ".bib exportieren"
+    source: bd6b5e151984f134
+  export_where:
+    text: "Wohin die .bib geschrieben wird"
+    source: 0fedfc2b2db6aeb3
+  write:
+    text: "Schreiben"
+    source: 6338f633edc45977
+  search:
+    text: "Suchen"
+    source: 4d67ccd810f00e9e
+  paste_title:
+    text: "Das BibTeX aus der Zwischenablage hinzufügen (oder Strg+V drücken)"
+    source: 8957f2ddffed0c69
+  new:
+    text: "Neue Quelle"
+    source: 413dbc2b8e4c96fc
+  nothing_found:
+    text: "Nichts gefunden."
+    source: b4656a91a3863581
+  no_sources:
+    text: "Noch keine Quellen."
+    source: 6a9946b778c6dd84

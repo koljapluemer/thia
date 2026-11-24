@@ -13,6 +13,7 @@ import * as learning from '@gestalts/learning';
 import * as sources from '@gestalts/sources';
 import { Component, type ComponentType, type ErrorInfo, type ReactNode } from 'react';
 import type { ViewError, ViewHost, ViewInit } from '@gestalts/view';
+import { keysShowing } from '@gestalts/view/wording';
 
 const modules: Record<string, unknown> = {
   react: React,
@@ -52,6 +53,16 @@ function mount(View: ComponentType, port: MessagePort, init: ViewInit) {
     consoleError(...args);
     host.report(describe('console', args.map(String).join(' ')));
   };
+  // while its maker rewords it, an alt-click on its text names the keys showing there, and does nothing else
+  if (init.picking) {
+    addEventListener('click', (e) => {
+      if (!e.altKey || !(e.target instanceof Element)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const text = (e.target as HTMLElement).innerText ?? e.target.textContent ?? '';
+      host.pick?.(keysShowing(text));
+    }, true);
+  }
   ReactDOMClient.createRoot(document.getElementById('view')!).render(
     <Boundary host={host}>
       <view.ViewProvider host={host} init={init}><View /></view.ViewProvider>

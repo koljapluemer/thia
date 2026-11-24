@@ -44,6 +44,7 @@ write is refused with the reason. Keep ymls small and link them.
 | `deck@3` | `name`, `title`, `members[]`, `concepts: {<concept id>: 0..1}` (at least one): what a view on it practises as a whole |
 | `deck@4` | the same, plus `lang` (what its text is in) and `target_lang?` (the language it teaches). The reviewer writes it on accepting; you don't |
 | `fsrs-data@1` | written by `saveReview` |
+| `wording@1` | the view's own text, below: `lang`, `layer`, `messages: {<key>: {text, description}}` |
 | `practice-session@1` | written by `usePracticeSession` |
 
 ## Its own gestalts
@@ -71,12 +72,52 @@ how many items), `one_of: [..]`.
 - Each yml in `data/` is `data/<id>.yml` with `gestalt:` and its props; the id comes from the file name. Keep ids
   short and readable (`haus`, `q-03`). See `examples/noun-gender`.
 
+## Its text
+
+Every word the view shows of its own (buttons, headings, help, feedback like "Right!", errors, placeholders,
+`title`, `aria-label`, `alt`) is in its wording, `data/wording.yml`, never in `view.tsx`, and is shown with `t()`:
+
+```yaml
+gestalt: wording@1
+lang: de            # view.json's lang: the language you write its text in
+layer: source
+messages:
+  next:
+    text: Weiter
+    description: after an answer, goes on to the next card
+  left:
+    text: "{n, plural, one {noch # Karte} other {noch # Karten}}"
+    description: above the card, how many are left today
+```
+
+```tsx
+import { t, formatNumber, parseNumber } from '@gestalts/view';
+<button>{t('next')}</button>
+<p>{t('left', { n: due.length })}</p>
+```
+
+- Each key has a `description`: where it shows and what it's for, for whoever rewords or translates it.
+- Keys stay as they are: when you change the view, keep the keys of what's still there (reworded text keeps its
+  key), add new ones for new text, and remove those no longer used. Its maker's rewordings and translations hang on
+  the keys.
+- A message is one whole sentence with placeholders (ICU: `{name}`, `{n, plural, one {…} other {…}}`,
+  `{x, select, a {…} other {…}}`): never put text together from pieces (`t('a') + name`), and never compare what
+  `t()` says.
+- Only the view's own text is there. What's practised (questions, answers, vocabulary, the words of a language
+  taught) is content: ymls in `data/`.
+- Numbers as the person writes them: `formatNumber(n)` (`3,5` in German), `parseNumber(typed)` for an answer typed
+  in (undefined when it can't be read for sure: say so, don't mark it wrong). Never `parseFloat` or `toFixed` on what
+  a person types or reads.
+
+The `check` refuses text written into `view.tsx`, a key that isn't in the wording, and a wording that doesn't hold
+together.
+
 ## What it may import
 
 | module | for |
 |---|---|
 | `react`, `lucide-react` | hooks; icons |
-| `@gestalts/view` | the data, below |
+| `@gestalts/view` | the data, below; `t`, `formatNumber`, `parseNumber`, `useLocale` (its text) |
 | `@gestalts/kit` | `Markdown`, `MarkdownEditor`, `Modal`, `NoteCard`, `NoteEditor`, `storeFile`; `usePanZoom` (drag, wheel and pinch, d3-zoom) |
 | `@gestalts/learning` | FSRS: `fsrsStates`, `useLocalReviews`, `getScheduler`, `rate`, `saveReview`, `nextItem`, `facetOf`, `Rating`, `usePracticeSession`; logging answers: `logPractice`, `ratingOf`; picking with what's known: `lessonPlan`, `rankNew`, `variantGroups` |
 | `@gestalts/sources` | sources: `FIELDS`, `ENTRY_TYPES`, `normalise`, `bibOf`, `parseBibtex`, `renderBibtex`, `match`, `mergeSource` |

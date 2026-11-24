@@ -4,6 +4,7 @@
  * ```
  * lessons/<lesson>/<version>/manifest.json   this
  *                            view.js         the compiled view
+ *                            wording.json    its own text, each layer (`wording@1` values), if it has any
  *                            index.json      the ymls it ships with, as a published deck: {ymls, blobs}
  *                            ymls.json       [{id, text}], its definitions among them
  *                            blobs/<name>
@@ -35,12 +36,14 @@ export type LessonManifest = {
   lang?: string;
   /** where a language is what it teaches: that one */
   target_lang?: string;
+  /** its own text, each layer, relative to the manifest */
+  wording?: string;
 };
 
 /** A lesson's id in its link: 128 random bits, base64url. */
 export const LESSON_ID = /^[A-Za-z0-9_-]{22}$/;
 
-const KEYS = ['format', 'title', 'runtime', 'reads', 'writes', 'view', 'npm', 'published', 'params', 'lang', 'target_lang'];
+const KEYS = ['format', 'title', 'runtime', 'reads', 'writes', 'view', 'npm', 'published', 'params', 'lang', 'target_lang', 'wording'];
 const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
 const NPM_PATH = /^\/npm\/[A-Za-z0-9._@+-]+\.js$/;
 
@@ -68,6 +71,10 @@ export function parseManifest(v: unknown): LessonManifest {
   if (params !== undefined && (typeof params !== 'object' || params === null || Array.isArray(params) || !Object.values(params).every((x) => typeof x === 'string'))) throw new Error('params must map names to texts');
   const out: LessonManifest = { format: LESSON, title: text('title'), runtime: text('runtime'), reads, writes, view, npm: npm as Record<string, string>, published: text('published') };
   if (params) out.params = params as Record<string, string>;
+  if (m.wording !== undefined) {
+    if (typeof m.wording !== 'string' || !/^[A-Za-z0-9._-]+\.json$/.test(m.wording)) throw new Error('wording must be a file next to the manifest');
+    out.wording = m.wording;
+  }
   for (const k of ['lang', 'target_lang'] as const) {
     if (m[k] === undefined) continue;
     if (typeof m[k] !== 'string' || !TAG.test(m[k] as string)) throw new Error(`${k} must be a language tag`);

@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { Paperclip, X } from 'lucide-react';
 import { Modal, storeFile, type BlobRef } from '@gestalts/kit';
-import { useHost, useWrite } from '@gestalts/view';
+import { t, useHost, useWrite } from '@gestalts/view';
 
 /**
  * One box: type, attach what belongs to it, save, and on to the next. Everything else about a note can wait, or be done
@@ -38,7 +38,7 @@ export default function QuickNote() {
       setMain('');
       setBlobs([]);
       if (then === 'edit' && await openView('note-crud', { note: note.id })) setStatus({});
-      else setStatus({ saved: then === 'edit' ? "Saved. There's no Notes view here to edit it in." : 'Saved.' });
+      else setStatus({ saved: then === 'edit' ? t('saved_no_notes') : t('saved') });
       box.current?.focus();
     } catch (e) {
       setStatus({ error: e instanceof Error ? e.message : String(e) });
@@ -54,7 +54,8 @@ export default function QuickNote() {
         autoFocus
         ref={box}
         className="textarea min-h-40 w-full flex-1 text-base"
-        placeholder="What's on your mind?"
+        placeholder={t('placeholder')}
+        aria-label={t('placeholder')}
         value={main}
         onChange={(e) => { setMain(e.target.value); setStatus({}); }}
         onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !empty) void save('next'); }}
@@ -64,7 +65,7 @@ export default function QuickNote() {
           {blobs.map((b) => (
             <li key={b.file} className="badge gap-1">
               {b.label}
-              <button type="button" aria-label="Remove" onClick={() => setBlobs(blobs.filter((x) => x !== b))}><X className="size-3" /></button>
+              <button type="button" aria-label={t('remove')} title={t('remove')} onClick={() => setBlobs(blobs.filter((x) => x !== b))}><X className="size-3" /></button>
             </li>
           ))}
         </ul>
@@ -72,16 +73,16 @@ export default function QuickNote() {
       {status.error && <div role="alert" className="alert alert-error text-sm whitespace-pre-wrap">{status.error}</div>}
       {status.saved && <p role="status" className="text-sm text-success">{status.saved}</p>}
       <div className="flex flex-wrap justify-between gap-2">
-        <button type="button" className="btn btn-ghost" onClick={() => setPicking(true)}><Paperclip className="size-4" /> Attach</button>
+        <button type="button" className="btn btn-ghost" onClick={() => setPicking(true)}><Paperclip className="size-4" /> {t('attach')}</button>
         <div className="flex flex-wrap justify-end gap-2">
-          <button type="button" className="btn" disabled={busy || empty} title="Save, and open it in Notes to add more" onClick={() => void save('edit')}>Save and Edit</button>
-          <button type="button" className="btn btn-primary" disabled={busy || empty} title="Save, and write the next one (Ctrl+Enter)" onClick={() => void save('next')}>Save and Next</button>
+          <button type="button" className="btn" disabled={busy || empty} title={t('save_edit_title')} onClick={() => void save('edit')}>{t('save_edit')}</button>
+          <button type="button" className="btn btn-primary" disabled={busy || empty} title={t('save_next_title')} onClick={() => void save('next')}>{t('save_next')}</button>
         </div>
       </div>
       {picking && (
         <Modal onClose={() => setPicking(false)}>
           <div className="flex flex-col gap-3 p-4">
-            <h2 className="font-semibold">Attach files</h2>
+            <h2 className="font-semibold">{t('attach_title')}</h2>
             <input type="file" multiple className="file-input w-full" disabled={busy} onChange={(e) => void attach(e.target.files)} />
             {busy && <span className="loading loading-spinner" />}
           </div>

@@ -1,0 +1,70 @@
+{
+  "kit_close": "Schließen",
+  "kit_cancel": "Abbrechen",
+  "kit_delete": "Löschen",
+  "kit_empty": "(leer)",
+  "kit_list_edit": "Bearbeiten: {what}",
+  "kit_list_remove": "Entfernen: {what}",
+  "kit_list_add": "Hinzufügen: {what}",
+  "kit_nothing_found": "Nichts gefunden.",
+  "kit_find_note": "Notiz suchen…",
+  "kit_find_concept": "Begriff suchen oder anlegen…",
+  "kit_create": "„{name}“ anlegen",
+  "kit_how_relates": "Wie es zusammenhängt",
+  "kit_related": "verwandt",
+  "kit_gone": "(weg)",
+  "kit_open_note": "Die Notiz in einem neuen Browser-Tab öffnen",
+  "kit_open_concept": "Den Begriff in einem neuen Browser-Tab öffnen",
+  "kit_open_source": "Die Quelle in einem neuen Browser-Tab öffnen",
+  "kit_kind_note": "Notiz",
+  "kit_kind_concept": "Begriff",
+  "kit_kind_source": "Quelle",
+  "kit_detach": "Lösen: beide bleiben, ohne Beziehung",
+  "kit_relationships": "Beziehungen",
+  "kit_add_source": "Quelle hinzufügen",
+  "kit_source": "Quelle",
+  "kit_link": "Notiz oder Begriff verknüpfen, oder neue Notiz benennen…",
+  "kit_new_note": "Neue Notiz „{text}“",
+  "kit_files": "Dateien",
+  "kit_label": "Bezeichnung",
+  "kit_remove": "Entfernen",
+  "kit_title": "Titel",
+  "kit_main": "Haupttext",
+  "kit_extra": "Zusatz",
+  "kit_alias": "Alias",
+  "kit_aliases": "Aliasse",
+  "kit_tag": "Schlagwort",
+  "kit_tags": "Schlagwörter",
+  "kit_open": "Öffnen",
+  "kit_paste_bibtex": "BibTeX einfügen: @article\\{…\\}",
+  "kit_from_clipboard": "Aus der Zwischenablage",
+  "kit_from_clipboard_title": "Das BibTeX aus der Zwischenablage hinzufügen",
+  "kit_add": "Hinzufügen",
+  "kit_source_have": "Eine Quelle, die du hast",
+  "kit_source_new": "Eine neue, aus BibTeX",
+  "kit_find_source": "Quelle suchen…",
+  "kit_clipboard_unreadable": "Die Zwischenablage lässt sich hier nicht lesen: Drück stattdessen Strg+V.",
+  "kit_no_bibtex": "Kein BibTeX-Eintrag gefunden.",
+  "kit_added": "{source} hinzugefügt.",
+  "kit_added_maybe": "{source} hinzugefügt (vielleicht dasselbe wie {other}).",
+  "kit_from": "Aus",
+  "kit_was_here": "{source} war schon da.",
+  "kit_was_here_filled": "{source} war schon da: ergänzt {fields}.",
+  "kit_to_decide": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{count} zu entscheiden.",
+        "n=other": "{count} zu entscheiden."
+      }
+    }
+  ],
+  "kit_no_such_note": "diese Notiz gibt es nicht",
+  "kit_click_to_open": "{label} (Strg/⌘-Klick öffnet)"
+}

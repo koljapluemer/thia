@@ -12,7 +12,7 @@ const walk = (dir: string): string[] => readdirSync(dir).flatMap((n) => {
 const filesOf = (dir: string, binary = /\.(png|jpe?g)$/): Files =>
   Object.fromEntries(walk(dir).map((p) => [relative(dir, p), binary.test(p) ? new Uint8Array(readFileSync(p)) : readFileSync(p, 'utf8')]));
 /** what the workshop sends as the app's gestalts */
-const GESTALTS = ['note@1', 'source@1', 'concept@2', 'concept@3', 'concept-link@1', 'practice-event@1', 'practice-event@2', 'flashcard@1', 'multiple-choice@1', 'item-model@1', 'deck@2', 'deck@3', 'fsrs-data@1', 'practice-session@1'];
+const GESTALTS = ['note@1', 'source@1', 'concept@2', 'concept@3', 'concept-link@1', 'practice-event@1', 'practice-event@2', 'flashcard@1', 'multiple-choice@1', 'item-model@1', 'deck@2', 'deck@3', 'fsrs-data@1', 'practice-session@1', 'wording@1'];
 
 describe('a view', () => {
   const examples = join(root, 'packages/workshop/agent-template/examples');
@@ -23,6 +23,24 @@ describe('a view', () => {
     }, 60_000);
   }
   const good = filesOf(join(examples, 'note-count'));
+  it('wants its text in its wording, in every language alike', async () => {
+    const view = good['view.tsx'] as string;
+    const check = (files: Files) => checkView({ ...good, ...files }, { gestalts: GESTALTS }, nodePlatform);
+    const textual = await check({ 'view.tsx': view.replace("{t('more')}", 'More') });
+    expect(textual.report).toMatch(/view\.tsx:\d+:\d+: “More” is text a person reads/);
+    const unknown = await check({ 'view.tsx': view.replace("t('more')", "t('mehr')") });
+    expect(unknown.report).toContain("mehr isn't in the view's wording");
+    const typed = await check({ 'view.tsx': view.replace('setText(e.target.value)', 'setText(String(parseFloat(e.target.value)))') });
+    expect(typed.report).toContain('parseNumber from @gestalts/view');
+    const physical = await check({ 'view.tsx': view.replace('min-w-0 flex-1', 'min-w-0 flex-1 ml-2') });
+    expect(physical.report).toContain('ml-2 is left or right');
+    const translated = await check({ 'data/wording-de.yml': 'gestalt: wording@1\nlang: de\nlayer: machine\nmessages:\n  add: { text: \'Hinzufügen {n}\', source: abc }\n  gone: { text: Weg, source: abc }\n' });
+    expect(translated.report).toContain('add takes {n}, its source nothing');
+    expect(translated.report).toContain('gone is no longer in the source');
+    const undescribed = await check({ 'data/wording.yml': (good['data/wording.yml'] as string).replace(/\n    description: the button.*\n/, '\n') });
+    expect(undescribed.report).toContain('add needs a `description`');
+  }, 60_000);
+
   it('reports a type error with its line', async () => {
     const r = await checkView({ ...good, 'view.tsx': `${good['view.tsx'] as string}\nconst n: number = 'x';\n` }, { gestalts: GESTALTS }, nodePlatform);
     expect(r.ok).toBe(false);

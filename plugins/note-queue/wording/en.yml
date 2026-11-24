@@ -1,0 +1,10 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  empty:
+    text: "No notes for the queue yet."
+    description: "shown instead of a note when there are none"
+  next:
+    text: "Next"
+    description: "under the note: shows another one"

@@ -1,0 +1,61 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  not_text:
+    text: "{name}: kein reiner Text"
+    source: a412f947884896e4
+  empty_file:
+    text: "{name}: leer"
+    source: ab361a6818614218
+  upload_title:
+    text: "Einen Ordner hochladen"
+    source: 75cf977e1e6874f7
+  upload_about:
+    text: "Seine reinen Textdateien, nicht die in Ordnern darin."
+    source: 8d76ae655b12bb79
+  progress:
+    text: "{done} von {of}"
+    source: f5a4ad407b653733
+  added:
+    text: "{added, plural, one {# hinzugefügt} other {# hinzugefügt}}."
+    source: cdf2b15c9c46f45b
+  added_there:
+    text: "{added, plural, one {# hinzugefügt} other {# hinzugefügt}}, {there} schon da."
+    source: 35b123a644fd20f7
+  skipped:
+    text: "Übersprungen:"
+    source: b31a1e969f1455bb
+  from_file:
+    text: "Notizen aus dieser Datei"
+    source: 9f87d31d1dab1ebe
+  upload:
+    text: "Ordner hochladen"
+    source: 57f4982ba3180943
+  left_title:
+    text: "Dateien im Eingang, diese eingeschlossen"
+    source: c77ef5cbf021efe7
+  left:
+    text: "noch {n}"
+    source: 04acbbc5f29644c5
+  inbox_empty:
+    text: "Der Eingang ist leer. Lade einen Ordner hoch."
+    source: 4ae87af5787e750d
+  defer:
+    text: "Später"
+    source: 79faae9897f51300
+  defer_title:
+    text: "Eine andere Datei; diese bleibt für später"
+    source: b725d4f7a4f353c8
+  delete:
+    text: "Löschen"
+    source: 5cd41daf77b3849f
+  delete_title:
+    text: "Diese Datei löschen; Notizen daraus bleiben"
+    source: 090770c284538dc7
+  save_new:
+    text: "Speichern und neue Notiz"
+    source: c999279a9e2fd5cf
+  save_new_title:
+    text: "Diese Notiz behalten und eine weitere aus derselben Datei beginnen"
+    source: ef683baed99e26da

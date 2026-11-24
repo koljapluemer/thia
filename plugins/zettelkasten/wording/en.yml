@@ -1,0 +1,166 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  status_root:
+    text: "The root"
+    description: "where a note stands: it is the root of the tree"
+  status_attached:
+    text: "In the Zettelkasten"
+    description: "where a note stands: placed, reaching the root"
+  status_floating:
+    text: "Placed, but not reaching the root"
+    description: "where a note stands"
+  status_unplaced:
+    text: "Not placed yet"
+    description: "where a note stands"
+  status_excluded:
+    text: "Kept out of the Zettelkasten"
+    description: "where a note stands"
+  mark_parent_missing:
+    text: "Its place is a note that doesn't exist (any more)."
+    description: "a problem with a note's place"
+  mark_parent_unplaced:
+    text: "Its place is a note that isn't placed yet."
+    description: "a problem with a note's place"
+  mark_parent_excluded:
+    text: "Its place is a note kept out of the Zettelkasten."
+    description: "a problem with a note's place"
+  mark_cycle:
+    text: "Its places go round in a circle."
+    description: "a problem with a note's place"
+  mark_placed_twice:
+    text: "It is placed in more than one place."
+    description: "a problem with a note's place"
+  mark_fork:
+    text: "Another note already follows the same note."
+    description: "a problem with a note's place"
+  mark_extra_root:
+    text: "There is already a root."
+    description: "a problem with a note's place"
+  mark_root_placed:
+    text: "The root is placed somewhere too; that place is ignored."
+    description: "a problem with a note's place"
+  mark_excluded_placed:
+    text: "It is tagged to be kept out, but placed."
+    description: "a problem with a note's place"
+  note_gone:
+    text: "That note is gone."
+    description: "when the note shown was deleted"
+  all_placed:
+    text: "Every note is placed, or kept out."
+    description: "shown when no note waits to be placed"
+  title:
+    text: "Zettelkasten"
+    description: "heading of the tree"
+  no_root:
+    text: "No root yet. Make a note the root to start: everything else is placed after it or under it."
+    description: "shown when the tree has no root"
+  next:
+    text: "Next"
+    description: "after \"that note is gone\": shows the next note"
+  edit:
+    text: "Edit"
+    description: "button: opens the note in the notes view"
+  edit_title:
+    text: "Edit in Notes"
+    description: "tooltip of that button"
+  drag:
+    text: "Drag onto a note in the tree or the search to place it there"
+    description: "tooltip of the note being placed"
+  skip:
+    text: "Skip"
+    description: "button: shows another note to place"
+  next_unplaced:
+    text: "Next unplaced"
+    description: "button: goes on to a note not placed yet"
+  unplace:
+    text: "Unplace"
+    description: "button: takes the note out of the tree"
+  keep_out:
+    text: "Keep out"
+    description: "button: keeps the note out of the tree"
+  let_in:
+    text: "Let in"
+    description: "button: lets a kept-out note be placed"
+  make_root:
+    text: "Make it the root"
+    description: "button: makes the note the root of the tree"
+  how_move:
+    text: "To move it, pick a note in the tree or search, or drag the note onto one: it goes after that note, or starts a branch under it."
+    description: "help below a placed note"
+  how_place:
+    text: "To place it, pick a note in the tree or search, or drag the note onto one: it goes after that note, or starts a branch under it."
+    description: "help below a note not placed yet"
+  unplace_title:
+    text: "Unplace this note?"
+    description: "the question asked before taking a note with branches out"
+  unplace_text:
+    text: "What branches from it will float until it is placed again."
+    description: "below that question"
+  missing_note:
+    text: "a missing note"
+    description: "in place of a note that is gone"
+  place_first:
+    text: "Place that note first"
+    description: "button: goes to the note this one's place depends on"
+  keep_after:
+    text: "Keep: after"
+    description: "button before a note: keeps only the place after it"
+  keep_under:
+    text: "Keep: under"
+    description: "button before a note: keeps only the place under it"
+  not_root:
+    text: "Not the root"
+    description: "button: takes the root tag off"
+  remove_place:
+    text: "Remove its place"
+    description: "button: takes the note's place away"
+  let_it_in:
+    text: "Let it in"
+    description: "button: lets a kept-out note be placed"
+  search:
+    text: "Search for where it goes"
+    description: "the search box for where a note goes"
+  nothing_found:
+    text: "Nothing found."
+    description: "when that search finds nothing"
+  itself:
+    text: "This is the note itself."
+    description: "why a note can't be placed here"
+  below_itself:
+    text: "This is placed below the note itself."
+    description: "why a note can't be placed here"
+  place_first_why:
+    text: "{status}: place it first."
+    description: "why a note can't be placed here; status is where that note stands"
+  already_here:
+    text: "It is already here."
+    description: "why a note can't be placed here"
+  has_follower:
+    text: "Another note already follows this one: place it after that one, or branch from this."
+    description: "why a note can't be placed after this one"
+  after_this:
+    text: "After this"
+    description: "button: places the note after this one"
+  branch_this:
+    text: "Branch from this"
+    description: "button: places the note under this one"
+  nothing_to_place:
+    text: "Nothing to place."
+    description: "shown where the place buttons would be, when no note is picked"
+  hide:
+    text: "Hide what hangs on it"
+    description: "icon button folding a branch"
+  show:
+    text: "Show what hangs on it"
+    description: "icon button unfolding a branch"
+  attention:
+    text: "Needs attention"
+    description: "heading of notes with a problem"
+  more:
+    text: "More"
+    description: "loads more of a list"
+  focus:
+    text: "Focus"
+    description: "button: shows that note as the one to place"

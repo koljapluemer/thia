@@ -31,10 +31,10 @@ async fn draft(s: &Server) -> Draft {
 impl Draft {
     async fn write(&self, s: &Server, fields: &str, view: &str) -> (StatusCode, Value) {
         let (p, id) = (&self.package, &self.id);
-        let members = format!("[gestalt-{p}.noun.1, haus]");
-        let view = format!("id: {id}\ngestalt: view@2\ntitle: Artikel\nsource: {view:?}\nreads: [{p}/noun@1, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: {members}\n");
+        let members = format!("[gestalt-{p}.noun.1, haus, wording]");
+        let view = format!("id: {id}\ngestalt: view@4\ntitle: Artikel\nsource: {view:?}\nreads: [{p}/noun@1, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: {members}\nlang: de\n");
         let noun = format!("id: gestalt-{p}.noun.1\ngestalt: gestalt@1\nname: {p}/noun\nversion: 1\nfields:\n{fields}");
-        let w = json!([{ "id": id, "text": view }, { "id": format!("gestalt-{p}.noun.1"), "text": noun }, { "id": "haus", "text": format!("id: haus\ngestalt: {p}/noun@1\nword: Haus\n") }]);
+        let w = json!([{ "id": id, "text": view }, { "id": format!("gestalt-{p}.noun.1"), "text": noun }, { "id": "haus", "text": format!("id: haus\ngestalt: {p}/noun@1\nword: Haus\n") }, { "id": "wording", "text": WORDING }]);
         let (status, body, _) = s.call("POST", &format!("{}/sync/write", self.base), Some(&self.cookie), Some(w)).await;
         (status, body)
     }
@@ -46,7 +46,11 @@ impl Draft {
 }
 
 const WORD: &str = "  word: { type: string, required: true }\n";
-const VIEW: &str = "export default function View() { return <div className=\"h-full\">Hallo</div>; }\n";
+const VIEW: &str = "import { t } from '@gestalts/view';\nexport default function View() { return <div className=\"h-full\">{t('hi')}</div>; }\n";
+/** a view without text of its own, so without a wording */
+const PLAIN: &str = "export default function View() { return <div className=\"h-full\" />; }\n";
+/** its text, in German: shipped beside the manifest, not among its ymls */
+const WORDING: &str = "id: wording\ngestalt: wording@1\nlang: de\nlayer: source\nmessages:\n  hi: { text: Hallo, description: the greeting }\n";
 
 #[tokio::test]
 async fn a_published_lesson_opens_from_its_link_until_it_is_switched_off() {
@@ -77,7 +81,14 @@ async fn a_published_lesson_opens_from_its_link_until_it_is_switched_off() {
     assert_eq!((manifest["format"].as_str(), manifest["runtime"].as_str(), manifest["title"].as_str()), (Some("lesson@1"), Some(RUNTIME), Some("Artikel")));
     let base = path.trim_end_matches("manifest.json");
     let (_, _, js) = s.lessons(&format!("{base}{}", manifest["view"].as_str().unwrap())).await;
-    assert!(String::from_utf8(js).unwrap().contains("Hallo"));
+    assert!(String::from_utf8(js).unwrap().contains("'hi'"));
+    // in its language, its text beside it
+    assert_eq!(manifest["lang"], "de");
+    let (status, _, wording) = s.lessons(&format!("{base}{}", manifest["wording"].as_str().unwrap())).await;
+    assert_eq!(status, StatusCode::OK);
+    let wording: Value = serde_json::from_slice(&wording).unwrap();
+    assert_eq!(wording[0]["messages"]["hi"]["text"], "Hallo");
+    assert!(wording[0].get("id").is_none() && wording[0]["layer"] == "source");
     let (_, _, ymls) = s.lessons(&format!("{base}ymls.json")).await;
     let ids: Vec<String> = serde_json::from_slice::<Vec<Value>>(&ymls).unwrap().iter().map(|y| y["id"].as_str().unwrap().to_owned()).collect();
     assert_eq!(ids, [format!("gestalt-{}.noun.1", d.package), "haus".to_owned()], "members only, never the view");
@@ -171,7 +182,7 @@ async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
     let cal = s.login("cal@school.example").await;
     let (_, c, _) = s.call("POST", "/api/drafts", Some(&cal), Some(json!({ "title": "Video" }))).await;
     let (id, p) = (c["id"].as_str().unwrap(), c["package"].as_str().unwrap());
-    let view = format!("id: {id}\ngestalt: view@2\ntitle: Video\nsource: {VIEW:?}\nreads: [media-source@1]\nwrites: []\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: [m]\n");
+    let view = format!("id: {id}\ngestalt: view@2\ntitle: Video\nsource: {PLAIN:?}\nreads: [media-source@1]\nwrites: []\npackage: {p}\nruntime: '{RUNTIME}'\nmembers: [m]\n");
     let media = "id: m\ngestalt: media-source@1\nprovider: youtube\nexternal_id: abc\nlanguage: it\n";
     let w = json!([{ "id": id, "text": view }, { "id": "m", "text": media }]);
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&cal), Some(w)).await.0, StatusCode::NO_CONTENT, "the repo's models, in a maintainer's draft");
@@ -184,7 +195,7 @@ async fn a_maintainers_draft_goes_out_only_within_the_lessons_models() {
 async fn view_practising(s: &Server, cookie: &str, title: &str, concept: &str) -> String {
     let (_, d, _) = s.call("POST", "/api/drafts", Some(cookie), Some(json!({ "title": title }))).await;
     let (id, p) = (d["id"].as_str().unwrap().to_owned(), d["package"].as_str().unwrap().to_owned());
-    let view = format!("id: {id}\ngestalt: view@2\ntitle: {title}\nsource: {VIEW:?}\nreads: [concept@2, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [{concept}]\n");
+    let view = format!("id: {id}\ngestalt: view@2\ntitle: {title}\nsource: {PLAIN:?}\nreads: [concept@2, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [{concept}]\n");
     let w = json!([{ "id": id, "text": view }, { "id": concept, "text": format!("id: {concept}\ngestalt: concept@2\nname: Zehnerübergang\n") }]);
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(cookie), Some(w)).await.0, StatusCode::NO_CONTENT);
     id

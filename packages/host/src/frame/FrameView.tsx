@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Repo } from '@gestalts/client';
-import { localeFor, useLang } from '@gestalts/i18n';
+import { chain, localeFor, useLang } from '@gestalts/i18n';
+import { resolveWording, type Wording } from '@gestalts/view/wording';
 import { PROTOCOL, logger, type FromView, type JsonMap, type ToView, type ViewError } from '@gestalts/view';
 import type { FrameRuntime, Permission } from '../registry';
 import { bootHtml } from './boot';
@@ -53,14 +54,22 @@ type Props = {
   hidden?: boolean;
   /** a Content-Security-Policy for the frame, as `closedCsp` makes one; none: what the sandbox allows */
   csp?: string;
+  /** its own text, each layer of it: shown in the person's language where there is a wording in it */
+  wording?: Wording[];
+  /** its maker is rewording it: an alt-click on its text names the keys showing there */
+  onPick?: (keys: string[]) => void;
+  /** its text in this language (its maker previewing a translation), not the app's */
+  textLang?: string;
 };
 
 /** One view, in a sandboxed frame of its own. A new `view.js` gives a new frame. */
-export function FrameView({ repo, view, runtime, css, tailwind, params, state, env, onError, hidden, csp }: Props) {
+export function FrameView({ repo, view, runtime, css, tailwind, params, state, env, onError, hidden, csp, wording, onPick, textLang }: Props) {
   const ref = useRef<HTMLIFrameElement>(null);
   const [failure, setFailure] = useState<string>();
   const latest = useRef({ env, onError });
-  useEffect(() => { latest.current = { env, onError }; }, [env, onError]);
+  const latestPick = useRef(onPick);
+  useEffect(() => { latest.current = { env, onError }; latestPick.current = onPick; }, [env, onError, onPick]);
+  const picking = Boolean(onPick);
   const scopeKey = JSON.stringify(view.scope);
   const npmUrlsKey = JSON.stringify(view.npmUrls ?? {});
   // where the view is: a new frame starts there; a running one is told when it's moved, not remade
@@ -72,10 +81,17 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
   // what the view starts from is fixed when its frame is made
   const initial = useMemo(() => state, [view.id, view.js]); // eslint-disable-line react-hooks/exhaustive-deps
   const flags = frameFlags(view.granted);
-  const lang = view.lang ?? 'en';
-  // numbers and dates as the person reads them
+  // numbers and dates as the person reads them; its text in their language where it has a wording in it
   const { lang: appLang, m } = useLang();
   const locale = localeFor(appLang);
+  const text = useMemo(() => (wording?.length ? resolveWording(wording, chain(textLang ?? appLang)) : undefined), [wording, textLang, appLang]);
+  const lang = text?.lang ?? view.lang ?? 'en';
+  // what it says is sent when it starts, and when it changes while it runs: the frame isn't made again for it
+  const latestText = useRef(text);
+  useEffect(() => {
+    latestText.current = text;
+    if (text) live.current?.post({ type: 'wording', wording: text.messages, lang: text.lang });
+  }, [text]);
   const said = useRef(m);
   useEffect(() => { said.current = m; }, [m]);
 
@@ -123,6 +139,10 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
           if (stage === 'mounted') clearTimeout(stalled);
           return;
         }
+        if (msg.type === 'pick') {
+          latestPick.current?.(msg.keys);
+          return;
+        }
         if (msg.type === 'error') {
           log.error('view error', { view: view.id, kind: msg.error.kind, message: msg.error.message, stack: msg.error.stack, reached: stage });
           // console.error from a view is its own business; these stop it working
@@ -145,7 +165,7 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
       };
       frame.contentWindow?.postMessage({
         runtime: runtime.js, css: `${runtime.css}\n${css}`, tailwind, js: view.js, npm: view.npm, npmUrls: JSON.parse(npmUrlsKey) as Record<string, string>,
-        init: { protocol: PROTOCOL, id: view.id, title: view.title, params: startAt, state: initial, lang, locale },
+        init: { protocol: PROTOCOL, id: view.id, title: view.title, params: startAt, state: initial, lang, locale, ...(latestText.current ? { wording: latestText.current.messages } : {}), ...(picking ? { picking } : {}) },
       }, '*', [channel.port2]);
     };
     addEventListener('message', onReady);
@@ -158,7 +178,7 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
       bridge?.close();
       port?.close();
     };
-  }, [repo, view.id, view.title, view.js, view.npm, npmUrlsKey, flags.key, scopeKey, runtime, css, tailwind, initial, csp, lang, locale]);
+  }, [repo, view.id, view.title, view.js, view.npm, npmUrlsKey, flags.key, scopeKey, runtime, css, tailwind, initial, csp, lang, locale, picking]);
 
   // moved from outside while running; its own moves come back equal and aren't echoed
   useEffect(() => {

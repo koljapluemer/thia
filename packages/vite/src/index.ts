@@ -16,6 +16,8 @@
  * those checkouts, and replaces `@gestalts-sources;` in the app's CSS with an `@source` per package and plugin
  * (Tailwind doesn't reliably scan through pnpm's symlinks). List it before `tailwindcss()`.
  */
+import { asWording, type Wording } from '@gestalts/view/wording';
+import { wordingProblems } from '@gestalts/view/wording-check';
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -156,6 +158,26 @@ export function readPlugin(root: string): { manifest: Manifest; compiled: Compil
   return { manifest, compiled: compile(readFileSync(viewFile, 'utf8'), viewFile) };
 }
 
+/**
+ * A plugin's wordings (`wording/<name>.yml`, `wording@1` without `gestalt`): its view's text, the source in its
+ * `lang` and each translation and rewording of it. Refused when they don't hold together (`wordingProblems`).
+ */
+export function readWording(id: string, root: string, lang = 'en'): Wording[] {
+  const dir = join(root, 'wording');
+  if (!existsSync(dir)) return [];
+  const found = readdirSync(dir).filter((f) => f.endsWith('.yml')).sort().map((f) => {
+    const raw = parse(readFileSync(join(dir, f), 'utf8')) as Record<string, unknown>;
+    const wording = asWording(raw);
+    if (!wording) throw new Error(`${id}/wording/${f}: a wording has lang, layer and messages ({key: {text, …}})`);
+    return { name: `${id}/wording/${f}`, wording };
+  });
+  const { problems } = wordingProblems(found);
+  const source = found.find((w) => w.wording.layer === 'source');
+  if (source && source.wording.lang !== lang) problems.push(`${source.name}: its lang ${source.wording.lang} isn't plugin.yml's (${lang})`);
+  if (problems.length) throw new Error(problems.join('\n'));
+  return found.map((w) => w.wording);
+}
+
 function loadPlugin(base: string, path: string) {
   const root = realpathSync(resolve(base, path));
   const { manifest, compiled } = readPlugin(root);
@@ -163,7 +185,7 @@ function loadPlugin(base: string, path: string) {
   const needs = pluginNeedsProblems(manifest, compiled);
   if (needs.length) throw new Error(`${manifest.id}: ${needs.join('; ')}`);
   if (existsSync(join(root, 'gestalts'))) throw new Error(`${manifest.id}: a plugin doesn't define gestalts; they go in a model package, gestalts/<package>/<name>/v<N>.yml`);
-  return { id: manifest.id, root, manifest, decks: readDecks(manifest.id, root), js: compiled.js, npm: compiled.npm, backend: existsSync(join(root, 'backend.py')) };
+  return { id: manifest.id, root, manifest, decks: readDecks(manifest.id, root), wording: readWording(manifest.id, root, manifest.lang), js: compiled.js, npm: compiled.npm, backend: existsSync(join(root, 'backend.py')) };
 }
 
 /**
@@ -362,8 +384,9 @@ export function gestaltsPlugins(): PluginOption[] {
       const entries = plugins.map((p) => {
         this.addWatchFile(join(p.root, 'plugin.yml'));
         this.addWatchFile(join(p.root, 'view.tsx'));
+        for (const f of existsSync(join(p.root, 'wording')) ? readdirSync(join(p.root, 'wording')) : []) this.addWatchFile(join(p.root, 'wording', f));
         const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}`, practises: d.practises, ...(d.lang ? { lang: d.lang } : {}), ...(d.targetLang ? { targetLang: d.targetLang } : {}) }));
-        return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], granted: p.granted, backend: p.backend };
+        return { manifest: p.manifest, decks, wording: p.wording, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);
       for (const o of outlines) this.addWatchFile(join(o.root, 'index.json'));

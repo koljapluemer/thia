@@ -112,6 +112,7 @@ fields:
 | `practice-session@1` | one session's timing and trials |
 | `plugin-install@1` | whether a plugin was on here (the gestalter's installs; no longer written) |
 | `view@1` | a vibecoded view: `title`, `source`, `reads`, `writes` |
+| `wording@1` | a view's own text in one language, one layer: `lang`, `layer` (`source`, `machine`, `reviewed`, `override`), `messages` (`{key: {text, description?, source?}}`, ICU texts), optional `catalog`. A view shows override > reviewed > machine > source; an entry whose `source` (the hash of the source text it was written against) no longer matches isn't used. See [Languages](../roadmap/00_i18n.md) |
 | `view@4` | a draft's view, as `view@3` (brief, npm, runtime, package, members) plus `lang` (the language its text was written in, its source) and optional `target_lang` |
 | `conflict@1` | a value a sync couldn't settle |
 | `gestalt@1` | a gestalt's definition, as data (above) |

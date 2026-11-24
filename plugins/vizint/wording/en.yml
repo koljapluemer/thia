@@ -1,0 +1,16 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  empty:
+    text: "No visualizations here yet."
+    description: "shown instead of the list when there are none"
+  more:
+    text: "More"
+    description: "below the list: loads more visualizations"
+  all:
+    text: "All"
+    description: "button above a visualization: back to the list of all"
+  not_built:
+    text: "Not built yet."
+    description: "in place of a visualization that has no built page yet"

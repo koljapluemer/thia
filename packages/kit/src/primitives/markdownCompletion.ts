@@ -79,12 +79,14 @@ type LinkOptions = {
   onOpen?: (target: string) => void;
   /** the referenced note's label, shown as the reference's tooltip; null when there's no such note */
   labelOf?: (target: string) => string | null | undefined;
+  /** what it says, in the view's language */
+  words: { open: string; missing: string; clickToOpen: (label: string) => string };
 };
 
 const coarse = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
 
 /** Marks references (struck through when the note is missing) and opens them on Mod-click or the touch button. */
-export function referenceLinks({ onOpen, labelOf }: LinkOptions): Extension {
+export function referenceLinks({ onOpen, labelOf, words }: LinkOptions): Extension {
   const marks = (view: EditorView): DecorationSet => {
     const b = new RangeSetBuilder<Decoration>();
     for (const { from, to } of view.visibleRanges) {
@@ -95,7 +97,7 @@ export function referenceLinks({ onOpen, labelOf }: LinkOptions): Extension {
         const label = labelOf?.(m[2].trim());
         b.add(start, start + m[0].length, Decoration.mark({
           class: label === null ? 'cm-ref cm-ref-missing' : 'cm-ref',
-          attributes: { title: label === null ? 'no such note' : `${label ?? m[2]}${onOpen ? ' (Ctrl/⌘-click to open)' : ''}` },
+          attributes: { title: label === null ? words.missing : onOpen ? words.clickToOpen(label ?? m[2]) : label ?? m[2] },
         }));
       }
     }
@@ -120,13 +122,13 @@ export function referenceLinks({ onOpen, labelOf }: LinkOptions): Extension {
         return true;
       },
     }));
-    if (coarse()) out.push(openButton(onOpen));
+    if (coarse()) out.push(openButton(onOpen, words.open));
   }
   return out;
 }
 
 /** On touch screens: an "open" button above the reference the cursor is in. */
-function openButton(onOpen: (target: string) => void) {
+function openButton(onOpen: (target: string) => void, open: string) {
   const tooltip = (state: EditorState): Tooltip | null => {
     const sel = state.selection.main;
     if (!sel.empty) return null;
@@ -139,7 +141,7 @@ function openButton(onOpen: (target: string) => void) {
         const dom = document.createElement('button');
         dom.type = 'button';
         dom.className = 'btn btn-xs';
-        dom.textContent = 'Open';
+        dom.textContent = open;
         dom.addEventListener('mousedown', (e) => e.preventDefault());
         dom.addEventListener('click', () => onOpen(ref.target));
         return { dom };

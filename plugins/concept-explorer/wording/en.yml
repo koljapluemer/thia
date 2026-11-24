@@ -1,0 +1,106 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  detach_source:
+    text: "Detach the source from this note"
+    description: "icon button beside a source of a note"
+  delete_source:
+    text: "Delete the source"
+    description: "icon button beside a source of a note"
+  delete_named:
+    text: "Delete {name}?"
+    description: "the question asked before deleting a source; name is its title"
+  delete_source_text:
+    text: "Other notes about this source will stay, pointing at nothing. This cannot be undone."
+    description: "below that question"
+  how_relates:
+    text: "How this relates to the concept"
+    description: "label of the field saying how a note relates"
+  sheds_light:
+    text: "sheds light on"
+    description: "the relation used when none is typed, shown in the empty field"
+  the_note:
+    text: "The note"
+    description: "label of a note's text field"
+  note_placeholder:
+    text: "Something about this concept…"
+    description: "the empty field of a new note"
+  add_source:
+    text: "Add a source"
+    description: "tooltip of the button adding a source to a note"
+  source:
+    text: "Source"
+    description: "that button"
+  detach_note:
+    text: "Detach: the note stays, unrelated to this concept"
+    description: "icon button on a note"
+  delete_note:
+    text: "Delete the note"
+    description: "icon button on a note"
+  delete_note_title:
+    text: "Delete this note?"
+    description: "the question asked before deleting a note"
+  cannot_undo:
+    text: "This cannot be undone."
+    description: "below that question"
+  note_gone:
+    text: "That note is gone."
+    description: "an error when a note picked to attach was deleted meanwhile"
+  attach_note:
+    text: "Attach an existing note…"
+    description: "the box an existing note is found in"
+  alias:
+    text: "Alias"
+    description: "what one other name of the concept is called"
+  also:
+    text: "also"
+    description: "before the concept's other names"
+  logit:
+    text: "logit {mean} ± {sd}"
+    description: "tooltip of what is known: the model's estimate"
+  known:
+    text: "Known about {p}, from {n, plural, one {# answer} other {# answers}} on it."
+    description: "how well the concept is known; p is a percentage"
+  known_last:
+    text: "Known about {p}, from {n, plural, one {# answer} other {# answers}} on it, last {date}."
+    description: "the same, with the date of the last answer"
+  not_practised:
+    text: "Not practised yet."
+    description: "shown when there is no answer on the concept yet"
+  members_known:
+    text: "{n} of its members known."
+    description: "for a set: how many of its members are known"
+  one_of:
+    text: "One of"
+    description: "before the set the concept is a member of"
+  says_about:
+    text: "Says something about"
+    description: "heading of the concepts this one says something about"
+  said_about:
+    text: "Is said something about by"
+    description: "heading of the concepts that say something about this one"
+  claimed_by:
+    text: "claimed by {source}"
+    description: "in a link's tooltip: who says so"
+  name:
+    text: "Name"
+    description: "label of the field renaming the concept"
+  switch:
+    text: "Go to another concept"
+    description: "icon button: picks another concept to show"
+  rename:
+    text: "Rename"
+    description: "icon button: renames the concept"
+  delete_concept:
+    text: "Delete the concept"
+    description: "icon button: asks whether to delete the concept"
+  delete_concept_title:
+    text: "Delete “{name}”?"
+    description: "the question asked before deleting the concept"
+  delete_concept_text:
+    text: "Its notes will stay, no longer related to it, and its links will be deleted. This cannot be undone."
+    description: "below that question"
+  delete:
+    text: "Delete"
+    description: "the button confirming a deletion"

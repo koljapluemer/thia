@@ -1,0 +1,16 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  empty:
+    text: "Hier gibt es noch keine Visualisierungen."
+    source: 26edd352c9713c31
+  more:
+    text: "Mehr"
+    source: 6b29418dc0c36e68
+  all:
+    text: "Alle"
+    source: 2a0aff9f1cbb54a2
+  not_built:
+    text: "Noch nicht gebaut."
+    source: fd808177e9dfc069

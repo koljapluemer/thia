@@ -1,7 +1,8 @@
-import { createContext, use, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { cloneElement, createContext, isValidElement, use, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
 import type { ViewHost } from './connection';
 import type { Call, Capabilities, LlmRequest, NetReply, NetRequest, ViewInit } from './protocol';
 import type { Belief, Item, Json, JsonMap, OutlineAsk, OutlineEntry, OutlinePage, OutlineQuery, OutlineSpec, Page, Query } from './types';
+import { onWording, setWording, wordingVersion } from './wording';
 
 const SAVE_DELAY_MS = 300;
 
@@ -35,11 +36,23 @@ class Location {
 type Context = { host: ViewHost; init: ViewInit; blobs: Map<string, Promise<string | null>>; saved: SavedState; location: Location };
 const ViewContext = createContext<Context | null>(null);
 
-/** What a view runs inside; the runtime (or a test) provides it. */
+/**
+ * What a view runs inside; the runtime (or a test) provides it. Its text (`t()`) is the init's wording until the app
+ * sends another, and then the view renders again, keeping its state.
+ */
 export function ViewProvider({ host, init, children }: { host: ViewHost; init: ViewInit; children: ReactNode }) {
-  const value = useMemo(() => ({ host, init, blobs: new Map(), saved: new SavedState(host, init.state), location: new Location(host, init.params) }), [host, init]);
+  const value = useMemo(() => {
+    setWording({ messages: init.wording ?? {}, locale: init.locale ?? init.lang ?? 'en', lang: init.lang ?? 'en', picking: init.picking });
+    return { host, init, blobs: new Map(), saved: new SavedState(host, init.state), location: new Location(host, init.params) };
+  }, [host, init]);
   useEffect(() => host.onParams(value.location.moved), [host, value]);
-  return <ViewContext value={value}>{children}</ViewContext>;
+  useEffect(() => host.onWording?.((wording, lang) => {
+    setWording({ messages: wording, locale: init.locale ?? lang, lang, picking: init.picking });
+    document.documentElement.lang = lang;
+  }), [host, init]);
+  // rendered again when the text changes, with a new element, so the view renders again with it
+  useSyncExternalStore(onWording, wordingVersion, wordingVersion);
+  return <ViewContext value={value}>{isValidElement(children) ? cloneElement(children) : children}</ViewContext>;
 }
 
 function useContext_(): Context {

@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Search } from 'lucide-react';
 import { ConfirmDialog, NoteCard, NoteTitle, useDebounced } from '@gestalts/kit';
-import {
-  useDoc, useHost, useOutline, useParams, useQuery, useRead, useViewState, useWrite,
-  type Json, type JsonMap, type OutlineEntry, type OutlineMark, type OutlineSpec, type OutlineStatus,
-} from '@gestalts/view';
+import { t, useDoc, useHost, useOutline, useParams, useQuery, useRead, useViewState, useWrite, type Json, type JsonMap, type OutlineEntry, type OutlineMark, type OutlineSpec, type OutlineStatus } from '@gestalts/view';
 
 const NOTE = 'note@1';
 const FOLLOWS = 'follows';
@@ -44,23 +41,23 @@ function withTag(v: JsonMap, tag: string, on: boolean): JsonMap {
   return tags.length ? { ...rest, tags } : rest;
 }
 
-const STATUS: Record<OutlineStatus, string> = {
-  root: 'The root',
-  attached: 'In the Zettelkasten',
-  floating: 'Placed, but not reaching the root',
-  unplaced: 'Not placed yet',
-  excluded: 'Kept out of the Zettelkasten',
+const STATUS: Record<OutlineStatus, () => string> = {
+  root: () => t('status_root'),
+  attached: () => t('status_attached'),
+  floating: () => t('status_floating'),
+  unplaced: () => t('status_unplaced'),
+  excluded: () => t('status_excluded'),
 };
-const MARK: Record<OutlineMark['kind'], string> = {
-  parentMissing: 'Its place is a note that doesn\'t exist (any more).',
-  parentUnplaced: 'Its place is a note that isn\'t placed yet.',
-  parentExcluded: 'Its place is a note kept out of the Zettelkasten.',
-  cycle: 'Its places go round in a circle.',
-  placedTwice: 'It is placed in more than one place.',
-  fork: 'Another note already follows the same note.',
-  extraRoot: 'There is already a root.',
-  rootPlaced: 'The root is placed somewhere too; that place is ignored.',
-  excludedPlaced: 'It is tagged to be kept out, but placed.',
+const MARK: Record<OutlineMark['kind'], () => string> = {
+  parentMissing: () => t('mark_parent_missing'),
+  parentUnplaced: () => t('mark_parent_unplaced'),
+  parentExcluded: () => t('mark_parent_excluded'),
+  cycle: () => t('mark_cycle'),
+  placedTwice: () => t('mark_placed_twice'),
+  fork: () => t('mark_fork'),
+  extraRoot: () => t('mark_extra_root'),
+  rootPlaced: () => t('mark_root_placed'),
+  excludedPlaced: () => t('mark_excluded_placed'),
 };
 
 /** Changes one note, always from its whole current value (what's shown may be only some of its props). */
@@ -72,7 +69,7 @@ function useChange() {
     setError(undefined);
     try {
       const v = (await read.page({ gestalt: NOTE, ids: [id], limit: 1 })).items[0]?.value;
-      if (!v) throw new Error('That note is gone.');
+      if (!v) throw new Error(t('note_gone'));
       await write.put(f(v));
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -126,15 +123,15 @@ export default function Zettelkasten() {
         {inbox.error && <div role="alert" className="alert alert-error text-sm">{inbox.error}</div>}
         {subject
           ? <Subject key={subject} id={subject} fromInbox={!focused} hasRoot={hasRoot} change={change} expand={expand} focus={focus} open={open} skip={() => setSeed(newSeed())} onDrag={setDragging} />
-          : !inbox.loading && <p className="p-4 text-center text-base-content/60">Every note is placed, or kept out.</p>}
+          : !inbox.loading && <p className="p-4 text-center text-base-content/60">{t('all_placed')}</p>}
         {subject && <Targets ctx={ctx} />}
         <Attention ctx={ctx} />
       </aside>
       <main className="min-w-0 flex-1 p-3 md:overflow-y-auto">
-        <h2 className="mb-2 text-sm font-semibold uppercase text-base-content/60">Zettelkasten</h2>
+        <h2 className="mb-2 text-sm font-semibold uppercase text-base-content/60">{t('title')}</h2>
         {top.error && <div role="alert" className="alert alert-error text-sm">{top.error}</div>}
         {!hasRoot && (
-          <p className="text-base-content/60">No root yet. Make a note the root to start: everything else is placed after it or under it.</p>
+          <p className="text-base-content/60">{t('no_root')}</p>
         )}
         <Rows result={top} depth={0} ctx={ctx} />
       </main>
@@ -158,7 +155,7 @@ function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip, on
     if (!fromInbox && path?.length) expand(path.map((p) => p.id));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- opens the tree to it once per place it is at, then the user may close it
   }, [pathKey]);
-  if (!note) return located === undefined ? null : <p className="text-base-content/60">That note is gone. <button type="button" className="link" onClick={() => focus(null)}>Next</button></p>;
+  if (!note) return located === undefined ? null : <p className="text-base-content/60">{t('note_gone')} <button type="button" className="link" onClick={() => focus(null)}>{t('next')}</button></p>;
   const v = note.value;
   const places = rels(v).filter(isPlace);
   const tags = tagsOf(v);
@@ -166,14 +163,14 @@ function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip, on
     <section className="card card-border bg-base-100">
       <div className="card-body gap-3 p-4">
         <div className="flex items-center gap-2 text-sm">
-          <span className="font-semibold">{located ? STATUS[located.status] : '…'}</span>
+          <span className="font-semibold">{located ? STATUS[located.status]() : '…'}</span>
           <span className="flex-1" />
-          <button type="button" className="btn btn-ghost btn-xs" title="Edit in Notes" onClick={() => open(id)}><Pencil className="size-4" /> Edit</button>
+          <button type="button" className="btn btn-ghost btn-xs" title={t('edit_title')} onClick={() => open(id)}><Pencil className="size-4" /> {t('edit')}</button>
         </div>
         {path && path.length > 0 && <Path path={path} />}
         {located && located.status !== 'root'
           ? (
-            <div className="cursor-grab active:cursor-grabbing" draggable title="Drag onto a note in the tree or the search to place it there"
+            <div className="cursor-grab active:cursor-grabbing" draggable title={t('drag')}
                  onDragStart={(e) => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; onDrag(true); }}
                  onDragEnd={() => onDrag(false)}>
               <NoteCard value={v} />
@@ -182,32 +179,32 @@ function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip, on
           : <NoteCard value={v} />}
         {located?.marks.map((m, i) => <Fix key={i} id={id} mark={m} value={v} change={change} focus={focus} />)}
         <div className="flex flex-wrap gap-2">
-          {fromInbox && <button type="button" className="btn btn-sm" onClick={skip}>Skip</button>}
-          {!fromInbox && <button type="button" className="btn btn-sm" onClick={() => focus(null)}>Next unplaced</button>}
+          {fromInbox && <button type="button" className="btn btn-sm" onClick={skip}>{t('skip')}</button>}
+          {!fromInbox && <button type="button" className="btn btn-sm" onClick={() => focus(null)}>{t('next_unplaced')}</button>}
           {places.length > 0 && (
             <button type="button" className="btn btn-sm" onClick={() => {
               if (located?.hasChildren) setConfirmingUnplace(true);
               else void change(id, (x) => withPlaces(x, []));
-            }}>Unplace</button>
+            }}>{t('unplace')}</button>
           )}
           {!tags.includes(EXCLUDE) && places.length === 0 && !tags.includes(ROOT) && (
-            <button type="button" className="btn btn-sm" onClick={() => void change(id, (x) => withTag(x, EXCLUDE, true))}>Keep out</button>
+            <button type="button" className="btn btn-sm" onClick={() => void change(id, (x) => withTag(x, EXCLUDE, true))}>{t('keep_out')}</button>
           )}
-          {tags.includes(EXCLUDE) && <button type="button" className="btn btn-sm" onClick={() => void change(id, (x) => withTag(x, EXCLUDE, false))}>Let in</button>}
+          {tags.includes(EXCLUDE) && <button type="button" className="btn btn-sm" onClick={() => void change(id, (x) => withTag(x, EXCLUDE, false))}>{t('let_in')}</button>}
           {!hasRoot && places.length === 0 && !tags.includes(EXCLUDE) && (
-            <button type="button" className="btn btn-sm btn-primary" onClick={() => void change(id, (x) => withTag(x, ROOT, true))}>Make it the root</button>
+            <button type="button" className="btn btn-sm btn-primary" onClick={() => void change(id, (x) => withTag(x, ROOT, true))}>{t('make_root')}</button>
           )}
         </div>
         {located?.status !== 'root' && (
           <p className="text-xs text-base-content/60">
-            {places.length ? 'To move it, pick' : 'To place it, pick'} a note in the tree or search, or drag the note onto one: it goes after that note, or starts a branch under it.
+            {places.length ? t('how_move') : t('how_place')}
           </p>
         )}
       </div>
       {confirmingUnplace && (
-        <ConfirmDialog title="Unplace this note?" confirmLabel="Unplace" onClose={() => setConfirmingUnplace(false)}
+        <ConfirmDialog title={t('unplace_title')} confirmLabel={t('unplace')} onClose={() => setConfirmingUnplace(false)}
                        onConfirm={() => change(id, (x) => withPlaces(x, []))}>
-          What branches from it will float until it is placed again.
+          {t('unplace_text')}
         </ConfirmDialog>
       )}
     </section>
@@ -218,23 +215,23 @@ function Subject({ id, fromInbox, hasRoot, change, expand, focus, open, skip, on
 function Fix({ id, mark, value, change, focus }: { id: string; mark: OutlineMark; value: JsonMap; change: Change; focus: (id: string | null) => void }) {
   const places = rels(value).filter(isPlace);
   const targets = useQuery(mark.kind === 'placedTwice' ? { gestalt: NOTE, ids: places.map((p) => p.to), fields: ['title', 'main'] } : null).items;
-  const title = (to: string) => { const t = targets.find((i) => i.id === to); return t ? <NoteTitle value={t.value} /> : 'a missing note'; };
+  const title = (to: string) => { const found = targets.find((i) => i.id === to); return found ? <NoteTitle value={found.value} /> : t('missing_note'); };
   return (
     <div role="alert" className="alert alert-warning flex flex-col items-start gap-2 text-sm">
-      <span>{MARK[mark.kind]}</span>
+      <span>{MARK[mark.kind]()}</span>
       <div className="flex flex-wrap gap-2">
-        {mark.kind === 'parentUnplaced' && mark.target && <button type="button" className="btn btn-xs" onClick={() => focus(mark.target!)}>Place that note first</button>}
+        {mark.kind === 'parentUnplaced' && mark.target && <button type="button" className="btn btn-xs" onClick={() => focus(mark.target!)}>{t('place_first')}</button>}
         {mark.kind === 'placedTwice' && places.map((p, i) => (
           <button key={i} type="button" className="btn btn-xs" onClick={() => void change(id, (x) => withPlaces(x, [p]))}>
-            Keep: {p.label === FOLLOWS ? 'after' : 'under'} {title(p.to)}
+            {p.label === FOLLOWS ? t('keep_after') : t('keep_under')} {title(p.to)}
           </button>
         ))}
         {(mark.kind === 'extraRoot' || mark.kind === 'rootPlaced') && (
           <button type="button" className="btn btn-xs" onClick={() => void change(id, (x) => (mark.kind === 'extraRoot' ? withTag(x, ROOT, false) : withPlaces(x, [])))}>
-            {mark.kind === 'extraRoot' ? 'Not the root' : 'Remove its place'}
+            {mark.kind === 'extraRoot' ? t('not_root') : t('remove_place')}
           </button>
         )}
-        {mark.kind === 'excludedPlaced' && <button type="button" className="btn btn-xs" onClick={() => void change(id, (x) => withTag(x, EXCLUDE, false))}>Let it in</button>}
+        {mark.kind === 'excludedPlaced' && <button type="button" className="btn btn-xs" onClick={() => void change(id, (x) => withTag(x, EXCLUDE, false))}>{t('let_it_in')}</button>}
       </div>
     </div>
   );
@@ -252,9 +249,9 @@ function Targets({ ctx }: { ctx: TreeCtx }) {
     <section className="flex flex-col gap-2">
       <label className="input input-sm w-full">
         <Search className="size-4 opacity-60" />
-        <input type="search" placeholder="Search for where it goes" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input type="search" placeholder={t('search')} aria-label={t('search')} value={search} onChange={(e) => setSearch(e.target.value)} />
       </label>
-      {text && !found.loading && !ids.length && <p className="text-sm text-base-content/60">Nothing found.</p>}
+      {text && !found.loading && !ids.length && <p className="text-sm text-base-content/60">{t('nothing_found')}</p>}
       <ul className="flex flex-col gap-1">
         {located.map((e) => (
           <li key={e.item.id} className="rounded-box bg-base-200 p-2 text-sm">
@@ -270,9 +267,9 @@ function Targets({ ctx }: { ctx: TreeCtx }) {
 
 /** Why a note can't take the subject, if it can't. */
 function refusal(e: OutlineEntry, subject: string, below: boolean): string | null {
-  if (e.item.id === subject) return 'This is the note itself.';
-  if (below) return 'This is placed below the note itself.';
-  if (e.status !== 'root' && e.status !== 'attached') return `${STATUS[e.status]}: place it first.`;
+  if (e.item.id === subject) return t('itself');
+  if (below) return t('below_itself');
+  if (e.status !== 'root' && e.status !== 'attached') return t('place_first_why', { status: STATUS[e.status]() });
   return null;
 }
 
@@ -281,17 +278,17 @@ function refusal(e: OutlineEntry, subject: string, below: boolean): string | nul
  * and going where it already is changes nothing.
  */
 function taken(e: OutlineEntry, how: Place, at: TreeCtx['subjectAt']): string | null {
-  if (at?.to === e.item.id && at.how === how) return 'It is already here.';
-  if (how === 'after' && e.hasFollower) return 'Another note already follows this one: place it after that one, or branch from this.';
+  if (at?.to === e.item.id && at.how === how) return t('already_here');
+  if (how === 'after' && e.hasFollower) return t('has_follower');
   return null;
 }
 
-const HOW: Record<Place, string> = { after: 'After this', branch: 'Branch from this' };
+const HOW: Record<Place, () => string> = { after: () => t('after_this'), branch: () => t('branch_this') };
 
 /** Putting the subject after this note or under it, by a click or by dropping it on the button. */
 function PlaceButtons({ entry, below, ctx }: { entry: OutlineEntry; below: boolean; ctx: TreeCtx }) {
   const [over, setOver] = useState<Place | null>(null);
-  const no = ctx.subject ? refusal(entry, ctx.subject, below) : 'Nothing to place.';
+  const no = ctx.subject ? refusal(entry, ctx.subject, below) : t('nothing_to_place');
   if (no) return <p className="mt-1 text-xs text-base-content/60">{no}</p>;
   return (
     <div className="mt-1 flex gap-2">
@@ -308,7 +305,7 @@ function PlaceButtons({ entry, below, ctx }: { entry: OutlineEntry; below: boole
                     onDragEnter={() => { if (drop) setOver(how); }}
                     onDragLeave={() => setOver(null)}
                     onDrop={(e) => { e.preventDefault(); e.stopPropagation(); setOver(null); if (drop) void ctx.place(entry.item.id, how); }}>
-              {HOW[how]}
+              {HOW[how]()}
             </button>
           </span>
         );
@@ -327,7 +324,7 @@ function Attention({ ctx }: { ctx: TreeCtx }) {
   if (!loose.entries.length) return null;
   return (
     <section className="flex flex-col gap-1">
-      <h2 className="text-sm font-semibold uppercase text-base-content/60">Needs attention</h2>
+      <h2 className="text-sm font-semibold uppercase text-base-content/60">{t('attention')}</h2>
       <ul className="flex flex-col gap-1">
         {loose.entries.map((e) => {
           const id = e.item.id;
@@ -337,11 +334,11 @@ function Attention({ ctx }: { ctx: TreeCtx }) {
             <li key={id}>
               <div className="flex items-start gap-1">
                 {floats
-                  ? <button type="button" className="btn btn-ghost btn-xs btn-square mt-1.5" aria-label={open ? 'Hide what hangs on it' : 'Show what hangs on it'} onClick={() => setUnfolded(open ? unfolded.filter((x) => x !== id) : [...unfolded, id])}>{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button>
+                  ? <button type="button" className="btn btn-ghost btn-xs btn-square mt-1.5" aria-label={open ? t('hide') : t('show')} title={open ? t('hide') : t('show')} onClick={() => setUnfolded(open ? unfolded.filter((x) => x !== id) : [...unfolded, id])}>{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button>
                   : <span className="inline-block w-6 shrink-0" />}
                 <button type="button" className="min-w-0 flex-1 rounded-box p-2 text-start text-sm hover:bg-base-200" onClick={() => ctx.focus(id)}>
                   <span className="block break-words"><NoteTitle value={e.item.value} /></span>
-                  <span className="block text-xs text-base-content/60">{e.marks.map((m) => MARK[m.kind]).join(' ')}</span>
+                  <span className="block text-xs text-base-content/60">{e.marks.map((m) => MARK[m.kind]()).join(' ')}</span>
                 </button>
               </div>
               {open && <Floating from={id} ctx={ctx} />}
@@ -349,7 +346,7 @@ function Attention({ ctx }: { ctx: TreeCtx }) {
           );
         })}
       </ul>
-      {loose.hasMore && <button type="button" className="btn btn-sm btn-ghost" onClick={loose.more}>More</button>}
+      {loose.hasMore && <button type="button" className="btn btn-sm btn-ghost" onClick={loose.more}>{t('more')}</button>}
     </section>
   );
 }
@@ -377,7 +374,7 @@ function Rows({ result, depth, ctx }: { result: ReturnType<typeof useOutline>; d
       <ul>
         {result.entries.map((e) => <Row key={e.item.id} entry={e} depth={depth} ctx={ctx} />)}
       </ul>
-      {result.hasMore && <button type="button" className="btn btn-xs btn-ghost" style={{ marginInlineStart: `${depth * 1.25 + 1.5}rem` }} onClick={result.more}>More</button>}
+      {result.hasMore && <button type="button" className="btn btn-xs btn-ghost" style={{ marginInlineStart: `${depth * 1.25 + 1.5}rem` }} onClick={result.more}>{t('more')}</button>}
     </>
   );
 }
@@ -412,7 +409,7 @@ function Row({ entry, depth, ctx }: { entry: OutlineEntry; depth: number; ctx: T
         <button type="button" className="min-w-0 flex-1 py-1 text-start break-words" onClick={() => ctx.select(selected ? null : id)}>
           <NoteTitle value={entry.item.value} />
         </button>
-        {entry.marks.length > 0 && <span className="badge badge-warning badge-xs" title={entry.marks.map((m) => MARK[m.kind]).join(' ')}>!</span>}
+        {entry.marks.length > 0 && <span className="badge badge-warning badge-xs" title={entry.marks.map((m) => MARK[m.kind]()).join(' ')}>!</span>}
       </div>
       {selected && <RowActions entry={entry} depth={depth} ctx={ctx} />}
       {open && <Children of={id} depth={depth + 1} ctx={ctx} />}
@@ -429,8 +426,8 @@ function RowActions({ entry, depth, ctx }: { entry: OutlineEntry; depth: number;
   return (
     <div className="flex flex-wrap items-center gap-2 py-1" style={{ paddingInlineStart: `${depth * 1.25 + 1.75}rem` }}>
       {subject && located && <PlaceButtons entry={entry} below={located.belowSubject === true} ctx={ctx} />}
-      <button type="button" className="btn btn-xs" onClick={() => ctx.focus(id)}>Focus</button>
-      <button type="button" className="btn btn-xs btn-ghost" title="Edit in Notes" onClick={() => ctx.open(id)}><Pencil className="size-4" /> Edit</button>
+      <button type="button" className="btn btn-xs" onClick={() => ctx.focus(id)}>{t('focus')}</button>
+      <button type="button" className="btn btn-xs btn-ghost" title={t('edit_title')} onClick={() => ctx.open(id)}><Pencil className="size-4" /> {t('edit')}</button>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react';
+import { m, useAt } from '../primitives/words';
 import { Plus } from 'lucide-react';
 import { useQuery, useRead, useWrite, type Item, type Query } from '@gestalts/view';
 import { useDebounced } from '../primitives';
@@ -40,6 +41,7 @@ export function ItemPicker({ query, more, render, onPick, exclude, create, place
   autoFocus?: boolean;
   size?: 'sm' | 'md';
 }) {
+  const words = useAt();
   const [search, setSearch] = useState('');
   const [active, setActive] = useState(0);
   const [error, setError] = useState<string>();
@@ -104,19 +106,20 @@ export function ItemPicker({ query, more, render, onPick, exclude, create, place
           )}
         </ul>
       )}
-      {text && text === typed && !loading && !count && <p className="px-2 text-sm text-base-content/60">Nothing found.</p>}
+      {text && text === typed && !loading && !count && <p className="px-2 text-sm text-base-content/60">{m.kit_nothing_found({}, words)}</p>}
       {error && <p role="alert" className="px-2 text-sm text-error">{error}</p>}
     </div>
   );
 }
 
 /** Notes found by their text. `unrelatedTo`: only those not related to that yml yet (asked of the core). */
-export function NotePicker({ onPick, unrelatedTo, exclude, placeholder = 'Find a note…', autoFocus }: {
+export function NotePicker({ onPick, unrelatedTo, exclude, placeholder, autoFocus }: {
   onPick: (note: Item) => void; unrelatedTo?: string; exclude?: Set<string>; placeholder?: string; autoFocus?: boolean;
 }) {
+  const at = useAt();
   return (
     <ItemPicker
-      placeholder={placeholder} autoFocus={autoFocus} exclude={exclude} onPick={onPick}
+      placeholder={placeholder ?? m.kit_find_note({}, at)} autoFocus={autoFocus} exclude={exclude} onPick={onPick}
       query={(text) => ({
         gestalt: NOTE, text, fields: ['title', 'main'], limit: SHOWN,
         ...(unrelatedTo ? { links: { none: [{ field: 'relationships', to: { ids: [unrelatedTo] } }] } } : {}),
@@ -137,15 +140,16 @@ export async function conceptNamed(read: ReturnType<typeof useRead>, name: strin
  * Concepts found by their name or aliases, or a new one made from what's typed (unless one goes by that name already:
  * then it's that one). `onPick` gets the concept's id. `exclude`: ids not offered.
  */
-export function ConceptPicker({ onPick, exclude, placeholder = 'Find or create a concept…', autoFocus, size }: {
+export function ConceptPicker({ onPick, exclude, placeholder, autoFocus, size }: {
   onPick: (id: string) => void; exclude?: Set<string>; placeholder?: string; autoFocus?: boolean; size?: 'sm' | 'md';
 }) {
+  const at = useAt();
   const read = useRead();
   const write = useWrite();
   const same = (c: Item, name: string) => [str(c.value.name), ...strings(c.value.aliases)].some((n) => fold(n) === fold(name));
   return (
     <ItemPicker
-      placeholder={placeholder} autoFocus={autoFocus} exclude={exclude} size={size} onPick={(c) => onPick(c.id)}
+      placeholder={placeholder ?? m.kit_find_concept({}, at)} autoFocus={autoFocus} exclude={exclude} size={size} onPick={(c) => onPick(c.id)}
       query={(text) => ({ gestalt: CONCEPTS, text, fields: ['name', 'aliases'], limit: SHOWN })}
       render={(c) => (
         <span className="flex min-w-0 items-baseline gap-2">
@@ -155,7 +159,7 @@ export function ConceptPicker({ onPick, exclude, placeholder = 'Find or create a
       )}
       create={{
         offer: (name, found) => !found.some((c) => same(c, name)),
-        label: (name) => <>Create “{name}”</>,
+        label: (name) => m.kit_create({ name }, at),
         run: async (name) => {
           const existing = await conceptNamed(read, name);
           onPick(existing ? existing.id : (await write.put({ gestalt: CONCEPT, name })).id);

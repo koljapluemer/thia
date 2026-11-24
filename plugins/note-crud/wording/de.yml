@@ -1,0 +1,28 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  search:
+    text: "Suchen"
+    source: 4d67ccd810f00e9e
+  new:
+    text: "Neue Notiz"
+    source: ae955e2217e3ee08
+  nothing_found:
+    text: "Nichts gefunden."
+    source: b4656a91a3863581
+  no_notes:
+    text: "Noch keine Notizen."
+    source: ac769d024a9171a8
+  back:
+    text: "Zurück zur Liste"
+    source: 83c47911885339d8
+  delete:
+    text: "Löschen"
+    source: 5cd41daf77b3849f
+  delete_title:
+    text: "Diese Notiz löschen?"
+    source: c501f66c28b5ece4
+  delete_text:
+    text: "Das lässt sich nicht rückgängig machen."
+    source: 43ef169b5f5c7ffe

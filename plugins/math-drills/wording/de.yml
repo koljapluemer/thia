@@ -1,0 +1,28 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  back:
+    text: "Zurück"
+    source: 2af5412f4ce18695
+  reveal:
+    text: "Antworten zeigen"
+    source: a6ea4acade185a83
+  no_questions:
+    text: "Keine Aufgaben in diesem Thema."
+    source: e94a3f9ec95dda58
+  not_saved:
+    text: "Deine letzte Antwort ließ sich nicht speichern: {error}"
+    source: a436cbca7ebdf7db
+  dismiss:
+    text: "Schließen"
+    source: 0d61ecd0675222ef
+  title:
+    text: "Rechentraining"
+    source: 6c3f3754e7f1775a
+  which_topic:
+    text: "Welches Thema?"
+    source: aefba14f535c379b
+  no_decks:
+    text: "Hier gibt es noch keine Rechenaufgaben."
+    source: cf8fbf33837c5f20

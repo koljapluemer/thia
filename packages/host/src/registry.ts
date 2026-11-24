@@ -1,4 +1,5 @@
 import type { DeckSource } from '@gestalts/client';
+import type { Wording } from '@gestalts/view/wording';
 
 /** What a view's frame may be allowed beyond the strict sandbox; only the distribution grants it (`grants`). */
 export type Permission = 'same-origin' | 'microphone';
@@ -38,6 +39,8 @@ export type DeckEntry = { id: string; title: string; source: string; path: strin
 export type PluginEntry = {
   manifest: PluginManifest;
   decks: DeckEntry[];
+  /** its view's text: the source and each translation and rewording of it (`wording/`) */
+  wording?: Wording[];
   /** its view, compiled */
   js: string;
   /** npm packages its view imports */

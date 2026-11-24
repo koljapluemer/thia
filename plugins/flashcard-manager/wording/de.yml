@@ -1,0 +1,82 @@
+# translated by a model from en.yml, not yet read by a person: mark it `layer: reviewed` once someone has
+lang: de
+layer: machine
+messages:
+  front_image:
+    text: "Bild vorn"
+    source: 3e3f3afead0d70c1
+  back_image:
+    text: "Bild hinten"
+    source: 79afe082cf76c118
+  audio:
+    text: "Audio"
+    source: eaac1fdec7ff9248
+  remove_slot:
+    text: "Entfernen: {what}"
+    source: 285b2dd8b346d60e
+  search:
+    text: "Suchen"
+    source: 4d67ccd810f00e9e
+  new:
+    text: "Neue Lernkarte"
+    source: 144f9efa6ee471d3
+  empty:
+    text: "(leer)"
+    source: 75a54ae499f8caa6
+  nothing_found:
+    text: "Nichts gefunden."
+    source: b4656a91a3863581
+  no_cards:
+    text: "Noch keine Lernkarten."
+    source: 18e66c80fc10e560
+  concepts:
+    text: "Begriffe"
+    source: 2353957129fc4ae9
+  strength:
+    text: "Stärke, 0 bis 1"
+    source: acdd9383f86a2f7e
+  remove:
+    text: "Entfernen"
+    source: d6abf7f44a9d2eb8
+  find_concept:
+    text: "Begriff suchen oder anlegen…"
+    source: 4636fa73a5fd5cf2
+  create:
+    text: "„{name}“ anlegen"
+    source: 87f8fc7c13a73611
+  back:
+    text: "Zurück zur Liste"
+    source: 83c47911885339d8
+  saved:
+    text: "Gespeichert"
+    source: 4503db5f977ff212
+  delete:
+    text: "Löschen"
+    source: 5cd41daf77b3849f
+  save:
+    text: "Speichern"
+    source: 287f0ee1b6bf83bf
+  front:
+    text: "Vorderseite"
+    source: 113f7d03ef1d6a00
+  context:
+    text: "Kontext, klein unter der Vorderseite"
+    source: ce1b1f27ecb544fb
+  back_side:
+    text: "Rückseite"
+    source: 2af5412f4ce18695
+  extra:
+    text: "Zusatz, nach dem Aufdecken gezeigt"
+    source: b88ee13f641b6cc3
+  tags:
+    text: "Schlagwörter, durch Kommas getrennt"
+    source: cb19cac7dbc4f31c
+  aliases:
+    text: "Aliasse, durch Kommas getrennt"
+    source: f32500a806ea7615
+  delete_title:
+    text: "Diese Lernkarte löschen?"
+    source: 9d28e8de5e81704a
+  delete_text:
+    text: "Auch der Lernstand dazu wird gelöscht. Das lässt sich nicht rückgängig machen."
+    source: 7d74eb2735c20a38

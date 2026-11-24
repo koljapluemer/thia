@@ -1,0 +1,82 @@
+# the view's own text, as its maker wrote it (wording@1, the source): each key with where it shows
+lang: en
+layer: source
+messages:
+  front_image:
+    text: "Front image"
+    description: "a file slot: the picture on the front"
+  back_image:
+    text: "Back image"
+    description: "a file slot: the picture on the back"
+  audio:
+    text: "Audio"
+    description: "a file slot: the sound played after the reveal"
+  remove_slot:
+    text: "Remove: {what}"
+    description: "icon button beside a file slot; what is the slot's name"
+  search:
+    text: "Search"
+    description: "the search box above the list of cards"
+  new:
+    text: "New flashcard"
+    description: "icon button: makes a new card"
+  empty:
+    text: "(empty)"
+    description: "in the list, for a card with no front"
+  nothing_found:
+    text: "Nothing found."
+    description: "in the list when a search finds nothing"
+  no_cards:
+    text: "No flashcards yet."
+    description: "in the list when there are no cards"
+  concepts:
+    text: "Concepts"
+    description: "heading of what the card practises"
+  strength:
+    text: "Strength, 0 to 1"
+    description: "label of how much a concept counts for the card"
+  remove:
+    text: "Remove"
+    description: "icon button: removes a concept from the card"
+  find_concept:
+    text: "Find or create a concept…"
+    description: "the box concepts are looked up in"
+  create:
+    text: "Create “{name}”"
+    description: "button: makes a new concept named as typed"
+  back:
+    text: "Back to the list"
+    description: "icon button above a card on narrow screens"
+  saved:
+    text: "Saved"
+    description: "after the card was saved"
+  delete:
+    text: "Delete"
+    description: "button: asks whether to delete the card"
+  save:
+    text: "Save"
+    description: "button: saves the card"
+  front:
+    text: "Front"
+    description: "the field for the front of the card"
+  context:
+    text: "Context, small print with the front"
+    description: "the field for small print shown with the front"
+  back_side:
+    text: "Back"
+    description: "the field for the back of the card"
+  extra:
+    text: "Extra, shown after the reveal"
+    description: "the field shown after the answer"
+  tags:
+    text: "Tags, comma separated"
+    description: "the field for tags"
+  aliases:
+    text: "Aliases, comma separated"
+    description: "the field for other names of the card"
+  delete_title:
+    text: "Delete this flashcard?"
+    description: "the question asked before deleting"
+  delete_text:
+    text: "Its review progress will also be deleted. This cannot be undone."
+    description: "below that question"
