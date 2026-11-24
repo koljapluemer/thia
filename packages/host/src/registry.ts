@@ -33,7 +33,9 @@ export type PluginManifest = {
  * `practises`: the names of the concepts a view opened on it practises as a whole (a deck@3's or @4's), most weight
  * first. `lang`: the language its text is in, `targetLang` the one it teaches (a `deck@4`'s); none for an older deck.
  */
-export type DeckEntry = { id: string; title: string; source: string; path: string; practises: string[]; lang?: string; targetLang?: string };
+export type DeckEntry = { id: string; title: string; source: string; path: string; practises: string[]; lang?: string; targetLang?: string;
+  /** the ids of the concepts it practises as a whole: decks of one view practising the same are siblings, one per language */
+  concepts?: string[] };
 
 /** A plugin the app is built with. */
 export type PluginEntry = {

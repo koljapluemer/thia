@@ -228,6 +228,7 @@ shell = "bash -c"
 run = """
 set -euo pipefail
 uv run plugins/math-drills/tools/build_decks.py {{usage.stembridge}}
+uv run plugins/math-drills/tools/siblings.py
 for d in plugins/math-drills/decks/*/; do mise run publish-data "$d"; done
 """
 

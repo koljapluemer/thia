@@ -101,5 +101,6 @@
   "seq_known": "du kannst {concept} schon",
   "seq_struggling": "erst etwas mehr Übung zu {concept}",
   "catalog_teaches": "Lehrt {language}",
-  "catalog_lang_filter": "Sprache der Inhalte"
+  "catalog_lang_filter": "Sprache der Inhalte",
+  "view_also_in": "Auch auf"
 }

@@ -7,7 +7,7 @@ import { renderToString } from 'react-dom/server';
 import { registry } from 'virtual:gestalts-plugins';
 import type { OutlineTree, OutlineTreeEntry } from '@gestalts/host';
 import { AVAILABLE, langPath, LangProvider, messages, splitPath } from '@gestalts/i18n';
-import { ENTRIES, entryAt, type Entry } from './Catalog';
+import { ENTRIES, entryAt, siblingsOf, type Entry } from './Catalog';
 import { outlineAt } from './Outline';
 import { NotFound, Site } from './Site';
 
@@ -65,8 +65,11 @@ function describe(e: Entry): string {
 }
 
 function viewHead(e: Entry, trees: OutlineTree[], base: string, lang?: string): Head {
+  // its siblings (the same practice in other languages), else its own pages in each language its text was read in
+  const siblings = siblingsOf(e);
   const others = reviewedLangs(e);
-  const alternates = others.length ? { [e.lang]: e.path, ...Object.fromEntries(others.map((l) => [l, langPath(e.path, l)])), 'x-default': e.path } : undefined;
+  const alternates = siblings.length > 1 ? { ...Object.fromEntries(siblings.map((s) => [s.lang, s.path])), 'x-default': siblings[0].path }
+    : others.length ? { [e.lang]: e.path, ...Object.fromEntries(others.map((l) => [l, langPath(e.path, l)])), 'x-default': e.path } : undefined;
   const path = lang ? langPath(e.path, lang) : e.path;
   if (!e.deck) return { title: `${e.title} · thia`, description: describe(e), lang: e.lang, path: e.path, noindex: true };
   const alignments = e.deck ? trees.flatMap((t) => closest(t.entries, e.deck!.source).map((x) => ({

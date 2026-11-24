@@ -135,7 +135,8 @@ function readDecks(pluginId: string, root: string) {
     const practises = Object.entries(practising ? meta.concepts ?? {} : {}).sort((a, b) => b[1] - a[1]).flatMap(([c]) => names.get(c) ?? []);
     // its language, a deck@4's
     const lang: { lang?: string; targetLang?: string } = meta.gestalt === 'deck@4' ? { lang: meta.lang, ...(meta.target_lang ? { targetLang: meta.target_lang } : {}) } : {};
-    return { id, title: meta.title ?? meta.name ?? id, dir: deck, gestalts, practises, ...lang };
+    const concepts = practising ? Object.keys(meta.concepts ?? {}).sort() : [];
+    return { id, title: meta.title ?? meta.name ?? id, dir: deck, gestalts, practises, concepts, ...lang };
   });
 }
 
@@ -385,7 +386,7 @@ export function gestaltsPlugins(): PluginOption[] {
         this.addWatchFile(join(p.root, 'plugin.yml'));
         this.addWatchFile(join(p.root, 'view.tsx'));
         for (const f of existsSync(join(p.root, 'wording')) ? readdirSync(join(p.root, 'wording')) : []) this.addWatchFile(join(p.root, 'wording', f));
-        const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}`, practises: d.practises, ...(d.lang ? { lang: d.lang } : {}), ...(d.targetLang ? { targetLang: d.targetLang } : {}) }));
+        const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}`, practises: d.practises, concepts: d.concepts, ...(d.lang ? { lang: d.lang } : {}), ...(d.targetLang ? { targetLang: d.targetLang } : {}) }));
         return { manifest: p.manifest, decks, wording: p.wording, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);

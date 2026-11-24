@@ -3,10 +3,10 @@ import { ArrowLeft } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import { RepoProvider } from '@gestalts/client';
 import { ViewFrame, closedCsp, type Navigate } from '@gestalts/host';
-import { useLang } from '@gestalts/i18n';
+import { nameIn, useLang } from '@gestalts/i18n';
 import tailwind from '@tailwindcss/browser?raw';
 import css from './app.css?inline';
-import { ENTRIES, type Entry } from './Catalog';
+import { ENTRIES, follow, siblingsOf, type Entry } from './Catalog';
 import { useHome, viewStatePrefix } from './home';
 import { Notice, Spinner } from './Run';
 import { rememberRecent } from './recent';
@@ -26,8 +26,10 @@ function pathOf(view: string, from: Entry): string | undefined {
  * so a link opens it there and going back goes back in it.
  */
 export function ViewPage({ entry, back, open }: { entry: Entry; back?: () => void; open: (path: string) => void }) {
-  const { m } = useLang();
+  const { m, lang } = useLang();
   const { home, dir } = useHome(entry.deck?.source);
+  // the same practice in other languages: what's done in one counts for the others
+  const others = siblingsOf(entry).filter((s) => s !== entry);
   const [title, setTitle] = useState(entry.title);
   useEffect(() => {
     rememberRecent(entry);
@@ -46,7 +48,13 @@ export function ViewPage({ entry, back, open }: { entry: Entry; back?: () => voi
             <ArrowLeft className="size-4" />
           </a>
         )}
-        <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{title}</h1>
+        <h1 lang={entry.lang} className="min-w-0 flex-1 truncate text-sm font-medium">{title}</h1>
+        {others.length > 0 && (
+          <span className="flex items-center gap-1 text-xs text-base-content/60">
+            {m.view_also_in()}
+            {others.map((s) => <a key={s.path} href={s.path} lang={s.lang} className="link" onClick={(e) => follow(e, s.path, open)}>{nameIn(s.lang, lang)}</a>)}
+          </span>
+        )}
         <Toolbar />
       </header>
       <main className="min-h-0 flex-1">

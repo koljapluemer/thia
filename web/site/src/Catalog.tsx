@@ -29,6 +29,22 @@ export const ENTRIES: Entry[] = registry.plugins.flatMap((plugin): Entry[] => {
 /** The languages of everything on the site, for the catalog's filter. */
 const LANGS = [...new Set(ENTRIES.map((e) => e.lang))].sort();
 
+/**
+ * The same view on decks in other languages practising the same concepts: siblings, so what's practised in one counts
+ * for the others. The entry itself is among them.
+ */
+export function siblingsOf(e: Entry): Entry[] {
+  const key = (x: Entry) => (x.deck?.concepts?.length ? `${x.plugin.manifest.id}|${x.deck.concepts.join(',')}` : x.path);
+  return ENTRIES.filter((x) => key(x) === key(e));
+}
+
+/** Of each set of siblings, the one in `lang` if there is one, else the first. */
+const oneOfEach = (entries: Entry[], lang: string) => entries.filter((e) => {
+  const sibs = siblingsOf(e);
+  const mine = sibs.find((s) => sameLanguage(s.lang, lang));
+  return (mine ?? sibs[0]) === e;
+});
+
 export function entryAt(path: string): Entry | undefined {
   return ENTRIES.find((e) => e.path === path.replace(/\/$/, ''));
 }
@@ -116,11 +132,11 @@ export function Catalog({ open }: { open: (path: string) => void }) {
   const shown = useMemo(() => {
     const terms = words(q).split(/\s+/).filter(Boolean);
     return ENTRIES.filter((e) => {
-      if (only && e.lang !== only && e.targetLang !== only) return false;
+      if (only ? e.lang !== only && e.targetLang !== only : !oneOfEach(ENTRIES, lang).includes(e)) return false;
       const text = words([e.title, e.plugin.manifest.title, e.about, ...e.tags].join(' '));
       return terms.every((t) => text.includes(t));
     });
-  }, [q, only]);
+  }, [q, only, lang]);
   const views = shown.filter((e) => e.deck);
   const own = shown.filter((e) => !e.deck);
   return (

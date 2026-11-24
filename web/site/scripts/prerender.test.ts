@@ -53,6 +53,16 @@ describe('the prerendered site', () => {
     expect(head(`/de${e.path}`, trees, '').lang).toBe(e.lang);
   });
 
+  test('shows one of a view\'s decks in each language, each naming the others', () => {
+    const de = ENTRIES.find((e) => e.deck?.id === 'stembridge-round-tenth-de')!;
+    const en = ENTRIES.find((e) => e.deck?.id === 'stembridge-round-tenth')!;
+    expect(de.lang).toBe('de');
+    expect(head(de.path, trees, 'https://thia.example').alternates).toEqual({ en: en.path, de: de.path, 'x-default': en.path });
+    expect(render('/')).toContain(en.title);
+    expect(render('/')).not.toContain(de.title);
+    expect(render('/de/')).toContain(de.title);
+  });
+
   test('renders the catalog with its views', () => {
     const html = render('/');
     for (const e of ENTRIES.slice(0, 5)) expect(html).toContain(e.title.replaceAll('&', '&amp;'));
