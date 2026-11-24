@@ -19,7 +19,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use serde::{Deserialize, Serialize};
 use serde_yaml_ng::Value;
 
-use crate::checks::{DECK3, is_concept, weighted};
+use crate::checks::{is_concept, is_practising_deck, weighted};
 use crate::yml::{Yml, content_hash};
 
 pub const OUTLINE: &str = "outline@1";
@@ -213,7 +213,7 @@ pub fn outline_index(input: &IndexInput) -> OutlineIndex {
     }
     let mut skipped = Vec::new();
     for (source, ymls) in &decks {
-        match ymls.iter().find(|y| y.gestalt() == Some(DECK3)) {
+        match ymls.iter().find(|y| is_practising_deck(y)) {
             Some(d) => concepts.decks.push((source.clone(), weighted(d.get("concepts")))),
             None => skipped.push(source.clone()),
         }

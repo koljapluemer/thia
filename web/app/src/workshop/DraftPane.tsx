@@ -29,11 +29,13 @@ const contextOf = (me: api.Me): { registry: Registry; source: { gestalts: string
 /** A view's draft: the preview beside the chat that edits it. */
 export function DraftPane({ info, me, agent, onChanged, onDeleted }: { info: api.DraftInfo; me: api.Me; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
   const [{ registry, source }] = useState(() => contextOf(me));
+  // its text starts in its maker's language
+  const { lang } = useLang();
   // a brief it was made with (a lesson's plan) becomes its spec
   const init = useCallback(async (repo: Repo) => {
-    await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package, spec: api.brief.get(info.id) });
+    await createDraft(repo, info.title, registry.runtime.version, { id: info.id, package: info.package, spec: api.brief.get(info.id) }, lang);
     api.brief.clear(info.id);
-  }, [info, registry]);
+  }, [info, registry, lang]);
   return (
     <OpenDraft info={info} source={source} init={init}>
       {(repo) => <Workbench repo={repo} registry={registry} info={info} agent={agent} onChanged={onChanged} onDeleted={onDeleted} />}

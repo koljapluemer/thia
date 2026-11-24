@@ -186,7 +186,8 @@ function LineView({ lineWords, typed, active, method }: { lineWords: Word[]; typ
         }
         return (
           <div key={w.id} className="flex flex-col items-center gap-1">
-            <span className="font-mono text-2xl tracking-wide">{chars}</span>
+            {/* what's typed against: Vietnamese, never translated by the browser */}
+            <span lang="vi" translate="no" className="font-mono text-2xl tracking-wide">{chars}</span>
             <span className="text-xs opacity-60">{w.gloss}</span>
             {method !== 'off' && <span className="badge badge-ghost badge-sm font-mono">{w.keys[method]}</span>}
           </div>
@@ -286,7 +287,7 @@ function Practice({ words, weightOf, method, log }: { words: Word[]; weightOf: (
         </div>
       </div>
 
-      <input ref={inputRef} type="text" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
+      <input ref={inputRef} type="text" lang="vi" translate="no" autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
              className="input input-bordered input-lg w-full max-w-3xl text-center" placeholder="Start typing..." autoFocus />
     </div>
   );

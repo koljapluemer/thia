@@ -1,5 +1,5 @@
 id: deck-vietnamese-typing
-gestalt: deck@3
+gestalt: deck@4
 name: vietnamese-typing
 title: Vietnamese typing
 members:
@@ -493,3 +493,5 @@ members:
 concepts:
   concept-4d6efe4987a5a211: 1
   concept-357c57e45c46147b: 0.5
+lang: en
+target_lang: vi

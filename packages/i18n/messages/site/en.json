@@ -99,5 +99,7 @@
   ],
   "view_practises": "Practises {concepts}.",
   "seq_known": "you already know {concept}",
-  "seq_struggling": "some extra practice on {concept} first"
+  "seq_struggling": "some extra practice on {concept} first",
+  "catalog_teaches": "Teaches {language}",
+  "catalog_lang_filter": "Language of the content"
 }

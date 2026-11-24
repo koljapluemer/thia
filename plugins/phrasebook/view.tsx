@@ -70,7 +70,7 @@ type Graph = {
 
 function useGraph(): { graph: Graph; loading: boolean; error?: string } {
   const cardQuery = useAll(useQuery({ gestalt: 'flashcard@1', tags: { all: ['phrasebook'] }, fields: ['tags', 'concepts', 'sources'], limit: 500 }));
-  const deckQuery = useAll(useQuery({ gestalt: ['deck@1', 'deck@3'], fields: ['name', 'title', 'members'], limit: 100 }));
+  const deckQuery = useAll(useQuery({ gestalt: ['deck@1', 'deck@3', 'deck@4'], fields: ['name', 'title', 'members'], limit: 100 }));
   const cards = useMemo(() => cardQuery.items.flatMap((i) => cardOf(i) ?? []), [cardQuery.items]);
   const decks = useMemo(() => {
     const ids = new Set(cards.map((c) => c.id));
@@ -219,12 +219,22 @@ function Shell({ mode, progress, instruction, onBack, children }: { mode: string
   );
 }
 
-/** What you want to say, and (revealed) how it's said. */
+/** The language a card is in (its `lang:<iso3>` tag), as BCP 47 writes it, for `lang` attributes. */
+function cardLang(tags: string[]): string | undefined {
+  const iso = tags.find((t) => t.startsWith('lang:'))?.slice('lang:'.length);
+  try { return iso ? Intl.getCanonicalLocales(iso)[0] : undefined; } catch { return undefined; }
+}
+
+/**
+ * What you want to say, and (revealed) how it's said: in the language learned, marked so, and never translated by
+ * the browser (`translate="no"`), which would give the answer away.
+ */
 function Phrase({ id, reveal }: { id: string; reveal: boolean }) {
   const card = useDoc('flashcard@1', id);
   if (!card) return <div className="flex flex-1 items-center justify-center"><span className="loading loading-spinner" /></div>;
   const context = str(card.value.context);
   const extra = str(card.value.extra);
+  const target = cardLang(strings(card.value.tags));
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
       <Markdown text={str(card.value.front)} className="text-2xl font-semibold" />
@@ -232,8 +242,8 @@ function Phrase({ id, reveal }: { id: string; reveal: boolean }) {
       {reveal && (
         <>
           <div className="divider my-0 w-full" />
-          <Markdown text={str(card.value.back)} className="text-2xl font-semibold" />
-          {extra && <Markdown text={extra} className="text-sm text-base-content/70" />}
+          <div lang={target} translate="no"><Markdown text={str(card.value.back)} className="text-2xl font-semibold" /></div>
+          {extra && <div lang={target} translate="no"><Markdown text={extra} className="text-sm text-base-content/70" /></div>}
           <Credits sources={card.value.sources} />
         </>
       )}

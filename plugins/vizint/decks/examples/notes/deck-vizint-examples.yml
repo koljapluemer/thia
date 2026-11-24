@@ -1,5 +1,5 @@
 id: deck-vizint-examples
-gestalt: deck@3
+gestalt: deck@4
 name: examples
 title: Examples
 members:
@@ -19,3 +19,4 @@ concepts:
   concept-d8a681bcc005abd1: 1
   concept-65a8c25c6ec017e2: 1
   concept-d03821e425883f59: 1
+lang: en

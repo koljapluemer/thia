@@ -1,6 +1,7 @@
 id: note-inbox
 version: 1.0.0
 title: Note inbox
+lang: en
 description: >-
   Upload a folder of plaintext files, then turn them into notes one at random: as many notes from each as it holds,
   then delete it, or defer it for later.

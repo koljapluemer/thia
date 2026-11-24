@@ -131,7 +131,8 @@ function Question({ id, onShown, onAnswered, onNext }: { id: string; onShown: ()
             const chosen = picked.includes(i);
             const cls = chosen ? (o.correct ? RIGHT : WRONG) : done ? `${OPTION} pointer-events-none` : OPTION;
             return (
-              <button key={i} type="button" className={cls} onClick={(e) => { if (!chosen && !done) pick(i, e.timeStamp); }}>
+              // an answer is compared as written: the browser's translation mustn't change it
+              <button key={i} type="button" translate="no" className={cls} onClick={(e) => { if (!chosen && !done) pick(i, e.timeStamp); }}>
                 <Markdown text={o.text} inline />
               </button>
             );

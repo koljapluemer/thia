@@ -1,5 +1,5 @@
 id: deck-world-map
-gestalt: deck@3
+gestalt: deck@4
 name: world-map
 title: World Map
 members:
@@ -661,3 +661,4 @@ members:
   - map-exercise-nga-group-west-africa-coast
 concepts:
   concept-afd0d8826da0be3d: 1
+lang: en

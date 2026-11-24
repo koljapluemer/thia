@@ -175,7 +175,13 @@ pub(crate) async fn build(state: &AppState, c: &Check<'_>) -> ApiResult<Version>
         "view": view_name,
         "npm": npm_files.iter().map(|(spec, (_, name))| (spec.clone(), json!(format!("/npm/{name}")))).collect::<serde_json::Map<_, _>>(),
         "published": now_iso(),
+        // what its text is in (a view from before languages were recorded: English), and what it teaches if a language
+        "lang": view.str_field("lang").unwrap_or("en"),
     });
+    let mut manifest = manifest;
+    if let Some(t) = view.str_field("target_lang") {
+        manifest["target_lang"] = json!(t);
+    }
     files.insert("manifest.json".to_owned(), serde_json::to_vec_pretty(&manifest).expect("json"));
     let blobs = blobs.into_iter().map(|(b, p)| (format!("blobs/{b}"), p)).collect();
     Ok(Version { files, blobs, npm: npm_files, definitions })

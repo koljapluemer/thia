@@ -21,11 +21,18 @@ export type PluginManifest = {
   llm?: boolean;
   /** the npm packages its view imports, at exact versions */
   npm?: Record<string, string>;
+  /** the language its view's text is written in (BCP 47); English if not said */
+  lang?: string;
+  /** where a language is what it teaches, whatever its decks: that one */
+  target_lang?: string;
 };
 
-/** One of a plugin's decks, as the build serves it: `source` is `<plugin>/<deck>`, `path` relative to the app. */
-/** `practises`: the names of the concepts a view opened on it practises as a whole (a deck@3's), most weight first */
-export type DeckEntry = { id: string; title: string; source: string; path: string; practises: string[] };
+/**
+ * One of a plugin's decks, as the build serves it: `source` is `<plugin>/<deck>`, `path` relative to the app.
+ * `practises`: the names of the concepts a view opened on it practises as a whole (a deck@3's or @4's), most weight
+ * first. `lang`: the language its text is in, `targetLang` the one it teaches (a `deck@4`'s); none for an older deck.
+ */
+export type DeckEntry = { id: string; title: string; source: string; path: string; practises: string[]; lang?: string; targetLang?: string };
 
 /** A plugin the app is built with. */
 export type PluginEntry = {

@@ -12,7 +12,7 @@ function readState(key: string): JsonMap {
 
 /** A plugin's view as a frame runs it. */
 export function runnable(p: PluginEntry): RunnableView {
-  return { id: p.manifest.id, title: p.manifest.title, js: p.js, npm: p.npm, npmUrls: npmUrlsOf(p), scope: { reads: p.manifest.reads ?? [], writes: p.manifest.writes ?? [], network: p.manifest.network ?? [], llm: p.manifest.llm ?? false, microphone: p.granted.includes('microphone') }, granted: p.granted };
+  return { id: p.manifest.id, title: p.manifest.title, lang: p.manifest.lang ?? 'en', js: p.js, npm: p.npm, npmUrls: npmUrlsOf(p), scope: { reads: p.manifest.reads ?? [], writes: p.manifest.writes ?? [], network: p.manifest.network ?? [], llm: p.manifest.llm ?? false, microphone: p.granted.includes('microphone') }, granted: p.granted };
 }
 
 /** The view's own backend, through the node. */

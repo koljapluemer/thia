@@ -110,5 +110,5 @@ for (const [intent, word] of pairs) {
 }
 
 // what the deck practises as a whole: writing Vietnamese, in the language; words and marks are the evidence
-await put({ id: 'deck-vietnamese-typing', gestalt: 'deck@3', name: 'vietnamese-typing', title: 'Vietnamese typing', members: [...members], concepts: { [script]: 1, [conceptId(LANGUAGE)]: 0.5 } });
+await put({ id: 'deck-vietnamese-typing', gestalt: 'deck@4', name: 'vietnamese-typing', title: 'Vietnamese typing', members: [...members], concepts: { [script]: 1, [conceptId(LANGUAGE)]: 0.5 }, lang: 'en', target_lang: 'vi' });
 console.log(`${Object.keys(words).length} words, ${MARK_KEYS.length} script concepts, ${pairs.length} phrasebook pairs`);

@@ -8,6 +8,8 @@ describe('a lesson manifest', () => {
     expect(parseManifest(ok)).toEqual(ok);
     // a viz's lesson starts the vizint view on its viz
     expect(parseManifest({ ...ok, params: { viz: 'wellen' } }).params).toEqual({ viz: 'wellen' });
+    // what its text is in, and what it teaches
+    expect(parseManifest({ ...ok, lang: 'de', target_lang: 'vi' })).toMatchObject({ lang: 'de', target_lang: 'vi' });
   });
 
   it('is refused when it asks for more than a lesson gets, or points elsewhere', () => {
@@ -20,6 +22,7 @@ describe('a lesson manifest', () => {
       ['writing what it does not read', { ...ok, writes: ['note@1'] }],
       ['another format', { ...ok, format: 'lesson@2' }],
       ['params that are not texts', { ...ok, params: { viz: 1 } }],
+      ['a language that is no tag', { ...ok, lang: 'German"><script>' }],
     ] as const) expect(() => parseManifest(bad), why).toThrow();
   });
 });

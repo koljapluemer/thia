@@ -1,5 +1,5 @@
 id: deck-greek-alphabet
-gestalt: deck@3
+gestalt: deck@4
 name: greek-alphabet
 title: Ancient Greek
 members:
@@ -110,3 +110,5 @@ members:
 - concept-5dfe069fd5d59eb4
 concepts:
   concept-5dfe069fd5d59eb4: 1
+lang: en
+target_lang: grc

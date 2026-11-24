@@ -81,7 +81,7 @@ def main(source: Path) -> None:
 
     members = [w["id"] for w in words] + [concept_id(n) for n in names] + [root]
     listing = "".join(f"- {m}\n" for m in members)
-    (notes / "deck-greek-alphabet.yml").write_text(f"id: deck-greek-alphabet\ngestalt: deck@3\nname: greek-alphabet\ntitle: Ancient Greek\nmembers:\n{listing}concepts:\n  {root}: 1\n", encoding="utf-8")
+    (notes / "deck-greek-alphabet.yml").write_text(f"id: deck-greek-alphabet\ngestalt: deck@4\nname: greek-alphabet\ntitle: Ancient Greek\nmembers:\n{listing}concepts:\n  {root}: 1\nlang: en\ntarget_lang: grc\n", encoding="utf-8")
     print(f"{len(words)} exercises, {len(names) + 1} concepts")
 
 

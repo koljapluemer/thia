@@ -1,6 +1,7 @@
 id: transparent-input
 version: 1.0.0
 title: Watch with vocabulary
+lang: en
 description: >-
   Watch YouTube videos in a language you learn, with cards for the words worth knowing as they come up. Every word shown
   counts as having come up, for the concept of its flemma; words whose flashcards you know well get no cards.

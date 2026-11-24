@@ -1,7 +1,7 @@
 //! Checks across the ymls of one published folder (a deck, an outline), beyond what each yml's gestalt says about it
 //! alone: what `publish-data` and `health` report besides invalid ymls.
 //!
-//! A `deck@3` says what it practises as a whole (`concepts`), apart from its members' evidence. So that the two can't
+//! A `deck@3` (and a `deck@4`, which adds its language) says what it practises as a whole (`concepts`), apart from its members' evidence. So that the two can't
 //! drift apart, where members name concepts, each of the deck's is one a member names (directly, through its `model`,
 //! or as evidence of a response) or a set (`in`) one of those is a member of. A deck whose members name none (a
 //! visualization) may say anything. Either way it names at least one, and ships each concept yml it names.
@@ -12,7 +12,13 @@ use serde_yaml_ng::Value;
 
 use crate::yml::Yml;
 
-pub const DECK3: &str = "deck@3";
+/// The decks that say what they practise as a whole: `deck@3`, and `deck@4` with its language.
+pub const PRACTISING_DECKS: &[&str] = &["deck@3", "deck@4"];
+
+/// Whether `y` is a deck that says what it practises as a whole.
+pub fn is_practising_deck(y: &Yml) -> bool {
+    y.gestalt().is_some_and(|g| PRACTISING_DECKS.contains(&g))
+}
 
 /// A `{id: weight}` map's keys with a weight above 0.
 pub(crate) fn weighted(v: Option<&Value>) -> BTreeMap<String, f64> {
@@ -41,7 +47,7 @@ fn named_concepts(y: &Yml) -> BTreeSet<String> {
 pub fn folder_problems(ymls: &[Yml]) -> Vec<String> {
     let by_id: BTreeMap<&str, &Yml> = ymls.iter().map(|y| (y.id.as_str(), y)).collect();
     let mut out = Vec::new();
-    for deck in ymls.iter().filter(|y| y.gestalt() == Some(DECK3)) {
+    for deck in ymls.iter().filter(|y| is_practising_deck(y)) {
         out.extend(deck_problems(deck, &by_id).into_iter().map(|p| format!("{}: {p}", deck.id)));
     }
     if ymls.iter().any(|y| y.gestalt() == Some(crate::outline_index::OUTLINE)) {

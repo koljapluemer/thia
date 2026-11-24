@@ -29,6 +29,9 @@ NO_SITUATION = "anywhere"
 TAGS = ["phrasebook", "native:eng", "no-generic-practice"]
 
 
+# ISO 639-3, as concepts name languages, to BCP 47, as a deck@4 does
+BCP47 = {"ita": "it", "vie": "vi"}
+
 def sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()[:16]
 
@@ -127,8 +130,9 @@ def build(path: Path) -> None:
         members.append(write(notes, value))
     deck_id = f"deck-{d['deck']}"
     # what the deck practises as a whole: the language; its cards' concepts are the evidence
-    write(notes, {"id": deck_id, "gestalt": "deck@3", "name": d["deck"], "title": d["title"], "members": members,
-                  "concepts": {concept_id(language): 1}})
+    # explained in English; the phrases are in the language it teaches (as BCP 47 has it: ita is it)
+    write(notes, {"id": deck_id, "gestalt": "deck@4", "name": d["deck"], "title": d["title"], "members": members,
+                  "concepts": {concept_id(language): 1}, "lang": "en", "target_lang": BCP47[lang]})
     (deck_dir / "LICENSE.md").write_text(license_text(d, src), encoding="utf-8")
     cards = sum(len(p["variants"]) for p in d["phrases"])
     print(f"{d['deck']}: {cards} cards, {len(names)} concepts, {len(links)} links")

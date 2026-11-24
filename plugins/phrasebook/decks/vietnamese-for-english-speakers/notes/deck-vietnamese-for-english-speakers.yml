@@ -1,5 +1,5 @@
 id: deck-vietnamese-for-english-speakers
-gestalt: deck@3
+gestalt: deck@4
 name: vietnamese-for-english-speakers
 title: Essential Vietnamese phrases for English speakers
 members:
@@ -156,3 +156,5 @@ members:
 - link-d181669185c3a35b
 concepts:
   concept-357c57e45c46147b: 1
+lang: en
+target_lang: vi

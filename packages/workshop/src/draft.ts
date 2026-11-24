@@ -3,14 +3,17 @@ import type { Item, Json, JsonMap } from '@gestalts/view';
 import { parse, stringify } from 'yaml';
 
 /**
- * A draft: one `view@3` yml and its members, the `gestalt@1` definitions and the ymls it ships with. Whatever the view
+ * A draft: one `view@4` yml and its members, the `gestalt@1` definitions and the ymls it ships with. Whatever the view
  * writes while it's tried out stays out of it. A `view@1` reads as a draft without members.
  *
  * The agent sees it as files ([`filesOf`]); what it changed comes back as ymls to write ([`applyFiles`]).
  */
-export const VIEW = 'view@3';
-/** what reads as a draft: a `view@1` without members, a `view@2` without a brief, written as a `view@3` when saved */
-export const VIEWS = ['view@1', 'view@2', 'view@3'];
+export const VIEW = 'view@4';
+/**
+ * what reads as a draft: a `view@1` without members, a `view@2` without a brief, a `view@3` in English (written before
+ * languages were recorded), written as a `view@4` when saved
+ */
+export const VIEWS = ['view@1', 'view@2', 'view@3', 'view@4'];
 export const DEFINITION = 'gestalt@1';
 
 export type Draft = {
@@ -28,7 +31,14 @@ export type Draft = {
   /** what its own gestalts are named in: `<package>/<name>@<N>` */
   package: string;
   members: string[];
+  /** the language its text is written in (BCP 47): the person's who makes it, often not English */
+  lang: string;
+  /** where a language is what it teaches: that one, whose words are never translated */
+  targetLang?: string;
 };
+
+/** `tag` as BCP 47 writes it, or undefined if it isn't one. */
+const canonicalTag = (tag: string): string | undefined => { try { return Intl.getCanonicalLocales(tag.trim())[0]; } catch { return undefined; } };
 
 const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 const isMap = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -62,6 +72,8 @@ export function asDraft(i: Item): Draft {
     runtime: typeof v.runtime === 'string' ? v.runtime : undefined,
     package: typeof v.package === 'string' ? v.package : packageOf(i.id),
     members: strings(v.members),
+    lang: typeof v.lang === 'string' && v.lang ? v.lang : 'en',
+    targetLang: typeof v.target_lang === 'string' && v.target_lang ? v.target_lang : undefined,
   };
 }
 
@@ -74,18 +86,19 @@ const STARTER = `export default function View() {
 export const isStarter = (d: Pick<Draft, 'source'>) => d.source === STARTER;
 
 /**
- * A new draft named after `title`; its id can be a file name. A server that hands out drafts gives the id and package
- * (`given`); otherwise they're made here.
+ * A new draft named after `title`, its text in `lang` (its maker's); its id can be a file name. A server that hands out
+ * drafts gives the id and package (`given`); otherwise they're made here.
  */
-export async function createDraft(repo: Pick<Repo, 'put'>, title: string, runtime?: string, given?: { id: string; package: string; spec?: string }): Promise<string> {
+export async function createDraft(repo: Pick<Repo, 'put'>, title: string, runtime?: string, given?: { id: string; package: string; spec?: string }, lang = 'en'): Promise<string> {
   const slug = title.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'view';
   const id = given?.id ?? `${slug}-${hash48(`${title}:${Date.now()}:${Math.random()}`).slice(0, 8)}`;
-  await repo.put(viewYml({ id, title, spec: given?.spec ?? '', source: STARTER, reads: [], writes: [], npm: {}, runtime, package: given?.package ?? packageOf(id), members: [] }));
+  await repo.put(viewYml({ id, title, spec: given?.spec ?? '', source: STARTER, reads: [], writes: [], npm: {}, runtime, package: given?.package ?? packageOf(id), members: [], lang }));
   return id;
 }
 
 function viewYml(d: Draft): JsonMap {
-  const out: JsonMap = { id: d.id, gestalt: VIEW, title: d.title, source: d.source, reads: d.reads, writes: d.writes, package: d.package };
+  const out: JsonMap = { id: d.id, gestalt: VIEW, title: d.title, source: d.source, reads: d.reads, writes: d.writes, package: d.package, lang: d.lang };
+  if (d.targetLang) out.target_lang = d.targetLang;
   if (d.spec) out.spec = d.spec;
   if (Object.keys(d.npm).length) out.npm = d.npm;
   if (d.runtime) out.runtime = d.runtime;
@@ -114,7 +127,7 @@ const DATA_FILE = /^data\/([^/\\]+)\.yml$/;
 export function filesOf(d: Draft, members: Item[]): Record<string, string> {
   const files: Record<string, string> = {
     'view.tsx': d.source,
-    'view.json': `${JSON.stringify({ title: d.title, package: d.package, reads: d.reads, writes: d.writes, npm: d.npm }, null, 2)}\n`,
+    'view.json': `${JSON.stringify({ title: d.title, package: d.package, lang: d.lang, ...(d.targetLang ? { target_lang: d.targetLang } : {}), reads: d.reads, writes: d.writes, npm: d.npm }, null, 2)}\n`,
   };
   for (const m of members) {
     if (m.gestalt === DEFINITION) {
@@ -163,6 +176,9 @@ export function applyFiles(d: Draft, members: Item[], changed: Record<string, st
       draft.reads = strings(m.reads);
       draft.writes = strings(m.writes);
       draft.npm = versions(m.npm);
+      if (typeof m.lang === 'string' && canonicalTag(m.lang)) draft.lang = canonicalTag(m.lang)!;
+      else if (m.lang !== undefined) problems.push(`view.json: lang ${JSON.stringify(m.lang)} isn't a language tag (BCP 47: de, en, vi)`);
+      draft.targetLang = typeof m.target_lang === 'string' && canonicalTag(m.target_lang) ? canonicalTag(m.target_lang) : undefined;
     } catch (e) {
       problems.push(`view.json: ${(e as Error).message}`);
     }

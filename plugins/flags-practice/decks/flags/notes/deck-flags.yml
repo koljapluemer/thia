@@ -1,5 +1,5 @@
 id: deck-flags
-gestalt: deck@3
+gestalt: deck@4
 name: flags
 title: Flags
 members:
@@ -1154,3 +1154,4 @@ members:
   - flag-zw
 concepts:
   concept-060e4a343bd58d18: 1
+lang: en

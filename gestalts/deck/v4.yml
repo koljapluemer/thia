@@ -1,0 +1,15 @@
+name: deck
+version: 4
+description: >-
+  What a view opened on it practises as a whole (`concepts`), as in `deck@3`, and the language of what it holds:
+  `lang` (BCP 47) is the language its text is in, as it was written (a German curriculum's exercises: `de`). Where
+  the language is what's practised (vocabulary, a script), `target_lang` is that one and `lang` the one it's explained
+  in: a Vietnamese deck for German speakers is `target_lang: vi`, `lang: de`. Decks in other languages with the same
+  `concepts` are siblings: practice on one counts for the others. Write `deck@3` for a deck in no particular language.
+fields:
+  name: { type: string, required: true }
+  title: { type: string, required: true }
+  members: { type: ref_list, required: true }
+  concepts: { type: ref_map, required: true, min: 0, max: 1, targets: [concept] }
+  lang: { type: string, required: true }
+  target_lang: { type: string }

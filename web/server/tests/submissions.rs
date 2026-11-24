@@ -14,7 +14,7 @@ async fn draft(s: &Server, email: &str, title: &str) -> (String, String, String)
     let cookie = s.login(email).await;
     let (_, d, _) = s.call("POST", "/api/drafts", Some(&cookie), Some(json!({ "title": title }))).await;
     let (id, p) = (d["id"].as_str().unwrap().to_owned(), d["package"].as_str().unwrap().to_owned());
-    let view = format!("id: {id}\ngestalt: view@2\ntitle: {title}\nsource: {VIEW:?}\nreads: [{p}/noun@1, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [gestalt-{p}.noun.1, haus]\n");
+    let view = format!("id: {id}\ngestalt: view@4\ntitle: {title}\nsource: {VIEW:?}\nreads: [{p}/noun@1, practice-event@1]\nwrites: [practice-event@1]\npackage: {p}\nmembers: [gestalt-{p}.noun.1, haus]\nlang: de\n");
     let noun = format!("id: gestalt-{p}.noun.1\ngestalt: gestalt@1\nname: {p}/noun\nversion: 1\nfields:\n  word: {{ type: string, required: true }}\n");
     let w = json!([{ "id": id, "text": view }, { "id": format!("gestalt-{p}.noun.1"), "text": noun }, { "id": "haus", "text": format!("id: haus\ngestalt: {p}/noun@1\nword: Haus\n") }, { "id": "tried", "text": "id: tried\ngestalt: note@1\n" }]);
     assert_eq!(s.call("POST", &format!("/api/drafts/{id}/sync/write"), Some(&cookie), Some(w)).await.0, StatusCode::NO_CONTENT);
@@ -105,11 +105,12 @@ async fn an_accepted_view_becomes_a_plugin_with_its_own_package_and_deck() {
     assert!(read(r, "plugins/artikel/view.tsx").contains("Hallo"));
     let manifest = read(r, "plugins/artikel/plugin.yml");
     assert!(manifest.contains("id: artikel") && manifest.contains("artikel/noun@1") && !manifest.contains(&package), "{manifest}");
+    assert!(manifest.contains("lang: de"), "the view's language: {manifest}");
     let def = read(r, "gestalts/artikel/noun/v1.yml");
     assert!(def.starts_with("name: artikel/noun\nversion: 1\nfields:") && !def.contains("gestalt:") && !def.contains("id:"), "as a definition in gestalts/ reads: {def}");
     assert!(read(r, "plugins/artikel/decks/nomen/notes/haus.yml").contains("gestalt: artikel/noun@1"));
     let deck = read(r, "plugins/artikel/decks/nomen/notes/deck-artikel-nomen.yml");
-    assert!(deck.contains("gestalt: deck@3") && deck.contains("- haus"), "{deck}");
+    assert!(deck.contains("gestalt: deck@4") && deck.contains("lang: de") && deck.contains("- haus"), "{deck}");
     let concept = gestalts_core::sha16("grammatical gender");
     assert!(deck.contains(&format!("concept-{concept}: 1")), "{deck}");
     assert!(read(r, &format!("plugins/artikel/decks/nomen/notes/concept-{concept}.yml")).contains("name: grammatical gender"));

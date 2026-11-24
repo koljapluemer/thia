@@ -1,0 +1,19 @@
+name: view
+version: 4
+description: >-
+  A vibecoded view and what ships with it, as in `view@3`, and its language: `lang` (BCP 47) is the one its text was
+  written in (its source; often German, never assumed English), `target_lang` the one it teaches where the language is
+  what's practised (vocabulary, transparent input), whose words are never translated. Write `view@3` for a view from
+  before languages were recorded.
+fields:
+  title: { type: string, required: true }
+  spec: { type: text }
+  source: { type: text, required: true }
+  reads: { type: string_list, required: true }
+  writes: { type: string_list, required: true }
+  npm: { type: map, values: { type: string } }
+  runtime: { type: string }
+  package: { type: string, required: true }
+  members: { type: ref_list }
+  lang: { type: string, required: true }
+  target_lang: { type: string }

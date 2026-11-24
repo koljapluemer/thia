@@ -1,6 +1,7 @@
 id: concept-explorer
 version: 1.0.0
 title: Concept explorer
+lang: en
 description: >-
   One concept at a time: collect what sheds light on it, as notes related to it, each with the sources it draws on;
   see how it links to other concepts, and how well you know it.

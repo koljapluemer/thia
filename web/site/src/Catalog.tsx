@@ -2,22 +2,32 @@ import { useMemo, useState, type MouseEvent } from 'react';
 import { BookOpen, History, Search } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import type { DeckEntry, PluginEntry } from '@gestalts/host';
-import { useLang } from '@gestalts/i18n';
+import { nameIn, sameLanguage, useLang } from '@gestalts/i18n';
 import { GuestBanner, Toolbar } from './Toolbar';
 import { useRecent } from './recent';
+import { store, useStored } from './store';
 
 /**
  * Everything on the site: each view opened on one of its decks (a learning loop, a lesson from a workshop, a
  * visualization, all alike), and the views without decks (notes, flashcards, sources), on the user's own data alone.
  */
-export type Entry = { plugin: PluginEntry; deck?: DeckEntry; path: string; title: string; about: string; tags: string[] };
+export type Entry = {
+  plugin: PluginEntry; deck?: DeckEntry; path: string; title: string; about: string; tags: string[];
+  /** the language its content is in: its deck's, else its view's; `targetLang`: the one it teaches */
+  lang: string; targetLang?: string;
+};
 
 export const ENTRIES: Entry[] = registry.plugins.flatMap((plugin): Entry[] => {
   const about = plugin.manifest.description ?? plugin.manifest.title;
   const tags = plugin.manifest.tags ?? [];
-  if (!plugin.decks.length) return [{ plugin, path: `/v/${plugin.manifest.id}`, title: plugin.manifest.title, about, tags }];
-  return plugin.decks.map((deck) => ({ plugin, deck, path: `/v/${plugin.manifest.id}/${deck.id}`, title: deck.title, about, tags }));
+  const lang = plugin.manifest.lang ?? 'en';
+  const targetLang = plugin.manifest.target_lang;
+  if (!plugin.decks.length) return [{ plugin, path: `/v/${plugin.manifest.id}`, title: plugin.manifest.title, about, tags, lang, targetLang }];
+  return plugin.decks.map((deck) => ({ plugin, deck, path: `/v/${plugin.manifest.id}/${deck.id}`, title: deck.title, about, tags, lang: deck.lang ?? lang, targetLang: deck.targetLang ?? targetLang }));
 });
+
+/** The languages of everything on the site, for the catalog's filter. */
+const LANGS = [...new Set(ENTRIES.map((e) => e.lang))].sort();
 
 export function entryAt(path: string): Entry | undefined {
   return ENTRIES.find((e) => e.path === path.replace(/\/$/, ''));
@@ -33,13 +43,23 @@ export function follow(e: MouseEvent, path: string, open: (path: string) => void
   open(path);
 }
 
+/**
+ * A view, its content's language said when it isn't the reader's (or when it teaches one): never hidden, as plenty of
+ * what's here is in one language only.
+ */
 export function ViewCard({ e, open }: { e: Entry; open: (path: string) => void }) {
+  const { m, lang } = useLang();
+  const other = !sameLanguage(e.lang, lang);
   return (
     <a href={e.path} onClick={(ev) => follow(ev, e.path, open)} className="card bg-base-100 shadow-sm transition hover:shadow-md">
       <div className="card-body gap-1 p-4">
-        <h2 className="card-title text-base">{e.title}</h2>
-        <p className="text-xs text-base-content/50">{e.plugin.manifest.title}</p>
-        <p className="line-clamp-3 text-sm text-base-content/70">{e.about}</p>
+        <h2 lang={e.lang} className="card-title text-base">{e.title}</h2>
+        <p className="flex flex-wrap items-center gap-1 text-xs text-base-content/50">
+          <span>{e.plugin.manifest.title}</span>
+          {other && <span className="badge badge-xs badge-ghost">{m.catalog_in_lang({ language: nameIn(e.lang, lang) })}</span>}
+          {e.targetLang && <span className="badge badge-xs badge-outline">{m.catalog_teaches({ language: nameIn(e.targetLang, lang) })}</span>}
+        </p>
+        <p lang={e.plugin.manifest.lang ?? 'en'} className="line-clamp-3 text-sm text-base-content/70">{e.about}</p>
       </div>
     </a>
   );
@@ -86,16 +106,21 @@ function RecentBar({ open }: { open: (path: string) => void }) {
   );
 }
 
+const LANG_FILTER = 'site:catalog:lang';
+
 export function Catalog({ open }: { open: (path: string) => void }) {
-  const { m } = useLang();
+  const { m, lang } = useLang();
   const [q, setQ] = useState('');
+  // a language to show only, kept on the device
+  const only = useStored(LANG_FILTER);
   const shown = useMemo(() => {
     const terms = words(q).split(/\s+/).filter(Boolean);
     return ENTRIES.filter((e) => {
+      if (only && e.lang !== only && e.targetLang !== only) return false;
       const text = words([e.title, e.plugin.manifest.title, e.about, ...e.tags].join(' '));
       return terms.every((t) => text.includes(t));
     });
-  }, [q]);
+  }, [q, only]);
   const views = shown.filter((e) => e.deck);
   const own = shown.filter((e) => !e.deck);
   return (
@@ -107,10 +132,18 @@ export function Catalog({ open }: { open: (path: string) => void }) {
           <Toolbar />
         </div>
         <p className="mt-1 text-base-content/70">{m.catalog_tagline()}</p>
-        <label className="input mt-6 w-full max-w-md">
-          <Search className="size-4 opacity-50" />
-          <input type="search" placeholder={m.catalog_search()} value={q} onChange={(e) => setQ(e.target.value)} aria-label={m.catalog_search()} />
-        </label>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <label className="input w-full max-w-md">
+            <Search className="size-4 opacity-50" />
+            <input type="search" placeholder={m.catalog_search()} value={q} onChange={(e) => setQ(e.target.value)} aria-label={m.catalog_search()} />
+          </label>
+          {LANGS.length > 1 && (
+            <select className="select w-auto" aria-label={m.catalog_lang_filter()} value={only ?? ''} onChange={(e) => (e.target.value ? store.set(LANG_FILTER, e.target.value) : store.remove(LANG_FILTER))}>
+              <option value="">{m.catalog_all_langs()}</option>
+              {LANGS.map((l) => <option key={l} value={l}>{nameIn(l, lang)}</option>)}
+            </select>
+          )}
+        </div>
         <RecentBar open={open} />
       </header>
       {!q && <Outlines open={open} />}

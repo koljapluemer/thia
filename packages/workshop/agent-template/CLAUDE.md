@@ -7,8 +7,9 @@ Work only in this folder.
 
 - **`view.tsx`**: one file, TypeScript + JSX. Its **default export is a React component with no props**. It fills its
   frame (give the root `h-full`). There are no other files: no local imports.
-- **`view.json`**: `{"title": "...", "package": "d-…", "reads": ["note@1"], "writes": [], "npm": {}}`. What it may
-  read and write, by gestalt. A call outside that is refused, so declare what the view needs, and no more. `package`
+- **`view.json`**: `{"title": "...", "package": "d-…", "lang": "de", "reads": ["note@1"], "writes": [], "npm": {}}`.
+  `lang` is the language its text is written in: the person's, as they write to you, whatever language this file is
+  in; `target_lang` too (`"vi"`) when a language is what it teaches. What it may read and write, by gestalt. A call outside that is refused, so declare what the view needs, and no more. `package`
   is fixed: it names the view's own gestalts. `npm` lists each npm package `view.tsx` imports, with its exact version
   (`{"three": "0.170.0"}`).
 - **`gestalts/<name>@<version>.yml`**, optional: a gestalt of the view's own, when none of the app's fits (below).
@@ -40,7 +41,8 @@ write is refused with the reason. Keep ymls small and link them.
 | `practice-event@2` | the same, saying more: written by `logPractice` when given `{ response, instance, ms }` (what kind of answer, a key of the item's `responses`; which item; how long) |
 | `deck@1` | `name`, `title?`, `members[]` |
 | `deck@2` | the same, plus `concepts?: {<concept id>: 0..1}`: what it practises beyond its members' own |
-| `deck@3` | `name`, `title`, `members[]`, `concepts: {<concept id>: 0..1}` (at least one): what a view on it practises as a whole. The reviewer writes it on accepting; you don't |
+| `deck@3` | `name`, `title`, `members[]`, `concepts: {<concept id>: 0..1}` (at least one): what a view on it practises as a whole |
+| `deck@4` | the same, plus `lang` (what its text is in) and `target_lang?` (the language it teaches). The reviewer writes it on accepting; you don't |
 | `fsrs-data@1` | written by `saveReview` |
 | `practice-session@1` | written by `usePracticeSession` |
 
@@ -87,7 +89,12 @@ what they read and write too: `NoteEditor` reads `note@1`, `source@1`, `concept@
 
 The sources are in `node_modules/@gestalts/*/src` (read-only). Read them when unsure; don't guess signatures.
 
-Style with Tailwind classes and daisyUI components. Keep it responsive: the frame can be narrow.
+Style with Tailwind classes and daisyUI components. Keep it responsive: the frame can be narrow. Left and right are
+`start` and `end` (`ms-2`, `pe-4`, `text-start`, `start-0`), never `ml-`, `pr-` or `text-left`, so it works right
+to left too.
+
+Text in the language being learned, and answers compared as typed or picked, carry their language and
+`translate="no"` (`<span lang="vi" translate="no">`): a browser translating the page would otherwise change them.
 
 A published view reaches no other server: no stylesheets, scripts, fonts or images from a URL (a CDN's KaTeX CSS,
 Google Fonts), which the `check` refuses. For maths, the kit's `Markdown` renders `$…$` and `$$…$$` (MathML, its

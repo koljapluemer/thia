@@ -180,6 +180,7 @@ function StepFrame({ repo, n, view, stateKey, onDone }: { repo: Repo; n: number;
   const runnable = useMemo<RunnableView>(() => ({
     id: `lesson-view-${n}`,
     title: view.manifest.title,
+    lang: view.manifest.lang,
     js: view.js,
     npm: Object.keys(view.manifest.npm),
     npmUrls: Object.fromEntries(Object.entries(view.manifest.npm).map(([spec, path]) => [spec, new URL(path, location.origin).href])),

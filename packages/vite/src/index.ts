@@ -37,7 +37,7 @@ const DISTRIBUTIONS = 'distributions';
 const RUNTIME = 'virtual:gestalts-runtime';
 const SOURCES = /^@gestalts-sources;$/m;
 
-type Manifest = { id: string; title: string; version: string; reads?: string[]; writes?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string> };
+type Manifest = { id: string; title: string; version: string; reads?: string[]; writes?: string[]; requires?: string[]; permissions?: string[]; npm?: Record<string, string>; lang?: string; target_lang?: string };
 type DistributionFile = { id?: unknown; plugins?: string[]; models?: string[]; outlines?: string[]; grants?: unknown; pinned_npm?: boolean };
 const DISTRIBUTION_KEYS = ['id', 'plugins', 'models', 'outlines', 'grants', 'pinned_npm'];
 /** where npm bundles are kept between builds */
@@ -123,14 +123,17 @@ function readDecks(pluginId: string, root: string) {
   return readdirSync(dir).filter((id) => statSync(join(dir, id)).isDirectory()).map((id) => {
     const deck = join(dir, id);
     if (!existsSync(join(deck, 'index.json'))) throw new Error(`${pluginId}: its deck ${id} has no index.json; run \`mise run publish-data ${relative(process.cwd(), deck)}\``);
-    const ymls = readdirSync(join(deck, 'notes')).map((f) => parse(readFileSync(join(deck, 'notes', f), 'utf8')) as { id?: string; gestalt?: string; title?: string; name?: string; concepts?: Record<string, number> });
-    const meta = ymls.find((y) => y.gestalt === 'deck@1' || y.gestalt === 'deck@2' || y.gestalt === 'deck@3');
+    const ymls = readdirSync(join(deck, 'notes')).map((f) => parse(readFileSync(join(deck, 'notes', f), 'utf8')) as { id?: string; gestalt?: string; title?: string; name?: string; concepts?: Record<string, number>; lang?: string; target_lang?: string });
+    const meta = ymls.find((y) => /^deck@[1-4]$/.test(y.gestalt ?? ''));
     if (!meta) throw new Error(`${pluginId}: its deck ${id} has no deck yml`);
     const gestalts = [...new Set(ymls.flatMap((y) => (typeof y.gestalt === 'string' ? [y.gestalt] : [])))];
-    // what a view opened on it practises (deck@3), by the names of the concepts it ships, most weight first
+    // what a view opened on it practises (deck@3, deck@4), by the names of the concepts it ships, most weight first
     const names = new Map(ymls.flatMap((y) => (y.id && typeof y.name === 'string' && y.gestalt?.startsWith('concept@') ? [[y.id, y.name] as const] : [])));
-    const practises = Object.entries(meta.gestalt === 'deck@3' ? meta.concepts ?? {} : {}).sort((a, b) => b[1] - a[1]).flatMap(([c]) => names.get(c) ?? []);
-    return { id, title: meta.title ?? meta.name ?? id, dir: deck, gestalts, practises };
+    const practising = meta.gestalt === 'deck@3' || meta.gestalt === 'deck@4';
+    const practises = Object.entries(practising ? meta.concepts ?? {} : {}).sort((a, b) => b[1] - a[1]).flatMap(([c]) => names.get(c) ?? []);
+    // its language, a deck@4's
+    const lang: { lang?: string; targetLang?: string } = meta.gestalt === 'deck@4' ? { lang: meta.lang, ...(meta.target_lang ? { targetLang: meta.target_lang } : {}) } : {};
+    return { id, title: meta.title ?? meta.name ?? id, dir: deck, gestalts, practises, ...lang };
   });
 }
 
@@ -359,7 +362,7 @@ export function gestaltsPlugins(): PluginOption[] {
       const entries = plugins.map((p) => {
         this.addWatchFile(join(p.root, 'plugin.yml'));
         this.addWatchFile(join(p.root, 'view.tsx'));
-        const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}`, practises: d.practises }));
+        const decks = p.decks.map((d) => ({ id: d.id, title: d.title, source: `${p.id}/${d.id}`, path: `decks/${p.id}/${d.id}`, practises: d.practises, ...(d.lang ? { lang: d.lang } : {}), ...(d.targetLang ? { targetLang: d.targetLang } : {}) }));
         return { manifest: p.manifest, decks, js: p.js, npm: p.npm, npmUrls: npmUrls[p.id], granted: p.granted, backend: p.backend };
       });
       const gestalts = models.flatMap((m) => m.texts);

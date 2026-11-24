@@ -39,7 +39,8 @@ export function Site({ path: start, data }: { path: string; data?: PageData }) {
   const entry = entryAt(route);
   const outline = outlineAt(route);
   useEffect(() => { if (!entry && !lesson && !outline) document.title = 'thia'; }, [entry, lesson, outline]);
-  const content = outline ? registry.outlines?.find((o) => o.name === outline.name)?.lang : undefined;
+  // a view's page is in its content's language, as an outline's is, until the person is known
+  const content = outline ? registry.outlines?.find((o) => o.name === outline.name)?.lang : entry?.lang;
 
   return (
     <LangProvider url={urlLang} content={content}>

@@ -1,5 +1,5 @@
 id: deck-stembridge-bodmas
-gestalt: deck@3
+gestalt: deck@4
 name: stembridge-bodmas
 title: BODMAS
 members:
@@ -22,3 +22,4 @@ members:
 - link-f44256db0d5c6ba5
 concepts:
   concept-547f4a7a793bef9e: 1
+lang: en

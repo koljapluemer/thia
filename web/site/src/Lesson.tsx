@@ -87,6 +87,7 @@ function Loaded({ lesson }: { lesson: Loaded }) {
     view: {
       id: `lesson-${id}`,
       title: manifest.title,
+      lang: manifest.lang,
       js,
       npm: Object.keys(manifest.npm),
       npmUrls: Object.fromEntries(Object.entries(manifest.npm).map(([spec, path]) => [spec, new URL(path, location.origin).href])),

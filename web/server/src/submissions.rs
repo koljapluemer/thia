@@ -5,7 +5,7 @@
 //! - **Sending**: a draft is copied from the server's own folder (`POST /drafts/<id>/submit`), as
 //!   `workshop:<draft id>`, by its signed-in owner, who affirms they may share it. Older submissions came from the
 //!   workshops that kept drafts in the browser (`make:`, `make-viz:`) or the old lesson area (`teach:`).
-//! - **What it is** follows from what it holds: one `view@3` (or `view@2`) and its members (`view`), or one `viz@1` (`viz`). A view
+//! - **What it is** follows from what it holds: one `view@4` (or an older one) and its members (`view`), or one `viz@1` (`viz`). A view
 //!   is checked as publishing checks it: it compiles, and its npm packages are pinned and bundle.
 //! - **Review** (admins): the queue, each submission as a read-only deck for a live preview, and accepting
 //!   ([`crate::promote`]) or rejecting with a note the sender sees.
@@ -31,8 +31,9 @@ use crate::db::Account;
 use crate::validate::{Batch, Kind, check, draft_gestalts};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
-/// What a submitted view is: a draft's, written as `view@3` since drafts keep their brief, or a `view@2` from before.
-pub const VIEWS: &[&str] = &["view@2", "view@3"];
+/// What a submitted view is: a draft's, written as `view@4` since drafts record their language, or a `view@3` or
+/// `view@2` from before.
+pub const VIEWS: &[&str] = &["view@2", "view@3", "view@4"];
 pub use crate::validate::VIZ;
 
 /// What was sent, before it's checked.
@@ -124,7 +125,7 @@ fn snapshot(state: &AppState, account: &Account, sent: &Sent) -> ApiResult<Snaps
             let keep = BTreeMap::from([(v.id.clone(), v.raw.clone())]);
             ("viz", keep, base.clone(), None)
         }
-        ([], []) => return Err(ApiError::BadRequest("nothing to submit: a view (view@3) or a visualization (viz@1)".into())),
+        ([], []) => return Err(ApiError::BadRequest("nothing to submit: a view (view@4) or a visualization (viz@1)".into())),
         _ => return Err(ApiError::BadRequest("a submission is one view or one visualization".into())),
     };
     let mut blobs = BTreeMap::new();

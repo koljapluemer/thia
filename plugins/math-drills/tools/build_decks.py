@@ -38,7 +38,7 @@ SOURCE = {
 }
 
 
-# what each topic's deck practises as a whole (`deck@3.concepts`), by stembridge's concept names; its exercises'
+# what each topic's deck practises as a whole (`deck@4.concepts`), by stembridge's concept names; its exercises'
 # concepts stay the evidence
 ABOUT = {
     "bodmas": {"order of operations": 1},
@@ -154,8 +154,8 @@ def build(topic: dict, curriculum: dict, decks: Path) -> str:
             links += 1
     if slug not in ABOUT:
         raise SystemExit(f"{slug}: say what its deck practises in ABOUT")
-    write(notes, {"id": f"deck-{deck}", "gestalt": "deck@3", "name": deck, "title": topic["title"], "members": members,
-                  "concepts": ids(ABOUT[slug])})
+    write(notes, {"id": f"deck-{deck}", "gestalt": "deck@4", "name": deck, "title": topic["title"], "members": members,
+                  "concepts": ids(ABOUT[slug]), "lang": "en"})
     (deck_dir / "LICENSE.md").write_text(license_text(topic["title"]), encoding="utf-8")
     print(f"{deck}: {len(items)} exercises, {len(touched)} concepts, {links} links")
     return deck

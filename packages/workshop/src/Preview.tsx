@@ -41,8 +41,8 @@ export function Preview({ repo, draft, runtime, css, tailwind, onError, resolveN
   const waiting = Boolean(resolveNpm && compiled.ok && compiled.npm.length > 0 && npm?.key !== npmKey);
   const npmUrls = npm?.key === npmKey ? npm.urls : undefined;
   const runnable = useMemo<RunnableView | undefined>(() => (compiled.ok
-    ? { id: draft.id, title: draft.title, js: compiled.js, npm: compiled.npm, npmUrls, scope: { reads: draft.reads, writes: draft.writes } }
-    : undefined), [compiled, npmUrls, draft.id, draft.title, draft.reads, draft.writes]);
+    ? { id: draft.id, title: draft.title, lang: draft.lang, js: compiled.js, npm: compiled.npm, npmUrls, scope: { reads: draft.reads, writes: draft.writes } }
+    : undefined), [compiled, npmUrls, draft.id, draft.title, draft.lang, draft.reads, draft.writes]);
   if (failure) return <div role="alert" className="alert alert-error m-4 font-mono text-sm whitespace-pre-wrap">{failure}</div>;
   if (waiting || !runnable) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
   return <FrameView key={runnable.js} repo={repo} view={runnable} runtime={runtime} css={css} tailwind={tailwind} params={{}} state={STATE} env={ENV} onError={onError} csp={csp} />;

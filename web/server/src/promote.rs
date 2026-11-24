@@ -8,7 +8,7 @@
 //!   and the package are added to the site's `distribution.yml`.
 //! - **A visualization** becomes the deck `plugins/vizint/decks/<deck>/`, holding the one `viz@1`.
 //!
-//! Either deck is a `deck@3` saying what it practises as a whole: the reviewer names its concepts, each one of the
+//! Either deck says what it practises as a whole (a `deck@4` with the view's language, a viz's a `deck@3`): the reviewer names its concepts, each one of the
 //! draft's by name or a new one, so that outlines find it.
 //!
 //! Each target gets an `origin.yml`: the submission it came from, the credit asked for, and the licence. A later
@@ -210,9 +210,10 @@ fn walk(dir: &Path) -> Vec<PathBuf> {
     out
 }
 
-/// The deck `id` of `data`, as a `deck@3` practising `concepts` (by name): each is the concept of `data` so named, or
-/// a new `concept@2`, added to the deck.
-fn add_deck(data: &mut BTreeMap<String, String>, id: &str, name: &str, title: &str, concepts: &BTreeMap<String, f64>) {
+/// The deck `id` of `data`, practising `concepts` (by name): each is the concept of `data` so named, or a new
+/// `concept@2`, added to the deck. With `lang` (the view's: what it was written in, and what it teaches, if a
+/// language) a `deck@4`, else a `deck@3`.
+fn add_deck(data: &mut BTreeMap<String, String>, id: &str, name: &str, title: &str, concepts: &BTreeMap<String, f64>, lang: Option<(&str, Option<&str>)>) {
     let named: BTreeMap<String, String> = data
         .iter()
         .map(|(i, t)| Yml::parse(i.clone(), t.clone()))
@@ -234,11 +235,17 @@ fn add_deck(data: &mut BTreeMap<String, String>, id: &str, name: &str, title: &s
     }
     let mut m = Mapping::new();
     m.insert("id".into(), id.into());
-    m.insert("gestalt".into(), "deck@3".into());
+    m.insert("gestalt".into(), if lang.is_some() { "deck@4" } else { "deck@3" }.into());
     m.insert("name".into(), name.into());
     m.insert("title".into(), title.into());
     m.insert("members".into(), Value::Sequence(data.keys().map(|s| Value::from(s.as_str())).collect()));
     m.insert("concepts".into(), Value::Mapping(ids));
+    if let Some((lang, target)) = lang {
+        m.insert("lang".into(), lang.into());
+        if let Some(t) = target {
+            m.insert("target_lang".into(), t.into());
+        }
+    }
     data.insert(id.to_owned(), serde_yaml_ng::to_string(&m).expect("yaml"));
 }
 
@@ -246,7 +253,7 @@ fn add_deck(data: &mut BTreeMap<String, String>, id: &str, name: &str, title: &s
 fn deck_concepts_in(dir: &Path) -> BTreeMap<String, f64> {
     let store = FsStorage::new(dir);
     let ymls: Vec<Yml> = store.list_ymls_sync().unwrap_or_default().into_iter().filter_map(|id| Some(Yml::parse(id.clone(), store.read_yml_sync(&id).ok()??))).collect();
-    let Some(deck) = ymls.iter().find(|y| y.gestalt() == Some("deck@3")) else { return BTreeMap::new() };
+    let Some(deck) = ymls.iter().find(|y| gestalts_core::checks::is_practising_deck(y)) else { return BTreeMap::new() };
     let name = |id: &str| ymls.iter().find(|y| y.id == id).and_then(|y| y.str_field("name")).unwrap_or(id).to_owned();
     deck.get("concepts").and_then(Value::as_mapping).into_iter().flatten().filter_map(|(k, w)| Some((name(k.as_str()?), w.as_f64()?))).collect()
 }
@@ -311,7 +318,10 @@ fn promote_view(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Ap
     let data: BTreeMap<String, String> = ymls.iter().filter(|(id, _)| !id.starts_with(DEFINITION_PREFIX) && *id != &view.id).map(|(id, t)| (id.clone(), rename(t))).collect();
     let mut deck = data.clone();
     let deck_id = format!("deck-{plugin}-{}", t.deck);
-    add_deck(&mut deck, &deck_id, &t.deck, &s.title, &t.concepts);
+    // a view from before languages were recorded (view@3) was written in English
+    let lang = view.str_field("lang").unwrap_or("en").to_owned();
+    let target = view.str_field("target_lang").map(str::to_owned);
+    add_deck(&mut deck, &deck_id, &t.deck, &s.title, &t.concepts, Some((&lang, target.as_deref())));
     let gestalts = draft_gestalts(&state.gestalts, package, definitions);
     let deck_dir = PathBuf::from(&at).join("decks").join(&t.deck);
     if let Some(d) = previous.as_ref().and_then(|o| o.deck.as_deref()).filter(|d| *d != t.deck) {
@@ -335,6 +345,10 @@ fn promote_view(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Ap
     manifest.insert("title".into(), s.title.as_str().into());
     manifest.insert("description".into(), s.about.as_str().into());
     manifest.insert("tags".into(), Value::Sequence(vec!["learning".into()]));
+    manifest.insert("lang".into(), lang.as_str().into());
+    if let Some(t) = &target {
+        manifest.insert("target_lang".into(), t.as_str().into());
+    }
     for k in ["reads", "writes"] {
         manifest.insert(k.into(), Value::Sequence(strings(&m, k).iter().map(|g| Value::from(rename(g))).collect()));
     }
@@ -373,7 +387,7 @@ fn promote_viz(state: &AppState, repo: &Path, s: &Submission, t: &Target) -> Api
     let mut w = Writer { repo, written: Vec::new() };
     let mut deck = ymls.clone();
     let deck_id = format!("deck-vizint-{}", t.deck);
-    add_deck(&mut deck, &deck_id, &t.deck, &s.title, &t.concepts);
+    add_deck(&mut deck, &deck_id, &t.deck, &s.title, &t.concepts, None);
     let warnings = w.deck(Path::new(&at), &deck, &store, &state.gestalts)?.into_iter().map(|p| format!("deck: {p}")).collect();
     w.write(format!("{at}/origin.yml"), serde_yaml_ng::to_string(&origin(s, None, &t.deck)).expect("yaml").as_bytes())?;
     let next = vec!["mise run check".to_owned(), format!("git add {at} && git commit"), "mise run site:build".to_owned()];

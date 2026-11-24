@@ -695,7 +695,8 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
 function WordCard({ card: c }: { card: ShownCard }) {
   return (
     <div className={`rounded-full bg-black/85 px-3 py-1 text-sm text-white backdrop-blur ${c.standing === 'due' ? 'ring-2 ring-warning' : ''}`}>
-      <span className="font-semibold">{c.gloss.surface}</span> = {c.gloss.translation}
+      {/* the word as it's heard, in the video's language: never translated by the browser */}
+      <span translate="no" className="font-semibold">{c.gloss.surface}</span> = {c.gloss.translation}
     </div>
   );
 }

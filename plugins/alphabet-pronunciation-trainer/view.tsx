@@ -88,7 +88,7 @@ function Exercise({ exercise, struggling, onShown, onRate }: { exercise: Item; s
     <div className="card card-border mx-auto w-full max-w-md bg-base-100">
       <div className="card-body items-center gap-4 text-center">
         <p className="text-sm text-base-content/60">Try to pronounce this</p>
-        <p lang={langOf(exercise)} className="text-5xl leading-tight break-words">{String(exercise.value.front)}</p>
+        <p lang={langOf(exercise)} translate="no" className="text-5xl leading-tight break-words">{String(exercise.value.front)}</p>
         {(struggling || revealed) && image && <img src={image} alt="" className="rounded-box max-h-56 object-contain" />}
         {!revealed ? (
           <button type="button" className="btn btn-primary" onClick={() => setRevealed(true)}>Show Pronunciation</button>

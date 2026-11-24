@@ -1,5 +1,5 @@
 id: deck-stembridge-round-sig-figs
-gestalt: deck@3
+gestalt: deck@4
 name: stembridge-round-sig-figs
 title: Round to significant figures
 members:
@@ -36,3 +36,4 @@ members:
 concepts:
   concept-9a6aefb4a7505ff2: 0.5
   concept-83d283e389f6444d: 1
+lang: en

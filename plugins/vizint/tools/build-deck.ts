@@ -17,7 +17,7 @@ await rm(join(deck, 'blobs'), { recursive: true, force: true });
 await mkdir(join(deck, 'notes'), { recursive: true });
 await mkdir(join(deck, 'blobs'), { recursive: true });
 
-// what each example is about (`deck@3.concepts`): canonical English names, each a concept yml in the deck
+// what each example is about (`deck@4.concepts`): canonical English names, each a concept yml in the deck
 const ABOUT: Record<string, string[]> = {
   bezier: ['Bézier curve'],
   'predator-prey': ['Lotka–Volterra equations'],
@@ -59,6 +59,7 @@ for (const c of [...about].sort()) {
   members.push(conceptId(c));
 }
 await writeFile(join(deck, 'notes', 'deck-vizint-examples.yml'), stringify({
-  id: 'deck-vizint-examples', gestalt: 'deck@3', name: 'examples', title: 'Examples', members,
+  id: 'deck-vizint-examples', gestalt: 'deck@4', name: 'examples', title: 'Examples', members,
   concepts: Object.fromEntries([...about].sort().map((c) => [conceptId(c), 1])),
+  lang: 'en',
 }));

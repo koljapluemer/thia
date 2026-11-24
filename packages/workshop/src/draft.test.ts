@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Item } from '@gestalts/view';
 import { applyFiles, asDraft, createDraft, definitionId, filesOf, packageOf, saveDraft, type Draft } from './draft';
 
-const draft: Draft = { id: 'v', title: 'T', spec: '', source: 'a', reads: ['note@1'], writes: [], npm: {}, package: 'd-abc', members: [] };
+const draft: Draft = { id: 'v', title: 'T', spec: '', source: 'a', reads: ['note@1'], writes: [], npm: {}, package: 'd-abc', members: [], lang: 'en' };
 const noun: Item = { id: 'gestalt-d-abc.noun.1', gestalt: 'gestalt@1', value: { id: 'gestalt-d-abc.noun.1', gestalt: 'gestalt@1', name: 'd-abc/noun', version: 1, fields: { word: { type: 'string', required: true } } } };
 const haus: Item = { id: 'haus', gestalt: 'd-abc/noun@1', value: { id: 'haus', gestalt: 'd-abc/noun@1', word: 'Haus' } };
 const withMembers = { ...draft, members: [noun.id, haus.id] };
@@ -73,8 +73,16 @@ describe('saving', () => {
 
   it('makes a draft whose id can be a file name', async () => {
     const put = vi.fn(async () => ({}) as never);
-    const id = await createDraft({ put }, 'Märchen & Co!', 'rt');
+    const id = await createDraft({ put }, 'Märchen & Co!', 'rt', undefined, 'de');
     expect(id).toMatch(/^marchen-co-[0-9a-f]{8}$/);
-    expect(put).toHaveBeenCalledWith(expect.objectContaining({ gestalt: 'view@3', package: packageOf(id), runtime: 'rt' }));
+    expect(put).toHaveBeenCalledWith(expect.objectContaining({ gestalt: 'view@4', package: packageOf(id), runtime: 'rt', lang: 'de' }));
+  });
+
+  it('keeps its language as view.json says, and refuses one that isn\'t a tag', () => {
+    const json = (lang: unknown, target?: string) => JSON.stringify({ title: 'T', lang, ...(target ? { target_lang: target } : {}), reads: [], writes: [] });
+    expect(applyFiles(withMembers, [noun, haus], { 'view.json': json('DE-at', 'vie') }).draft).toMatchObject({ lang: 'de-AT', targetLang: 'vi' });
+    const bad = applyFiles(withMembers, [noun, haus], { 'view.json': json('not a tag') });
+    expect(bad.draft.lang).toBe(withMembers.lang);
+    expect(bad.problems[0]).toContain('isn\'t a language tag');
   });
 });

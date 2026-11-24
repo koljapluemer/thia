@@ -99,5 +99,7 @@
   ],
   "view_practises": "Übt {concepts}.",
   "seq_known": "du kannst {concept} schon",
-  "seq_struggling": "erst etwas mehr Übung zu {concept}"
+  "seq_struggling": "erst etwas mehr Übung zu {concept}",
+  "catalog_teaches": "Lehrt {language}",
+  "catalog_lang_filter": "Sprache der Inhalte"
 }

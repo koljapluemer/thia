@@ -58,6 +58,12 @@ pub struct PluginManifest {
     /// its view asks for completions through the node's `/llm`
     #[serde(default)]
     pub llm: bool,
+    /// the language its view's text is written in (BCP 47); English if not said
+    #[serde(default)]
+    pub lang: Option<String>,
+    /// where a language is what it teaches: that one
+    #[serde(default)]
+    pub target_lang: Option<String>,
 }
 
 /// What a view's frame may be allowed beyond the strict sandbox. Only the distribution grants these.

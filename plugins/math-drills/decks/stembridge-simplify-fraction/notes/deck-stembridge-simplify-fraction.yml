@@ -1,5 +1,5 @@
 id: deck-stembridge-simplify-fraction
-gestalt: deck@3
+gestalt: deck@4
 name: stembridge-simplify-fraction
 title: Simplify fractions
 members:
@@ -24,3 +24,4 @@ members:
 - link-0be6fd359dbc784e
 concepts:
   concept-08c8843900e181f9: 1
+lang: en

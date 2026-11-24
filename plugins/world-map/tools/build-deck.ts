@@ -167,7 +167,7 @@ for (const [g, group] of Object.entries(groups).sort(([a], [b]) => a.localeCompa
 }
 
 // what the deck practises as a whole: where the countries are; each exercise's country is the evidence
-await put({ id: 'deck-world-map', gestalt: 'deck@3', name: 'world-map', title: 'World Map', members: [...members], concepts: { [COUNTRIES.id]: 1 } });
+await put({ id: 'deck-world-map', gestalt: 'deck@4', name: 'world-map', title: 'World Map', members: [...members], concepts: { [COUNTRIES.id]: 1 }, lang: 'en' });
 await writeFile(join(deck, 'LICENSE.md'), `# World Map
 
 The country shapes are [Natural Earth](https://www.naturalearthdata.com)'s Admin 0 – Countries, which is in the public

@@ -52,12 +52,12 @@ const closest = (entries: OutlineTreeEntry[], source: string) => walk(entries).f
 
 function describe(e: Entry): string {
   const practises = e.deck?.practises ?? [];
-  const what = practises.length ? ` ${messages('en').view_practises({ concepts: practises.slice(0, 6).join(', ') })}` : '';
+  const what = practises.length ? ` ${messages(e.lang).view_practises({ concepts: practises.slice(0, 6).join(', ') })}` : '';
   return `${e.title}: ${e.about}${what}`.slice(0, 300);
 }
 
 function viewHead(e: Entry, trees: OutlineTree[], base: string): Head {
-  if (!e.deck) return { title: `${e.title} · thia`, description: describe(e), lang: 'en', path: e.path, noindex: true };
+  if (!e.deck) return { title: `${e.title} · thia`, description: describe(e), lang: e.lang, path: e.path, noindex: true };
   const alignments = e.deck ? trees.flatMap((t) => closest(t.entries, e.deck!.source).map((x) => ({
     '@type': 'AlignmentObject',
     alignmentType: 'teaches',
@@ -68,7 +68,7 @@ function viewHead(e: Entry, trees: OutlineTree[], base: string): Head {
   return {
     title: `${e.title} · thia`,
     description: describe(e),
-    lang: 'en',
+    lang: e.lang,
     path: e.path,
     jsonLd: {
       '@context': 'https://schema.org',
@@ -78,6 +78,7 @@ function viewHead(e: Entry, trees: OutlineTree[], base: string): Head {
       ...(base ? { url: `${base}${e.path}` } : {}),
       isAccessibleForFree: true,
       learningResourceType: 'interactive exercise',
+      inLanguage: e.lang,
       ...(e.deck?.practises.length ? { teaches: e.deck.practises } : {}),
       ...(alignments.length ? { educationalAlignment: alignments } : {}),
     },

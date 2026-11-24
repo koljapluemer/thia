@@ -104,13 +104,15 @@ fields:
 | `source@1` | a citable source: `key` (its BibTeX key, apart from the id), `entrytype`, `title` and biblatex fields (`author`, `date`, `doi`, …); optional `license` (SPDX), `aliases`, `tags`, `extra`, `blobs`, `concepts` (`{concept id: 0..1}`, how strongly each comes up in it) |
 | `deck@1` | `name`, `title`, `members`: ymls that ship together |
 | `deck@2` | the same, plus `concepts` (`{concept id: 0..1}`): what it practises beyond its members' own, for content not made of items |
-| `deck@3` | `name`, `title`, `members`, and `concepts` (at least one): what a view opened on it practises as a whole, which outlines find it by. Every deck on the public site is one |
+| `deck@3` | `name`, `title`, `members`, and `concepts` (at least one): what a view opened on it practises as a whole, which outlines find it by |
+| `deck@4` | the same, plus `lang` (BCP 47: what its text is in) and optional `target_lang` (the language it teaches: a Vietnamese phrasebook for English speakers is `lang: en`, `target_lang: vi`). Every deck on the public site is one |
 | `outline@1` | a curriculum or guide: `name`, `title`, `lang`, the top-level `entries` in order; optional `issuer`, `region`, `subject`, `school_type`, `edition`, `valid_from`, `replaces`, `source` (see Outlines) |
 | `outline-entry@1` | one node of an outline: `label`, its children as `entries`; optional `notation`, `kind`, `level`, `grades`, `isced`, `concepts` |
 | `fsrs-data@1` | spaced-repetition state for a `target` |
 | `practice-session@1` | one session's timing and trials |
 | `plugin-install@1` | whether a plugin was on here (the gestalter's installs; no longer written) |
 | `view@1` | a vibecoded view: `title`, `source`, `reads`, `writes` |
+| `view@4` | a draft's view, as `view@3` (brief, npm, runtime, package, members) plus `lang` (the language its text was written in, its source) and optional `target_lang` |
 | `conflict@1` | a value a sync couldn't settle |
 | `gestalt@1` | a gestalt's definition, as data (above) |
 

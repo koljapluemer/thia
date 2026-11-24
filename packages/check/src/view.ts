@@ -10,6 +10,9 @@ import { needsProblems } from '@gestalts/view/needs';
 import { parse } from 'yaml';
 import { packageName, remoteLoads, result, versionedImport, versionedMessage, type CheckItem, type CheckResult, type Files, type Platform } from './index.ts';
 
+/** Whether `tag` is a language tag (BCP 47). */
+const isTag = (tag: string) => { try { return Intl.getCanonicalLocales(tag).length === 1; } catch { return false; } };
+
 export type ViewContext = {
   /** the gestalts the app has (`name@N`), which the view may read and write besides its own */
   gestalts: string[];
@@ -88,6 +91,11 @@ export async function checkView(files: Files, ctx: ViewContext, platform: Platfo
       for (const g of writes) if (!reads.includes(g)) fail(`view.json: it writes ${g}, so it must read it too`);
     }
     if (!isMap(manifest.npm ?? {}) || !Object.values(npmPinned).every((v) => typeof v === 'string')) fail('view.json: `npm` maps package names to versions, like {"three": "0.170.0"}');
+    for (const k of ['lang', 'target_lang']) {
+      const v = manifest[k];
+      if (v === undefined) continue;
+      if (typeof v !== 'string' || !isTag(v)) fail(`view.json: \`${k}\` is a language tag (BCP 47), like "de", "en" or "vi"`);
+    }
   }
   items.push({ ok: problems.length === 0, name: 'view.json', message: problems.splice(0).join('\n') });
 

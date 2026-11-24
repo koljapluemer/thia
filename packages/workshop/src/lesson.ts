@@ -31,12 +31,17 @@ export type LessonManifest = {
   published: string;
   /** where the view starts (a viz's lesson: the vizint view, on that viz); a link's own params win */
   params?: Record<string, string>;
+  /** the language its text is in (BCP 47); English in a lesson published before languages were recorded */
+  lang?: string;
+  /** where a language is what it teaches: that one */
+  target_lang?: string;
 };
 
 /** A lesson's id in its link: 128 random bits, base64url. */
 export const LESSON_ID = /^[A-Za-z0-9_-]{22}$/;
 
-const KEYS = ['format', 'title', 'runtime', 'reads', 'writes', 'view', 'npm', 'published', 'params'];
+const KEYS = ['format', 'title', 'runtime', 'reads', 'writes', 'view', 'npm', 'published', 'params', 'lang', 'target_lang'];
+const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
 const NPM_PATH = /^\/npm\/[A-Za-z0-9._@+-]+\.js$/;
 
 /**
@@ -63,6 +68,11 @@ export function parseManifest(v: unknown): LessonManifest {
   if (params !== undefined && (typeof params !== 'object' || params === null || Array.isArray(params) || !Object.values(params).every((x) => typeof x === 'string'))) throw new Error('params must map names to texts');
   const out: LessonManifest = { format: LESSON, title: text('title'), runtime: text('runtime'), reads, writes, view, npm: npm as Record<string, string>, published: text('published') };
   if (params) out.params = params as Record<string, string>;
+  for (const k of ['lang', 'target_lang'] as const) {
+    if (m[k] === undefined) continue;
+    if (typeof m[k] !== 'string' || !TAG.test(m[k] as string)) throw new Error(`${k} must be a language tag`);
+    out[k] = m[k] as string;
+  }
   return out;
 }
 
