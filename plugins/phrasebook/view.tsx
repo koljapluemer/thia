@@ -497,8 +497,8 @@ function Bar({ belief }: { belief?: Belief }) {
   const hi = belief ? sigmoid(belief.mean + belief.sd) : 1;
   return (
     <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-base-300" title={belief ? `${Math.round(p * 100)}% · from ${belief.evidence} answers` : 'nothing yet'}>
-      <div className="absolute inset-y-0 bg-primary/30" style={{ left: `${lo * 100}%`, width: `${(hi - lo) * 100}%` }} />
-      <div className="absolute inset-y-0 left-0 rounded-full bg-primary" style={{ width: `${p * 100}%` }} />
+      <div className="absolute inset-y-0 bg-primary/30" style={{ insetInlineStart: `${lo * 100}%`, width: `${(hi - lo) * 100}%` }} />
+      <div className="absolute inset-y-0 start-0 rounded-full bg-primary" style={{ width: `${p * 100}%` }} />
     </div>
   );
 }

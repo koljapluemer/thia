@@ -24,6 +24,26 @@ describe('the prerendered site', () => {
     expect(new Set(all).size).toBe(all.length);
   });
 
+  test('has everything in each language of the app, each naming the others', () => {
+    expect(routes(trees)).toContain('/de/');
+    const html = render('/de/');
+    expect(html).toContain('Interaktive Übungen');
+    const h = head('/de/', trees, 'https://thia.example');
+    expect(h).toMatchObject({ lang: 'de', path: '/de/', alternates: { en: '/', de: '/de/', 'x-default': '/' } });
+    expect(head('/', trees, '').lang).toBe('en');
+    const page = fill(template, '', h, 'https://thia.example');
+    expect(page).toContain('<html lang="de">');
+    expect(page).toContain('<link rel="alternate" hreflang="en" href="https://thia.example/">');
+    expect(page).toContain('<link rel="alternate" hreflang="de" href="https://thia.example/de/">');
+  });
+
+  test("renders a German outline's page in German, the outline marked as German", () => {
+    const t = trees.find((x) => x.lang.startsWith('de'))!;
+    const html = render(`/o/${t.name}`, t);
+    expect(html).toContain('nur mit Inhalten');
+    expect(html).toContain(`<h1 lang="${t.lang}"`);
+  });
+
   test('renders the catalog with its views', () => {
     const html = render('/');
     for (const e of ENTRIES.slice(0, 5)) expect(html).toContain(e.title.replaceAll('&', '&amp;'));

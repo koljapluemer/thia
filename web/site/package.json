@@ -12,6 +12,7 @@
   "dependencies": {
     "@gestalts/client": "workspace:*",
     "@gestalts/host": "workspace:*",
+    "@gestalts/i18n": "workspace:*",
     "@gestalts/learning": "workspace:*",
     "@gestalts/sources": "workspace:*",
     "@gestalts/view": "workspace:*",

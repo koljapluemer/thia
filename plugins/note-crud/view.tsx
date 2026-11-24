@@ -27,7 +27,7 @@ function List({ selected, onSelect, onNew }: { selected: string | null; onSelect
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {items.map((n) => (
           <li key={n.id}>
-            <button type="button" className={`w-full truncate px-3 py-3 text-left text-sm hover:bg-base-200 ${n.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(n.id)}><NoteTitle value={n.value} /></button>
+            <button type="button" className={`w-full truncate px-3 py-3 text-start text-sm hover:bg-base-200 ${n.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(n.id)}><NoteTitle value={n.value} /></button>
           </li>
         ))}
         {hasMore && <li ref={end} className="flex justify-center p-3"><span className="loading loading-spinner loading-sm" /></li>}
@@ -70,7 +70,7 @@ export default function NoteCrud() {
   const show = (note: string | null) => setParams(note ? { note } : {});
   return (
     <div className="flex h-full bg-base-100">
-      <div className={`h-full w-full border-base-300 md:w-80 md:shrink-0 md:border-r ${selected ? 'hidden md:block' : ''}`}>
+      <div className={`h-full w-full border-base-300 md:w-80 md:shrink-0 md:border-e ${selected ? 'hidden md:block' : ''}`}>
         <List selected={selected} onSelect={(id) => show(id)} onNew={() => show(newId())} />
       </div>
       <div className={`h-full min-w-0 flex-1 ${selected ? '' : 'hidden md:block'}`}>

@@ -184,7 +184,7 @@ export default function NoteInbox() {
         </div>
       ) : file && (
         <div className="grid min-h-0 flex-1 grid-cols-1 overflow-y-auto md:grid-cols-2 md:overflow-hidden">
-          <div className="flex min-h-0 flex-col border-base-300 md:border-r">
+          <div className="flex min-h-0 flex-col border-base-300 md:border-e">
             <div className="flex gap-2 border-b border-base-300 p-2">
               <button type="button" className="btn btn-sm" title="Another file; this one stays for later" onClick={() => leave(file.id)}><Clock className="size-4" /> Defer</button>
               <button type="button" className="btn btn-sm btn-ghost" title="Delete this file; notes made from it stay" onClick={() => void remove(file.id)}><Trash2 className="size-4" /> Delete</button>

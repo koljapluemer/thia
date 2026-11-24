@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Paperclip, X } from 'lucide-react';
 import type { Repo } from '@gestalts/client';
+import { useLang } from '@gestalts/i18n';
 import { VIZ, asViz, saveViz, storeBlob, type Viz } from '@gestalts/workshop';
 
 type Texts = Pick<Viz, 'title' | 'intro' | 'outro'>;
@@ -19,6 +20,7 @@ async function fresh(repo: Repo, id: string): Promise<Viz> {
  * can name. Saved as you type. Its brief is the shared one (`Brief`), its source the agent's.
  */
 export function Editor({ repo, viz }: { repo: Repo; viz: Viz }) {
+  const { m } = useLang();
   const [texts, setTexts] = useState<Texts>(() => textsOf(viz));
   const pending = useRef<Texts | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -60,36 +62,36 @@ export function Editor({ repo, viz }: { repo: Repo; viz: Viz }) {
   const field = 'textarea textarea-sm w-full font-mono';
   return (
     <details className="border-b border-base-300 px-3 py-2 text-sm">
-      <summary className="cursor-pointer text-base-content/60">Title, texts and files</summary>
+      <summary className="cursor-pointer text-base-content/60">{m.viz_texts()}</summary>
       <div className="mt-1 flex flex-col gap-2">
         <label className="flex flex-col gap-1">
-          <span className="text-base-content/60">Title</span>
+          <span className="text-base-content/60">{m.seq_title()}</span>
           <input className="input input-sm w-full" value={texts.title} onChange={(e) => edit('title', e.target.value)} />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-base-content/60">Before it (Markdown)</span>
+          <span className="text-base-content/60">{m.viz_before()}</span>
           <textarea className={field} rows={3} value={texts.intro} onChange={(e) => edit('intro', e.target.value)} />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-base-content/60">After it (Markdown)</span>
+          <span className="text-base-content/60">{m.viz_after()}</span>
           <textarea className={field} rows={3} value={texts.outro} onChange={(e) => edit('outro', e.target.value)} />
         </label>
         <div className="flex flex-col gap-1">
-          <span className="text-base-content/60">Files the brief can name</span>
+          <span className="text-base-content/60">{m.viz_files()}</span>
           <ul className="flex flex-wrap gap-1">
             {viz.files.map((f) => (
               <li key={f.label} className="badge badge-outline gap-1">
                 {f.label}
-                <button type="button" title={`Remove ${f.label}`} aria-label={`Remove ${f.label}`} onClick={() => void removeFile(f.label)}><X className="size-3" /></button>
+                <button type="button" title={m.remove_named({ name: f.label })} aria-label={m.remove_named({ name: f.label })} onClick={() => void removeFile(f.label)}><X className="size-3" /></button>
               </li>
             ))}
           </ul>
-          <label className="btn btn-xs btn-ghost self-start"><Paperclip className="size-3" />Add files
+          <label className="btn btn-xs btn-ghost self-start"><Paperclip className="size-3" />{m.add_files()}
             <input type="file" multiple className="hidden" onChange={(e) => { void addFiles(e.target.files); e.target.value = ''; }} />
           </label>
         </div>
-        {viz.packages.length > 0 && <p className="text-xs text-base-content/60">Packages: {viz.packages.join(', ')}</p>}
-        {viz.generator && <p className="text-xs text-base-content/50">Last built by {viz.generator}.</p>}
+        {viz.packages.length > 0 && <p className="text-xs text-base-content/60">{m.viz_packages({ list: viz.packages.join(', ') })}</p>}
+        {viz.generator && <p className="text-xs text-base-content/50">{m.viz_built_by({ generator: viz.generator })}</p>}
       </div>
     </details>
   );

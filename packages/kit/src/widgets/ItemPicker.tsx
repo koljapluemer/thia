@@ -88,7 +88,7 @@ export function ItemPicker({ query, more, render, onPick, exclude, create, place
         <ul id={list} role="listbox" className="flex flex-col rounded-box border border-base-300 bg-base-100 p-1">
           {current.map((item, i) => (
             <li key={item.id} id={`${list}-${i}`} role="option" aria-selected={i === at}>
-              <button type="button" className={`btn btn-ghost btn-sm h-auto w-full justify-start py-1 text-left font-normal ${i === at ? 'bg-base-200' : ''}`}
+              <button type="button" className={`btn btn-ghost btn-sm h-auto w-full justify-start py-1 text-start font-normal ${i === at ? 'bg-base-200' : ''}`}
                       onMouseEnter={() => setActive(i)} onClick={() => void choose(i)}>
                 {render(item)}
               </button>
@@ -96,7 +96,7 @@ export function ItemPicker({ query, more, render, onPick, exclude, create, place
           ))}
           {creating && (
             <li id={`${list}-${current.length}`} role="option" aria-selected={at === current.length}>
-              <button type="button" className={`btn btn-ghost btn-sm h-auto w-full justify-start py-1 text-left font-normal ${at === current.length ? 'bg-base-200' : ''}`}
+              <button type="button" className={`btn btn-ghost btn-sm h-auto w-full justify-start py-1 text-start font-normal ${at === current.length ? 'bg-base-200' : ''}`}
                       onMouseEnter={() => setActive(current.length)} onClick={() => void choose(current.length)}>
                 <Plus className="size-4 shrink-0" /> {create.label(typed)}
               </button>

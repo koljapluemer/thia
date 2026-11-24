@@ -2,6 +2,7 @@ import { useMemo, useState, type MouseEvent } from 'react';
 import { BookOpen, History, Search } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import type { DeckEntry, PluginEntry } from '@gestalts/host';
+import { useLang } from '@gestalts/i18n';
 import { GuestBanner, Toolbar } from './Toolbar';
 import { useRecent } from './recent';
 
@@ -46,11 +47,12 @@ export function ViewCard({ e, open }: { e: Entry; open: (path: string) => void }
 
 /** Curricula and guides, current editions only: each with how many of its entries have views. */
 function Outlines({ open }: { open: (path: string) => void }) {
+  const { m } = useLang();
   const outlines = (registry.outlines ?? []).filter((o) => !o.replacedBy);
   if (!outlines.length) return null;
   return (
     <section className="mx-auto max-w-5xl px-4 pb-6">
-      <h2 className="mb-2 text-sm font-medium text-base-content/70">Curricula and guides</h2>
+      <h2 className="mb-2 text-sm font-medium text-base-content/70">{m.catalog_outlines()}</h2>
       <ul className="grid gap-3 sm:grid-cols-2">
         {outlines.map((o) => (
           <li key={o.name}>
@@ -58,8 +60,8 @@ function Outlines({ open }: { open: (path: string) => void }) {
               <BookOpen className="mt-0.5 size-5 shrink-0 opacity-60" />
               <span className="flex flex-col gap-0.5">
                 <span className="font-medium">{o.title}</span>
-                <span className="text-xs text-base-content/60">{[o.region ? 'Curriculum' : 'Guide', o.issuer, o.edition].filter(Boolean).join(' · ')}</span>
-                <span className="text-xs text-base-content/60">{o.leavesWithViews} of {o.leaves} entries with views</span>
+                <span className="text-xs text-base-content/60">{[o.region ? m.catalog_curriculum() : m.catalog_guide(), o.issuer, o.edition].filter(Boolean).join(' · ')}</span>
+                <span className="text-xs text-base-content/60">{m.catalog_coverage({ withViews: o.leavesWithViews, all: o.leaves })}</span>
               </span>
             </a>
           </li>
@@ -73,10 +75,11 @@ const words = (s: string) => s.toLowerCase().normalize('NFD').replace(/\p{Diacri
 
 /** What was opened on this device lately. */
 function RecentBar({ open }: { open: (path: string) => void }) {
+  const { m } = useLang();
   const recent = useRecent();
   if (!recent.length) return null;
   return (
-    <nav aria-label="Recent" className="mt-4 flex flex-wrap items-center gap-1 text-sm">
+    <nav aria-label={m.catalog_recent()} className="mt-4 flex flex-wrap items-center gap-1 text-sm">
       <History className="size-4 opacity-50" />
       {recent.map((r) => <a key={r.path} href={r.path} onClick={(ev) => follow(ev, r.path, open)} className="btn btn-xs btn-ghost">{r.title}</a>)}
     </nav>
@@ -84,6 +87,7 @@ function RecentBar({ open }: { open: (path: string) => void }) {
 }
 
 export function Catalog({ open }: { open: (path: string) => void }) {
+  const { m } = useLang();
   const [q, setQ] = useState('');
   const shown = useMemo(() => {
     const terms = words(q).split(/\s+/).filter(Boolean);
@@ -102,10 +106,10 @@ export function Catalog({ open }: { open: (path: string) => void }) {
           <h1 className="flex-1 text-3xl font-semibold">thia</h1>
           <Toolbar />
         </div>
-        <p className="mt-1 text-base-content/70">Interactive exercises and visualizations. Free, nothing to sign up for; what you do stays in this browser.</p>
+        <p className="mt-1 text-base-content/70">{m.catalog_tagline()}</p>
         <label className="input mt-6 w-full max-w-md">
           <Search className="size-4 opacity-50" />
-          <input type="search" placeholder="Search" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search" />
+          <input type="search" placeholder={m.catalog_search()} value={q} onChange={(e) => setQ(e.target.value)} aria-label={m.catalog_search()} />
         </label>
         <RecentBar open={open} />
       </header>
@@ -116,11 +120,11 @@ export function Catalog({ open }: { open: (path: string) => void }) {
         </section>
         {own.length > 0 && (
           <section>
-            <h2 className="mb-2 text-sm font-medium text-base-content/70">Your notes and cards</h2>
+            <h2 className="mb-2 text-sm font-medium text-base-content/70">{m.catalog_own()}</h2>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{own.map((e) => <ViewCard key={e.path} e={e} open={open} />)}</div>
           </section>
         )}
-        {shown.length === 0 && <p className="text-base-content/60">Nothing here matches “{q}”.</p>}
+        {shown.length === 0 && <p className="text-base-content/60">{m.catalog_no_match({ query: q })}</p>}
       </main>
     </div>
   );

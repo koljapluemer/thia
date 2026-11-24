@@ -4,6 +4,7 @@ import { registry } from 'virtual:gestalts-plugins/workshop';
 import { registry as lessons } from 'virtual:gestalts-plugins/lessons';
 import { RepoProvider, useHostQuery, useOpenRepo, type Repo } from '@gestalts/client';
 import { SingleView, closedCsp } from '@gestalts/host';
+import { useLang, type Messages } from '@gestalts/i18n';
 import type { ViewError } from '@gestalts/view';
 import { Preview, VIEW, asDraft } from '@gestalts/workshop';
 import css from '../app.css?inline';
@@ -16,25 +17,28 @@ import * as api from '../workshop/api';
  * with (as a plugin, or a vizint deck), to be checked and committed; rejecting sends the sender a note.
  */
 export function Review() {
+  const { m } = useLang();
   const [me, setMe] = useState<api.Me | null>();
   useEffect(() => { api.me().then(setMe, () => setMe(null)); }, []);
   return (
     <div className="flex h-dvh flex-col bg-base-200">
       <header className="navbar min-h-0 gap-3 border-b border-base-300 bg-base-100 px-4 py-1">
         <Areas />
-        <span className="font-semibold">Review</span>
+        <span className="font-semibold">{m.area_review()}</span>
       </header>
       {me === undefined && <div className="flex justify-center p-8"><span className="loading loading-spinner" /></div>}
-      {me === null && <p className="p-8">Sign in at the <AreaLink path="/workshop" className="link">workshop</AreaLink> first.</p>}
-      {me && !me.admin && <p className="p-8">Only admins review submissions.</p>}
+      {me === null && <p className="p-8">{m.sign_in_first()} <AreaLink path="/workshop" className="link">{m.area_workshop()}</AreaLink></p>}
+      {me && !me.admin && <p className="p-8">{m.admins_only()}</p>}
       {me?.admin && <Queue />}
     </div>
   );
 }
 
 const BADGE = { pending: 'badge-warning', accepted: 'badge-success', rejected: 'badge-ghost' } as const;
+const STATUS = (m: Messages, s: api.Submission['status']) => ({ pending: m.status_pending, accepted: m.status_accepted, rejected: m.status_rejected })[s]();
 
 function Queue() {
+  const { m, lang } = useLang();
   const [queue, setQueue] = useState<{ submissions: api.Submission[]; repo: string | null }>();
   const [error, setError] = useState<string>();
   const [selected, setSelected] = useState<string>();
@@ -46,27 +50,27 @@ function Queue() {
   const shown = queue.submissions.filter((s) => all || s.status === 'pending');
   return (
     <div className="flex min-h-0 flex-1">
-      <nav className="flex w-64 shrink-0 flex-col gap-1 overflow-y-auto border-r border-base-300 bg-base-100 p-2">
-        <label className="label gap-2 px-2 text-xs"><input type="checkbox" className="toggle toggle-xs" checked={all} onChange={(e) => setAll(e.target.checked)} />Decided ones too</label>
+      <nav className="flex w-64 shrink-0 flex-col gap-1 overflow-y-auto border-e border-base-300 bg-base-100 p-2">
+        <label className="label gap-2 px-2 text-xs"><input type="checkbox" className="toggle toggle-xs" checked={all} onChange={(e) => setAll(e.target.checked)} />{m.review_decided_too()}</label>
         <ul className="menu menu-sm w-full p-0">
           {shown.map((s) => (
             <li key={s.id}>
               <button type="button" className={s.id === selected ? 'menu-active' : ''} onClick={() => setSelected(s.id)}>
                 <span className="flex min-w-0 flex-1 flex-col items-start">
                   <span className="w-full truncate">{s.title}</span>
-                  <span className="text-xs text-base-content/50">{s.kind === 'viz' ? 'visualization' : 'view'} · {new Date(s.created).toLocaleDateString()}</span>
+                  <span className="text-xs text-base-content/50">{m.review_kind_date({ kind: s.kind === 'viz' ? m.kind_viz() : m.kind_view(), date: new Date(s.created).toLocaleDateString(lang) })}</span>
                 </span>
-                <span className={`badge badge-xs ${BADGE[s.status]}`}>{s.status}</span>
+                <span className={`badge badge-xs ${BADGE[s.status]}`}>{STATUS(m, s.status)}</span>
               </button>
             </li>
           ))}
         </ul>
-        {!shown.length && <p className="p-2 text-sm text-base-content/60">Nothing waiting.</p>}
+        {!shown.length && <p className="p-2 text-sm text-base-content/60">{m.review_nothing()}</p>}
       </nav>
       <main className="min-w-0 flex-1 overflow-y-auto">
         {selected
           ? <Detail key={selected} id={selected} repo={queue.repo} onDecided={reload} />
-          : <div className="flex h-full items-center justify-center text-base-content/60">Pick a submission.</div>}
+          : <div className="flex h-full items-center justify-center text-base-content/60">{m.review_pick()}</div>}
       </main>
     </div>
   );
@@ -75,6 +79,7 @@ function Queue() {
 type Detailed = Awaited<ReturnType<typeof api.submission>>;
 
 function Detail({ id, repo, onDecided }: { id: string; repo: string | null; onDecided: () => void }) {
+  const { m, lang } = useLang();
   const [s, setS] = useState<Detailed>();
   const [error, setError] = useState<string>();
   useEffect(() => { api.submission(id).then(setS, (e: unknown) => setError(e instanceof Error ? e.message : String(e))); }, [id]);
@@ -85,17 +90,23 @@ function Detail({ id, repo, onDecided }: { id: string; repo: string | null; onDe
       <section className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold">{s.title}</h1>
         <p className="text-sm text-base-content/60">
-          A {s.kind === 'viz' ? 'visualization' : 'view'} from {s.email} ({s.source}), {new Date(s.created).toLocaleString()}
-          {s.credit && <>; to be credited as “{s.credit}”</>}
+          {(s.kind === 'viz' ? m.review_from_viz : m.review_from_view)({ email: s.email, source: s.source, time: new Date(s.created).toLocaleString(lang) })}
+          {s.credit && <> {m.review_credit({ credit: s.credit })}</>}
         </p>
         <p className="whitespace-pre-wrap">{s.about}</p>
-        {s.status !== 'pending' && <p className="text-sm">It was {s.status} {s.decided && new Date(s.decided).toLocaleString()}{s.promoted && <> into <code>{s.promoted}</code></>}{s.note && <>: “{s.note}”</>}.</p>}
+        {s.status !== 'pending' && (
+          <p className="text-sm">
+            {m.review_was({ status: STATUS(m, s.status), time: s.decided ? new Date(s.decided).toLocaleString(lang) : '' })}
+            {s.promoted && <> {m.review_into({ path: s.promoted })}</>}
+            {s.note && <> {m.review_note({ note: s.note })}</>}
+          </p>
+        )}
       </section>
       <section className="h-[32rem] overflow-hidden rounded-box border border-base-300 bg-base-100">
         <Live s={s} />
       </section>
       <section>
-        <h2 className="mb-1 font-medium">Its files</h2>
+        <h2 className="mb-1 font-medium">{m.review_files()}</h2>
         {s.ymls.map((y) => (
           <details key={y.id} className="border-b border-base-300 py-1">
             <summary className="cursor-pointer font-mono text-sm">{y.id}</summary>
@@ -147,6 +158,7 @@ function ViewLive({ repo }: { repo: Repo }) {
 const NAME = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 function Decide({ s, repo, onDecided }: { s: Detailed; repo: string | null; onDecided: () => void }) {
+  const { m } = useLang();
   const [t, setT] = useState<api.Target>(s.proposed);
   const [about, setAbout] = useState(Object.keys(s.proposed.concepts ?? {}).join(', '));
   const names = about.split(',').map((n) => n.trim()).filter(Boolean);
@@ -176,45 +188,45 @@ function Decide({ s, repo, onDecided }: { s: Detailed; repo: string | null; onDe
   );
   const valid = [t.deck, ...(s.kind === 'view' ? [t.plugin, t.package] : [])].every((x) => NAME.test(x ?? '')) && names.length > 0;
 
-  if (done === 'rejected') return <p className="text-sm">Rejected; the sender sees your note.</p>;
+  if (done === 'rejected') return <p className="text-sm">{m.review_rejected()}</p>;
   if (done) {
     return (
       <section className="flex flex-col gap-2 rounded-box border border-success p-3 text-sm">
-        <p>Accepted into <code>{done.at}</code>. It goes public once it’s committed and the site is built:</p>
+        <p>{m.review_accepted_into({ path: done.at })}</p>
         <pre className="overflow-x-auto bg-base-100 p-2 text-xs">{done.next.join('\n')}</pre>
         {done.warnings.map((w) => <p key={w} className="text-warning">{w}</p>)}
-        <details><summary className="cursor-pointer text-xs">{done.written.length} files written</summary><pre className="overflow-x-auto text-xs">{done.written.join('\n')}</pre></details>
+        <details><summary className="cursor-pointer text-xs">{m.review_written({ count: done.written.length })}</summary><pre className="overflow-x-auto text-xs">{done.written.join('\n')}</pre></details>
       </section>
     );
   }
   return (
     <section className="grid gap-4 md:grid-cols-2">
       <div className="flex flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 text-sm">
-        <h2 className="font-medium">Accept</h2>
+        <h2 className="font-medium">{m.accept()}</h2>
         {s.kind === 'view'
-          ? <>{field('plugin', 'As the plugin plugins/…')}{field('package', 'Its gestalts in the package gestalts/…')}{field('deck', 'Its data as the deck …')}</>
-          : field('deck', 'As the deck plugins/vizint/decks/…')}
+          ? <>{field('plugin', m.review_as_plugin())}{field('package', m.review_as_package())}{field('deck', m.review_as_deck())}</>
+          : field('deck', m.review_as_viz_deck())}
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-base-content/70">What it practises as a whole: concept names in English, comma-separated (outlines find it by these)</span>
-          <input className={`input input-sm ${names.length ? '' : 'input-error'}`} placeholder="rounding, place value" value={about} onChange={(e) => setAbout(e.target.value)} />
-          {drafted.length > 0 && <span className="text-xs text-base-content/60">Its own concepts: {drafted.join(', ')}</span>}
+          <span className="text-xs text-base-content/70">{m.review_concepts()}</span>
+          <input className={`input input-sm ${names.length ? '' : 'input-error'}`} placeholder={m.review_concepts_example()} value={about} onChange={(e) => setAbout(e.target.value)} />
+          {drafted.length > 0 && <span className="text-xs text-base-content/60">{m.review_own_concepts({ list: drafted.join(', ') })}</span>}
         </label>
         {repo
-          ? <p className="text-xs text-base-content/60">Into <code>{repo}</code>, to be checked and committed there.</p>
-          : <p className="text-xs text-warning">This server accepts into no checkout (start it with <code>--promote-into</code>): only rejecting works here.</p>}
-        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !repo || !valid} onClick={() => void run(async () => setDone(await api.accept(s.id, { ...t, concepts })))}>Accept</button>
+          ? <p className="text-xs text-base-content/60">{m.review_into_checkout({ path: repo })}</p>
+          : <p className="text-xs text-warning">{m.review_no_checkout()}</p>}
+        <button type="button" className="btn btn-sm btn-primary" disabled={busy || !repo || !valid} onClick={() => void run(async () => setDone(await api.accept(s.id, { ...t, concepts })))}>{m.accept()}</button>
       </div>
       <div className="flex flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-3 text-sm">
-        <h2 className="font-medium">Reject</h2>
+        <h2 className="font-medium">{m.reject()}</h2>
         <label className="flex flex-col gap-1">
-          <span className="text-xs text-base-content/70">Why, for the sender</span>
+          <span className="text-xs text-base-content/70">{m.review_why()}</span>
           <textarea className="textarea textarea-sm" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         </label>
-        <button type="button" className="btn btn-sm" disabled={busy || !note.trim()} onClick={() => void run(async () => { await api.reject(s.id, note); setDone('rejected'); })}>Reject</button>
+        <button type="button" className="btn btn-sm" disabled={busy || !note.trim()} onClick={() => void run(async () => { await api.reject(s.id, note); setDone('rejected'); })}>{m.reject()}</button>
       </div>
       {problems.length > 0 && (
         <div role="alert" className="text-sm text-error md:col-span-2">
-          <ul className="list-disc pl-5">{problems.map((x) => <li key={x}>{x}</li>)}</ul>
+          <ul className="list-disc ps-5">{problems.map((x) => <li key={x}>{x}</li>)}</ul>
         </div>
       )}
     </section>

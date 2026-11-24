@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '@gestalts/i18n';
 import type { ViewError } from '@gestalts/view';
 import type { AgentBackend, Answers } from './agents/types';
 import { AskCard } from './AskCard';
@@ -18,6 +19,7 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
   suggestion?: string;
   actions?: Action[];
 }) {
+  const { m } = useLang();
   const key = conversationKey(backend.id, work.id);
   const { lines, busy, refused } = useConversation(key);
   const [text, setText] = useState(suggestion ?? '');
@@ -49,7 +51,7 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
   }, [backend, work.id, key]);
 
   /** the open card a turn would answer, if any */
-  const waiting = lines.find((l): l is Ask => l.who === 'ask' && !l.answered && !l.reply);
+  const waiting = lines.find((l): l is Ask => l.who === 'ask' && !l.answered && !l.closed && !l.reply);
 
   const answer = (card: Ask, answers: Answers) => {
     const shown = Object.entries(answers).map(([q, a]) => `${q} → ${a}`).join('\n');
@@ -66,7 +68,7 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
     if (!message || busy) return;
     if (said === undefined) setText('');
     // a message instead of an answer answers the card
-    if (waiting) closeAsk(key, waiting.id, 'answered by your message');
+    if (waiting) closeAsk(key, waiting.id, m.chat_answered_by_message());
     say(key, { who: 'you', text: message });
     void runTurn({ work, backend, message, errors });
   };
@@ -75,17 +77,19 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
     <div className="flex h-full min-h-0 flex-col bg-base-100">
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3 text-sm">
         {lines.map((l, i) => (l.who === 'ask'
-          ? <AskCard key={`ask-${l.id}`} questions={l.questions} answered={l.answered} disabled={!l.reply && busy} onAnswer={(a) => answer(l, a)} />
+          ? <AskCard key={`ask-${l.id}`} questions={l.questions} answered={l.closed ? m.ask_closed() : l.answered} disabled={!l.reply && busy} onAnswer={(a) => answer(l, a)} />
           : l.who === 'rate'
           ? <Rating key={`rate-${l.run.id}`} line={l} onRate={(score, comment) => rate(key, l.run, score, comment)} />
           : l.who === 'checked'
           ? (
             <div key={i} className={l.ok ? 'text-success' : 'text-error'}>
-              {l.text}
-              {l.detail && <details><summary className="cursor-pointer text-xs text-base-content/60">The check</summary><pre className="overflow-x-auto text-xs text-base-content">{l.detail}</pre></details>}
+              {l.ok ? m.chat_built() : m.chat_check_failed()}
+              {l.detail && <details><summary className="cursor-pointer text-xs text-base-content/60">{m.chat_check()}</summary><pre className="overflow-x-auto text-xs text-base-content">{l.detail}</pre></details>}
             </div>
           )
-          : <p key={i} className={`whitespace-pre-wrap ${l.who === 'you' ? 'font-semibold' : l.who === 'tool' ? 'font-mono text-xs text-base-content/50' : l.who === 'error' ? 'text-error' : ''}`}>{l.text}</p>
+          : l.who === 'checking'
+          ? <p key={i} className="font-mono text-xs text-base-content/50">{m.chat_checking()}</p>
+          : <p key={i} className={`whitespace-pre-wrap ${l.who === 'you' ? 'font-semibold' : l.who === 'tool' ? 'font-mono text-xs text-base-content/50' : l.who === 'error' || l.who === 'unsaved' ? 'text-error' : ''}`}>{l.who === 'unsaved' ? m.chat_unsaved({ problem: l.text }) : l.text}</p>
         ))}
         {busy && <span className="loading loading-dots loading-sm" />}
         <div ref={end} />
@@ -93,22 +97,22 @@ export function Chat({ work, backend, errors, onTurnDone, suggestion, actions = 
       {unavailable && (
         <div role="status" className="flex items-center gap-2 px-3 text-xs text-warning">
           <span className="flex-1">{unavailable}</span>
-          {backend.connect && <button type="button" className="btn btn-xs" onClick={() => void connect()}>Connect</button>}
-          <button type="button" className="btn btn-xs btn-ghost" onClick={() => setChecked((n) => n + 1)}>Check again</button>
+          {backend.connect && <button type="button" className="btn btn-xs" onClick={() => void connect()}>{m.chat_connect()}</button>}
+          <button type="button" className="btn btn-xs btn-ghost" onClick={() => setChecked((n) => n + 1)}>{m.chat_check_again()}</button>
         </div>
       )}
-      {errors.length + refused.length > 0 && <p role="status" className="px-3 text-xs text-error">{errors.length + refused.length} error(s) from the preview and saving go with your next message.</p>}
+      {errors.length + refused.length > 0 && <p role="status" className="px-3 text-xs text-error">{m.chat_errors({ count: errors.length + refused.length })}</p>}
       {actions.length > 0 && !busy && (
         <div className="flex flex-wrap gap-1 px-2 pt-2">
           {actions.map((a) => <button key={a.label} type="button" className="btn btn-xs" disabled={Boolean(unavailable)} onClick={() => send(a.message)}>{a.label}</button>)}
         </div>
       )}
       <div className="flex gap-2 border-t border-base-300 p-2">
-        <textarea className="textarea textarea-sm min-w-0 flex-1" rows={2} placeholder={waiting ? 'Answer above, or write your answer here' : 'What should it do?'} value={text} onChange={(e) => setText(e.target.value)}
+        <textarea className="textarea textarea-sm min-w-0 flex-1" rows={2} placeholder={waiting ? m.chat_answer_here() : m.chat_what()} value={text} onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }} />
         {busy
-          ? <button type="button" className="btn btn-sm" onClick={() => stop(key)}>Stop</button>
-          : <button type="button" className="btn btn-sm btn-primary" disabled={!text.trim() || Boolean(unavailable)} onClick={() => send()}>Send</button>}
+          ? <button type="button" className="btn btn-sm" onClick={() => stop(key)}>{m.chat_stop()}</button>
+          : <button type="button" className="btn btn-sm btn-primary" disabled={!text.trim() || Boolean(unavailable)} onClick={() => send()}>{m.chat_send()}</button>}
       </div>
     </div>
   );
@@ -118,14 +122,15 @@ const SCORES = [1, 2, 3, 4, 5];
 
 /** After a turn: how good it was, 1 (bad) to 5 (good), and why, if the person likes; kept with the turn's record. */
 function Rating({ line, onRate }: { line: Rate; onRate: (score: number, comment: string) => void }) {
+  const { m } = useLang();
   const [editing, setEditing] = useState(line.score === undefined);
   const [score, setScore] = useState(line.score);
   const [comment, setComment] = useState(line.comment ?? '');
   if (!editing && line.score !== undefined) {
     return (
       <div className="flex items-center gap-2 text-base-content/60">
-        <span>Rated {line.score} of 5{line.comment ? `: ${line.comment}` : ''}</span>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>Change</button>
+        <span>{line.comment ? m.chat_rated_why({ score: line.score, comment: line.comment }) : m.chat_rated({ score: line.score })}</span>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setEditing(true)}>{m.chat_change()}</button>
       </div>
     );
   }
@@ -136,20 +141,20 @@ function Rating({ line, onRate }: { line: Rate; onRate: (score: number, comment:
   };
   return (
     <div className="flex flex-wrap items-center gap-2 text-base-content/60">
-      <span>How good was this?</span>
-      <span>bad</span>
+      <span>{m.chat_how_good()}</span>
+      <span>{m.chat_bad()}</span>
       <div className="join" role="radiogroup">
         {SCORES.map((s) => (
           <input key={s} type="radio" className="join-item btn btn-sm" name={`rate-${line.run.id}`} aria-label={String(s)}
                  checked={score === s} onChange={() => setScore(s)} />
         ))}
       </div>
-      <span>good</span>
+      <span>{m.chat_good()}</span>
       {score !== undefined && (
         <>
-          <input type="text" className="input input-sm min-w-0 flex-1" placeholder="Why? (optional)" value={comment}
+          <input type="text" className="input input-sm min-w-0 flex-1" placeholder={m.chat_why()} value={comment}
                  onChange={(e) => setComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') send(); }} />
-          <button type="button" className="btn btn-sm" onClick={send}>Send</button>
+          <button type="button" className="btn btn-sm" onClick={send}>{m.chat_send()}</button>
         </>
       )}
     </div>

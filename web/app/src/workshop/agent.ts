@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { INSTALL_BRIDGE, bridgeBackend, geminiBackend, httpBackend, ollamaBackend, useRunning, type AgentBackend } from '@gestalts/workshop';
+import type { Messages } from '@gestalts/i18n';
+import { bridgeBackend, geminiBackend, httpBackend, ollamaBackend, useRunning, type AgentBackend } from '@gestalts/workshop';
 import { AGENT_NODE, OLLAMA_NODE } from '../nodes';
 
 /**
@@ -18,7 +19,6 @@ const KEY = 'workshop:agent';
 const OLD_KEY = 'teacher:agent';
 export const DEFAULT_NODE: string = AGENT_NODE;
 export const DEFAULT_OLLAMA_NODE: string = OLLAMA_NODE;
-export const START = INSTALL_BRIDGE;
 
 const isAgent = (a: unknown): a is AgentId => AGENTS.includes(a as AgentId);
 
@@ -49,14 +49,14 @@ export function saveChoice(c: AgentChoice) {
   try { localStorage.setItem(KEY, JSON.stringify(c)); localStorage.removeItem(OLD_KEY); } catch { /* for this visit only */ }
 }
 
-/** An http(s) address without a path, or why not. */
-export function nodeProblem(url: string, example: string = DEFAULT_NODE): string | undefined {
+/** An http(s) address without a path, or why not, in `m`'s language. */
+export function nodeProblem(m: Messages, url: string, example: string = DEFAULT_NODE): string | undefined {
   try {
     const u = new URL(url);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return 'an http:// address';
-    if (u.pathname !== '/' || u.search || u.hash) return `the bridge’s address only, like ${example}`;
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return m.address_http();
+    if (u.pathname !== '/' || u.search || u.hash) return m.address_only({ example });
   } catch {
-    return `an address like ${example}`;
+    return m.address_like({ example });
   }
   return undefined;
 }

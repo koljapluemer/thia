@@ -3,6 +3,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import { useOpenRepo, type DeckSource, type Repo } from '@gestalts/client';
 import { FrameView, type RunnableView, type ViewEnv } from '@gestalts/host';
+import { useLang } from '@gestalts/i18n';
 import type { JsonMap } from '@gestalts/view';
 import tailwind from '@tailwindcss/browser?raw';
 import css from './app.css?inline';
@@ -31,6 +32,7 @@ export type Run = {
  * next person on a shared device.
  */
 export function RunPage({ run }: { run: Run }) {
+  const { m } = useLang();
   const [generation, setGeneration] = useState(() => Number(store.get(run.keys.generation) ?? 0) || 0);
   const dir = generation ? `${run.dir}-${generation}` : run.dir;
   const source = useMemo(() => ({ dir, decks: [run.deck], gestalts: registry.gestalts }), [dir, run.deck]);
@@ -42,7 +44,7 @@ export function RunPage({ run }: { run: Run }) {
   }, [run.title]);
 
   const startFresh = () => {
-    if (!confirm('Start again from the beginning? What you did here on this device is deleted.')) return;
+    if (!confirm(m.run_start_fresh_confirm())) return;
     const old = { dir, repo };
     store.set(run.keys.generation, String(generation + 1));
     store.remove(run.keys.state);
@@ -54,17 +56,17 @@ export function RunPage({ run }: { run: Run }) {
     <div className="flex h-dvh flex-col bg-base-200">
       <header className="flex min-h-0 items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
         {run.back && (
-          <a href="/" className="btn btn-ghost btn-xs btn-square" title="Everything here" onClick={(e) => { if (e.button === 0 && !e.metaKey && !e.ctrlKey) { e.preventDefault(); run.back?.(); } }}>
+          <a href="/" className="btn btn-ghost btn-xs btn-square" title={m.back_everything()} aria-label={m.back_everything()} onClick={(e) => { if (e.button === 0 && !e.metaKey && !e.ctrlKey) { e.preventDefault(); run.back?.(); } }}>
             <ArrowLeft className="size-4" />
           </a>
         )}
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{run.title}</h1>
-        <button type="button" className="btn btn-ghost btn-xs" onClick={startFresh} title="Start again, for the next person on this device">
-          <RotateCcw className="size-3.5" /> Start fresh
+        <button type="button" className="btn btn-ghost btn-xs" onClick={startFresh} title={m.run_start_fresh_title()}>
+          <RotateCcw className="size-3.5" /> {m.run_start_fresh()}
         </button>
       </header>
       <main className="min-h-0 flex-1">
-        {error && <Notice title="This couldn’t open its data">{error}</Notice>}
+        {error && <Notice title={m.run_data_failed()}>{error}</Notice>}
         {!error && !repo && <Spinner />}
         {repo && <Frame key={dir} repo={repo} run={run} />}
       </main>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { registry } from 'virtual:gestalts-plugins';
 import { closedCsp } from '@gestalts/host';
+import { useLang } from '@gestalts/i18n';
 import { LESSON_ID, SEQUENCE_LESSON, parseManifest, parseSequenceManifest, type LessonManifest } from '@gestalts/workshop/lesson';
 import { Notice, RunPage, Spinner, type Run } from './Run';
 import { SequencePage, type LoadedSequence } from './Sequence';
@@ -49,8 +50,9 @@ async function load(id: string): Promise<Any> {
 }
 
 export function Lesson({ id }: { id: string }) {
+  const { m } = useLang();
   const [lesson, setLesson] = useState<Any>();
-  const [error, setError] = useState<{ gone?: boolean; message?: string }>();
+  const [error, setError] = useState<{ gone?: boolean; other?: boolean; message?: string }>();
   useEffect(() => {
     load(id).then((l) => {
       if (l.lesson.manifest.runtime !== registry.runtime.version) {
@@ -61,15 +63,15 @@ export function Lesson({ id }: { id: string }) {
           location.reload();
           return;
         }
-        setError({ message: 'This lesson needs another version of this page, which isn’t here.' });
+        setError({ other: true });
         return;
       }
       setLesson(l);
     }, (e: unknown) => setError(e instanceof Gone ? { gone: true } : { message: e instanceof Error ? e.message : String(e) }));
   }, [id]);
 
-  if (error?.gone) return <Notice title="This lesson isn’t available">The link was switched off or has expired. Ask your teacher for a new one.</Notice>;
-  if (error) return <Notice title="The lesson couldn’t start">{error.message}</Notice>;
+  if (error?.gone) return <Notice title={m.lesson_gone()}>{m.lesson_gone_text()}</Notice>;
+  if (error) return <Notice title={m.lesson_failed()}>{error.other ? m.lesson_other_version() : error.message}</Notice>;
   if (!lesson) return <Spinner />;
   return lesson.kind === 'sequence' ? <SequencePage lesson={lesson.lesson} /> : <Loaded lesson={lesson.lesson} />;
 }

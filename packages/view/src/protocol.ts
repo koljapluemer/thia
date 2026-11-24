@@ -1,7 +1,7 @@
 import type { Belief, BeliefDelta, Delta, Item, Json, JsonMap, OutlineDelta, OutlinePage, OutlineQuery, Page, Query } from './types';
 
 /** Bumped when a message below changes meaning. A view and the host that run it must agree. */
-export const PROTOCOL = 3;
+export const PROTOCOL = 4;
 
 /** What a view is told when it starts. */
 export type ViewInit = {
@@ -15,6 +15,10 @@ export type ViewInit = {
   params: Record<string, string>;
   /** what it last saved with `useViewState` */
   state: JsonMap;
+  /** the language its text is shown in (BCP 47): its own, as it was made */
+  lang: string;
+  /** the person's locale (BCP 47), for numbers and dates: German `3,5` is three and a half */
+  locale: string;
 };
 
 export type ServiceReply = { status: number; contentType: string; body: Uint8Array };

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { registry } from 'virtual:gestalts-plugins/workshop';
 import { useHostQuery, type Repo } from '@gestalts/client';
 import { SingleView } from '@gestalts/host';
+import { useLang } from '@gestalts/i18n';
 import { Chat, VIZ, asViz, buildActions, createViz, flushing, vizWork } from '@gestalts/workshop';
 import css from '../app.css?inline';
 import { usePickedBackend, type AgentChoice } from './agent';
@@ -36,6 +37,7 @@ export function VizPane({ info, agent, onChanged, onDeleted }: { info: api.Draft
 }
 
 function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; agent: AgentChoice; onChanged: () => void; onDeleted: () => void }) {
+  const { m } = useLang();
   const current = useHostQuery({ gestalt: VIZ, ids: [info.id], limit: 1 })[0];
   const viz = useMemo(() => (current ? asViz(current) : null), [current]);
   const params = useMemo(() => ({ viz: info.id }), [info.id]);
@@ -61,10 +63,10 @@ function Workbench({ repo, info, agent, onChanged, onDeleted }: { repo: Repo; in
       preview={<SingleView registry={registry} css={css} view="vizint" params={params} onParams={NO_NAVIGATION} />}
       side={(
         <>
-          <Brief work={work} spec={viz.spec} edit={edit} flush={flush} placeholder="e.g. Show how a Bézier curve is drawn by de Casteljau's construction; the control points are draggable." />
+          <Brief work={work} spec={viz.spec} edit={edit} flush={flush} placeholder={m.viz_brief_placeholder()} />
           <Editor key={viz.id} repo={repo} viz={viz} />
           <div className="min-h-0 flex-1">
-            <Chat work={work} backend={backend} errors={NO_ERRORS} actions={buildActions(viz.spec, Boolean(viz.source))} onTurnDone={() => {}} />
+            <Chat work={work} backend={backend} errors={NO_ERRORS} actions={buildActions(m, viz.spec, Boolean(viz.source))} onTurnDone={() => {}} />
           </div>
         </>
       )}

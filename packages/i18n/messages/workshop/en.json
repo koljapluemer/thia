@@ -1,0 +1,43 @@
+{
+  "chat_check": "The check",
+  "chat_connect": "Connect",
+  "chat_check_again": "Check again",
+  "chat_errors": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{count} error from the preview and saving goes with your next message.",
+        "n=other": "{count} errors from the preview and saving go with your next message."
+      }
+    }
+  ],
+  "chat_answer_here": "Answer above, or write your answer here",
+  "chat_what": "What should it do?",
+  "chat_stop": "Stop",
+  "chat_send": "Send",
+  "chat_rated": "Rated {score} of 5",
+  "chat_rated_why": "Rated {score} of 5: {comment}",
+  "chat_change": "Change",
+  "chat_how_good": "How good was this?",
+  "chat_bad": "bad",
+  "chat_good": "good",
+  "chat_why": "Why? (optional)",
+  "chat_answered_by_message": "answered by your message",
+  "chat_unsaved": "not saved: {problem}",
+  "chat_checking": "check what came back, here",
+  "chat_built": "Built and checked.",
+  "chat_check_failed": "The check failed: the source is saved, the page shown is the last one that passed.",
+  "action_build": "Build from the brief",
+  "action_rebuild": "Rebuild from the brief",
+  "ask_recommended": "recommended",
+  "ask_own_words": "Or in your own words",
+  "ask_your_answer": "Your answer",
+  "ask_answer": "Answer",
+  "ask_closed": "closed: the turn ended before it was answered"
+}

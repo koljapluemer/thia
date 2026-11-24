@@ -121,7 +121,7 @@ export default function Zettelkasten() {
 
   return (
     <div className="h-full overflow-y-auto bg-base-100 md:flex md:overflow-hidden">
-      <aside className="flex flex-col gap-4 border-base-300 p-3 md:w-[26rem] md:shrink-0 md:overflow-y-auto md:border-r">
+      <aside className="flex flex-col gap-4 border-base-300 p-3 md:w-[26rem] md:shrink-0 md:overflow-y-auto md:border-e">
         {error && <div role="alert" className="alert alert-error text-sm">{error}</div>}
         {inbox.error && <div role="alert" className="alert alert-error text-sm">{inbox.error}</div>}
         {subject
@@ -339,7 +339,7 @@ function Attention({ ctx }: { ctx: TreeCtx }) {
                 {floats
                   ? <button type="button" className="btn btn-ghost btn-xs btn-square mt-1.5" aria-label={open ? 'Hide what hangs on it' : 'Show what hangs on it'} onClick={() => setUnfolded(open ? unfolded.filter((x) => x !== id) : [...unfolded, id])}>{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button>
                   : <span className="inline-block w-6 shrink-0" />}
-                <button type="button" className="min-w-0 flex-1 rounded-box p-2 text-left text-sm hover:bg-base-200" onClick={() => ctx.focus(id)}>
+                <button type="button" className="min-w-0 flex-1 rounded-box p-2 text-start text-sm hover:bg-base-200" onClick={() => ctx.focus(id)}>
                   <span className="block break-words"><NoteTitle value={e.item.value} /></span>
                   <span className="block text-xs text-base-content/60">{e.marks.map((m) => MARK[m.kind]).join(' ')}</span>
                 </button>
@@ -377,7 +377,7 @@ function Rows({ result, depth, ctx }: { result: ReturnType<typeof useOutline>; d
       <ul>
         {result.entries.map((e) => <Row key={e.item.id} entry={e} depth={depth} ctx={ctx} />)}
       </ul>
-      {result.hasMore && <button type="button" className="btn btn-xs btn-ghost" style={{ marginLeft: `${depth * 1.25 + 1.5}rem` }} onClick={result.more}>More</button>}
+      {result.hasMore && <button type="button" className="btn btn-xs btn-ghost" style={{ marginInlineStart: `${depth * 1.25 + 1.5}rem` }} onClick={result.more}>More</button>}
     </>
   );
 }
@@ -386,7 +386,7 @@ function Rows({ result, depth, ctx }: { result: ReturnType<typeof useOutline>; d
 function Floating({ from, ctx }: { from: string; ctx: TreeCtx }) {
   const result = useOutline(SPEC, { sequence: from }, { fields: FIELDS, limit: PAGE });
   if (result.error) return <div role="alert" className="alert alert-error text-sm">{result.error}</div>;
-  return <div className="ml-6 border-l border-base-300 pl-1"><Rows result={result} depth={0} ctx={ctx} /></div>;
+  return <div className="ms-6 border-s border-base-300 ps-1"><Rows result={result} depth={0} ctx={ctx} /></div>;
 }
 
 function Children({ of, depth, ctx }: { of: string; depth: number; ctx: TreeCtx }) {
@@ -404,12 +404,12 @@ function Row({ entry, depth, ctx }: { entry: OutlineEntry; depth: number; ctx: T
   useEffect(() => { if (ctx.revealed === id) ref.current?.scrollIntoView({ block: 'nearest' }); }, [ctx.revealed, id]);
   return (
     <li>
-      <div ref={ref} className={`flex items-center gap-1 rounded-box py-0.5 pr-1 ${selected ? 'bg-base-200' : ''} ${isSubject ? 'outline outline-1 outline-primary' : ''}`} style={{ paddingLeft: `${depth * 1.25}rem` }}
+      <div ref={ref} className={`flex items-center gap-1 rounded-box py-0.5 pe-1 ${selected ? 'bg-base-200' : ''} ${isSubject ? 'outline outline-1 outline-primary' : ''}`} style={{ paddingInlineStart: `${depth * 1.25}rem` }}
            onDragEnter={() => { if (ctx.dragging && !selected) ctx.select(id); }}>
         {entry.hasChildren
           ? <button type="button" className="btn btn-ghost btn-xs btn-square" aria-label={open ? 'Collapse' : 'Expand'} onClick={() => ctx.toggle(id)}>{open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}</button>
           : <span className="inline-block w-6 shrink-0" />}
-        <button type="button" className="min-w-0 flex-1 py-1 text-left break-words" onClick={() => ctx.select(selected ? null : id)}>
+        <button type="button" className="min-w-0 flex-1 py-1 text-start break-words" onClick={() => ctx.select(selected ? null : id)}>
           <NoteTitle value={entry.item.value} />
         </button>
         {entry.marks.length > 0 && <span className="badge badge-warning badge-xs" title={entry.marks.map((m) => MARK[m.kind]).join(' ')}>!</span>}
@@ -427,7 +427,7 @@ function RowActions({ entry, depth, ctx }: { entry: OutlineEntry; depth: number;
   // whether the subject would end up below itself is the core's to say
   const located = useOutline(SPEC, subject ? { locate: [id] } : null, { fields: [], subject: subject ?? undefined }).entries[0];
   return (
-    <div className="flex flex-wrap items-center gap-2 py-1" style={{ paddingLeft: `${depth * 1.25 + 1.75}rem` }}>
+    <div className="flex flex-wrap items-center gap-2 py-1" style={{ paddingInlineStart: `${depth * 1.25 + 1.75}rem` }}>
       {subject && located && <PlaceButtons entry={entry} below={located.belowSubject === true} ctx={ctx} />}
       <button type="button" className="btn btn-xs" onClick={() => ctx.focus(id)}>Focus</button>
       <button type="button" className="btn btn-xs btn-ghost" title="Edit in Notes" onClick={() => ctx.open(id)}><Pencil className="size-4" /> Edit</button>

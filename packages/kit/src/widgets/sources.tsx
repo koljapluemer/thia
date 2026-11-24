@@ -150,7 +150,7 @@ export function SourceSearch({ exclude, onPick, placeholder = 'Find a source…'
     <div className="flex flex-col gap-1">
       <input className="input input-sm w-full" type="search" placeholder={placeholder} value={search} onChange={(e) => setSearch(e.target.value)} />
       {found.map((s) => (
-        <button key={s.id} type="button" className="btn btn-ghost btn-sm h-auto justify-start py-1 text-left font-normal" onClick={() => { onPick(s.id); setSearch(''); }}>
+        <button key={s.id} type="button" className="btn btn-ghost btn-sm h-auto justify-start py-1 text-start font-normal" onClick={() => { onPick(s.id); setSearch(''); }}>
           <span className="min-w-0 flex-1">
             <span className="block truncate">{sourceTitle(s.value)}</span>
             <span className="block truncate text-xs text-base-content/60">{[byline(s.value), str(s.value.key)].filter(Boolean).join(' · ')}</span>

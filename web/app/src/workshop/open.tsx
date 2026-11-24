@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { RepoProvider, useOpenRepo, type DeckSource, type Repo } from '@gestalts/client';
+import { useLang } from '@gestalts/i18n';
 import * as api from './api';
 
 /**
@@ -10,6 +11,7 @@ import * as api from './api';
 export function OpenDraft({ info, source, init, children }: {
   info: api.DraftInfo; source: { gestalts: string[]; decks?: DeckSource[] }; init: (repo: Repo) => Promise<void>; children: (repo: Repo) => ReactNode;
 }) {
+  const { m } = useLang();
   const [opened] = useState(() => ({ ...source, dir: `draft-${info.id}` }));
   const { repo, error } = useOpenRepo(opened);
   const [ready, setReady] = useState<Repo>();
@@ -28,7 +30,7 @@ export function OpenDraft({ info, source, init, children }: {
     return () => { live = false; };
   }, [repo, info.id, first]);
   const problem = error ?? failed;
-  if (problem) return <div role="alert" className="alert alert-error m-4">This draft couldn’t open: {problem}</div>;
+  if (problem) return <div role="alert" className="alert alert-error m-4">{m.draft_failed({ error: problem })}</div>;
   if (!ready) return <div className="flex h-full items-center justify-center"><span className="loading loading-spinner" /></div>;
   return <RepoProvider repo={ready}>{children(ready)}</RepoProvider>;
 }

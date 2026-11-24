@@ -1,7 +1,8 @@
 /** The built page (`dist/index.html`) filled in per page, by scripts/prerender.ts. */
 
 /** `noindex`: a page with nothing of its own to find (a view on the user's data alone) */
-export type Head = { title: string; description: string; lang: string; path: string; jsonLd?: object; noindex?: boolean };
+/** `alternates`: the page in each language it has, by language (`x-default` for everyone else) */
+export type Head = { title: string; description: string; lang: string; path: string; jsonLd?: object; noindex?: boolean; alternates?: Record<string, string> };
 
 const APP = '<div id="app"></div>';
 
@@ -32,6 +33,8 @@ export function fill(template: string, markup: string, head: Head, base: string,
     `<meta property="og:description" content="${attr(head.description)}">`,
     `<meta property="og:type" content="website">`,
     ...(base ? [`<link rel="canonical" href="${attr(`${base}${head.path}`)}">`, `<meta property="og:url" content="${attr(`${base}${head.path}`)}">`] : []),
+    // search engines take hreflang only with absolute URLs
+    ...(base ? Object.entries(head.alternates ?? {}).map(([lang, path]) => `<link rel="alternate" hreflang="${attr(lang)}" href="${attr(`${base}${path}`)}">`) : []),
     ...(head.jsonLd ? [`<script type="application/ld+json">${json(head.jsonLd)}</script>`] : []),
   ];
   // replaced by functions: a `$` in what goes in is just a `$`

@@ -1,0 +1,43 @@
+{
+  "chat_check": "Die Prüfung",
+  "chat_connect": "Verbinden",
+  "chat_check_again": "Erneut prüfen",
+  "chat_errors": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{count} Fehler aus der Vorschau und beim Speichern geht mit deiner nächsten Nachricht mit.",
+        "n=other": "{count} Fehler aus der Vorschau und beim Speichern gehen mit deiner nächsten Nachricht mit."
+      }
+    }
+  ],
+  "chat_answer_here": "Antworte oben oder schreib deine Antwort hier",
+  "chat_what": "Was soll es tun?",
+  "chat_stop": "Stopp",
+  "chat_send": "Senden",
+  "chat_rated": "Bewertet mit {score} von 5",
+  "chat_rated_why": "Bewertet mit {score} von 5: {comment}",
+  "chat_change": "Ändern",
+  "chat_how_good": "Wie gut war das?",
+  "chat_bad": "schlecht",
+  "chat_good": "gut",
+  "chat_why": "Warum? (freiwillig)",
+  "chat_answered_by_message": "mit deiner Nachricht beantwortet",
+  "chat_unsaved": "nicht gespeichert: {problem}",
+  "chat_checking": "prüfe hier, was zurückkam",
+  "chat_built": "Gebaut und geprüft.",
+  "chat_check_failed": "Die Prüfung ist fehlgeschlagen: Der Quelltext ist gespeichert, die gezeigte Seite ist die letzte, die bestanden hat.",
+  "action_build": "Aus dem Auftrag bauen",
+  "action_rebuild": "Aus dem Auftrag neu bauen",
+  "ask_recommended": "empfohlen",
+  "ask_own_words": "Oder in eigenen Worten",
+  "ask_your_answer": "Deine Antwort",
+  "ask_answer": "Antworten",
+  "ask_closed": "geschlossen: Der Zug endete, bevor sie beantwortet wurde"
+}

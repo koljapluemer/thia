@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLang } from '@gestalts/i18n';
 import type { Work } from '@gestalts/workshop';
 
 const SAVE_AFTER_MS = 600;
@@ -34,13 +35,14 @@ export function useDebounced(save: (text: string) => Promise<void>) {
 export function Brief({ work, spec, flush, edit, placeholder }: {
   work: Pick<Work, 'id'>; spec: string; flush: () => Promise<void>; edit: (t: string) => void; placeholder?: string;
 }) {
+  const { m } = useLang();
   const [text, setText] = useState(spec);
   // another device, or the plan, may set it: shown when nothing is typed here
   const typing = useRef(false);
   useEffect(() => { if (!typing.current) setText(spec); }, [spec]);
   return (
     <details className="border-b border-base-300 px-3 py-2 text-sm" open={!spec.trim()}>
-      <summary className="cursor-pointer text-base-content/60">Brief{spec.trim() ? `: ${spec.trim().split('\n')[0].slice(0, 60)}` : ''}</summary>
+      <summary className="cursor-pointer text-base-content/60">{spec.trim() ? m.brief_with({ start: spec.trim().split('\n')[0].slice(0, 60) }) : m.brief()}</summary>
       <textarea key={work.id} className="textarea textarea-sm mt-1 w-full" rows={5} value={text} placeholder={placeholder}
                 onFocus={() => { typing.current = true; }}
                 onBlur={() => { typing.current = false; void flush(); }}

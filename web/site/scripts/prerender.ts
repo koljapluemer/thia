@@ -17,6 +17,7 @@ type Server = {
   routes(trees: OutlineTree[]): string[];
   render(path: string, tree?: OutlineTree): string;
   renderNotFound(): string;
+  notFoundHead(): Head;
   head(path: string, trees: OutlineTree[], base: string): Head;
   outlineNames: string[];
 };
@@ -39,21 +40,25 @@ write(join(dist, 'player.html'), playerPage(template));
 
 const trees = server.outlineNames.map((name) => JSON.parse(readFileSync(join(dist, 'outlines', `${name}.json`), 'utf8')) as OutlineTree);
 const routes = server.routes(trees);
-const listed: string[] = [];
+const listed: { path: string; alternates?: Record<string, string> }[] = [];
 for (const path of routes) {
   const outline = /^\/o\/([a-z0-9-]+)/.exec(path)?.[1];
   const markup = server.render(path, outline ? trees.find((t) => t.name === outline) : undefined);
   const head = server.head(path, trees, base);
-  if (!head.noindex) listed.push(path);
+  if (!head.noindex) listed.push({ path, alternates: head.alternates });
   write(join(dist, path === '/' ? 'index.html' : `${path.slice(1)}/index.html`), page(markup, head));
 }
 // for any path: no canonical link of its own
-const nothing = { title: 'Nothing here · thia', description: 'This page isn’t here.', lang: 'en', path: '/' };
+const nothing = server.notFoundHead();
 write(join(dist, '404.html'), fill(template, server.renderNotFound(), nothing, '', ['<meta name="robots" content="noindex">']));
 
 if (base) {
-  const urls = listed.map((p) => `  <url><loc>${text(`${base}${p}`)}</loc></url>`).join('\n');
-  write(join(dist, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`);
+  // each language version names the others (xhtml:link), as the page's own head does
+  const urls = listed.map(({ path, alternates }) => {
+    const links = Object.entries(alternates ?? {}).map(([lang, p]) => `\n    <xhtml:link rel="alternate" hreflang="${text(lang)}" href="${text(`${base}${p}`)}"/>`).join('');
+    return `  <url><loc>${text(`${base}${path}`)}</loc>${links}${links ? '\n  ' : ''}</url>`;
+  }).join('\n');
+  write(join(dist, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls}\n</urlset>\n`);
   write(join(dist, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${base}/sitemap.xml\n`);
 }
 console.log(`prerendered ${routes.length} pages${base ? `, sitemap for ${base}` : ' (no VITE_PUBLIC_URL: no canonical links or sitemap)'}`);

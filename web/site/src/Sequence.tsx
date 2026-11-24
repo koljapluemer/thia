@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check, RotateCcw, Sparkles } from 'lucide-react'
 import { registry } from 'virtual:gestalts-plugins';
 import { useOpenRepo, type Repo } from '@gestalts/client';
 import { FrameView, closedCsp, type RunnableView, type ViewEnv } from '@gestalts/host';
+import { useLang, type Messages } from '@gestalts/i18n';
 import type { Belief, JsonMap } from '@gestalts/view';
 import type { LessonManifest, SequenceManifest } from '@gestalts/workshop/lesson';
 import { decide, type Step } from '@gestalts/workshop/sequence';
@@ -16,8 +17,8 @@ import { store } from './store';
 export type LoadedSequence = { id: string; manifest: SequenceManifest; views: { manifest: LessonManifest; base: string; js: string }[] };
 
 /**
- * Where a learner is: the step, whether its detour is playing, the steps skipped (and why) and those that got a
- * detour. Kept on this device, so a reload goes on where they were.
+ * Where a learner is: the step, whether its detour is playing, the steps skipped and those that got a detour, each
+ * with the concept that decided it. Kept on this device, so a reload goes on where they were.
  */
 type At = { step: number; detour: boolean; skipped: Record<number, string>; extra: Record<number, string> };
 const START: At = { step: 0, detour: false, skipped: {}, extra: {} };
@@ -28,6 +29,7 @@ const START: At = { step: 0, detour: false, skipped: {}, extra: {} };
  * practises counts in the next. Going back is always allowed, and a skipped step can be done anyway.
  */
 export function SequencePage({ lesson }: { lesson: LoadedSequence }) {
+  const { m } = useLang();
   const { id, manifest } = lesson;
   const keys = useMemo(() => ({ generation: `player:generation:${id}`, at: `player:at:${id}`, state: (n: number) => `player:state:${id}:${n}` }), [id]);
   const [generation, setGeneration] = useState(() => Number(store.get(keys.generation) ?? 0) || 0);
@@ -44,7 +46,7 @@ export function SequencePage({ lesson }: { lesson: LoadedSequence }) {
   }, [manifest.title]);
 
   const startFresh = () => {
-    if (!confirm('Start again from the beginning? What you did here on this device is deleted.')) return;
+    if (!confirm(m.run_start_fresh_confirm())) return;
     const old = { dir, repo };
     store.set(keys.generation, String(generation + 1));
     store.remove(keys.at);
@@ -57,11 +59,11 @@ export function SequencePage({ lesson }: { lesson: LoadedSequence }) {
     <div className="flex h-dvh flex-col bg-base-200">
       <header className="flex min-h-0 items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{manifest.title}</h1>
-        <button type="button" className="btn btn-ghost btn-xs" onClick={startFresh} title="Start again, for the next person on this device">
-          <RotateCcw className="size-3.5" /> Start fresh
+        <button type="button" className="btn btn-ghost btn-xs" onClick={startFresh} title={m.run_start_fresh_title()}>
+          <RotateCcw className="size-3.5" /> {m.run_start_fresh()}
         </button>
       </header>
-      {error && <Notice title="This couldn’t open its data">{error}</Notice>}
+      {error && <Notice title={m.run_data_failed()}>{error}</Notice>}
       {!error && !repo && <Spinner />}
       {repo && <Player key={dir} repo={repo} lesson={lesson} keys={keys} />}
     </div>
@@ -80,7 +82,12 @@ async function beliefsNow(repo: Repo, concepts: string[]): Promise<Map<string, B
   return new Map(live.beliefs.map((b) => [b.concept, b]));
 }
 
+/** Why a step was skipped, or got a detour: what's known of its concept, in the page's language. */
+const known = (m: Messages, concept: string) => m.seq_known({ concept });
+const struggling = (m: Messages, concept: string) => m.seq_struggling({ concept });
+
 function Player({ repo, lesson, keys }: { repo: Repo; lesson: LoadedSequence; keys: { at: string; state: (n: number) => string } }) {
+  const { m } = useLang();
   const { manifest, views } = lesson;
   const all = useMemo(() => steps(manifest), [manifest]);
   const [at, setAt] = useState<At>(() => { try { return { ...START, ...(JSON.parse(store.get(keys.at) ?? 'null') as At | null) }; } catch { return START; } });
@@ -98,8 +105,8 @@ function Player({ repo, lesson, keys }: { repo: Repo; lesson: LoadedSequence; ke
         const beliefs = await beliefsNow(repo, concept ? [concept] : []);
         const d = decide(s, (c) => beliefs.get(c));
         delete next.skipped[i];
-        if (d.kind === 'skip') { next.skipped[i] = d.why; continue; }
-        if (d.kind === 'detour') next.extra[i] = d.why;
+        if (d.kind === 'skip') { next.skipped[i] = d.concept; continue; }
+        if (d.kind === 'detour') next.extra[i] = d.concept;
         else delete next.extra[i];
         keep({ ...next, step: i, detour: d.kind === 'detour' });
         return;
@@ -127,8 +134,8 @@ function Player({ repo, lesson, keys }: { repo: Repo; lesson: LoadedSequence; ke
   const viewIndex = finished ? -1 : Number(at.detour ? all[at.step].detour!.view : all[at.step].view);
   return (
     <>
-      <nav className="flex flex-wrap items-center gap-1 border-b border-base-300 bg-base-100 px-3 py-1 text-xs" aria-label="The lesson’s steps">
-        <button type="button" className="btn btn-ghost btn-xs btn-square" disabled={at.detour || at.step === 0} onClick={back} title="Back"><ArrowLeft className="size-4" /></button>
+      <nav className="flex flex-wrap items-center gap-1 border-b border-base-300 bg-base-100 px-3 py-1 text-xs" aria-label={m.seq_steps()}>
+        <button type="button" className="btn btn-ghost btn-xs btn-square" disabled={at.detour || at.step === 0} onClick={back} title={m.seq_back()} aria-label={m.seq_back()}><ArrowLeft className="size-4" /></button>
         <ol className="flex flex-1 flex-wrap items-center gap-1">
           {all.map((_, i) => {
             const skipped = at.skipped[i];
@@ -136,25 +143,25 @@ function Player({ repo, lesson, keys }: { repo: Repo; lesson: LoadedSequence; ke
             return (
               <li key={i}>
                 {skipped
-                  ? <button type="button" className="badge badge-ghost badge-sm line-through" title={`Skipped: ${skipped}. Do it anyway`} onClick={() => anyway(i)}>{i + 1}</button>
+                  ? <button type="button" className="badge badge-ghost badge-sm line-through" title={m.seq_skipped_title({ why: known(m, skipped) })} onClick={() => anyway(i)}>{i + 1}</button>
                   : <span className={`badge badge-sm ${here ? 'badge-primary' : i < at.step ? 'badge-success' : 'badge-outline'}`}>{i < at.step && !here ? <Check className="size-3" /> : i + 1}</span>}
               </li>
             );
           })}
         </ol>
-        {!finished && <span className="text-base-content/60">Step {at.step + 1} of {all.length}</span>}
-        {!finished && <button type="button" className="btn btn-primary btn-xs" disabled={busy} onClick={next}>Next <ArrowRight className="size-3.5" /></button>}
+        {!finished && <span className="text-base-content/60">{m.seq_step_of({ step: at.step + 1, count: all.length })}</span>}
+        {!finished && <button type="button" className="btn btn-primary btn-xs" disabled={busy} onClick={next}>{m.seq_next()} <ArrowRight className="size-3.5" /></button>}
       </nav>
-      {at.detour && <p role="status" className="flex items-center gap-1 bg-info/10 px-3 py-1 text-xs"><Sparkles className="size-3.5" /> Extra: {at.extra[at.step]}. Then on with step {at.step + 1}.</p>}
+      {at.detour && <p role="status" className="flex items-center gap-1 bg-info/10 px-3 py-1 text-xs"><Sparkles className="size-3.5" /> {m.seq_detour({ why: struggling(m, at.extra[at.step]), step: at.step + 1 })}</p>}
       {!at.detour && Object.entries(at.skipped).filter(([k]) => Number(k) === at.step - 1).map(([k, why]) => (
-        <p key={k} role="status" className="bg-base-100 px-3 py-1 text-xs text-base-content/70">Step {Number(k) + 1} was skipped: {why}. <button type="button" className="link" onClick={() => anyway(Number(k))}>Do it anyway</button></p>
+        <p key={k} role="status" className="bg-base-100 px-3 py-1 text-xs text-base-content/70">{m.seq_was_skipped({ step: Number(k) + 1, why: known(m, why) })} <button type="button" className="link" onClick={() => anyway(Number(k))}>{m.seq_anyway()}</button></p>
       ))}
       <main className="min-h-0 flex-1">
         {busy && <Spinner />}
         {!busy && finished && (
-          <Notice title="Done">
-            You’re through this lesson.{Object.keys(at.skipped).length > 0 && ' The steps you skipped are still there above, if you want them.'}{' '}
-            <button type="button" className="link" onClick={() => anyway(0)}>Back to the start</button>
+          <Notice title={m.seq_done()}>
+            {m.seq_done_text()}{Object.keys(at.skipped).length > 0 && <> {m.seq_done_skipped()}</>}{' '}
+            <button type="button" className="link" onClick={() => anyway(0)}>{m.seq_restart()}</button>
           </Notice>
         )}
         {!busy && !finished && <StepFrame key={`${at.step}-${at.detour}`} repo={repo} n={viewIndex} view={views[viewIndex]} stateKey={keys.state(viewIndex)} onDone={next} />}

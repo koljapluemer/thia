@@ -39,10 +39,11 @@ export default { width: ${img.width}, height: ${img.height}, data: d };`;
 
 const inline = (code: string, tag: string) => code.replaceAll(`</${tag}`, `<\\/${tag}`);
 
-/** The built page: one file, offline. Throws when it's bigger than `MAX_BYTES`. */
-export function pageHtml(js: string, css: string): string {
+/** The built page, its text in `lang`: one file, offline. Throws when it's bigger than `MAX_BYTES`. */
+export function pageHtml(js: string, css: string, lang = 'en'): string {
+  const tag = /^[A-Za-z0-9-]+$/.test(lang) ? lang : 'en';
   const html = `<!doctype html>
-<html lang="en" data-gestalts-viz>
+<html lang="${tag}" data-gestalts-viz>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">

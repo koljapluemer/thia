@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, Plus, Sparkles, X } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins/lessons';
 import { useHostQuery, type Repo } from '@gestalts/client';
+import { useLang } from '@gestalts/i18n';
 import type { Belief } from '@gestalts/view';
 import { SEQUENCE, asSequence, planLesson, ruleConcepts, sequenceYml, walk, type AgentBackend, type Plan, type Sequence, type Step } from '@gestalts/workshop';
 import { usePickedBackend, type AgentChoice } from './agent';
@@ -28,6 +29,7 @@ export function SequencePane({ info, agent, onChanged, onDeleted }: { info: api.
 }
 
 function Editor({ repo, info, backend, onChanged, onDeleted }: { repo: Repo; info: api.DraftInfo; backend: AgentBackend; onChanged: () => void; onDeleted: () => void }) {
+  const { m } = useLang();
   const item = useHostQuery({ gestalt: SEQUENCE, ids: [info.id], limit: 1 })[0];
   const [edited, setSeq] = useState<Sequence>();
   // the draft as typed: what comes back from the repo only seeds it
@@ -74,14 +76,10 @@ function Editor({ repo, info, backend, onChanged, onDeleted }: { repo: Repo; inf
         <div className="flex flex-col gap-3 p-3 text-sm">
           <Planner id={info.id} seq={seq} backend={backend} onTake={(next) => { change(next); onChanged(); }} />
           <label className="flex flex-col gap-1">
-            <span className="text-base-content/60">Title</span>
+            <span className="text-base-content/60">{m.seq_title()}</span>
             <input className="input input-sm w-full" value={seq.title} onChange={(e) => change({ ...seq, title: e.target.value })} />
           </label>
-          <p className="text-xs text-base-content/60">
-            Each step is one of your views or visualizations, played in order. A step may be skipped when the student
-            already knows something, or get an extra view first when they struggle with it. Make them first, as drafts
-            of their own.
-          </p>
+          <p className="text-xs text-base-content/60">{m.seq_about()}</p>
           <ol className="flex flex-col gap-2">
             {seq.steps.map((s, i) => (
               <StepRow key={i} n={i} step={s} views={views} concepts={conceptsBefore(seq.steps, i, views)} nameOf={nameOf} last={i === seq.steps.length - 1}
@@ -89,9 +87,9 @@ function Editor({ repo, info, backend, onChanged, onDeleted }: { repo: Repo; inf
             ))}
           </ol>
           <button type="button" className="btn btn-sm self-start" disabled={!views.length} onClick={() => change({ ...seq, steps: [...seq.steps, { view: views[0]?.id ?? '' }] })}>
-            <Plus className="size-4" /> Add a step
+            <Plus className="size-4" /> {m.seq_add()}
           </button>
-          {!views.length && report && <p className="text-xs text-warning">You have no views or visualizations yet: make one with New first.</p>}
+          {!views.length && report && <p className="text-xs text-warning">{m.seq_no_views()}</p>}
           {report && (report.problems.length > 0 || report.warnings.length > 0) && (
             <ul className="flex flex-col gap-1 text-xs">
               {report.problems.map((p) => <li key={p} className="text-error">{p}</li>)}
@@ -111,6 +109,7 @@ function Editor({ repo, info, backend, onChanged, onDeleted }: { repo: Repo; inf
  * draft's: they're built one at a time, when each one's chat is asked to.
  */
 function Planner({ id, seq, backend, onTake }: { id: string; seq: Sequence; backend: AgentBackend; onTake: (s: Sequence) => void }) {
+  const { m, lang } = useLang();
   const [request, setRequest] = useState('');
   const [plan, setPlan] = useState<Plan>();
   const [unavailable, setUnavailable] = useState<string>();
@@ -144,7 +143,7 @@ function Planner({ id, seq, backend, onTake }: { id: string; seq: Sequence; back
         if (rule && 'skip_if_known' in rule) steps.push({ view: v, skipIfKnown: rule.skip_if_known });
         else if (rule && 'detour' in rule) {
           steps.push({ view: v, detour: { concept: rule.detour.concept, view: await view(rule.detour.title, rule.detour.brief) } });
-          titles.push(`${rule.detour.title} (extra)`);
+          titles.push(m.plan_extra_title({ title: rule.detour.title }));
         } else steps.push({ view: v });
       }
       onTake({ ...seq, title: seq.title.trim() ? seq.title : p.title, steps: [...seq.steps, ...steps] });
@@ -156,45 +155,42 @@ function Planner({ id, seq, backend, onTake }: { id: string; seq: Sequence; back
   };
   return (
     <details className="rounded-box border border-base-300 bg-base-100 p-2" open={!seq.steps.length}>
-      <summary className="cursor-pointer font-medium"><Sparkles className="mr-1 inline size-4" />Plan it with the agent</summary>
+      <summary className="cursor-pointer font-medium"><Sparkles className="me-1 inline size-4" />{m.plan()}</summary>
       <div className="mt-2 flex flex-col gap-2">
         <textarea className="textarea textarea-sm w-full" rows={3} value={request} onChange={(e) => setRequest(e.target.value)}
-                  placeholder="What should the lesson do, for whom? e.g. Klasse 2: Plusaufgaben mit Zehnerübergang bis 100; wer das schon kann, soll nicht gelangweilt werden." />
+                  placeholder={m.plan_placeholder()} />
         <div className="flex items-center gap-2">
           <button type="button" className="btn btn-sm" disabled={busy || !request.trim() || Boolean(unavailable)} onClick={() => void ask()}>
-            {busy && !plan ? <span className="loading loading-spinner loading-xs" /> : 'Propose steps'}
+            {busy && !plan ? <span className="loading loading-spinner loading-xs" /> : m.plan_propose()}
           </button>
-          {busy && !plan && <button type="button" className="btn btn-sm btn-ghost" onClick={() => abort.current?.abort()}>Stop</button>}
+          {busy && !plan && <button type="button" className="btn btn-sm btn-ghost" onClick={() => abort.current?.abort()}>{m.stop()}</button>}
           <span className="text-xs text-base-content/50">{backend.label}</span>
         </div>
         {unavailable && <p role="status" className="text-xs text-warning">{unavailable}</p>}
         {error && <p role="alert" className="text-xs text-error">{error}</p>}
         {plan && 'one_view' in plan && (
-          <p className="text-sm">The agent thinks this is one view, not several: {plan.one_view} Make it with New → View.</p>
+          <p className="text-sm">{m.plan_one_view({ why: plan.one_view })}</p>
         )}
         {plan && 'steps' in plan && (
           <div className="flex flex-col gap-2">
             <p className="font-medium">{plan.title}</p>
-            <ol className="flex list-decimal flex-col gap-1 pl-5">
+            <ol className="flex list-decimal flex-col gap-1 ps-5">
               {plan.steps.map((st, i) => (
                 <li key={i}>
-                  <span className="font-medium">{st.title}</span>{st.kind === 'viz' && <span className="badge badge-ghost badge-xs ml-1">visualization</span>}: {st.does}
-                  {st.rule && 'skip_if_known' in st.rule && <span className="block text-xs text-base-content/60">skipped if they know {nameIn(plan, st.rule.skip_if_known)}</span>}
-                  {st.rule && 'detour' in st.rule && <span className="block text-xs text-base-content/60">extra first if they struggle with {nameIn(plan, st.rule.detour.concept)}: {st.rule.detour.title}</span>}
+                  <span className="font-medium">{st.title}</span>{st.kind === 'viz' && <span className="badge badge-ghost badge-xs ms-1">{m.plan_viz()}</span>}: {st.does}
+                  {st.rule && 'skip_if_known' in st.rule && <span className="block text-xs text-base-content/60">{m.plan_skip({ concept: nameIn(plan, st.rule.skip_if_known) })}</span>}
+                  {st.rule && 'detour' in st.rule && <span className="block text-xs text-base-content/60">{m.plan_detour({ concept: nameIn(plan, st.rule.detour.concept), title: st.rule.detour.title })}</span>}
                 </li>
               ))}
             </ol>
-            <p className="text-xs text-base-content/60">
-              Taking it makes {views(plan)} drafts, each with its brief kept with it. Each is built when you ask its chat
-              to, one at a time: start with the first, and see if it’s what you want before the others.
-            </p>
+            <p className="text-xs text-base-content/60">{m.plan_take_about({ count: views(plan) })}</p>
             <div className="flex gap-2">
-              <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void take(plan)}>{busy ? <span className="loading loading-spinner loading-xs" /> : 'Take it'}</button>
-              <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => setPlan(undefined)}>Discard</button>
+              <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void take(plan)}>{busy ? <span className="loading loading-spinner loading-xs" /> : m.plan_take()}</button>
+              <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={() => setPlan(undefined)}>{m.plan_discard()}</button>
             </div>
           </div>
         )}
-        {made && <p role="status" className="text-xs text-success">Made {made.join(', ')}. Open each from the list to build it; until they’re built, the check below misses the concepts they’ll practise.</p>}
+        {made && <p role="status" className="text-xs text-success">{m.plan_made({ titles: new Intl.ListFormat(lang).format(made) })}</p>}
       </div>
     </details>
   );
@@ -216,6 +212,7 @@ function StepRow({ n, step, views, concepts, nameOf, last, onChange, onMove, onR
   n: number; step: Step; views: api.SequenceReport['views']; concepts: string[]; nameOf: (c: string) => string; last: boolean;
   onChange: (s: Step) => void; onMove: (by: number) => void; onRemove: () => void;
 }) {
+  const { m } = useLang();
   const rule: Rule = step.skipIfKnown ? 'skip' : step.detour ? 'detour' : 'none';
   const concept = step.skipIfKnown ?? step.detour?.concept ?? concepts[0] ?? '';
   const setRule = (r: Rule) => onChange({
@@ -226,32 +223,32 @@ function StepRow({ n, step, views, concepts, nameOf, last, onChange, onMove, onR
   const setConcept = (c: string) => onChange(rule === 'skip' ? { ...step, skipIfKnown: c } : { ...step, detour: { concept: c, view: step.detour!.view } });
   const viewSelect = (value: string, set: (v: string) => void, label: string) => (
     <select className="select select-sm min-w-0 flex-1" aria-label={label} value={value} onChange={(e) => set(e.target.value)}>
-      {!views.some((v) => v.id === value) && <option value={value}>{value || 'Pick a view'}</option>}
-      {views.map((v) => <option key={v.id} value={v.id}>{v.title || v.id}{v.kind === 'viz' ? ' (visualization)' : ''}</option>)}
+      {!views.some((v) => v.id === value) && <option value={value}>{value || m.step_pick_view()}</option>}
+      {views.map((v) => <option key={v.id} value={v.id}>{v.kind === 'viz' ? m.step_viz_suffix({ title: v.title || v.id }) : v.title || v.id}</option>)}
     </select>
   );
   return (
     <li className="flex flex-col gap-2 rounded-box border border-base-300 bg-base-100 p-2">
       <div className="flex items-center gap-1">
         <span className="badge badge-sm">{n + 1}</span>
-        {viewSelect(step.view, (v) => onChange({ ...step, view: v }), `Step ${n + 1}'s view`)}
-        <button type="button" className="btn btn-ghost btn-xs btn-square" disabled={n === 0} title="Earlier" onClick={() => onMove(-1)}><ArrowUp className="size-3.5" /></button>
-        <button type="button" className="btn btn-ghost btn-xs btn-square" disabled={last} title="Later" onClick={() => onMove(1)}><ArrowDown className="size-3.5" /></button>
-        <button type="button" className="btn btn-ghost btn-xs btn-square" title="Remove the step" onClick={onRemove}><X className="size-3.5" /></button>
+        {viewSelect(step.view, (v) => onChange({ ...step, view: v }), m.step_view({ step: n + 1 }))}
+        <button type="button" className="btn btn-ghost btn-xs btn-square" disabled={n === 0} title={m.earlier()} aria-label={m.earlier()} onClick={() => onMove(-1)}><ArrowUp className="size-3.5" /></button>
+        <button type="button" className="btn btn-ghost btn-xs btn-square" disabled={last} title={m.later()} aria-label={m.later()} onClick={() => onMove(1)}><ArrowDown className="size-3.5" /></button>
+        <button type="button" className="btn btn-ghost btn-xs btn-square" title={m.step_remove()} aria-label={m.step_remove()} onClick={onRemove}><X className="size-3.5" /></button>
       </div>
       <div className="flex flex-wrap items-center gap-1 text-xs">
-        <select className="select select-xs" aria-label="Rule" value={rule} onChange={(e) => setRule(e.target.value as Rule)}>
-          <option value="none">Always</option>
-          <option value="skip">Skip if they know</option>
-          <option value="detour">Extra view first if they struggle with</option>
+        <select className="select select-xs" aria-label={m.rule()} value={rule} onChange={(e) => setRule(e.target.value as Rule)}>
+          <option value="none">{m.rule_always()}</option>
+          <option value="skip">{m.rule_skip()}</option>
+          <option value="detour">{m.rule_detour()}</option>
         </select>
         {rule !== 'none' && (
-          <select className="select select-xs min-w-0" aria-label="Concept" value={concept} onChange={(e) => setConcept(e.target.value)}>
-            {!concepts.includes(concept) && <option value={concept}>{concept || 'No concept yet'}</option>}
+          <select className="select select-xs min-w-0" aria-label={m.concept()} value={concept} onChange={(e) => setConcept(e.target.value)}>
+            {!concepts.includes(concept) && <option value={concept}>{concept || m.concept_none()}</option>}
             {concepts.map((c) => <option key={c} value={c}>{nameOf(c)}</option>)}
           </select>
         )}
-        {rule === 'detour' && step.detour && <span className="flex min-w-40 flex-1 items-center gap-1">: {viewSelect(step.detour.view, (v) => onChange({ ...step, detour: { concept: step.detour!.concept, view: v } }), 'The extra view')}</span>}
+        {rule === 'detour' && step.detour && <span className="flex min-w-40 flex-1 items-center gap-1">: {viewSelect(step.detour.view, (v) => onChange({ ...step, detour: { concept: step.detour!.concept, view: v } }), m.step_extra_view())}</span>}
       </div>
     </li>
   );
@@ -264,6 +261,7 @@ type Pretend = 'new' | 'knows' | 'struggles';
  * Their beliefs stay as chosen; a real student's change as they go.
  */
 function PlayThrough({ steps, views, nameOf }: { steps: Step[]; views: api.SequenceReport['views']; nameOf: (c: string) => string }) {
+  const { m } = useLang();
   const concepts = useMemo(() => ruleConcepts(steps), [steps]);
   const [who, setWho] = useState<Pretend>('new');
   const [concept, setConcept] = useState('');
@@ -273,17 +271,17 @@ function PlayThrough({ steps, views, nameOf }: { steps: Step[]; views: api.Seque
   const title = (id: string) => views.find((v) => v.id === id)?.title ?? id;
   const path = walk(steps, beliefOf);
   return (
-    <aside className="flex flex-col gap-2 border-t border-base-300 bg-base-100 p-3 text-sm md:border-t-0 md:border-l">
-      <h2 className="font-medium">Play it through</h2>
+    <aside className="flex flex-col gap-2 border-t border-base-300 bg-base-100 p-3 text-sm md:border-t-0 md:border-s">
+      <h2 className="font-medium">{m.play()}</h2>
       <div className="flex flex-wrap items-center gap-1 text-xs">
-        <span>A student who</span>
-        <select className="select select-xs" aria-label="Who" value={who} onChange={(e) => setWho(e.target.value as Pretend)}>
-          <option value="new">is new to all of it</option>
-          <option value="knows" disabled={!concepts.length}>knows</option>
-          <option value="struggles" disabled={!concepts.length}>struggles with</option>
+        <span>{m.play_who()}</span>
+        <select className="select select-xs" aria-label={m.who()} value={who} onChange={(e) => setWho(e.target.value as Pretend)}>
+          <option value="new">{m.play_new()}</option>
+          <option value="knows" disabled={!concepts.length}>{m.play_knows()}</option>
+          <option value="struggles" disabled={!concepts.length}>{m.play_struggles()}</option>
         </select>
         {who !== 'new' && (
-          <select className="select select-xs min-w-0" aria-label="Concept" value={c} onChange={(e) => setConcept(e.target.value)}>
+          <select className="select select-xs min-w-0" aria-label={m.concept()} value={c} onChange={(e) => setConcept(e.target.value)}>
             {concepts.map((x) => <option key={x} value={x}>{nameOf(x)}</option>)}
           </select>
         )}
@@ -291,13 +289,13 @@ function PlayThrough({ steps, views, nameOf }: { steps: Step[]; views: api.Seque
       <ol className="flex flex-col gap-1">
         {path.map(({ step, decision }) => (
           <li key={step} className={decision.kind === 'skip' ? 'text-base-content/50 line-through' : ''}>
-            {decision.kind === 'detour' && <span className="block text-info">+ extra: {title(decision.view)}</span>}
-            {step + 1}. {title(steps[step].view)}
-            {decision.kind === 'skip' && <span className="ml-1 text-xs no-underline">(skipped)</span>}
+            {decision.kind === 'detour' && <span className="block text-info">{m.play_extra({ title: title(decision.view) })}</span>}
+            {m.play_step({ step: step + 1, title: title(steps[step].view) })}
+            {decision.kind === 'skip' && <span className="ms-1 text-xs no-underline">{m.play_skipped()}</span>}
           </li>
         ))}
       </ol>
-      {!steps.length && <p className="text-xs text-base-content/60">No steps yet.</p>}
+      {!steps.length && <p className="text-xs text-base-content/60">{m.play_none()}</p>}
     </aside>
   );
 }

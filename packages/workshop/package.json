@@ -16,6 +16,7 @@
     "@gestalts/check": "workspace:*",
     "@gestalts/client": "workspace:*",
     "@gestalts/host": "workspace:*",
+    "@gestalts/i18n": "workspace:*",
     "@gestalts/view": "workspace:*",
     "yaml": "2.8.1"
   },

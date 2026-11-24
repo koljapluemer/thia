@@ -11,11 +11,12 @@
   },
   "dependencies": {
     "@gestalts/client": "workspace:*",
+    "@gestalts/i18n": "workspace:*",
     "@gestalts/kit": "workspace:*",
-    "lucide-react": "1.66.0",
-    "@gestalts/view": "workspace:*",
     "@gestalts/learning": "workspace:*",
-    "@gestalts/sources": "workspace:*"
+    "@gestalts/sources": "workspace:*",
+    "@gestalts/view": "workspace:*",
+    "lucide-react": "1.66.0"
   },
   "peerDependencies": {
     "react": "19.3.1",

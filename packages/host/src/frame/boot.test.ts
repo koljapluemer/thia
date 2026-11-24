@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { bootHtml, closedCsp } from './boot';
 
 describe('the frame page', () => {
+  it('is in the language it is given, English if none', () => {
+    expect(bootHtml()).toContain('<html lang="en">');
+    expect(bootHtml(undefined, 'de-AT')).toContain('<html lang="de-AT">');
+    expect(bootHtml(undefined, '"><script>')).toContain('<html lang="en">');
+  });
+
   it('has no policy unless given one', () => {
     expect(bootHtml()).not.toContain('Content-Security-Policy');
   });

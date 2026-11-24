@@ -1,0 +1,16 @@
+{
+  "sync_about": "Sync with a folder on this computer through the folder-sync desktop app. Without it, everything stays in this browser.",
+  "sync_url": "Desktop app URL",
+  "sync_now": "Sync now",
+  "sync_disconnect": "Disconnect",
+  "sync_connect": "Connect",
+  "sync_off": "Not connected.",
+  "sync_syncing": "Syncing…",
+  "sync_done": "Synced {time}",
+  "sync_report": "Synced {time} · {pulled} in, {pushed} out",
+  "broke": "Something broke: {error}",
+  "broke_in": "Something broke in {name}: {error}",
+  "retry": "Retry",
+  "view_missing": "This view ({id}) isn't in this app.",
+  "view_stalled": "This view didn't start (reached: {stage})."
+}

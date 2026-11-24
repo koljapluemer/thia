@@ -1,0 +1,103 @@
+{
+  "site_description": "Interaktive Übungen und Visualisierungen, kostenlos, ohne Anmeldung.",
+  "catalog_tagline": "Interaktive Übungen und Visualisierungen. Kostenlos, ohne Anmeldung; was du tust, bleibt in diesem Browser.",
+  "catalog_search": "Suchen",
+  "catalog_outlines": "Lehrpläne und Leitfäden",
+  "catalog_curriculum": "Lehrplan",
+  "catalog_guide": "Leitfaden",
+  "catalog_coverage": [
+    {
+      "declarations": [
+        "input all",
+        "local n = all: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{withViews} von {all} Eintrag mit Inhalten",
+        "n=other": "{withViews} von {all} Einträgen mit Inhalten"
+      }
+    }
+  ],
+  "catalog_own": "Deine Notizen und Karten",
+  "catalog_no_match": "Nichts passt zu „{query}“.",
+  "catalog_recent": "Zuletzt",
+  "catalog_in_lang": "Auf {language}",
+  "catalog_all_langs": "Alle Sprachen",
+  "guest_banner": "Gast: Was du hier tust, wird gelöscht, wenn du den Gastmodus beendest.",
+  "guest_end": "Gastmodus beenden",
+  "guest_confirm": "Dieses Gerät als Gast benutzen? Du fängst neu an; was du als Gast tust, wird gelöscht, wenn du den Gastmodus beendest. Deine eigenen Daten bleiben.",
+  "guest_start": "Als Gast benutzen (ein geteiltes Gerät)",
+  "sync_title": "Mit einem Ordner auf diesem Computer abgleichen",
+  "workshop_title": "Inhalte und Lektionen erstellen (Werkstatt)",
+  "data_failed": "Deine Daten ließen sich nicht öffnen",
+  "data_failed_because": "Deine Daten ließen sich nicht öffnen: {error}",
+  "back_everything": "Alle Inhalte",
+  "run_start_fresh": "Neu anfangen",
+  "run_start_fresh_title": "Neu anfangen, für die nächste Person an diesem Gerät",
+  "run_start_fresh_confirm": "Von vorn anfangen? Was du hier auf diesem Gerät getan hast, wird gelöscht.",
+  "run_data_failed": "Die Daten ließen sich nicht öffnen",
+  "seq_steps": "Die Schritte der Lektion",
+  "seq_back": "Zurück",
+  "seq_next": "Weiter",
+  "seq_skipped_title": "Übersprungen: {why}. Trotzdem machen",
+  "seq_step_of": "Schritt {step} von {count}",
+  "seq_detour": "Extra: {why}. Danach weiter mit Schritt {step}.",
+  "seq_was_skipped": "Schritt {step} wurde übersprungen: {why}.",
+  "seq_anyway": "Trotzdem machen",
+  "seq_done": "Fertig",
+  "seq_done_text": "Du hast die Lektion geschafft.",
+  "seq_done_skipped": "Die übersprungenen Schritte sind oben noch da, falls du sie machen willst.",
+  "seq_restart": "Zurück zum Anfang",
+  "lesson_gone": "Diese Lektion ist nicht verfügbar",
+  "lesson_gone_text": "Der Link wurde abgeschaltet oder ist abgelaufen. Frag deine Lehrkraft nach einem neuen.",
+  "lesson_failed": "Die Lektion konnte nicht starten",
+  "lesson_other_version": "Diese Lektion braucht eine andere Version dieser Seite, die es hier nicht gibt.",
+  "not_found": "Hier ist nichts",
+  "not_found_text": "Öffne den Link, den du bekommen hast, noch einmal.",
+  "not_found_link": "Alles ansehen, was es gibt",
+  "not_found_description": "Diese Seite gibt es nicht.",
+  "outline_back": "Alle Inhalte",
+  "outline_views": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{count} Inhalt",
+        "n=other": "{count} Inhalte"
+      }
+    }
+  ],
+  "outline_none": "Noch nichts dazu",
+  "outline_only": "nur mit Inhalten",
+  "outline_replaced": "Neuere Fassung:",
+  "outline_unknown": "Diesen Lehrplan gibt es nicht",
+  "outline_failed": "Er ließ sich nicht laden ({error}). Versuch es gleich noch einmal.",
+  "outline_curriculum_in": "Lehrplan auf {language}",
+  "outline_guide_in": "Leitfaden auf {language}",
+  "outline_description": "{title} ({edition}): jeder Eintrag mit den interaktiven Inhalten dazu.",
+  "outline_entry_description": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "Ein interaktiver Inhalt zu „{label}“ ({title}, {edition}).",
+        "n=other": "{count} interaktive Inhalte zu „{label}“ ({title}, {edition})."
+      }
+    }
+  ],
+  "view_practises": "Übt {concepts}.",
+  "seq_known": "du kannst {concept} schon",
+  "seq_struggling": "erst etwas mehr Übung zu {concept}"
+}

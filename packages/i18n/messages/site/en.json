@@ -1,0 +1,103 @@
+{
+  "site_description": "Interactive exercises and visualizations, free to use, nothing to sign up for.",
+  "catalog_tagline": "Interactive exercises and visualizations. Free, nothing to sign up for; what you do stays in this browser.",
+  "catalog_search": "Search",
+  "catalog_outlines": "Curricula and guides",
+  "catalog_curriculum": "Curriculum",
+  "catalog_guide": "Guide",
+  "catalog_coverage": [
+    {
+      "declarations": [
+        "input all",
+        "local n = all: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{withViews} of {all} entry with views",
+        "n=other": "{withViews} of {all} entries with views"
+      }
+    }
+  ],
+  "catalog_own": "Your notes and cards",
+  "catalog_no_match": "Nothing here matches “{query}”.",
+  "catalog_recent": "Recent",
+  "catalog_in_lang": "In {language}",
+  "catalog_all_langs": "All languages",
+  "guest_banner": "Guest: what you do here is deleted when you end it.",
+  "guest_end": "End guest",
+  "guest_confirm": "Use this device as a guest? You get a fresh start; what you do as a guest is deleted when you end it. Your own data stays.",
+  "guest_start": "Use as a guest (a shared device)",
+  "sync_title": "Sync with a folder on this computer",
+  "workshop_title": "Make views and lessons (workshop)",
+  "data_failed": "Your data couldn’t open",
+  "data_failed_because": "Your data couldn’t open: {error}",
+  "back_everything": "Everything here",
+  "run_start_fresh": "Start fresh",
+  "run_start_fresh_title": "Start again, for the next person on this device",
+  "run_start_fresh_confirm": "Start again from the beginning? What you did here on this device is deleted.",
+  "run_data_failed": "This couldn’t open its data",
+  "seq_steps": "The lesson’s steps",
+  "seq_back": "Back",
+  "seq_next": "Next",
+  "seq_skipped_title": "Skipped: {why}. Do it anyway",
+  "seq_step_of": "Step {step} of {count}",
+  "seq_detour": "Extra: {why}. Then on with step {step}.",
+  "seq_was_skipped": "Step {step} was skipped: {why}.",
+  "seq_anyway": "Do it anyway",
+  "seq_done": "Done",
+  "seq_done_text": "You’re through this lesson.",
+  "seq_done_skipped": "The steps you skipped are still there above, if you want them.",
+  "seq_restart": "Back to the start",
+  "lesson_gone": "This lesson isn’t available",
+  "lesson_gone_text": "The link was switched off or has expired. Ask your teacher for a new one.",
+  "lesson_failed": "The lesson couldn’t start",
+  "lesson_other_version": "This lesson needs another version of this page, which isn’t here.",
+  "not_found": "Nothing here",
+  "not_found_text": "Open the link you were given again.",
+  "not_found_link": "See everything there is",
+  "not_found_description": "This page isn’t here.",
+  "outline_back": "Everything",
+  "outline_views": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "{count} view",
+        "n=other": "{count} views"
+      }
+    }
+  ],
+  "outline_none": "Nothing here yet",
+  "outline_only": "only with views",
+  "outline_replaced": "A newer edition:",
+  "outline_unknown": "No such outline",
+  "outline_failed": "It didn’t load ({error}). Try again in a moment.",
+  "outline_curriculum_in": "Curriculum in {language}",
+  "outline_guide_in": "Guide in {language}",
+  "outline_description": "{title} ({edition}): every entry with the interactive exercises for it.",
+  "outline_entry_description": [
+    {
+      "declarations": [
+        "input count",
+        "local n = count: plural"
+      ],
+      "selectors": [
+        "n"
+      ],
+      "match": {
+        "n=one": "One interactive exercise for “{label}” ({title}, {edition}).",
+        "n=other": "{count} interactive exercises for “{label}” ({title}, {edition})."
+      }
+    }
+  ],
+  "view_practises": "Practises {concepts}.",
+  "seq_known": "you already know {concept}",
+  "seq_struggling": "some extra practice on {concept} first"
+}

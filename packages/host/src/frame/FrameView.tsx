@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Repo } from '@gestalts/client';
+import { localeFor, useLang } from '@gestalts/i18n';
 import { PROTOCOL, logger, type FromView, type JsonMap, type ToView, type ViewError } from '@gestalts/view';
 import type { FrameRuntime, Permission } from '../registry';
 import { bootHtml } from './boot';
@@ -20,6 +21,8 @@ export type RunnableView = {
   granted?: Permission[];
   /** where each of `npm` is loaded from, by name; esm.sh (unpinned) for any not here */
   npmUrls?: Record<string, string>;
+  /** the language its text is in (BCP 47); English if not said */
+  lang?: string;
 };
 
 const STRICT = 'allow-scripts allow-downloads';
@@ -69,6 +72,12 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
   // what the view starts from is fixed when its frame is made
   const initial = useMemo(() => state, [view.id, view.js]); // eslint-disable-line react-hooks/exhaustive-deps
   const flags = frameFlags(view.granted);
+  const lang = view.lang ?? 'en';
+  // numbers and dates as the person reads them
+  const { lang: appLang, m } = useLang();
+  const locale = localeFor(appLang);
+  const said = useRef(m);
+  useEffect(() => { said.current = m; }, [m]);
 
   useEffect(() => {
     const frame = ref.current;
@@ -78,7 +87,7 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
     let stage = 'frame created, not ready yet';
     const stalled = setTimeout(() => {
       log.warn('view has not started', { view: view.id, reached: stage });
-      setFailure(`This view didn't start (reached: ${stage}).`);
+      setFailure(said.current.view_stalled({ stage }));
     }, STALLED_MS);
     const envProxy: ViewEnv = {
       service: latest.current.env.service && ((...a) => latest.current.env.service!(...a)),
@@ -136,11 +145,11 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
       };
       frame.contentWindow?.postMessage({
         runtime: runtime.js, css: `${runtime.css}\n${css}`, tailwind, js: view.js, npm: view.npm, npmUrls: JSON.parse(npmUrlsKey) as Record<string, string>,
-        init: { protocol: PROTOCOL, id: view.id, title: view.title, params: startAt, state: initial },
+        init: { protocol: PROTOCOL, id: view.id, title: view.title, params: startAt, state: initial, lang, locale },
       }, '*', [channel.port2]);
     };
     addEventListener('message', onReady);
-    frame.srcdoc = bootHtml(csp);
+    frame.srcdoc = bootHtml(csp, lang);
     return () => {
       clearTimeout(stalled);
       setFailure(undefined);
@@ -149,7 +158,7 @@ export function FrameView({ repo, view, runtime, css, tailwind, params, state, e
       bridge?.close();
       port?.close();
     };
-  }, [repo, view.id, view.title, view.js, view.npm, npmUrlsKey, flags.key, scopeKey, runtime, css, tailwind, initial, csp]);
+  }, [repo, view.id, view.title, view.js, view.npm, npmUrlsKey, flags.key, scopeKey, runtime, css, tailwind, initial, csp, lang, locale]);
 
   // moved from outside while running; its own moves come back equal and aren't echoed
   useEffect(() => {

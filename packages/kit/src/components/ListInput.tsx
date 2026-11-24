@@ -32,7 +32,7 @@ function Chip({ value, label, onSave, onRemove }: { value: string; label: string
     );
   }
   return (
-    <span className="badge badge-ghost gap-0.5 pr-0.5">
+    <span className="badge badge-ghost gap-0.5 pe-0.5">
       <button type="button" className="cursor-text" title={`Edit the ${label.toLowerCase()}`} onClick={() => setEditing(value)}>{value}</button>
       <button type="button" className="btn btn-ghost btn-xs btn-circle size-4 min-h-0" title={`Remove the ${label.toLowerCase()}`} onClick={onRemove}><X className="size-3" /></button>
     </span>

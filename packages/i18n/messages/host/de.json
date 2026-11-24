@@ -1,0 +1,16 @@
+{
+  "sync_about": "Mit einem Ordner auf diesem Computer abgleichen, über die Desktop-App folder-sync. Ohne sie bleibt alles in diesem Browser.",
+  "sync_url": "Adresse der Desktop-App",
+  "sync_now": "Jetzt abgleichen",
+  "sync_disconnect": "Trennen",
+  "sync_connect": "Verbinden",
+  "sync_off": "Nicht verbunden.",
+  "sync_syncing": "Wird abgeglichen…",
+  "sync_done": "Abgeglichen {time}",
+  "sync_report": "Abgeglichen {time} · {pulled} herein, {pushed} hinaus",
+  "broke": "Etwas ist kaputtgegangen: {error}",
+  "broke_in": "In {name} ist etwas kaputtgegangen: {error}",
+  "retry": "Nochmal versuchen",
+  "view_missing": "Diesen Inhalt ({id}) gibt es in dieser App nicht.",
+  "view_stalled": "Dieser Inhalt ist nicht gestartet (bis: {stage})."
+}

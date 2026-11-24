@@ -226,7 +226,7 @@ function Strength({ value, onSave }: { value: number; onSave: (v: number) => voi
       <input type="range" className="range range-xs w-28" min={0} max={1} step={0.1} value={v} aria-label="How strongly it comes up"
              onPointerDown={() => setHeld(true)} onChange={(e) => setMoved(Number(e.target.value))}
              onPointerUp={done} onKeyUp={done} onBlur={() => { if (held || moved !== null) done(); }} />
-      <span className="w-8 text-right text-xs tabular-nums text-base-content/60">{v.toFixed(1)}</span>
+      <span className="w-8 text-end text-xs tabular-nums text-base-content/60">{v.toFixed(1)}</span>
     </label>
   );
 }
@@ -258,7 +258,7 @@ function Concepts({ source }: { source: Item }) {
       {error && <div role="alert" className="alert alert-error text-sm">{error}</div>}
       {ids.map((id) => (
         <div key={id} className="flex items-center gap-2">
-          <button type="button" className="link link-hover min-w-0 flex-1 text-left text-sm break-words" title="Open in the concept explorer"
+          <button type="button" className="link link-hover min-w-0 flex-1 text-start text-sm break-words" title="Open in the concept explorer"
                   onClick={() => void openView('concept-explorer', { concept: id })}>
             {names.get(id) ?? <code className="text-xs text-base-content/50">{id}</code>}
           </button>
@@ -471,7 +471,7 @@ function List({ selected, status, busy, onSelect, onNew, onPaste }: {
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {items.map((s) => (
           <li key={s.id}>
-            <button type="button" className={`w-full px-3 py-2 text-left hover:bg-base-200 ${s.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(s.id)}>
+            <button type="button" className={`w-full px-3 py-2 text-start hover:bg-base-200 ${s.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(s.id)}>
               <span className="block truncate">{titleOf(s.value)}</span>
               <span className="block truncate text-xs text-base-content/60">{[byline(s.value), str(s.value.key)].filter(Boolean).join(' · ')}</span>
             </button>
@@ -542,7 +542,7 @@ export default function SourceManager() {
   const showPane = pane.kind !== 'none';
   return (
     <div className="flex h-full bg-base-100">
-      <div className={`h-full w-full border-base-300 md:w-80 md:shrink-0 md:border-r ${showPane ? 'hidden md:block' : ''}`}>
+      <div className={`h-full w-full border-base-300 md:w-80 md:shrink-0 md:border-e ${showPane ? 'hidden md:block' : ''}`}>
         <List selected={pane.kind === 'source' ? pane.id : null} status={status} busy={busy} onSelect={(id) => open(id)} onNew={() => { setSelected(null); setPane({ kind: 'new' }); }} onPaste={fromClipboard} />
       </div>
       <div className={`h-full min-w-0 flex-1 ${showPane ? '' : 'hidden md:block'}`}>

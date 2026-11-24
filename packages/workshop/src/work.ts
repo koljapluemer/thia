@@ -1,4 +1,5 @@
 import type { Repo } from '@gestalts/client';
+import type { Messages } from '@gestalts/i18n';
 import type { AgentKind } from './agents/kinds';
 import { toBase64 } from './base64';
 import { VIEWS, applyFiles, asDraft, filesOf, loadMembers, saveDraft, saveSpec } from './draft';
@@ -125,7 +126,7 @@ export function vizWork(repo: Repo, id: string): Work {
 /** `work`, with `flush` awaited before the draft is read for a turn: what's typed and not saved yet goes with it. */
 export const flushing = (work: Work, flush: () => Promise<void>): Work => ({ ...work, snapshot: async () => { await flush(); return work.snapshot(); } });
 
-/** The one-click messages a draft's chat offers: building from its brief, once there is one. */
-export const buildActions = (spec: string, built: boolean) => (spec.trim()
-  ? [{ label: built ? 'Rebuild from the brief' : 'Build from the brief', message: built ? 'Build what SPEC.md describes, starting from what is there: keep what works and change what the brief requires.' : 'Build what SPEC.md describes.' }]
+/** The one-click messages a draft's chat offers: building from its brief, once there is one. Labels in `m`'s language; what the agent is told in English. */
+export const buildActions = (m: Messages, spec: string, built: boolean) => (spec.trim()
+  ? [{ label: built ? m.action_rebuild() : m.action_build(), message: built ? 'Build what SPEC.md describes, starting from what is there: keep what works and change what the brief requires.' : 'Build what SPEC.md describes.' }]
   : []);

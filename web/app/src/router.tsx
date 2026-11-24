@@ -1,5 +1,6 @@
 import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { LayoutGrid } from 'lucide-react';
+import { LangPicker, useLang, type Messages } from '@gestalts/i18n';
 import { me } from './workshop/api';
 
 /** The use app (web/site): every view, the user's notes, what the workshops' accepted results are published on. The
@@ -7,11 +8,13 @@ import { me } from './workshop/api';
 export const SITE: string = import.meta.env.VITE_SITE ?? '/';
 
 /** The app's areas, by path; any other path is the workshop. */
-export const AREAS = [
-  { path: '/workshop', title: 'Workshop', about: 'Make learning views and visualizations with an agent; publish them to a class, or offer them for the public site.' },
-  { path: '/review', title: 'Review', about: 'What the workshops offered for the public site: accept or reject it.' },
-  { path: '/runs', title: 'Agent runs', about: 'Every agent turn: what it was sent, what it did, its time, tokens, cost and rating.' },
-] as const;
+export const AREAS = [{ path: '/workshop' }, { path: '/review' }, { path: '/runs' }] as const;
+/** An area's name and what it's for, in the app's language. */
+export const areaText = (m: Messages, path: AreaPath) => ({
+  '/workshop': { title: m.area_workshop(), about: m.area_workshop_about() },
+  '/review': { title: m.area_review(), about: m.area_review_about() },
+  '/runs': { title: m.area_runs(), about: m.area_runs_about() },
+})[path];
 /** The areas only admins see. */
 const ADMIN: readonly string[] = ['/review', '/runs'];
 export type AreaPath = (typeof AREAS)[number]['path'];
@@ -63,17 +66,22 @@ export function useAreas(): (typeof AREAS)[number][] {
   return AREAS.filter((a) => isAdmin || !ADMIN.includes(a.path));
 }
 
-/** The other areas, from each area's header: at its start, or at its `end`. */
+/** The other areas, from each area's header: at its start, or at its `end`; and the app's language. */
 export function Areas({ end = false }: { end?: boolean }) {
+  const { m } = useLang();
   const here = useArea();
   const areas = useAreas();
   return (
-    <details className={`dropdown ${end ? 'dropdown-end' : ''}`}>
-      <summary className="btn btn-sm btn-ghost btn-square" title="Areas"><LayoutGrid className="size-4" /></summary>
-      <ul className="dropdown-content menu z-50 mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow">
-        {areas.map((a) => <li key={a.path}><AreaLink path={a.path} className={a.path === here ? 'menu-active' : ''}>{a.title}</AreaLink></li>)}
-        <li><a href={SITE}>Views and notes</a></li>
-      </ul>
-    </details>
+    <span className="flex items-center">
+      {end && <LangPicker />}
+      <details className={`dropdown ${end ? 'dropdown-end' : ''}`}>
+        <summary className="btn btn-sm btn-ghost btn-square" title={m.areas()} aria-label={m.areas()}><LayoutGrid className="size-4" /></summary>
+        <ul className="dropdown-content menu z-50 mt-2 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow">
+          {areas.map((a) => <li key={a.path}><AreaLink path={a.path} className={a.path === here ? 'menu-active' : ''}>{areaText(m, a.path).title}</AreaLink></li>)}
+          <li><a href={SITE}>{m.areas_site()}</a></li>
+        </ul>
+      </details>
+      {!end && <LangPicker />}
+    </span>
   );
 }

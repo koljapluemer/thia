@@ -12,6 +12,7 @@
     "@gestalts/check": "workspace:*",
     "@gestalts/client": "workspace:*",
     "@gestalts/host": "workspace:*",
+    "@gestalts/i18n": "workspace:*",
     "@gestalts/learning": "workspace:*",
     "@gestalts/npm-bundle": "workspace:*",
     "@gestalts/sources": "workspace:*",

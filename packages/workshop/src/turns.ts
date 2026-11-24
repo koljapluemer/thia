@@ -7,12 +7,17 @@ import type { Work } from './work';
 
 /**
  * An `ask` card: `reply` while the turn waits on it (the bridge), else answered with the next turn. `answered`: what
- * was answered, or why it closed.
+ * was answered.
  */
-export type Ask = { who: 'ask'; id: string; questions: Question[]; reply?: (answers: Answers) => void; answered?: string };
+/** `closed`: the turn ended before it was answered */
+export type Ask = { who: 'ask'; id: string; questions: Question[]; reply?: (answers: Answers) => void; answered?: string; closed?: boolean };
 /** How good a turn was, as the person says after it (1–5), kept with the turn's record. */
 export type Rate = { who: 'rate'; run: Run; score?: number; comment?: string };
-export type Line = { who: 'you' | 'agent' | 'tool' | 'error'; text: string } | { who: 'checked'; ok: boolean; text: string; detail?: string } | Ask | Rate;
+/**
+ * A line of the conversation. `unsaved`: a file of the turn the repo refused (`text` says why); `checking`: what came
+ * back is being checked here; `checked`: how that went (`text` is for the record; the chat says it in its language).
+ */
+export type Line = { who: 'you' | 'agent' | 'tool' | 'error' | 'unsaved'; text: string } | { who: 'checking' } | { who: 'checked'; ok: boolean; text: string; detail?: string } | Ask | Rate;
 
 /** One conversation about one draft, with one backend: what was said, and whether a turn is running. */
 export type Conversation = { lines: Line[]; busy: boolean; refused: Diagnostic[] };
@@ -132,7 +137,7 @@ export async function runTurn({ work, backend, message, reply, errors }: {
         if (problems.length) {
           run.add({ type: 'saved', problems });
           const at = new Date().toISOString();
-          problems.forEach((p) => say(key, { who: 'error', text: `not saved: ${p}` }));
+          problems.forEach((p) => say(key, { who: 'unsaved', text: p }));
           update(key, (c) => ({ refused: [...c.refused, ...problems.map((p): Diagnostic => ({ kind: 'save', message: p, at }))] }));
         }
       } else if (ev.type === 'done') {
@@ -142,7 +147,7 @@ export async function runTurn({ work, backend, message, reply, errors }: {
       }
     }
     if (changed && work.settle && !controller.signal.aborted) {
-      say(key, { who: 'tool', text: 'check what came back, here' });
+      say(key, { who: 'checking' });
       const r = await work.settle(backend.id);
       if (r) { say(key, { who: 'checked', ...r }); run.add({ type: 'settled', ...r }); }
     }
@@ -162,7 +167,7 @@ export async function runTurn({ work, backend, message, reply, errors }: {
     // a card the run waited on closes with it
     update(key, (c) => ({
       busy: false,
-      lines: c.lines.map((l) => (l.who === 'ask' && l.reply && !l.answered ? { ...l, reply: undefined, answered: 'closed: the turn ended before it was answered' } : l)),
+      lines: c.lines.map((l) => (l.who === 'ask' && l.reply && !l.answered ? { ...l, reply: undefined, closed: true } : l)),
     }));
   }
 }

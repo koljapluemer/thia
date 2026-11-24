@@ -52,17 +52,20 @@ export function sequenceYml(s: Sequence): JsonMap {
 /** The concepts a sequence's rules ask about. */
 export const ruleConcepts = (steps: Step[]) => [...new Set(steps.flatMap((s) => [s.skipIfKnown, s.detour?.concept].filter((c): c is string => !!c)))];
 
-/** What happens on arriving at a step: it's played, skipped (and why), or a detour comes first (and why). */
-export type Decision = { kind: 'play' } | { kind: 'skip'; why: string } | { kind: 'detour'; view: string; why: string };
+/**
+ * What happens on arriving at a step: it's played, skipped (the `concept` is known), or a detour comes first (the
+ * `concept` is struggled with). Saying why is the page's, in its language.
+ */
+export type Decision = { kind: 'play' } | { kind: 'skip'; concept: string } | { kind: 'detour'; view: string; concept: string };
 
 /** The decision for `step`, by what's known now. A concept never practised is neither known nor struggled with. */
-export function decide(step: Step, beliefOf: (concept: string) => Belief | undefined, nameOf: (concept: string) => string = (c) => c): Decision {
+export function decide(step: Step, beliefOf: (concept: string) => Belief | undefined): Decision {
   if (step.skipIfKnown) {
     const b = beliefOf(step.skipIfKnown);
-    if (b && b.evidence > 0 && b.p >= KNOWN_P) return { kind: 'skip', why: `you already know ${nameOf(step.skipIfKnown)}` };
+    if (b && b.evidence > 0 && b.p >= KNOWN_P) return { kind: 'skip', concept: step.skipIfKnown };
   } else if (step.detour) {
     const b = beliefOf(step.detour.concept);
-    if (b && b.evidence > 0 && b.p < STRUGGLING_P) return { kind: 'detour', view: step.detour.view, why: `some extra practice on ${nameOf(step.detour.concept)} first` };
+    if (b && b.evidence > 0 && b.p < STRUGGLING_P) return { kind: 'detour', view: step.detour.view, concept: step.detour.concept };
   }
   return { kind: 'play' };
 }

@@ -74,7 +74,7 @@ function List({ selected, onSelect, onNew }: { selected: string | null; onSelect
       <ul className="min-h-0 flex-1 overflow-y-auto">
         {items.map((c) => (
           <li key={c.id}>
-            <button type="button" className={`w-full truncate px-3 py-3 text-left hover:bg-base-200 ${c.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(c.id)}>{str(c.value.front).trim().split('\n')[0] || '(empty)'}</button>
+            <button type="button" className={`w-full truncate px-3 py-3 text-start hover:bg-base-200 ${c.id === selected ? 'bg-base-300' : ''}`} onClick={() => onSelect(c.id)}>{str(c.value.front).trim().split('\n')[0] || '(empty)'}</button>
           </li>
         ))}
         {hasMore && <li ref={end} className="flex justify-center p-3"><span className="loading loading-spinner loading-sm" /></li>}
@@ -207,7 +207,7 @@ export default function FlashcardManager() {
   const close = () => { setCreating(false); setSelected(null); };
   return (
     <div className="flex h-full bg-base-100">
-      <div className={`h-full w-full border-base-300 md:w-80 md:shrink-0 md:border-r ${showEditor ? 'hidden md:block' : ''}`}>
+      <div className={`h-full w-full border-base-300 md:w-80 md:shrink-0 md:border-e ${showEditor ? 'hidden md:block' : ''}`}>
         <List selected={selected} onSelect={(id) => { setCreating(false); setSelected(id); }} onNew={() => { setSelected(null); setCreating(true); }} />
       </div>
       <div className={`h-full min-w-0 flex-1 ${showEditor ? '' : 'hidden md:block'}`}>

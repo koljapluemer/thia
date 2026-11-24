@@ -451,7 +451,7 @@ function Library({ native, setNative, onOpen }: { native: string; setNative: (n:
         <ul className="flex flex-col gap-1">
           {sources.items.map((s) => (
             <li key={s.id}>
-              <button type="button" className="btn btn-ghost btn-sm h-auto w-full justify-start py-2 text-left font-normal" onClick={() => onOpen(s.id)}>
+              <button type="button" className="btn btn-ghost btn-sm h-auto w-full justify-start py-2 text-start font-normal" onClick={() => onOpen(s.id)}>
                 <span className="flex-1">{String(s.value.title ?? s.value.external_id)}</span>
                 <span className="text-xs text-base-content/60">{languageName(String(s.value.language))}</span>
               </button>
@@ -678,10 +678,10 @@ function Watch({ source, native, setNative, onBack }: { source: Item; native: st
         <div ref={wrapRef} className="relative aspect-video w-full overflow-hidden rounded-box bg-black">
           <iframe ref={frameRef} className="absolute inset-0 h-full w-full" src={src} title={title}
                   referrerPolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media; picture-in-picture" />
-          <div className="pointer-events-none absolute top-2 left-2 flex max-w-[70%] flex-col items-start gap-1.5">
+          <div className="pointer-events-none absolute top-2 start-2 flex max-w-[70%] flex-col items-start gap-1.5">
             {shown.map((c) => <WordCard key={c.key} card={c} />)}
           </div>
-          <button type="button" className="btn btn-xs btn-square absolute right-2 bottom-12 border-0 bg-black/60 text-white hover:bg-black/80" title="Fullscreen, with cards" aria-label="Fullscreen" onClick={fullscreen}>
+          <button type="button" className="btn btn-xs btn-square absolute end-2 bottom-12 border-0 bg-black/60 text-white hover:bg-black/80" title="Fullscreen, with cards" aria-label="Fullscreen" onClick={fullscreen}>
             <Expand className="size-3" />
           </button>
         </div>

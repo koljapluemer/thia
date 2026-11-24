@@ -1,0 +1,26 @@
+{
+  "name": "@gestalts/i18n",
+  "private": true,
+  "type": "module",
+  "description": "The app's own text in every language it has (Paraglide), which language a page is in, and the picker",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "prepare": "node scripts/compile.ts",
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "lucide-react": "1.66.0"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@inlang/paraglide-js": "3.2.2",
+    "@inlang/plugin-message-format": "4.6.1",
+    "@types/node": "26.6.6",
+    "react": "19.3.1",
+    "typescript": "7.0.2"
+  }
+}

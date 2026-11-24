@@ -36,7 +36,7 @@ function Card({ item, open }: { item: Item; open: (id: string) => void }) {
   const still = useBlobUrl(str(item.value.still) || undefined);
   return (
     <li>
-      <button type="button" className="card card-border h-full w-full bg-base-100 text-left hover:border-primary" onClick={() => open(item.id)}>
+      <button type="button" className="card card-border h-full w-full bg-base-100 text-start hover:border-primary" onClick={() => open(item.id)}>
         <figure className="aspect-[5/3] bg-base-200">{still && <img src={still} alt="" className="h-full w-full object-cover object-top" />}</figure>
         <div className="card-body p-3"><span className="font-medium">{str(item.value.title) || item.id}</span></div>
       </button>

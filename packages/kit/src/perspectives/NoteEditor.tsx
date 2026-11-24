@@ -98,7 +98,7 @@ function TargetName({ item }: { item: Item }) {
     return (
       <span className="min-w-0">
         <span className="break-words">{sourceTitle(item.value)}</span>
-        {by && <span className="ml-2 whitespace-nowrap text-base-content/60">{by}</span>}
+        {by && <span className="ms-2 whitespace-nowrap text-base-content/60">{by}</span>}
       </span>
     );
   }

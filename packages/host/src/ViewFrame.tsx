@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useHostRepo, type Repo } from '@gestalts/client';
+import { useLang } from '@gestalts/i18n';
 import type { JsonMap } from '@gestalts/view';
 import { FrameView, type RunnableView } from './frame/FrameView';
 import type { ViewEnv } from './frame/bridge';
@@ -34,6 +35,7 @@ export function ViewFrame({ registry, css, tailwind, view: id, params, stateKey,
   registry: Registry; css: string; tailwind?: string; view: string; params: Record<string, string>; stateKey: string; csp?: string;
   hidden?: boolean; navigate: Navigate; setTitle: (title: string) => void; setParams: (params: Record<string, string>) => void;
 }) {
+  const { m } = useLang();
   const repo = useHostRepo();
   const plugin = findPlugin(registry, id);
   const [state] = useState(() => readState(stateKey));
@@ -57,7 +59,7 @@ export function ViewFrame({ registry, css, tailwind, view: id, params, stateKey,
     openView: navigate,
   }), [repo, plugin, stateKey, setTitle, setParams, navigate]);
   const view = useMemo(() => (plugin ? runnable(plugin) : undefined), [plugin]);
-  if (!view) return <p className="p-8 text-center text-base-content/60">This view (<code>{id}</code>) isn't in this app.</p>;
+  if (!view) return <p className="p-8 text-center text-base-content/60">{m.view_missing({ id })}</p>;
   return <FrameView repo={repo} view={view} runtime={registry.runtime} css={css} tailwind={tailwind} params={params} state={state} env={env} hidden={hidden} csp={csp} />;
 }
 

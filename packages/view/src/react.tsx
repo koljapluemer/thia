@@ -470,6 +470,15 @@ export function useCapabilities(): { capabilities: Capabilities | undefined; ref
   return { capabilities, refresh: useMemo(() => () => setRound((r) => r + 1), []) };
 }
 
+/**
+ * The language the view's text is shown in (`lang`, set on the frame's `<html>` already) and the person's locale,
+ * for numbers and dates (`locale`). A host from before them says English.
+ */
+export function useLocale(): { lang: string; locale: string } {
+  const { init } = useContext_();
+  return useMemo(() => ({ lang: init.lang ?? 'en', locale: init.locale ?? init.lang ?? 'en' }), [init]);
+}
+
 /** Who this view is, and what it can ask of the app around it. */
 export function useHost() {
   const { host, init } = useContext_();

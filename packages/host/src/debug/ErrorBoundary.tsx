@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { useLang } from '@gestalts/i18n';
 import { logger } from '@gestalts/view';
 
 const log = logger('ui');
@@ -19,13 +20,18 @@ export class ErrorBoundary extends Component<Props, { error: Error | null }> {
 
   render() {
     if (!this.state.error) return this.props.children;
-    return (
-      <div className="flex justify-center p-4">
-        <div role="alert" className="alert alert-error max-w-lg">
-          <span>Something broke{this.props.name ? ` in ${this.props.name}` : ''}: {this.state.error.message}</span>
-          <button type="button" className="btn btn-sm" onClick={() => this.setState({ error: null })}>Retry</button>
-        </div>
-      </div>
-    );
+    return <Broke name={this.props.name} error={this.state.error} retry={() => this.setState({ error: null })} />;
   }
+}
+
+function Broke({ name, error, retry }: { name?: string; error: Error; retry: () => void }) {
+  const { m } = useLang();
+  return (
+    <div className="flex justify-center p-4">
+      <div role="alert" className="alert alert-error max-w-lg">
+        <span>{name ? m.broke_in({ name, error: error.message }) : m.broke({ error: error.message })}</span>
+        <button type="button" className="btn btn-sm" onClick={retry}>{m.retry()}</button>
+      </div>
+    </div>
+  );
 }

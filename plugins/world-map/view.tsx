@@ -264,7 +264,7 @@ const WorldMapCanvas = forwardRef<CanvasHandle, CanvasProps>(function WorldMapCa
           )}
         </g>
       </svg>
-      <div className="pointer-events-none absolute top-1/2 right-3 flex -translate-y-1/2 flex-col gap-2">
+      <div className="pointer-events-none absolute top-1/2 end-3 flex -translate-y-1/2 flex-col gap-2">
         {!isTouchDevice && (
           <>
             <button type="button" className={button} disabled={!canZoomIn} aria-label="Zoom in" onClick={() => panZoom.scaleBy(ZOOM_BUTTON_FACTOR, ZOOM_TRANSITION_MS)}><Plus size={20} aria-hidden="true" /></button>
@@ -731,7 +731,7 @@ export default function WorldMap() {
           <button type="button" className="btn btn-sm btn-ghost" onClick={() => setError(null)}>Dismiss</button>
         </div>
       )}
-      <div className="pointer-events-none absolute bottom-0 left-0 px-2 leading-tight"><Credits sources={credit} className="pointer-events-auto" /></div>
+      <div className="pointer-events-none absolute bottom-0 start-0 px-2 leading-tight"><Credits sources={credit} className="pointer-events-auto" /></div>
     </section>
   );
 }

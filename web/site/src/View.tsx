@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import { registry } from 'virtual:gestalts-plugins';
 import { RepoProvider } from '@gestalts/client';
 import { ViewFrame, closedCsp, type Navigate } from '@gestalts/host';
+import { useLang } from '@gestalts/i18n';
 import tailwind from '@tailwindcss/browser?raw';
 import css from './app.css?inline';
 import { ENTRIES, type Entry } from './Catalog';
@@ -25,6 +26,7 @@ function pathOf(view: string, from: Entry): string | undefined {
  * so a link opens it there and going back goes back in it.
  */
 export function ViewPage({ entry, back, open }: { entry: Entry; back?: () => void; open: (path: string) => void }) {
+  const { m } = useLang();
   const { home, dir } = useHome(entry.deck?.source);
   const [title, setTitle] = useState(entry.title);
   useEffect(() => {
@@ -40,7 +42,7 @@ export function ViewPage({ entry, back, open }: { entry: Entry; back?: () => voi
       <GuestBanner />
       <header className="flex min-h-0 items-center gap-2 border-b border-base-300 bg-base-100 px-3 py-1">
         {back && (
-          <a href="/" className="btn btn-ghost btn-xs btn-square" title="Everything here" onClick={(e) => { if (e.button === 0 && !e.metaKey && !e.ctrlKey) { e.preventDefault(); back(); } }}>
+          <a href="/" className="btn btn-ghost btn-xs btn-square" title={m.back_everything()} aria-label={m.back_everything()} onClick={(e) => { if (e.button === 0 && !e.metaKey && !e.ctrlKey) { e.preventDefault(); back(); } }}>
             <ArrowLeft className="size-4" />
           </a>
         )}
@@ -48,7 +50,7 @@ export function ViewPage({ entry, back, open }: { entry: Entry; back?: () => voi
         <Toolbar />
       </header>
       <main className="min-h-0 flex-1">
-        {home.error && <Notice title="Your data couldn’t open">{home.error}</Notice>}
+        {home.error && <Notice title={m.data_failed()}>{home.error}</Notice>}
         {!home.error && !ready && <Spinner />}
         {ready && home.repo && (
           <RepoProvider repo={home.repo}>

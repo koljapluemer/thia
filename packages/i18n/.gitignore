@@ -1,0 +1,6 @@
+# compiled by `pnpm install` (prepare) from messages/
+src/paraglide/
+# the pseudo-locale, made from en
+messages/*/en-XA.json
+# made by scripts/compile.ts
+project.inlang/

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { registry } from 'virtual:gestalts-plugins/workshop';
 import { useOpenRepo, type Repo } from '@gestalts/client';
+import { useLang } from '@gestalts/i18n';
 import type { Item } from '@gestalts/view';
 import { VIEWS, VIZ, asDraft, loadMembers, packageOf, toBase64 } from '@gestalts/workshop';
 import { stringify } from 'yaml';
@@ -61,6 +62,7 @@ export function MoveOffer({ onMoved }: { onMoved: () => void }) {
 }
 
 function Offer({ onMoved }: { onMoved: () => void }) {
+  const { m } = useLang();
   const { repo, error } = useOpenRepo(OLD);
   const [items, setItems] = useState<Item[]>();
   const [busy, setBusy] = useState(false);
@@ -102,23 +104,23 @@ function Offer({ onMoved }: { onMoved: () => void }) {
       {problems.length
         ? (
           <div className="flex-1 text-sm">
-            <p>Moved, except:</p>
-            <ul className="list-disc pl-5 text-error">{problems.map((p) => <li key={p}>{p}</li>)}</ul>
-            <p className="text-xs text-base-content/60">They stay in this browser.</p>
+            <p>{m.move_except()}</p>
+            <ul className="list-disc ps-5 text-error">{problems.map((p) => <li key={p}>{p}</li>)}</ul>
+            <p className="text-xs text-base-content/60">{m.move_stay()}</p>
           </div>
         )
         : (
           <span className="flex-1 text-sm">
-            This browser keeps {items.length} {items.length === 1 ? 'draft' : 'drafts'} from the workshops before they moved to accounts. Move {items.length === 1 ? 'it' : 'them'} to your account?
-            <span className="block text-xs text-base-content/60">They stay here too. You’re asked once.</span>
+            {m.move_offer({ count: items.length })}
+            <span className="block text-xs text-base-content/60">{m.move_once()}</span>
           </span>
         )}
       {problems.length
-        ? <button type="button" className="btn btn-sm" onClick={() => setDone(true)}>OK</button>
+        ? <button type="button" className="btn btn-sm" onClick={() => setDone(true)}>{m.ok()}</button>
         : (
           <>
-            <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void go()}>{busy ? <span className="loading loading-spinner loading-xs" /> : 'Move'}</button>
-            <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={no}>No</button>
+            <button type="button" className="btn btn-sm btn-primary" disabled={busy} onClick={() => void go()}>{busy ? <span className="loading loading-spinner loading-xs" /> : m.move()}</button>
+            <button type="button" className="btn btn-sm btn-ghost" disabled={busy} onClick={no}>{m.no()}</button>
           </>
         )}
     </div>

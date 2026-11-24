@@ -47,10 +47,11 @@ addEventListener('message', async (first) => {
 parent.postMessage('gestalts:ready', '*');
 `;
 
-/** The frame's page; with `csp`, under that Content-Security-Policy. */
-export function bootHtml(csp?: string): string {
+/** The frame's page, its text in `lang`; with `csp`, under that Content-Security-Policy. */
+export function bootHtml(csp?: string, lang = 'en'): string {
   const policy = csp ? `<meta http-equiv="Content-Security-Policy" content="${csp.replaceAll('&', '&amp;').replaceAll('"', '&quot;')}">` : '';
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8">${policy}<meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="view" class="h-dvh"></div><script>${script.replaceAll('</script', '<\\/script')}</script></body></html>`;
+  const tag = /^[A-Za-z0-9-]+$/.test(lang) ? lang : 'en';
+  return `<!doctype html><html lang="${tag}"><head><meta charset="utf-8">${policy}<meta name="viewport" content="width=device-width, initial-scale=1"></head><body><div id="view" class="h-dvh"></div><script>${script.replaceAll('</script', '<\\/script')}</script></body></html>`;
 }
 
 export const BOOT_HTML = bootHtml();
