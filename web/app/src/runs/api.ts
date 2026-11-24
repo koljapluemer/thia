@@ -2,7 +2,9 @@
 
 export type RunRow = {
   id: string; account: string; started: string; lastAt?: string; draft?: string; kind?: string; purpose?: string;
-  backend?: string; models?: string; billing?: string; outcome?: string; waiting: boolean; wallMs?: number;
+  backend?: string; appCommit?: string; appBuild?: string; serverCommit?: string; serverBuild?: string;
+  bridgeCommit?: string; bridgeVersion?: string; providerVersion?: string;
+  models?: string; billing?: string; outcome?: string; waiting: boolean; wallMs?: number;
   firstOutputMs?: number; requests: number; input: number; output: number; cacheRead: number; cacheWrite: number;
   costUsd?: number; tools: number; toolFailures: number; checkOk?: boolean; filesChanged: number; errors: number;
   rating?: number; comment?: string; notes: number;

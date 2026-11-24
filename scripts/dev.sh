@@ -16,6 +16,8 @@
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
+export GESTALTS_GIT_COMMIT="$(git rev-parse HEAD)"
+if [[ -n "$(git status --porcelain)" ]]; then export GESTALTS_GIT_DIRTY=true; else export GESTALTS_GIT_DIRTY=false; fi
 logs="target/dev"
 mkdir -p "$logs"
 

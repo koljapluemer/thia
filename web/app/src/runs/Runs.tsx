@@ -68,6 +68,7 @@ const tokens = (v?: number) => (!v ? '0' : v < 1000 ? String(v) : v < 1_000_000 
 const dollars = (v?: number) => (v === undefined || v === null ? '—' : `$${v < 0.01 && v > 0 ? v.toFixed(4) : v.toFixed(2)}`);
 const pct = (n: number, of: number) => (of ? `${Math.round((100 * n) / of)}%` : '—');
 const when = (iso: string) => new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+const build = (commit?: string, tag?: string) => [commit?.slice(0, 12), tag].filter(Boolean).join(' · ') || '—';
 
 /** A run's cost: paid (API), a subscription's (notional, ≈), or nothing. */
 function Cost({ row }: { row: api.RunRow }) {
@@ -149,7 +150,8 @@ function Summary({ filter, by, onBy, stamp }: { filter: api.Filter; by: string; 
       <div className="mb-2 flex items-center gap-2">
         <span className="font-semibold">Summary by</span>
         <select className="select select-sm w-auto" value={by} onChange={(e) => onBy(e.target.value)}>
-          {['backend', 'model', 'kind', 'purpose', 'day', 'draft'].map((b) => <option key={b} value={b}>{b}</option>)}
+          {['backend', 'model', 'kind', 'purpose', 'day', 'draft', 'app-commit', 'server-commit', 'bridge-commit', 'provider-version']
+            .map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
         {data && <span className="text-base-content/60">{data.rows} run(s){data.capped ? ', the newest only' : ''}; prices as of {data.pricesAsOf}</span>}
       </div>
@@ -305,6 +307,7 @@ function What({ e }: { e: api.RunEvent }) {
       </span>
     );
     case 'throttle': return <span className="text-warning">{s('model') ?? 'the provider'} turned it away{e.status ? ` (${e.status as number})` : ''}, waited {ms(e.waitMs as number)}{s('reason') ? `: ${s('reason')!.slice(0, 200)}` : ''}</span>;
+    case 'provenance': return <span className="font-mono">software {JSON.stringify(e.provenance)}</span>;
     case 'files': return <span>changed {Object.entries((e.files ?? {}) as Record<string, unknown>).map(([p, v]) => (v === null ? `${p} (deleted)` : p)).join(', ')}</span>;
     case 'ask': return <span>asks: {((e.questions ?? []) as { question?: string }[]).map((q) => q.question).join(' / ')}</span>;
     case 'saved': return <span className="text-error">not saved: {((e.problems ?? []) as string[]).join('; ')}</span>;
@@ -357,6 +360,10 @@ function Detail({ id, onClose, onDraft }: { id: string; onClose: () => void; onD
         <Fact label="draft">{r.draft ? <button type="button" className="link font-mono" onClick={() => onDraft(r.draft!)}>{r.draft}</button> : '—'} {r.kind ? `(${r.kind})` : ''}</Fact>
         <Fact label="backend">{data.backendLabel ?? r.backend ?? '—'}</Fact>
         <Fact label="models">{r.models ?? '—'}</Fact>
+        <Fact label="app build">{build(r.appCommit, r.appBuild)}</Fact>
+        <Fact label="server build">{build(r.serverCommit, r.serverBuild)}</Fact>
+        <Fact label="bridge">{build(r.bridgeCommit, r.bridgeVersion)}</Fact>
+        <Fact label="provider version">{r.providerVersion ?? '—'}</Fact>
         <Fact label="outcome">{r.outcome ?? 'not ended (yet)'}{r.waiting ? ', waiting on a question' : ''}</Fact>
         <Fact label="wall · first output">{ms(r.wallMs)} · {ms(r.firstOutputMs)}</Fact>
         <Fact label="requests · throttled">{r.requests} · {data.throttles}</Fact>

@@ -1,20 +1,23 @@
 import type { AgentBackend, CompleteRequest } from '../agents/types';
+import type { RunProvenance } from '../agents/types';
 import { NO_RUN, startRun, type Run, type RunEvent, type RunSink } from './recorder';
 
 export { NO_RUN, runId, sha256, startRun, type BlobRef, type Envelope, type Run, type RunEvent, type RunSink } from './recorder';
 
 let sink: RunSink | undefined;
+let provenance: RunProvenance | undefined;
 
 /** Where this page records its agent runs, once (the app's server); without, nothing is recorded. */
-export function recordRunsTo(s: RunSink | undefined) {
+export function recordRunsTo(s: RunSink | undefined, p?: RunProvenance) {
   sink = s;
+  provenance = p;
 }
 
 const client = () => (typeof navigator === 'undefined' ? undefined : { ua: navigator.userAgent });
 
 /** A new run, recorded where `recordRunsTo` said; `NO_RUN` when nowhere. */
 export function newRun(start: RunEvent): Run {
-  return sink ? startRun(sink, { client: client(), ...start }) : NO_RUN;
+  return sink ? startRun(sink, { client: client(), provenance, ...start }) : NO_RUN;
 }
 
 /** `backend.complete`, recorded as a run of its own (`purpose: complete`). */

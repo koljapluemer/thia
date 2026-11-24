@@ -18,6 +18,7 @@ if ssh "$THIA_HOST" test -e /var/lib/gestalts-teacher; then
 fi
 sha="$(git rev-parse --short HEAD)"
 release="/opt/thia-server/releases/$sha"
+export GESTALTS_GIT_COMMIT="$(git rev-parse HEAD)" GESTALTS_GIT_DIRTY=false GESTALTS_BUILD="$sha"
 
 cargo build --release -q -p thia-server
 pnpm --dir web/app build

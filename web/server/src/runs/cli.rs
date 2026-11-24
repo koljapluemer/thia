@@ -22,6 +22,14 @@ pub struct Which {
     /// the backend's id: claude-cli, ollama, gemini, server
     #[arg(long)]
     backend: Option<String>,
+    #[arg(long)]
+    app_commit: Option<String>,
+    #[arg(long)]
+    server_commit: Option<String>,
+    #[arg(long)]
+    bridge_commit: Option<String>,
+    #[arg(long)]
+    provider_version: Option<String>,
     /// a model, or part of its name
     #[arg(long)]
     model: Option<String>,
@@ -58,7 +66,7 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// The runs summed by backend, model, kind, purpose, day or draft
+    /// The runs summed by backend, model, kind, purpose, day, draft, a component commit or provider version
     Summary {
         #[command(flatten)]
         which: Which,
@@ -111,6 +119,10 @@ impl Which {
             since: self.since.map(|s| since(&s, crate::now_ms())),
             until: self.until,
             backend: self.backend,
+            app_commit: self.app_commit,
+            server_commit: self.server_commit,
+            bridge_commit: self.bridge_commit,
+            provider_version: self.provider_version,
             model: self.model,
             kind: self.kind,
             purpose: self.purpose,

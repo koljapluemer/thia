@@ -17,6 +17,7 @@ sends what it can of them:
 | `tool_result` | how a tool call came out: `name`, `ok`, `ms`, `content` (texts, screenshots) | whoever runs the tool: the page for its own tools on the bridges (`timed`, `agents/tools.ts`), the server for all of its agent's, the Ollama bridge and Gemini for their file tools. Claude Code's own (Read, Edit…) are only in its raw stream |
 | `throttle` | a request turned away for now: `model`, `status`, `waitMs`, `reason` | the server (each retry), Gemini (each model paused after a 429 or 503) |
 | `trace` | the provider's answer as it came: `source`, `data` | the server, every Claude/Codex CLI JSONL line and stderr, the Ollama bridge, and Gemini |
+| `provenance` | path-free software identity: `bridge` build/version and `provider` name/version/model | local bridges, before their turn starts |
 
 `done` may also say the backend's own `outcome` (`completed`, `failed`, `cancelled`) and the process's `exitCode`
 (the Claude bridge). Every field is optional: a backend that knows less sends less, and a new one needs nothing here
@@ -30,7 +31,7 @@ own `ms`, a tool's or a request's duration, is kept as `took`). The page adds it
 
 - `start`: `purpose` (`turn`, or `complete` for a one-off answer such as planning a lesson), `draft`, `kind`,
   `backend` {id, label}, `message`, `session`, `answer`, `diagnostics`, `gestalts`, and `inputs`: the draft's files,
-  its binaries, its brief and the kind's template, the way it was sent
+  its binaries, its brief and the kind's template, the way it was sent; `provenance.app` identifies the web build
 - `saved`: what saving refused of what came back; `settled`: what the kind's own check said after the turn
 - `end`: `outcome` (`completed`, `failed`, `stopped`) and `waiting` (the turn ended on a question)
 - `rating`: `score` 1–5 and `comment`, from the row after the turn in the chat ("How good was this?"); rating again
@@ -61,9 +62,13 @@ arrives out of order is kept. The server writes two kinds itself, with seqs belo
 it is, the first line) and `note` (an admin's). Blobs: `POST /api/runs/blobs/missing`, then `PUT
 /api/runs/blobs/{sha}`, which checks the hash.
 
+The server's `owner` event adds `provenance.server`. A build has a full Git `commit`, optional deployment `tag`,
+package `version` where applicable, and `dirty` for a local build; no checkout or machine paths are recorded.
+
 The index (`runs/index.rs`) is one row per run, folded from its lines: times (wall, first output), outcome, models,
 tokens, cost, tool calls and failures, the last check, files changed, errors, the latest rating, notes. Unknown event
-types count as events and no more. Cost is derived, never recorded: tokens × Anthropic's list prices in
+types count as events and no more. It also extracts app/server/bridge commits and build tags and provider version so
+runs from before and after a deployment can be separated without opening every record. Cost is derived, never recorded: tokens × Anthropic's list prices in
 `runs/prices.rs` (dated), `api` billing what was paid, `subscription` what it would have cost (notional, shown as ≈),
 `free` nothing, and a model without a price is counted as unpriced. Changing what the index derives, a price
 included, is a change of `index::VERSION`: the server rebuilds the index from the records when it starts.
@@ -74,7 +79,7 @@ included, is a change of `index::VERSION`: the server rebuilds the index from th
 An admin area (`web/app/src/runs/`). What's picked is kept in the address, so a view can be linked.
 
 - **Filters:** period, backend, model, kind, purpose, outcome, rated, draft.
-- **Summary**, by backend, model, kind, purpose, day or draft: runs, completed, the check passed, wall time (median,
+- **Summary**, by backend, model, kind, purpose, day, draft, component commit or provider version: runs, completed, the check passed, wall time (median,
   p90), first output, requests, tokens, cache, cost paid and notional, the mean rating and how many rated, tool
   failures.
 - **The runs**, newest first, a page at a time.
@@ -92,7 +97,8 @@ into runs (the project skill `.claude/skills/runs/SKILL.md` says how to go about
 runs …` (on `server-data/`); on the box `sudo -u thia /opt/thia-server/current/bin/thia-server --data
 /var/lib/thia-server admin runs …`.
 
-- `list` and `summary [--by …]` take the filters of `/runs`, `--since` also as `7d`, and `--rating-min/--rating-max`
+- `list` and `summary [--by …]` take the filters of `/runs`, `--since` also as `7d`, `--rating-min/--rating-max`, and
+  `--app-commit`, `--server-commit`, `--bridge-commit`, or `--provider-version`
   (the latest rating; `rating_min`/`rating_max` on `/api/admin/runs` too); `--json` for the index's rows
 - `show <id>`: the run without its raw stream, long texts cut (`--full` keeps them): its facts, what it was sent, the
   timeline (`src/runs/read.rs`)

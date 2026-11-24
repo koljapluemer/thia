@@ -1,6 +1,6 @@
 import { contracts, systemOf } from './kinds';
 import { timed, type AgentTool } from './tools';
-import type { AgentBackend, AgentEvent, Answers, CompleteRequest, Question, TurnRequest } from './types';
+import type { AgentBackend, AgentEvent, Answers, CompleteRequest, Question, RunProvenance, TurnRequest } from './types';
 
 /**
  * The claude CLI on this computer, through the Claude bridge (`installables/claude-bridge`): a site the person allowed
@@ -9,6 +9,21 @@ import type { AgentBackend, AgentEvent, Answers, CompleteRequest, Question, Turn
  */
 
 export type BridgeStatus = { app: string; version: string; claude: { found: boolean; path?: string; version?: string }; paired: boolean };
+
+type AnyBridgeStatus = { app?: string; version?: string; build?: { commit?: string; tag?: string; dirty?: boolean }; [key: string]: unknown };
+
+/** The deliberately small, path-free part of a bridge status that belongs in a run record. */
+function provenanceOf(s: AnyBridgeStatus): RunProvenance {
+  const provider = ['claude', 'codex', 'ollama'].find((k) => typeof s[k] === 'object' && s[k] !== null);
+  const p = provider ? s[provider] as { version?: unknown; model?: unknown } : undefined;
+  return {
+    bridge: { version: s.version, commit: s.build?.commit, tag: s.build?.tag, dirty: s.build?.dirty },
+    provider: provider ? {
+      name: provider, version: typeof p?.version === 'string' ? p.version : undefined,
+      model: typeof p?.model === 'string' ? p.model : undefined,
+    } : undefined,
+  };
+}
 
 /** One turn, as the bridge takes it. */
 export type BridgeStart = {
@@ -81,6 +96,8 @@ export async function bridgeAvailable(url: string): Promise<true | string> {
  * it changed until then still comes back.
  */
 export async function* runOnBridge(url: string, start: BridgeStart, tools: AgentTool[], signal: AbortSignal, name = 'Claude bridge', tokenPrefix?: string): AsyncIterable<BridgeEvent> {
+  const status = await bridgeStatus<AnyBridgeStatus>(url, name, '', tokenPrefix);
+  if (typeof status !== 'string') yield { type: 'provenance', provenance: provenanceOf(status) };
   const t = token(url, tokenPrefix);
   const ws = new WebSocket(`${base(url).replace(/^http/, 'ws')}/runs${t ? `?token=${encodeURIComponent(t)}` : ''}`);
   const queue: BridgeEvent[] = [];

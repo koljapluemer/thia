@@ -13,6 +13,18 @@ pub struct Codex {
     pub version: Option<String>,
 }
 
+/// The root of a standalone Codex release, when `path` is its launcher or binary. Sandboxed commands re-enter the
+/// running Codex binary, so a restrictive custom permission profile must keep this directory readable. Other
+/// installations are already covered by `:minimal`; do not broaden them to an arbitrary parent such as `/usr`.
+pub fn standalone_root(path: &Path) -> Option<PathBuf> {
+    let binary = path.canonicalize().ok()?;
+    let root = binary.parent()?.parent()?;
+    (binary.parent()?.file_name()? == "bin"
+        && root.join("codex-resources").is_dir()
+        && root.join("codex-path").is_dir())
+    .then(|| root.to_owned())
+}
+
 const NAMES: &[&str] = if cfg!(windows) {
     &["codex.exe", "codex.cmd"]
 } else {
@@ -82,5 +94,30 @@ pub fn probe() -> Codex {
         found: version.is_some(),
         path: Some(path),
         version,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn finds_only_a_standalone_release_root() {
+        use std::os::unix::fs::symlink;
+
+        let dir = tempfile::tempdir().unwrap();
+        let release = dir.path().join("release");
+        std::fs::create_dir_all(release.join("bin")).unwrap();
+        std::fs::create_dir(release.join("codex-resources")).unwrap();
+        std::fs::create_dir(release.join("codex-path")).unwrap();
+        std::fs::write(release.join("bin/codex"), "binary").unwrap();
+        let launcher = dir.path().join("codex");
+        symlink(release.join("bin/codex"), &launcher).unwrap();
+        assert_eq!(standalone_root(&launcher), Some(release));
+
+        let ordinary = dir.path().join("ordinary");
+        std::fs::write(&ordinary, "binary").unwrap();
+        assert_eq!(standalone_root(&ordinary), None);
     }
 }

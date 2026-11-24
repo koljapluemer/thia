@@ -125,7 +125,10 @@ pub async fn serve(bridge: Arc<Bridge>, listener: tokio::net::TcpListener, stop:
 
 async fn status(State(b): State<Arc<Bridge>>, headers: HeaderMap) -> Json<Value> {
     let paired = b.authorized(origin(&headers), bearer(&headers));
-    Json(json!({ "app": NAME, "version": env!("CARGO_PKG_VERSION"), "ollama": b.status().await, "paired": paired }))
+    Json(json!({ "app": NAME, "version": env!("CARGO_PKG_VERSION"), "build": {
+        "commit": option_env!("GESTALTS_GIT_COMMIT"), "tag": option_env!("GESTALTS_BUILD"),
+        "dirty": option_env!("GESTALTS_GIT_DIRTY").map(|v| v == "true"),
+    }, "ollama": b.status().await, "paired": paired }))
 }
 
 /// A site asks to run models here: the person decides, once per site.

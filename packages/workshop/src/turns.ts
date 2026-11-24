@@ -112,6 +112,7 @@ export async function runTurn({ work, backend, message, reply, errors }: {
   let changed = false;
   let run: Run = NO_RUN;
   let failed = false;
+  let toolFailures = 0;
   let waiting = false;
   try {
     const snap = await work.snapshot();
@@ -131,6 +132,7 @@ export async function runTurn({ work, backend, message, reply, errors }: {
       else if (ev.type === 'ask') say(key, { who: 'ask', id: ev.id, questions: ev.questions, reply: ev.reply });
       else if (ev.type === 'tool') say(key, { who: 'tool', text: `${ev.name} ${ev.summary}` });
       else if (ev.type === 'error') { failed = true; say(key, { who: 'error', text: ev.message }); }
+      else if (ev.type === 'tool_result' && !ev.ok) toolFailures += 1;
       else if (ev.type === 'files') {
         changed = true;
         const problems = await work.apply(ev.files);
@@ -146,6 +148,7 @@ export async function runTurn({ work, backend, message, reply, errors }: {
         if (ev.outcome === 'failed') failed = true;
       }
     }
+    if (!changed && toolFailures > 0) failed = true;
     if (changed && work.settle && !controller.signal.aborted) {
       say(key, { who: 'checking' });
       const r = await work.settle(backend.id);

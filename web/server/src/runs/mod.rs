@@ -38,6 +38,13 @@ const MAX_BLOB: usize = 64 * 1024 * 1024;
 /// at most this many runs' rows are summed for one summary
 pub const SUMMARY_ROWS: i64 = 10_000;
 
+fn server_provenance() -> Value {
+    json!({ "server": {
+        "version": env!("CARGO_PKG_VERSION"), "commit": option_env!("GESTALTS_GIT_COMMIT"),
+        "tag": option_env!("GESTALTS_BUILD"), "dirty": option_env!("GESTALTS_GIT_DIRTY").map(|v| v == "true"),
+    } })
+}
+
 /// The runs' records and the lock that keeps two batches of one run from interleaving.
 pub struct Runs {
     pub store: Store,
@@ -113,7 +120,8 @@ async fn append(State(state): State<AppState>, me: SignedIn, Path(id): Path<Stri
             let day = events.iter().filter_map(|e| e["at"].as_str()).min().map_or_else(now_iso, str::to_owned);
             let day = if day.len() >= 10 && day.as_bytes()[4] == b'-' { day[..10].to_owned() } else { now_iso()[..10].to_owned() };
             let mut s = Summary::default();
-            let owner = json!({"v": 1, "run": id, "seq": -1, "type": "owner", "by": "server", "at": now_iso(), "account": me.0.id});
+            let owner = json!({"v": 1, "run": id, "seq": -1, "type": "owner", "by": "server", "at": now_iso(),
+                "account": me.0.id, "provenance": server_provenance()});
             s.server_seq = -2;
             s.fold(&owner);
             (s, Store::new_path(&id, &day), vec![owner])
@@ -152,6 +160,10 @@ pub struct Filter {
     pub since: Option<String>,
     pub until: Option<String>,
     pub backend: Option<String>,
+    pub app_commit: Option<String>,
+    pub server_commit: Option<String>,
+    pub bridge_commit: Option<String>,
+    pub provider_version: Option<String>,
     pub model: Option<String>,
     pub kind: Option<String>,
     pub purpose: Option<String>,
@@ -181,6 +193,10 @@ impl Filter {
         eq("started", &self.since, ">=");
         eq("started", &self.until, "<");
         eq("backend", &self.backend, "=");
+        eq("app_commit", &self.app_commit, "LIKE");
+        eq("server_commit", &self.server_commit, "LIKE");
+        eq("bridge_commit", &self.bridge_commit, "LIKE");
+        eq("provider_version", &self.provider_version, "LIKE");
         eq("models", &self.model, "LIKE");
         eq("kind", &self.kind, "=");
         eq("purpose", &self.purpose, "=");
@@ -209,6 +225,13 @@ pub struct Row {
     pub kind: Option<String>,
     pub purpose: Option<String>,
     pub backend: Option<String>,
+    pub app_commit: Option<String>,
+    pub app_build: Option<String>,
+    pub server_commit: Option<String>,
+    pub server_build: Option<String>,
+    pub bridge_commit: Option<String>,
+    pub bridge_version: Option<String>,
+    pub provider_version: Option<String>,
     pub models: Option<String>,
     pub billing: Option<String>,
     pub outcome: Option<String>,
@@ -231,17 +254,21 @@ pub struct Row {
     pub notes: i64,
 }
 
-const COLUMNS: &str = "id, account, started, last_at, draft, kind, purpose, backend, models, billing, outcome, waiting, wall_ms,
+const COLUMNS: &str = "id, account, started, last_at, draft, kind, purpose, backend,
+    app_commit, app_build, server_commit, server_build, bridge_commit, bridge_version, provider_version,
+    models, billing, outcome, waiting, wall_ms,
     first_output_ms, requests, input, output, cache_read, cache_write, cost_usd, tools, tool_failures, check_ok, files_changed,
     errors, rating, comment, notes";
 
 fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Row> {
     Ok(Row {
         id: r.get(0)?, account: r.get(1)?, started: r.get(2)?, last_at: r.get(3)?, draft: r.get(4)?, kind: r.get(5)?, purpose: r.get(6)?,
-        backend: r.get(7)?, models: r.get(8)?, billing: r.get(9)?, outcome: r.get(10)?, waiting: r.get(11)?, wall_ms: r.get(12)?,
-        first_output_ms: r.get(13)?, requests: r.get(14)?, input: r.get(15)?, output: r.get(16)?, cache_read: r.get(17)?,
-        cache_write: r.get(18)?, cost_usd: r.get(19)?, tools: r.get(20)?, tool_failures: r.get(21)?, check_ok: r.get(22)?,
-        files_changed: r.get(23)?, errors: r.get(24)?, rating: r.get(25)?, comment: r.get(26)?, notes: r.get(27)?,
+        backend: r.get(7)?, app_commit: r.get(8)?, app_build: r.get(9)?, server_commit: r.get(10)?, server_build: r.get(11)?,
+        bridge_commit: r.get(12)?, bridge_version: r.get(13)?, provider_version: r.get(14)?, models: r.get(15)?,
+        billing: r.get(16)?, outcome: r.get(17)?, waiting: r.get(18)?, wall_ms: r.get(19)?, first_output_ms: r.get(20)?,
+        requests: r.get(21)?, input: r.get(22)?, output: r.get(23)?, cache_read: r.get(24)?, cache_write: r.get(25)?,
+        cost_usd: r.get(26)?, tools: r.get(27)?, tool_failures: r.get(28)?, check_ok: r.get(29)?, files_changed: r.get(30)?,
+        errors: r.get(31)?, rating: r.get(32)?, comment: r.get(33)?, notes: r.get(34)?,
     })
 }
 
@@ -300,6 +327,10 @@ pub fn summarize(all: &[Row], by: &str) -> Value {
             "purpose" => r.purpose.clone(),
             "day" => Some(r.started.chars().take(10).collect()),
             "draft" => r.draft.clone(),
+            "app-commit" => r.app_commit.clone(),
+            "server-commit" => r.server_commit.clone(),
+            "bridge-commit" => r.bridge_commit.clone(),
+            "provider-version" => r.provider_version.clone(),
             _ => r.backend.clone(),
         }
         .unwrap_or_else(|| "—".into())

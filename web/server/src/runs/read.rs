@@ -55,6 +55,16 @@ fn facts(r: &Row, label: Option<&str>) -> String {
     let opt = |v: &Option<String>| v.clone().unwrap_or_else(|| "—".into());
     let _ = writeln!(o, "run {}  started {}  account {}", r.id, r.started, r.account);
     let _ = writeln!(o, "backend {} ({})  models {}  billing {}", opt(&r.backend), label.unwrap_or("—"), opt(&r.models), opt(&r.billing));
+    let build = |commit: &Option<String>, tag: &Option<String>| match (commit, tag) {
+        (Some(c), Some(t)) => format!("{} ({t})", &c[..c.len().min(12)]),
+        (Some(c), None) => c[..c.len().min(12)].to_owned(),
+        (None, Some(t)) => t.clone(),
+        _ => "—".into(),
+    };
+    let _ = writeln!(o, "software app {}  server {}  bridge {}{}  provider {}",
+        build(&r.app_commit, &r.app_build), build(&r.server_commit, &r.server_build),
+        build(&r.bridge_commit, &None), r.bridge_version.as_deref().map(|v| format!(" v{v}")).unwrap_or_default(),
+        opt(&r.provider_version));
     let _ = writeln!(o, "draft {}  kind {}  purpose {}", opt(&r.draft), opt(&r.kind), opt(&r.purpose));
     let _ = writeln!(o, "outcome {}{}  wall {}  first output {}", opt(&r.outcome), if r.waiting { " (waiting on a question)" } else { "" },
         r.wall_ms.map_or("—".into(), secs), r.first_output_ms.map_or("—".into(), secs));
@@ -242,7 +252,9 @@ mod tests {
     fn row() -> Row {
         Row {
             id: "r1".into(), account: "a".into(), started: "2026-11-23T10:00:00Z".into(), last_at: None, draft: Some("d".into()),
-            kind: Some("view".into()), purpose: Some("turn".into()), backend: Some("claude-cli".into()), models: None, billing: None,
+            kind: Some("view".into()), purpose: Some("turn".into()), backend: Some("claude-cli".into()),
+            app_commit: None, app_build: None, server_commit: None, server_build: None, bridge_commit: None,
+            bridge_version: None, provider_version: None, models: None, billing: None,
             outcome: Some("completed".into()), waiting: false, wall_ms: Some(30_000), first_output_ms: Some(2000), requests: 1,
             input: 10, output: 5, cache_read: 0, cache_write: 0, cost_usd: None, tools: 1, tool_failures: 1, check_ok: Some(false),
             files_changed: 1, errors: 0, rating: Some(1), comment: Some("broke it".into()), notes: 1,

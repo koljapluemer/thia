@@ -20,7 +20,7 @@ export function Workshop() {
   const [me, setMe] = useState<api.Me | null>();
   useEffect(() => { api.me().then(setMe, () => setMe(null)); }, []);
   // signed in, every agent run is recorded as this account's (admins read them in /runs)
-  useEffect(() => { recordRunsTo(me ? serverRuns : undefined); }, [me]);
+  useEffect(() => { recordRunsTo(me ? serverRuns : undefined, { app: __GESTALTS_BUILD__ }); }, [me]);
   if (me === undefined) return <div className="flex h-dvh items-center justify-center"><span className="loading loading-spinner" /></div>;
   if (!me) return <Login onIn={setMe} />;
   return <Drafts me={me} onOut={() => setMe(null)} />;

@@ -19,10 +19,12 @@ Backend ids: `claude-cli` (Claude Code through the bridge), `ollama`, `gemini`, 
 
 ## Commands
 
-- `summary [filters] [--by backend|model|kind|purpose|day|draft]`: counts, outcomes, check, wall time, rating, cost
+- `summary [filters] [--by backend|model|kind|purpose|day|draft|app-commit|server-commit|bridge-commit|provider-version]`:
+  counts, outcomes, check, wall time, rating, cost
 - `list [filters] [--limit N] [--json]`: one line a run, newest first
 - filters: `--since 7d|2026-11-16 --until … --backend … --model … --kind … --purpose turn|complete --outcome
-  completed|failed|stopped --rated yes|no --rating-min N --rating-max N --draft …`
+  completed|failed|stopped --rated yes|no --rating-min N --rating-max N --draft … --app-commit … --server-commit …
+  --bridge-commit … --provider-version …`
 - `show <id> [--full]`: facts, what it was sent (message, brief, file names), the timeline: texts, tool calls, tool
   results, usage, files written, errors, the rating and notes. No raw stream.
 - `diff <id> [path]`: what it changed against what it was sent
@@ -36,6 +38,7 @@ Backend ids: `claude-cli` (Claude Code through the bridge), `ollama`, `gemini`, 
 1. `summary` over the period to see the shape, then `list` with the filters the question names.
 2. `show` each run in question. Most causes are visible here: a failed tool result, a failed check, a turn that
    ended on a question, an error, a long gap, nothing written (`files` missing), the rating's comment.
+   Compare its app/server/bridge commits and provider version with later runs before deciding an issue still exists.
 3. `diff` when what it built is in question; `stream --grep` only for what `show` leaves open (a permission turned
    down, a stop reason, what Claude Code read).
 4. Report by cause, not by run: each cause, the run ids it covers, the evidence (a quoted line), and where in the

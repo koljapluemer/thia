@@ -11,7 +11,7 @@ use serde_json::Value;
 use super::prices;
 
 /// What the index holds and how it's counted; a change rebuilds it.
-pub const VERSION: &str = "1";
+pub const VERSION: &str = "2";
 
 pub const SCHEMA: &str = r"
     DROP TABLE IF EXISTS runs;
@@ -25,6 +25,13 @@ pub const SCHEMA: &str = r"
         kind TEXT,
         purpose TEXT,
         backend TEXT,
+        app_commit TEXT,
+        app_build TEXT,
+        server_commit TEXT,
+        server_build TEXT,
+        bridge_commit TEXT,
+        bridge_version TEXT,
+        provider_version TEXT,
         models TEXT,
         billing TEXT,
         outcome TEXT,
@@ -63,6 +70,13 @@ pub struct Summary {
     pub purpose: Option<String>,
     pub backend: Option<String>,
     pub backend_label: Option<String>,
+    pub app_commit: Option<String>,
+    pub app_build: Option<String>,
+    pub server_commit: Option<String>,
+    pub server_build: Option<String>,
+    pub bridge_commit: Option<String>,
+    pub bridge_version: Option<String>,
+    pub provider_version: Option<String>,
     pub models: BTreeSet<String>,
     pub billing: BTreeSet<String>,
     pub outcome: Option<String>,
@@ -128,7 +142,10 @@ impl Summary {
         if let Some(ms) = ms && e.get("by").is_none() { self.wall_ms = Some(self.wall_ms.map_or(ms, |w| w.max(ms))); }
         let ty = e.get("type").and_then(Value::as_str).unwrap_or("");
         match ty {
-            "owner" => { if let Some(a) = s("account") { self.account = a; } }
+            "owner" => {
+                if let Some(a) = s("account") { self.account = a; }
+                self.fold_provenance(e.get("provenance"));
+            }
             "start" => {
                 if let Some(at) = s("at") { self.started = Some(at); }
                 self.draft = s("draft").or(self.draft.take());
@@ -138,7 +155,9 @@ impl Summary {
                     self.backend = b.get("id").and_then(Value::as_str).map(str::to_owned).or(self.backend.take());
                     self.backend_label = b.get("label").and_then(Value::as_str).map(str::to_owned).or(self.backend_label.take());
                 }
+                self.fold_provenance(e.get("provenance"));
             }
+            "provenance" => self.fold_provenance(e.get("provenance")),
             "text" | "tool" | "files" | "ask" => {
                 if let Some(ms) = ms { self.first_output_ms = Some(self.first_output_ms.map_or(ms, |f| f.min(ms))); }
                 if ty == "tool" { self.tools += 1; }
@@ -197,6 +216,17 @@ impl Summary {
         }
     }
 
+    fn fold_provenance(&mut self, provenance: Option<&Value>) {
+        let text = |component: &str, field: &str| provenance?.get(component)?.get(field)?.as_str().map(str::to_owned);
+        if let Some(v) = text("app", "commit") { self.app_commit = Some(v); }
+        if let Some(v) = text("app", "tag") { self.app_build = Some(v); }
+        if let Some(v) = text("server", "commit") { self.server_commit = Some(v); }
+        if let Some(v) = text("server", "tag") { self.server_build = Some(v); }
+        if let Some(v) = text("bridge", "commit") { self.bridge_commit = Some(v); }
+        if let Some(v) = text("bridge", "version") { self.bridge_version = Some(v); }
+        if let Some(v) = text("provider", "version") { self.provider_version = Some(v); }
+    }
+
     fn set_check(&mut self, seq: i64, ok: bool) {
         if self.check.is_none_or(|(at, _)| seq >= at) { self.check = Some((seq, ok)); }
     }
@@ -216,12 +246,15 @@ pub fn load(conn: &Connection, id: &str) -> rusqlite::Result<Option<(Summary, St
 pub fn save(conn: &Connection, id: &str, path: &str, s: &Summary) -> rusqlite::Result<()> {
     let join = |set: &BTreeSet<String>| if set.is_empty() { None } else { Some(set.iter().cloned().collect::<Vec<_>>().join(", ")) };
     conn.execute(
-        "INSERT OR REPLACE INTO runs (id, account, path, started, last_at, draft, kind, purpose, backend, models, billing, outcome, waiting,
+        "INSERT OR REPLACE INTO runs (id, account, path, started, last_at, draft, kind, purpose, backend,
+            app_commit, app_build, server_commit, server_build, bridge_commit, bridge_version, provider_version, models, billing, outcome, waiting,
             wall_ms, first_output_ms, requests, input, output, cache_read, cache_write, cost_usd, tools, tool_failures, check_ok,
             files_changed, errors, rating, comment, notes, summary)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30)",
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
+            ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36, ?37)",
         params![
             id, s.account, path, s.started.clone().unwrap_or_default(), s.last_at, s.draft, s.kind, s.purpose, s.backend,
+            s.app_commit, s.app_build, s.server_commit, s.server_build, s.bridge_commit, s.bridge_version, s.provider_version,
             join(&s.models), join(&s.billing), s.outcome, s.waiting, s.wall_ms, s.first_output_ms, s.requests, s.input, s.output,
             s.cache_read, s.cache_write, s.priced(), s.tools, s.tool_failures, s.check.map(|c| c.1), s.files_changed, s.errors,
             s.rating.as_ref().map(|r| r.1), s.rating.as_ref().and_then(|r| r.2.clone()), s.notes,
@@ -256,7 +289,10 @@ mod tests {
     fn folds_what_it_knows_and_counts_the_rest() {
         let mut s = Summary::default();
         for e in [
-            json!({"type": "start", "seq": 0, "ms": 0, "at": "2026-11-23T10:00:00Z", "draft": "d", "kind": "view", "purpose": "turn", "backend": {"id": "cli", "label": "Claude"}}),
+            json!({"type": "start", "seq": 0, "ms": 0, "at": "2026-11-23T10:00:00Z", "draft": "d", "kind": "view", "purpose": "turn",
+                "backend": {"id": "cli", "label": "Claude"}, "provenance": {"app": {"commit": "app1", "tag": "deploy1"}}}),
+            json!({"type": "owner", "seq": -1, "by": "server", "provenance": {"server": {"commit": "server1", "tag": "deploy1"}}}),
+            json!({"type": "provenance", "seq": 10, "provenance": {"bridge": {"commit": "bridge1", "version": "0.1.0"}, "provider": {"version": "cli 2"}}}),
             json!({"type": "usage", "seq": 1, "ms": 900, "model": "claude-opus-5-5", "input": 1_000_000, "billing": "subscription"}),
             json!({"type": "text", "seq": 2, "ms": 1000}),
             json!({"type": "something-new", "seq": 3, "ms": 1100, "whatever": [1, 2]}),
@@ -267,12 +303,14 @@ mod tests {
             json!({"type": "rating", "seq": 9, "score": 2}),
             json!({"type": "rating", "seq": 8, "score": 5}),
         ] { s.fold(&e); }
-        assert_eq!((s.events, s.requests, s.input), (10, 3, 1_000_020));
+        assert_eq!((s.events, s.requests, s.input), (12, 3, 1_000_020));
         assert_eq!((s.cost_usd, s.cost_api, s.unpriced), (4.0, 0.0, 1));
         assert_eq!((s.first_output_ms, s.wall_ms, s.outcome.as_deref()), (Some(1000), Some(2000), Some("completed")));
         assert_eq!((s.check, s.tool_failures), (Some((4, false)), 1));
         assert_eq!(s.rating, Some((9, 2, None)));
         assert_eq!(s.backend.as_deref(), Some("cli"));
+        assert_eq!((s.app_commit.as_deref(), s.server_commit.as_deref(), s.bridge_commit.as_deref(), s.provider_version.as_deref()),
+            (Some("app1"), Some("server1"), Some("bridge1"), Some("cli 2")));
     }
 
     #[test]

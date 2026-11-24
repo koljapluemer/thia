@@ -70,6 +70,14 @@ export type Usage = {
   costUsd?: number;
 };
 
+export type SoftwareBuild = { version?: string; commit?: string; tag?: string; dirty?: boolean };
+export type RunProvenance = {
+  app?: SoftwareBuild;
+  server?: SoftwareBuild;
+  bridge?: SoftwareBuild;
+  provider?: { name?: string; version?: string; model?: string };
+};
+
 /**
  * What a turn says as it goes. A backend sends what it can: `text`, `tool`, `files` and `done` are the conversation;
  * `usage`, `tool_result`, `throttle` and `trace` are for the record of the turn (`runs/`), which the chat doesn't show.
@@ -87,6 +95,8 @@ export type AgentEvent =
   /** `waiting`: the turn ended on a question; `outcome`: how the backend's own run ended, when it knows */
   | { type: 'done'; session?: string; waiting?: boolean; outcome?: 'completed' | 'failed' | 'cancelled'; exitCode?: number }
   | { type: 'error'; message: string }
+  /** Immutable software/build identity. Components add only the part they know. */
+  | { type: 'provenance'; provenance: RunProvenance }
   | ({ type: 'usage' } & Usage)
   /** how a tool call came out: whoever ran it (the page, a bridge, the server) */
   | { type: 'tool_result'; name: string; ok: boolean; ms?: number; content?: ToolContent[] }

@@ -74,6 +74,11 @@ pub enum ToPage {
         name: String,
         summary: String,
     },
+    /// A provider-native tool's result. Page tools already report their own result from the page.
+    ToolResult {
+        name: String,
+        ok: bool,
+    },
     ToolCall {
         id: String,
         name: String,
@@ -350,7 +355,7 @@ pub struct Command {
     pub mcp_config: PathBuf,
 }
 
-pub fn args(start: &Start, mcp_config: &Path) -> Vec<String> {
+pub fn args(start: &Start, mcp_config: &Path, codex: &Path) -> Vec<String> {
     let cfg: Value = std::fs::read(mcp_config)
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok())
@@ -364,25 +369,49 @@ pub fn args(start: &Start, mcp_config: &Path) -> Vec<String> {
         .as_str()
         .unwrap_or_default();
     let quoted = |s: &str| serde_json::to_string(s).unwrap_or_else(|_| "\"\"".into());
+    let mut filesystem = vec![
+        "\":root\"=\"deny\"".to_owned(),
+        "\":minimal\"=\"read\"".to_owned(),
+        "\":workspace_roots\"={\".\"=\"write\"}".to_owned(),
+        "\":tmpdir\"=\"deny\"".to_owned(),
+        "\":slash_tmp\"=\"deny\"".to_owned(),
+    ];
+    if let Some(root) = crate::codex::standalone_root(codex) {
+        filesystem.push(format!("{}=\"read\"", quoted(&root.to_string_lossy())));
+    }
     let mut a: Vec<String> = [
         "exec",
         "--json",
         "--skip-git-repo-check",
         "--ignore-user-config",
         "--ignore-rules",
+        "--strict-config",
     ]
     .map(String::from)
     .into();
-    for c in [
+    let settings = vec![
         "approval_policy=\"never\"".to_owned(),
         "default_permissions=\"gestalts-bridge\"".to_owned(),
-        "permissions.gestalts-bridge.filesystem={\":root\"=\"deny\",\":minimal\"=\"read\",\":workspace_roots\"={\".\"=\"write\"},\":tmpdir\"=\"deny\",\":slash_tmp\"=\"deny\"}".to_owned(),
+        format!(
+            "permissions.gestalts-bridge.filesystem={{{}}}",
+            filesystem.join(",")
+        ),
         "permissions.gestalts-bridge.network.enabled=false".to_owned(),
         format!("mcp_servers.{MCP_SERVER}.command={}", quoted(command)),
         format!("mcp_servers.{MCP_SERVER}.args=[\"mcp\"]"),
-        format!("mcp_servers.{MCP_SERVER}.env={{GESTALTS_BRIDGE_CALLS={},GESTALTS_BRIDGE_SECRET={}}}", quoted(calls), quoted(secret)),
+        format!(
+            "mcp_servers.{MCP_SERVER}.env={{GESTALTS_BRIDGE_CALLS={},GESTALTS_BRIDGE_SECRET={}}}",
+            quoted(calls),
+            quoted(secret)
+        ),
         format!("mcp_servers.{MCP_SERVER}.tool_timeout_sec=900"),
-    ] { a.extend(["--config".into(), c]); }
+        // This MCP server exposes only the tools supplied by the workshop page for this turn. There is no interactive
+        // approval channel in a background bridge, and the bridge still validates every call against that list.
+        format!("mcp_servers.{MCP_SERVER}.default_tools_approval_mode=\"approve\""),
+    ];
+    for c in settings {
+        a.extend(["--config".into(), c]);
+    }
     if let Some(s) = &start.system {
         a.extend([
             "--config".into(),
@@ -431,6 +460,7 @@ pub fn events_of(
     workspace: &Path,
     session: &mut Option<String>,
     failed: &mut Option<String>,
+    tool_failures: &mut usize,
 ) -> Vec<ToPage> {
     let mut out = vec![];
     match e.get("type").and_then(Value::as_str) {
@@ -451,17 +481,41 @@ pub fn events_of(
                         out.push(ToPage::Text { text: t.to_owned() });
                     }
                 }
-                Some("command_execution") => {
+                Some("command_execution") if e["type"] == "item.started" => {
                     let command = item.get("command").and_then(Value::as_str).unwrap_or("");
                     out.push(ToPage::Tool {
                         name: "shell".into(),
                         summary: command.chars().take(200).collect(),
                     });
                 }
-                Some("file_change") => out.push(ToPage::Tool {
+                Some("command_execution") if e["type"] == "item.completed" => {
+                    let ok = item.get("status").and_then(Value::as_str) != Some("failed")
+                        && item
+                            .get("exit_code")
+                            .and_then(Value::as_i64)
+                            .is_none_or(|c| c == 0);
+                    if !ok {
+                        *tool_failures += 1;
+                    }
+                    out.push(ToPage::ToolResult {
+                        name: "shell".into(),
+                        ok,
+                    });
+                }
+                Some("file_change") if e["type"] == "item.started" => out.push(ToPage::Tool {
                     name: "edit".into(),
                     summary: "workspace files".into(),
                 }),
+                Some("file_change") if e["type"] == "item.completed" => {
+                    let ok = item.get("status").and_then(Value::as_str) != Some("failed");
+                    if !ok {
+                        *tool_failures += 1;
+                    }
+                    out.push(ToPage::ToolResult {
+                        name: "edit".into(),
+                        ok,
+                    });
+                }
                 Some("mcp_tool_call") if e["type"] == "item.started" => {
                     let name = item.get("tool").and_then(Value::as_str).unwrap_or("");
                     let (name, what) = summary(
@@ -472,6 +526,19 @@ pub fn events_of(
                     out.push(ToPage::Tool {
                         name,
                         summary: what,
+                    });
+                }
+                // Successful page tools report their richer result in the page. A call rejected inside Codex never
+                // reaches the page, so surface that provider-native failure here.
+                Some("mcp_tool_call")
+                    if e["type"] == "item.completed"
+                        && item.get("status").and_then(Value::as_str) == Some("failed") =>
+                {
+                    *tool_failures += 1;
+                    let name = item.get("tool").and_then(Value::as_str).unwrap_or("mcp");
+                    out.push(ToPage::ToolResult {
+                        name: name.into(),
+                        ok: false,
                     });
                 }
                 _ => {}
@@ -511,13 +578,14 @@ pub async fn run(
     let mut failed: Option<String> = None;
     let mut cancelled = false;
     let mut exit_code = None;
+    let mut tool_failures = 0;
 
     let mut prompt = start.prompt.clone();
     if start.session.is_some() && !outside.is_empty() {
         prompt.push_str(&format!("\n\n(Changed since your last turn, outside this conversation: {}. Re-read them before relying on what you remember.)", outside.join(", ")));
     }
     let mut child = match tokio::process::Command::new(&cmd.codex)
-        .args(args(&start, &cmd.mcp_config))
+        .args(args(&start, &cmd.mcp_config, &cmd.codex))
         .current_dir(&workspace)
         .env("MCP_TOOL_TIMEOUT", "900000")
         .stdin(Stdio::piped())
@@ -554,7 +622,7 @@ pub async fn run(
             line = lines.next_line() => match line {
                 Ok(Some(line)) => match serde_json::from_str::<Value>(&line) {
                     Ok(e) => {
-                        for ev in events_of(&e, &workspace, &mut session, &mut failed) { let _ = out.send(ev); }
+                        for ev in events_of(&e, &workspace, &mut session, &mut failed, &mut tool_failures) { let _ = out.send(ev); }
                         if e.get("type").and_then(Value::as_str) == Some("turn.completed")
                             && let Some(u) = e.get("usage")
                         {
@@ -618,6 +686,11 @@ pub async fn run(
             .filter(|p| !after.contains_key(*p))
             .map(|p| (p.clone(), None)),
     );
+    if failed.is_none() && tool_failures > 0 && changed.is_empty() {
+        failed = Some(format!(
+            "Codex could not complete the turn: {tool_failures} provider tool call(s) failed and no files changed"
+        ));
+    }
     if !changed.is_empty() {
         let _ = out.send(ToPage::Files { files: changed });
     }
@@ -738,15 +811,45 @@ mod tests {
     #[test]
     fn reads_the_stream() {
         let ws = Path::new("/w");
-        let (mut session, mut failed) = (None, None);
+        let (mut session, mut failed, mut tool_failures) = (None, None, 0);
         let e = json!({"type": "thread.started", "thread_id": "s1"});
-        assert!(events_of(&e, ws, &mut session, &mut failed).is_empty());
+        assert!(events_of(&e, ws, &mut session, &mut failed, &mut tool_failures).is_empty());
         assert_eq!(session.as_deref(), Some("s1"));
         let e = json!({"type": "item.completed", "item": {"type": "agent_message", "text": "ok"}});
-        let ev = serde_json::to_value(events_of(&e, ws, &mut session, &mut failed)).unwrap();
+        let ev = serde_json::to_value(events_of(
+            &e,
+            ws,
+            &mut session,
+            &mut failed,
+            &mut tool_failures,
+        ))
+        .unwrap();
         assert_eq!(ev, json!([{"type": "text", "text": "ok"}]));
+        let e = json!({"type": "item.completed", "item": {
+            "type": "command_execution", "command": "false", "status": "failed", "exit_code": 1
+        }});
+        let ev = serde_json::to_value(events_of(
+            &e,
+            ws,
+            &mut session,
+            &mut failed,
+            &mut tool_failures,
+        ))
+        .unwrap();
+        assert_eq!(
+            ev,
+            json!([{"type": "tool_result", "name": "shell", "ok": false}])
+        );
+        assert_eq!(tool_failures, 1);
         let e = json!({"type": "turn.failed", "error": {"message": "budget"}});
-        let ev = serde_json::to_value(events_of(&e, ws, &mut session, &mut failed)).unwrap();
+        let ev = serde_json::to_value(events_of(
+            &e,
+            ws,
+            &mut session,
+            &mut failed,
+            &mut tool_failures,
+        ))
+        .unwrap();
         assert_eq!(ev, json!([]));
         assert_eq!(
             (session.as_deref(), failed.as_deref()),
@@ -763,8 +866,12 @@ mod tests {
             input_schema: json!({"type": "object"}),
         }];
         s.session = Some("s".into());
-        let a = args(&s, Path::new("/m.json"));
+        let a = args(&s, Path::new("/m.json"), Path::new("/usr/bin/codex"));
         assert!(a.windows(2).any(|w| w == ["resume", "s"]));
+        assert!(
+            a.iter()
+                .any(|x| x == "mcp_servers.gestalts.default_tools_approval_mode=\"approve\"")
+        );
         assert_eq!(a.last().map(String::as_str), Some("-"));
     }
 

@@ -32,7 +32,13 @@ p.stdin.write(json.dumps({"jsonrpc": "2.0", "method": "notifications/initialized
 tools = rpc(2, "tools/list", {})["result"]["tools"]
 out({"type": "item.started", "item": {"type": "mcp_tool_call", "server": "gestalts", "tool": tools[0]["name"], "arguments": {}}})
 r = rpc(3, "tools/call", {"name": tools[0]["name"], "arguments": {"strict": True}})["result"]
-out({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps({"tool": r, "prompt": prompt, "configured": "mcp_servers.gestalts.command=" in " ".join(args)})}})
+out({"type": "item.completed", "item": {"type": "agent_message", "text": json.dumps({
+    "tool": r,
+    "prompt": prompt,
+    "configured": "mcp_servers.gestalts.command=" in " ".join(args),
+    "approved": 'mcp_servers.gestalts.default_tools_approval_mode="approve"' in args,
+    "annotations": tools[0].get("annotations"),
+})}})
 p.stdin.close(); p.wait()
 out({"type": "turn.completed", "usage": {"input_tokens": 10, "cached_input_tokens": 2, "output_tokens": 3}})
 "#;
@@ -181,6 +187,11 @@ async fn a_turn_with_a_tool_call() {
     assert_eq!(text["tool"]["content"][0]["text"], "all good");
     assert_eq!(text["prompt"], "make it");
     assert_eq!(text["configured"], true);
+    assert_eq!(text["approved"], true);
+    assert_eq!(
+        text["annotations"],
+        json!({ "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false })
+    );
 }
 
 #[tokio::test]

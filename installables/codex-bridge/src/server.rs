@@ -166,7 +166,10 @@ pub async fn serve(
 async fn status(State(b): State<Arc<Bridge>>, headers: HeaderMap) -> Json<Value> {
     let paired = b.authorized(origin(&headers), bearer(&headers));
     Json(
-        json!({ "app": NAME, "version": env!("CARGO_PKG_VERSION"), "codex": b.codex().await, "paired": paired }),
+        json!({ "app": NAME, "version": env!("CARGO_PKG_VERSION"), "build": {
+            "commit": option_env!("GESTALTS_GIT_COMMIT"), "tag": option_env!("GESTALTS_BUILD"),
+            "dirty": option_env!("GESTALTS_GIT_DIRTY").map(|v| v == "true"),
+        }, "codex": b.codex().await, "paired": paired }),
     )
 }
 
@@ -449,7 +452,12 @@ async fn internal_tools(
     headers: HeaderMap,
 ) -> Response {
     match live(&b, &id, &headers) {
-        Ok(l) => Json(json!({ "tools": l.tools.iter().map(|t| json!({ "name": t.name, "description": t.description, "inputSchema": t.input_schema })).collect::<Vec<_>>() })).into_response(),
+        Ok(l) => Json(json!({ "tools": l.tools.iter().map(|t| json!({
+            "name": t.name,
+            "description": t.description,
+            "inputSchema": t.input_schema,
+            "annotations": if t.name == "check" { json!({ "readOnlyHint": true, "destructiveHint": false, "openWorldHint": false }) } else { Value::Null },
+        })).collect::<Vec<_>>() })).into_response(),
         Err(s) => s.into_response(),
     }
 }
