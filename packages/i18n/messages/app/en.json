@@ -254,5 +254,10 @@
   "text_parse": "It doesn’t read as a message: {error}",
   "text_missing": "It needs {list}, as the original has.",
   "text_extra": "{list} isn’t in the original.",
-  "text_not_saved": "Not saved: {error}"
+  "text_not_saved": "Not saved: {error}",
+  "text_translate": "Translate into {language}",
+  "text_translating": "Translating…",
+  "text_translate_about": "One answer from {agent}, as a machine translation: what a person wrote here stays.",
+  "text_translate_failed": "It wasn’t translated: {error}",
+  "text_skipped": "Left out, as they didn’t come back right: {list}"
 }

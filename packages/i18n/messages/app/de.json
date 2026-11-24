@@ -254,5 +254,10 @@
   "text_parse": "Das ist keine gültige Nachricht: {error}",
   "text_missing": "Es braucht {list}, wie das Original.",
   "text_extra": "{list} gibt es im Original nicht.",
-  "text_not_saved": "Nicht gespeichert: {error}"
+  "text_not_saved": "Nicht gespeichert: {error}",
+  "text_translate": "Ins {language} übersetzen",
+  "text_translating": "Wird übersetzt…",
+  "text_translate_about": "Eine Antwort von {agent}, als maschinelle Übersetzung: Was eine Person hier geschrieben hat, bleibt.",
+  "text_translate_failed": "Es wurde nicht übersetzt: {error}",
+  "text_skipped": "Ausgelassen, weil sie nicht richtig zurückkamen: {list}"
 }

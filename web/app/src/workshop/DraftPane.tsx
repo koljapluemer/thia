@@ -93,7 +93,7 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
             </>
           ) : (
             <div className="min-h-0 flex-1">
-              <TextPane repo={repo} draft={draft} lang={textLang ?? draft.lang} setLang={setTextLang} picked={picked} />
+              <TextPane repo={repo} draft={draft} backend={backend} lang={textLang ?? draft.lang} setLang={setTextLang} picked={picked} />
             </div>
           )}
         </>

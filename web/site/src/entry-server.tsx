@@ -32,9 +32,17 @@ const ENTRY = 'outline-entry-';
 const walk = (entries: OutlineTreeEntry[]): OutlineTreeEntry[] => entries.flatMap((e) => [e, ...walk(e.entries ?? [])]);
 const entryPath = (outline: string, e: OutlineTreeEntry) => `/o/${outline}/${e.id.slice(ENTRY.length)}`;
 
-/** Every page the site has: everything (in each language of the app), each view, each outline and each of its entries. */
+/**
+ * The languages of the app a view's text was read in by a person (a `reviewed` wording): each gets a page of its own,
+ * found by search engines. A machine translation is shown to whoever reads that language, but gets no page.
+ */
+export function reviewedLangs(e: Entry): string[] {
+  return [...new Set((e.plugin.wording ?? []).filter((w) => w.layer === 'reviewed').map((w) => w.lang))].filter((l) => OTHER.includes(l));
+}
+
+/** Every page the site has: everything (in each language of the app), each view (and its reviewed languages), each outline and each of its entries. */
 export function routes(trees: OutlineTree[]): string[] {
-  return ['/', ...OTHER.map((l) => langPath('/', l)), ...ENTRIES.map((e) => e.path), ...trees.flatMap((t) => [`/o/${t.name}`, ...walk(t.entries).map((e) => entryPath(t.name, e))])];
+  return ['/', ...OTHER.map((l) => langPath('/', l)), ...ENTRIES.flatMap((e) => [e.path, ...reviewedLangs(e).map((l) => langPath(e.path, l))]), ...trees.flatMap((t) => [`/o/${t.name}`, ...walk(t.entries).map((e) => entryPath(t.name, e))])];
 }
 
 /** The page at `path`, as markup; `tree` for an outline's. */
@@ -56,7 +64,10 @@ function describe(e: Entry): string {
   return `${e.title}: ${e.about}${what}`.slice(0, 300);
 }
 
-function viewHead(e: Entry, trees: OutlineTree[], base: string): Head {
+function viewHead(e: Entry, trees: OutlineTree[], base: string, lang?: string): Head {
+  const others = reviewedLangs(e);
+  const alternates = others.length ? { [e.lang]: e.path, ...Object.fromEntries(others.map((l) => [l, langPath(e.path, l)])), 'x-default': e.path } : undefined;
+  const path = lang ? langPath(e.path, lang) : e.path;
   if (!e.deck) return { title: `${e.title} · thia`, description: describe(e), lang: e.lang, path: e.path, noindex: true };
   const alignments = e.deck ? trees.flatMap((t) => closest(t.entries, e.deck!.source).map((x) => ({
     '@type': 'AlignmentObject',
@@ -68,17 +79,18 @@ function viewHead(e: Entry, trees: OutlineTree[], base: string): Head {
   return {
     title: `${e.title} · thia`,
     description: describe(e),
-    lang: e.lang,
-    path: e.path,
+    lang: lang ?? e.lang,
+    path,
+    ...(alternates ? { alternates } : {}),
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'LearningResource',
       name: e.title,
       description: describe(e),
-      ...(base ? { url: `${base}${e.path}` } : {}),
+      ...(base ? { url: `${base}${path}` } : {}),
       isAccessibleForFree: true,
       learningResourceType: 'interactive exercise',
-      inLanguage: e.lang,
+      inLanguage: lang ?? e.lang,
       ...(e.deck?.practises.length ? { teaches: e.deck.practises } : {}),
       ...(alignments.length ? { educationalAlignment: alignments } : {}),
     },
@@ -90,7 +102,7 @@ export function head(path: string, trees: OutlineTree[], base: string): Head {
   const { lang: urlLang, path: route } = splitPath(path, AVAILABLE);
   if (urlLang && route === '/') return homeHead(urlLang);
   const entry = entryAt(route);
-  if (entry) return viewHead(entry, trees, base);
+  if (entry) return viewHead(entry, trees, base, urlLang && reviewedLangs(entry).includes(urlLang) ? urlLang : undefined);
   const outline = outlineAt(path);
   const tree = outline && trees.find((t) => t.name === outline.name);
   if (outline && tree) {

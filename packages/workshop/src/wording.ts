@@ -1,7 +1,8 @@
 /**
  * Rewording a draft's text, as its maker does in the workshop (never in the use app): the agent writes the source
  * (`data/wording.yml`); the maker's own wording of a key is an `override` in its language (`wording-<lang>-override`,
- * the source's language included), and a translation is `wording-<lang>` (`machine`, then `reviewed`). Every entry is
+ * the source's language included); a model's translation is `wording-<lang>-machine`, and what a person read or wrote
+ * of a translation `wording-<lang>` (`reviewed`), which a new translation never overwrites. Every entry is
  * signed with the hash of the source text it was written against, so a changed source shows it as stale; the agent
  * can't overwrite the maker's words, and a key the agent dropped is listed, not lost.
  */
@@ -20,8 +21,8 @@ export const wordingsOf = (items: Item[]): WordingYml[] => items.flatMap((i) => 
   return wording ? [{ id: i.id, wording }] : [];
 });
 
-/** Where a language's layer is kept: one translation per language, which is `machine` until marked `reviewed`. */
-export const wordingId = (lang: string, layer: Layer) => (layer === 'override' ? `wording-${lang.toLowerCase()}-override` : `wording-${lang.toLowerCase()}`);
+/** Where a language's layer is kept. */
+export const wordingId = (lang: string, layer: Exclude<Layer, 'source'>) => `wording-${lang.toLowerCase()}${layer === 'reviewed' ? '' : `-${layer}`}`;
 
 export type Row = {
   key: string;
@@ -98,8 +99,7 @@ export async function setEntry(repo: Writer, draft: Draft, wordings: WordingYml[
   const source = wordings.find((w) => w.wording.layer === 'source')?.wording;
   const id = wordingId(lang, layer);
   const had = wordings.find((w) => w.id === id)?.wording;
-  // a translation keeps its layer (machine or reviewed); a new one written by a person is reviewed
-  const w: Wording = had ?? { lang, layer: layer === 'override' ? 'override' : 'reviewed', messages: {} };
+  const w: Wording = had ?? { lang, layer, messages: {} };
   const messages = { ...w.messages };
   if (text === null) delete messages[key];
   else messages[key] = { text, ...(source?.messages[key] ? { source: textHash(source.messages[key].text) } : {}) };
@@ -124,15 +124,23 @@ export async function dropEntry(repo: Writer, wordings: WordingYml[], id: string
   await repo.put(ymlOf(w.id, { ...w.wording, messages }));
 }
 
-/** Marks a machine translation as read by a person. */
-export async function markReviewed(repo: Writer, wordings: WordingYml[], lang: string): Promise<void> {
-  const w = wordings.find((x) => x.id === wordingId(lang, 'machine'));
-  if (w && w.wording.layer === 'machine') await repo.put(ymlOf(w.id, { ...w.wording, layer: 'reviewed' }));
+/**
+ * Marks a model's translation as read by a person: its entries go to the language's reviewed layer, where one isn't
+ * there already, and the machine layer is emptied.
+ */
+export async function markReviewed(repo: Writer, draft: Draft, wordings: WordingYml[], lang: string): Promise<void> {
+  const machine = wordings.find((x) => x.id === wordingId(lang, 'machine'))?.wording;
+  if (!machine || !Object.keys(machine.messages).length) return;
+  const id = wordingId(lang, 'reviewed');
+  const reviewed = wordings.find((x) => x.id === id)?.wording ?? { lang, layer: 'reviewed' as const, messages: {} };
+  await repo.put(ymlOf(id, { ...reviewed, messages: { ...machine.messages, ...reviewed.messages } }));
+  if (!draft.members.includes(id)) await addMembers(repo, draft, [id]);
+  await repo.put(ymlOf(wordingId(lang, 'machine'), { ...machine, messages: {} }));
 }
 
-/** Writes a whole layer (a translation made from the source): replaces what was there. */
-export async function putWording(repo: Writer, draft: Draft, w: Wording): Promise<void> {
-  const id = wordingId(w.lang, w.layer === 'override' ? 'override' : 'machine');
-  await repo.put(ymlOf(id, w));
+/** Writes a model's translation of the whole source: replaces the language's machine layer, never what a person wrote. */
+export async function putTranslation(repo: Writer, draft: Draft, w: Wording): Promise<void> {
+  const id = wordingId(w.lang, 'machine');
+  await repo.put(ymlOf(id, { ...w, layer: 'machine' }));
   if (!draft.members.includes(id)) await addMembers(repo, draft, [id]);
 }

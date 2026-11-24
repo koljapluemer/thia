@@ -5,7 +5,7 @@ import { registry } from 'virtual:gestalts-plugins';
 import type { OutlineTree, OutlineTreeEntry } from '@gestalts/host';
 import { checkTemplate, fill, playerPage } from './pages.ts';
 import { ENTRIES } from '../src/Catalog';
-import { head, render, routes } from '../src/entry-server';
+import { head, render, reviewedLangs, routes } from '../src/entry-server';
 import { loadOutline } from './test-outlines.ts';
 
 const trees: OutlineTree[] = await Promise.all((registry.outlines ?? []).map((o) => loadOutline(o.name)));
@@ -42,6 +42,15 @@ describe('the prerendered site', () => {
     const html = render(`/o/${t.name}`, t);
     expect(html).toContain('nur mit Inhalten');
     expect(html).toContain(`<h1 lang="${t.lang}"`);
+  });
+
+  test("gives a view a page in a language a person read its text in, and none for a machine's", () => {
+    const e = ENTRIES.find((x) => x.deck)!;
+    const as = (layer: 'machine' | 'reviewed') => ({ ...e, plugin: { ...e.plugin, wording: [{ lang: 'de', layer, messages: {} }] } });
+    expect(reviewedLangs(as('machine'))).toEqual([]);
+    expect(reviewedLangs(as('reviewed'))).toEqual(['de']);
+    // a German page of a view only machine-translated isn't one of the site's: it says what the view's own page says
+    expect(head(`/de${e.path}`, trees, '').lang).toBe(e.lang);
   });
 
   test('renders the catalog with its views', () => {

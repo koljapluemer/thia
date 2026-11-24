@@ -19,4 +19,5 @@ export type { CompleteRequest } from './agents/types';
 export { NO_RUN, newRun, recordRunsTo, recordedComplete, runId, sha256, startRun, type BlobRef as RunBlobRef, type Envelope, type Run, type RunEvent, type RunSink } from './runs';
 export type { Usage } from './agents/types';
 export { lineDiff, type DiffLine } from './runs/diff';
-export { dropEntry, keepEntry, markReviewed, messageProblem, putWording, type MessageProblem, rowsFor, setEntry, wordingId, wordingsOf, type Gone, type Row, type WordingYml } from './wording';
+export { dropEntry, keepEntry, markReviewed, messageProblem, putTranslation, type MessageProblem, rowsFor, setEntry, wordingId, wordingsOf, type Gone, type Row, type WordingYml } from './wording';
+export { checkTranslation, translateWording, type Term, type Translation } from './translate';
