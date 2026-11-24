@@ -11,7 +11,7 @@ use serde_json::Value;
 use super::prices;
 
 /// What the index holds and how it's counted; a change rebuilds it.
-pub const VERSION: &str = "2";
+pub const VERSION: &str = "3";
 
 pub const SCHEMA: &str = r"
     DROP TABLE IF EXISTS runs;
@@ -25,6 +25,7 @@ pub const SCHEMA: &str = r"
         kind TEXT,
         purpose TEXT,
         backend TEXT,
+        session TEXT,
         app_commit TEXT,
         app_build TEXT,
         server_commit TEXT,
@@ -70,6 +71,10 @@ pub struct Summary {
     pub purpose: Option<String>,
     pub backend: Option<String>,
     pub backend_label: Option<String>,
+    /// the backend's conversation the run was a turn of (a chat host's spans several runs)
+    pub session: Option<String>,
+    /// what the person asked, its start (the whole is in the record)
+    pub message: Option<String>,
     pub app_commit: Option<String>,
     pub app_build: Option<String>,
     pub server_commit: Option<String>,
@@ -151,6 +156,8 @@ impl Summary {
                 self.draft = s("draft").or(self.draft.take());
                 self.kind = s("kind").or(self.kind.take());
                 self.purpose = s("purpose").or(self.purpose.take());
+                self.session = s("session").or(self.session.take());
+                if let Some(m) = s("message").filter(|m| !m.trim().is_empty()) { self.message = Some(m.chars().take(300).collect()); }
                 if let Some(b) = e.get("backend") {
                     self.backend = b.get("id").and_then(Value::as_str).map(str::to_owned).or(self.backend.take());
                     self.backend_label = b.get("label").and_then(Value::as_str).map(str::to_owned).or(self.backend_label.take());
@@ -246,14 +253,14 @@ pub fn load(conn: &Connection, id: &str) -> rusqlite::Result<Option<(Summary, St
 pub fn save(conn: &Connection, id: &str, path: &str, s: &Summary) -> rusqlite::Result<()> {
     let join = |set: &BTreeSet<String>| if set.is_empty() { None } else { Some(set.iter().cloned().collect::<Vec<_>>().join(", ")) };
     conn.execute(
-        "INSERT OR REPLACE INTO runs (id, account, path, started, last_at, draft, kind, purpose, backend,
+        "INSERT OR REPLACE INTO runs (id, account, path, started, last_at, draft, kind, purpose, backend, session,
             app_commit, app_build, server_commit, server_build, bridge_commit, bridge_version, provider_version, models, billing, outcome, waiting,
             wall_ms, first_output_ms, requests, input, output, cache_read, cache_write, cost_usd, tools, tool_failures, check_ok,
             files_changed, errors, rating, comment, notes, summary)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
-            ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36, ?37)",
+            ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30, ?31, ?32, ?33, ?34, ?35, ?36, ?37, ?38)",
         params![
-            id, s.account, path, s.started.clone().unwrap_or_default(), s.last_at, s.draft, s.kind, s.purpose, s.backend,
+            id, s.account, path, s.started.clone().unwrap_or_default(), s.last_at, s.draft, s.kind, s.purpose, s.backend, s.session,
             s.app_commit, s.app_build, s.server_commit, s.server_build, s.bridge_commit, s.bridge_version, s.provider_version,
             join(&s.models), join(&s.billing), s.outcome, s.waiting, s.wall_ms, s.first_output_ms, s.requests, s.input, s.output,
             s.cache_read, s.cache_write, s.priced(), s.tools, s.tool_failures, s.check.map(|c| c.1), s.files_changed, s.errors,

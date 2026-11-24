@@ -17,7 +17,7 @@ use gestalts_fs::FsStorage;
 use serde::{Deserialize, Serialize};
 
 use crate::auth::SignedIn;
-use crate::db::Draft;
+use crate::db::{Account, Draft};
 use crate::validate::{Batch, Kind, check};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
@@ -36,12 +36,100 @@ impl AppState {
 
     /// The signed-in account's draft and its folder, or 404 for anyone else's.
     pub fn own_draft(&self, me: &SignedIn, id: &str) -> ApiResult<(Draft, FsStorage)> {
+        self.draft_of(&me.0, id)
+    }
+
+    /// The account's draft and its folder, or 404 for anyone else's.
+    pub fn draft_of(&self, account: &Account, id: &str) -> ApiResult<(Draft, FsStorage)> {
         if !valid_draft_id(id) {
             return Err(ApiError::NotFound);
         }
-        let d = self.db.draft(id, &me.0.id)?.ok_or(ApiError::NotFound)?;
+        let d = self.db.draft(id, &account.id)?.ok_or(ApiError::NotFound)?;
         let s = FsStorage::new(self.draft_dir(id));
         Ok((d, s))
+    }
+
+    /// A new, empty draft of the account's: its id (its view's or viz's), and the package its own gestalts are named
+    /// in. Its view or viz yml is written after, by whoever made it.
+    pub fn create_draft(&self, account: &Account, title: &str, kind: Kind, moved: Option<(String, String)>) -> ApiResult<Draft> {
+        let title = title.trim();
+        if title.is_empty() || title.chars().count() > 200 || title.contains('\n') {
+            return Err(ApiError::BadRequest("a title is one line, up to 200 characters".into()));
+        }
+        let limits = self.limits_for(account);
+        if self.db.count_drafts(&account.id)? >= limits.drafts_per_account {
+            return Err(ApiError::TooMany(format!("at most {} drafts: delete one first", limits.drafts_per_account)));
+        }
+        let (id, package) = match moved {
+            Some((id, package)) if valid_draft_id(&id) && valid_package(&package) => (id, package),
+            Some(_) => return Err(ApiError::BadRequest("moved: a draft's id and its package (d-<12 hex digits>)".into())),
+            None => (format!("{}-{}", slug(title), random_hex(4)), format!("d-{}", random_hex(6))),
+        };
+        if self.db.draft_taken(&id, &package)? {
+            return Err(ApiError::Conflict("a draft with this id or package is here already".into()));
+        }
+        let draft = Draft {
+            id,
+            owner: account.id.clone(),
+            school: account.school.clone(),
+            package,
+            kind: kind.as_str().into(),
+            title: title.into(),
+            created: now_iso(),
+        };
+        std::fs::create_dir_all(self.draft_dir(&draft.id)).map_err(|e| ApiError::Internal(e.to_string()))?;
+        self.db.add_draft(&draft)?;
+        Ok(draft)
+    }
+
+    /// The draft's ymls as they are, by id, without tombstones.
+    pub async fn draft_ymls(&self, s: FsStorage) -> ApiResult<BTreeMap<String, String>> {
+        blocking(move || {
+            let mut out = BTreeMap::new();
+            for id in s.list_ymls_sync()? {
+                if let Some(text) = s.read_yml_sync(&id)? && !gestalts_core::merge::is_tombstone_text(&text) {
+                    out.insert(id, text);
+                }
+            }
+            Ok(out)
+        })
+        .await
+    }
+
+    /// Writes ymls to the account's draft once all of them are fine, or none (`Invalid`, with each problem): the one
+    /// way into a draft's folder, for the browser's sync and the server's own writes alike.
+    pub async fn write_ymls(&self, account: &Account, d: &Draft, s: FsStorage, incoming: BTreeMap<String, String>) -> ApiResult<()> {
+        let kind = kind_of(d)?;
+        // one write at a time, so what's checked is what's there when it lands
+        let _guard = self.writes.lock().await;
+        let st = self.clone();
+        let (account, d2) = (account.clone(), d.clone());
+        let title = blocking(move || {
+            let d = d2;
+            let gestalts = st.gestalts_for(&account);
+            let existing: BTreeSet<String> = s.list_ymls_sync()?.into_iter().collect();
+            let mut definitions = BTreeMap::new();
+            for e in existing.iter().filter(|e| e.starts_with(DEFINITION_PREFIX) && !incoming.contains_key(*e)) {
+                if let Some(t) = s.read_yml_sync(e)? {
+                    definitions.insert(e.clone(), t);
+                }
+            }
+            let problems = check(gestalts, &st.limits_for(&account), &Batch { kind, draft: &d.id, package: &d.package, incoming: &incoming, existing: &existing, definitions: &definitions });
+            if !problems.is_empty() {
+                return Err(ApiError::Invalid(problems));
+            }
+            for (id, text) in &incoming {
+                s.write_yml_sync(id, text)?;
+            }
+            // what the list shows
+            let main = incoming.get(&d.id).map(|t| Yml::parse(d.id.clone(), t.clone()));
+            Ok(main.filter(|y| matches!(gestalts.classify(y), YmlState::Valid(g) if kind.is_main(&g))).and_then(|y| y.str_field("title").map(str::to_owned)))
+        })
+        .await?;
+        if let Some(t) = title {
+            self.db.set_draft_title(&d.id, &t)?;
+        }
+        Ok(())
     }
 }
 
@@ -103,34 +191,8 @@ async fn list(State(state): State<AppState>, me: SignedIn) -> ApiResult<Json<Vec
 /// A new, empty draft: its id (its view's or viz's), and the package its own gestalts are named in. The browser
 /// writes the view or viz yml through sync.
 async fn create(State(state): State<AppState>, me: SignedIn, Json(req): Json<NewDraft>) -> ApiResult<(StatusCode, Json<Draft>)> {
-    let title = req.title.trim();
-    if title.is_empty() || title.chars().count() > 200 || title.contains('\n') {
-        return Err(ApiError::BadRequest("a title is one line, up to 200 characters".into()));
-    }
     let kind = Kind::parse(&req.kind).ok_or_else(|| ApiError::BadRequest("kind: view, viz or sequence".into()))?;
-    let limits = state.limits_for(&me.0);
-    if state.db.count_drafts(&me.0.id)? >= limits.drafts_per_account {
-        return Err(ApiError::TooMany(format!("at most {} drafts: delete one first", limits.drafts_per_account)));
-    }
-    let (id, package) = match req.moved {
-        Some(m) if valid_draft_id(&m.id) && valid_package(&m.package) => (m.id, m.package),
-        Some(_) => return Err(ApiError::BadRequest("moved: a draft's id and its package (d-<12 hex digits>)".into())),
-        None => (format!("{}-{}", slug(title), random_hex(4)), format!("d-{}", random_hex(6))),
-    };
-    if state.db.draft_taken(&id, &package)? {
-        return Err(ApiError::Conflict("a draft with this id or package is here already".into()));
-    }
-    let draft = Draft {
-        id,
-        owner: me.0.id.clone(),
-        school: me.0.school.clone(),
-        package,
-        kind: kind.as_str().into(),
-        title: title.into(),
-        created: now_iso(),
-    };
-    std::fs::create_dir_all(state.draft_dir(&draft.id)).map_err(|e| ApiError::Internal(e.to_string()))?;
-    state.db.add_draft(&draft)?;
+    let draft = state.create_draft(&me.0, &req.title, kind, req.moved.map(|m| (m.id, m.package)))?;
     Ok((StatusCode::CREATED, Json(draft)))
 }
 
@@ -196,36 +258,7 @@ async fn read(State(state): State<AppState>, me: SignedIn, Path(id): Path<String
 /// Writes ymls once all of them are fine, or none (422 with each problem).
 async fn write(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(ymls): Json<Vec<YmlEntry>>) -> ApiResult<StatusCode> {
     let (d, s) = state.own_draft(&me, &id)?;
-    let kind = kind_of(&d)?;
-    // one write at a time, so what's checked is what's there when it lands
-    let _guard = state.writes.lock().await;
-    let st = state.clone();
-    let account = me.0;
-    let title = blocking(move || {
-        let gestalts = st.gestalts_for(&account);
-        let incoming: BTreeMap<String, String> = ymls.into_iter().map(|y| (y.id, y.text)).collect();
-        let existing: BTreeSet<String> = s.list_ymls_sync()?.into_iter().collect();
-        let mut definitions = BTreeMap::new();
-        for e in existing.iter().filter(|e| e.starts_with(DEFINITION_PREFIX) && !incoming.contains_key(*e)) {
-            if let Some(t) = s.read_yml_sync(e)? {
-                definitions.insert(e.clone(), t);
-            }
-        }
-        let problems = check(gestalts, &st.limits_for(&account), &Batch { kind, draft: &d.id, package: &d.package, incoming: &incoming, existing: &existing, definitions: &definitions });
-        if !problems.is_empty() {
-            return Err(ApiError::Invalid(problems));
-        }
-        for (id, text) in &incoming {
-            s.write_yml_sync(id, text)?;
-        }
-        // what the list shows
-        let main = incoming.get(&d.id).map(|t| Yml::parse(d.id.clone(), t.clone()));
-        Ok(main.filter(|y| matches!(gestalts.classify(y), YmlState::Valid(g) if kind.is_main(&g))).and_then(|y| y.str_field("title").map(str::to_owned)))
-    })
-    .await?;
-    if let Some(t) = title {
-        state.db.set_draft_title(&id, &t)?;
-    }
+    state.write_ymls(&me.0, &d, s, ymls.into_iter().map(|y| (y.id, y.text)).collect()).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

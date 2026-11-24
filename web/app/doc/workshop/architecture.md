@@ -24,6 +24,10 @@ web/app/src/workshop/
                              through their bridges, Ollama through its bridge (experimental), Gemini's free tier
   api.ts                     the server's API
   runs.ts                    where the agents' runs are recorded: the server's (runs.md)
+  host.tsx, Connect.tsx      a chat app working on a draft over MCP (web/server/doc/mcp.md): the draft syncs every
+                             few seconds while it does, the preview's errors go to the server for its check, its
+                             requests are listed to rate; Connect is where the person allows the app (/workshop/connect),
+                             Settings where they find the address and disconnect it
 
 packages/workshop/           shared by the panes:
   draft.ts, viz.ts           a view's draft as ymls (`view@3` and its members), a viz as its `viz@1` yml

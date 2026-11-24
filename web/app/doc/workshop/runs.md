@@ -3,7 +3,10 @@
 Every agent turn in the workshop is recorded, whichever backend runs it (the server's, Claude Code or Codex through their
 bridge, Ollama through the Ollama bridge, Gemini in the page), so the agents can be compared and improved from what
 they actually did. The page records, since every turn passes through it (`runTurn`, `packages/workshop/src/turns.ts`);
-the server keeps the record (`web/server/src/runs/`); admins read it in `/runs`.
+the server keeps the record (`web/server/src/runs/`); admins read it in `/runs`. A chat app working over MCP
+(`web/server/doc/mcp.md`, backend `mcp`) doesn't pass through a page: the server records each of its requests
+itself, in the same format (`runs/server_run.rs`), with the server's seqs from 0 as the page's would be. Its runs
+have no `usage`, since the app doesn't say what its model used.
 
 ## What a backend sends
 
@@ -35,7 +38,8 @@ own `ms`, a tool's or a request's duration, is kept as `took`). The page adds it
 - `saved`: what saving refused of what came back; `settled`: what the kind's own check said after the turn
 - `end`: `outcome` (`completed`, `failed`, `stopped`) and `waiting` (the turn ended on a question)
 - `rating`: `score` 1–5 and `comment`, from the row after the turn in the chat ("How good was this?"); rating again
-  adds a newer one, the latest counts
+  adds a newer one, the latest counts. A chat app's runs are rated from the draft's list of them
+  (`POST /api/runs/{id}/rating`, which gives the rating the run's next seq)
 
 Contents go to blobs by sha256, `{$blob, bytes}` in place of the text: the files sent and changed, images, tool
 results over 4 KB, and any text over 16 KB. A draft's files and the template barely change from turn to turn, so a
@@ -65,7 +69,8 @@ it is, the first line) and `note` (an admin's). Blobs: `POST /api/runs/blobs/mis
 The server's `owner` event adds `provenance.server`. A build has a full Git `commit`, optional deployment `tag`,
 package `version` where applicable, and `dirty` for a local build; no checkout or machine paths are recorded.
 
-The index (`runs/index.rs`) is one row per run, folded from its lines: times (wall, first output), outcome, models,
+The index (`runs/index.rs`) is one row per run, folded from its lines: times (wall, first output), outcome, the
+backend's conversation (`session`: a chat app's spans several runs), models,
 tokens, cost, tool calls and failures, the last check, files changed, errors, the latest rating, notes. Unknown event
 types count as events and no more. It also extracts app/server/bridge commits and build tags and provider version so
 runs from before and after a deployment can be separated without opening every record. Cost is derived, never recorded: tokens × Anthropic's list prices in
@@ -79,7 +84,7 @@ included, is a change of `index::VERSION`: the server rebuilds the index from th
 An admin area (`web/app/src/runs/`). What's picked is kept in the address, so a view can be linked.
 
 - **Filters:** period, backend, model, kind, purpose, outcome, rated, draft.
-- **Summary**, by backend, model, kind, purpose, day, draft, component commit or provider version: runs, completed, the check passed, wall time (median,
+- **Summary**, by backend, model, kind, purpose, day, draft, session, component commit or provider version: runs, completed, the check passed, wall time (median,
   p90), first output, requests, tokens, cache, cost paid and notional, the mean rating and how many rated, tool
   failures.
 - **The runs**, newest first, a page at a time.
@@ -97,7 +102,7 @@ into runs (the project skill `.claude/skills/runs/SKILL.md` says how to go about
 runs …` (on `server-data/`); on the box `sudo -u thia /opt/thia-server/current/bin/thia-server --data
 /var/lib/thia-server admin runs …`.
 
-- `list` and `summary [--by …]` take the filters of `/runs`, `--since` also as `7d`, `--rating-min/--rating-max`, and
+- `list` and `summary [--by …]` take the filters of `/runs`, `--since` also as `7d`, `--session`, `--rating-min/--rating-max`, and
   `--app-commit`, `--server-commit`, `--bridge-commit`, or `--provider-version`
   (the latest rating; `rating_min`/`rating_max` on `/api/admin/runs` too); `--json` for the index's rows
 - `show <id>`: the run without its raw stream, long texts cut (`--full` keeps them): its facts, what it was sent, the

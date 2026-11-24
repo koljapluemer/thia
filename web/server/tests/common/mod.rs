@@ -74,6 +74,22 @@ impl Server {
         (status, serde_json::from_slice(&bytes).unwrap_or(Value::Null), set_cookie)
     }
 
+    /// Any request: its headers, and a body with its content type; answered with status, headers and JSON (or null).
+    pub async fn raw(&self, method: &str, path: &str, headers: &[(&str, &str)], body: Option<(&str, String)>) -> (StatusCode, axum::http::HeaderMap, Value) {
+        let mut req = Request::builder().method(method).uri(path);
+        for (k, v) in headers {
+            req = req.header(*k, *v);
+        }
+        let req = match body {
+            Some((ty, b)) => req.header(header::CONTENT_TYPE, ty).body(Body::from(b)).unwrap(),
+            None => req.body(Body::empty()).unwrap(),
+        };
+        let res = thia_server::app(self.state.clone()).oneshot(req).await.unwrap();
+        let (status, headers) = (res.status(), res.headers().clone());
+        let bytes = res.into_body().collect().await.unwrap().to_bytes();
+        (status, headers, serde_json::from_slice(&bytes).unwrap_or(Value::Null))
+    }
+
     /// A request with a body of bytes, answered with bytes: blobs, exports.
     pub async fn bytes(&self, method: &str, path: &str, cookie: &str, body: Vec<u8>) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
         let req = Request::builder().method(method).uri(path).header(header::COOKIE, cookie).body(Body::from(body)).unwrap();

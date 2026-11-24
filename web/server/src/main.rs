@@ -210,9 +210,17 @@ async fn run(cli: Cli) -> Result<(), String> {
                 eprintln!("no ANTHROPIC_API_KEY: the agent is off");
             }
             let state = AppState::new(db, cli.data, limits, !insecure_cookies, services)?;
+            // a chat host's run ends when no call comes for it a while, whether or not another call comes at all
+            let sweeping = state.clone();
+            tokio::spawn(async move {
+                loop {
+                    tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+                    sweeping.mcp.sweep(&sweeping).await;
+                }
+            });
             let app_listener = tokio::net::TcpListener::bind(app).await.map_err(|e| format!("{app}: {e}"))?;
             let lesson_listener = tokio::net::TcpListener::bind(lessons).await.map_err(|e| format!("{lessons}: {e}"))?;
-            eprintln!("app API on http://{app}/api, lessons on http://{lessons}");
+            eprintln!("app API on http://{app}/api (MCP at /mcp), lessons on http://{lessons}");
             let a = axum::serve(app_listener, thia_server::app(state.clone()));
             let l = axum::serve(lesson_listener, thia_server::lessons(state));
             tokio::select! {

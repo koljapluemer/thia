@@ -34,7 +34,7 @@ fn verify_password(password: &str, hash: &str) -> bool {
     PasswordHash::new(hash).is_ok_and(|h| Argon2::default().verify_password(password.as_bytes(), &h).is_ok())
 }
 
-fn token_hash(token: &str) -> String {
+pub(crate) fn token_hash(token: &str) -> String {
     Sha256::digest(token.as_bytes()).iter().map(|b| format!("{b:02x}")).collect()
 }
 

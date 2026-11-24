@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Copy, X } from 'lucide-react';
 import { useLang, type Messages } from '@gestalts/i18n';
 import { GEMINI_KEY_PAGE, codexBackend, geminiBackend, ollamaBackend, type AgentBackend } from '@gestalts/workshop';
+import * as api from './api';
 import { DEFAULT_CODEX_NODE, DEFAULT_NODE, DEFAULT_OLLAMA_NODE, cliAgent, nodeProblem, type AgentChoice, type AgentId } from './agent';
 
 /** What the address field says for each bridge. */
@@ -82,6 +83,7 @@ export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onS
             ))}
           </ul>
           {!order.some((o) => o.on) && <p className="text-error">{m.settings_one_on()}</p>}
+          <ChatApps />
         </div>
         <div className="modal-action m-0 border-t border-base-300 px-5 py-3">
           <button type="button" className="btn btn-sm btn-ghost" onClick={onClose}>{m.cancel()}</button>
@@ -168,5 +170,48 @@ function Node({ bridge, node, setNode, problem }: { bridge: BridgeText; node: st
         {m.bridge_asks({ start: bridge.start })}
       </p>
     </div>
+  );
+}
+
+/** Using thia from a chat app (Claude, over MCP): the address to add there, and the apps allowed, to disconnect. */
+function ChatApps() {
+  const { m, lang } = useLang();
+  const [list, setList] = useState<api.Connection[]>();
+  const [error, setError] = useState<string>();
+  const [copied, setCopied] = useState(false);
+  const url = api.mcpUrl();
+  const load = () => api.connections().then(setList, (e: unknown) => setError(e instanceof Error ? e.message : String(e)));
+  useEffect(() => { void load(); }, []);
+  const copy = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  const drop = async (client: string) => {
+    try { await api.disconnect(client); } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    await load();
+  };
+  return (
+    <section className="mt-4 flex flex-col gap-2">
+      <h3 className="font-medium">{m.settings_host()}</h3>
+      <p className="text-base-content/60">{m.settings_host_about()}</p>
+      <div className="flex gap-1">
+        <input className="input input-sm min-w-0 flex-1 font-mono" readOnly value={url} onFocus={(e) => e.target.select()} />
+        <button type="button" className="btn btn-sm btn-square" onClick={() => void copy()} title={m.copy()} aria-label={m.copy()}>{copied ? <Check className="size-4" /> : <Copy className="size-4" />}</button>
+      </div>
+      <p className="text-base-content/60">{m.settings_host_where()}</p>
+      {error && <p role="alert" className="text-error">{error}</p>}
+      {list?.length === 0 && <p className="text-base-content/60">{m.settings_host_none()}</p>}
+      {list && list.length > 0 && (
+        <ul className="rounded-box border border-base-300">
+          {list.map((c) => (
+            <li key={c.client} className="flex items-center gap-3 p-3 not-last:border-b not-last:border-base-300">
+              <span className="flex-1"><span className="font-medium">{c.name}</span> <span className="text-base-content/60">{m.settings_host_since({ date: new Date(c.since).toLocaleDateString(lang) })}</span></span>
+              <button type="button" className="btn btn-sm" onClick={() => void drop(c.client)}>{m.disconnect()}</button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

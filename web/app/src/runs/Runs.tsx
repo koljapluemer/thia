@@ -150,7 +150,7 @@ function Summary({ filter, by, onBy, stamp }: { filter: api.Filter; by: string; 
       <div className="mb-2 flex items-center gap-2">
         <span className="font-semibold">Summary by</span>
         <select className="select select-sm w-auto" value={by} onChange={(e) => onBy(e.target.value)}>
-          {['backend', 'model', 'kind', 'purpose', 'day', 'draft', 'app-commit', 'server-commit', 'bridge-commit', 'provider-version']
+          {['backend', 'model', 'kind', 'purpose', 'day', 'draft', 'session', 'app-commit', 'server-commit', 'bridge-commit', 'provider-version']
             .map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
         {data && <span className="text-base-content/60">{data.rows} run(s){data.capped ? ', the newest only' : ''}; prices as of {data.pricesAsOf}</span>}
@@ -359,6 +359,7 @@ function Detail({ id, onClose, onDraft }: { id: string; onClose: () => void; onD
         <Fact label="started">{new Date(r.started).toLocaleString()}</Fact>
         <Fact label="draft">{r.draft ? <button type="button" className="link font-mono" onClick={() => onDraft(r.draft!)}>{r.draft}</button> : '—'} {r.kind ? `(${r.kind})` : ''}</Fact>
         <Fact label="backend">{data.backendLabel ?? r.backend ?? '—'}</Fact>
+        <Fact label="session">{r.session ? <span className="font-mono">{r.session}</span> : '—'}</Fact>
         <Fact label="models">{r.models ?? '—'}</Fact>
         <Fact label="app build">{build(r.appCommit, r.appBuild)}</Fact>
         <Fact label="server build">{build(r.serverCommit, r.serverBuild)}</Fact>

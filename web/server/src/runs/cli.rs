@@ -19,9 +19,12 @@ pub struct Which {
     /// before this day or time
     #[arg(long)]
     until: Option<String>,
-    /// the backend's id: claude-cli, ollama, gemini, server
+    /// the backend's id: claude-cli, codex-cli, ollama, gemini, server, mcp
     #[arg(long)]
     backend: Option<String>,
+    /// the backend's conversation (a chat host's spans several runs)
+    #[arg(long)]
+    session: Option<String>,
     #[arg(long)]
     app_commit: Option<String>,
     #[arg(long)]
@@ -66,7 +69,7 @@ pub enum Command {
         #[arg(long)]
         json: bool,
     },
-    /// The runs summed by backend, model, kind, purpose, day, draft, a component commit or provider version
+    /// The runs summed by backend, model, kind, purpose, day, draft, session, a component commit or provider version
     Summary {
         #[command(flatten)]
         which: Which,
@@ -119,6 +122,7 @@ impl Which {
             since: self.since.map(|s| since(&s, crate::now_ms())),
             until: self.until,
             backend: self.backend,
+            session: self.session,
             app_commit: self.app_commit,
             server_commit: self.server_commit,
             bridge_commit: self.bridge_commit,

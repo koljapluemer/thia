@@ -1,6 +1,6 @@
 ---
 name: runs
-description: Investigate recorded workshop agent runs (Claude bridge, Ollama, Gemini, the server's agent) - find runs by backend, model, outcome, rating or time, and work out what went wrong or how backends compare. Use for "look at the bad runs", "why did claude fail on X", "compare backends this week", a run id, or /runs.
+description: Investigate recorded workshop agent runs (Claude bridge, Codex bridge, Ollama, Gemini, the server's agent, chat apps over MCP) - find runs by backend, model, outcome, rating or time, and work out what went wrong or how backends compare. Use for "look at the bad runs", "why did claude fail on X", "compare backends this week", a run id, or /runs.
 ---
 
 # Investigating agent runs
@@ -15,14 +15,21 @@ Every workshop turn is recorded (`web/app/doc/workshop/runs.md` says what each e
   for it. The commands exist on the box only once a deploy with them went out; if `runs` is unknown there, say so.
 - **Local** (dev runs): `mise run server:admin runs …`, or the built `target/debug/thia-server --data server-data admin runs …`.
 
-Backend ids: `claude-cli` (Claude Code through the bridge), `ollama`, `gemini`, `server`.
+Backend ids: `claude-cli` (Claude Code through the bridge), `codex-cli`, `ollama`, `gemini`, `server`, `mcp` (a chat
+app such as claude.ai working on drafts over MCP, `web/server/doc/mcp.md`).
+
+`mcp` runs are recorded by the server, one per request the app opened (`message` is the request; `implicit` when it
+didn't open the draft first), and end by `finish`, the next request, idleness or the session's end (`ended` on `end`).
+They have no usage: tokens and cost are empty, so compare them by check passed, tool failures, refused writes
+(`saved`), wall time and rating. One conversation spans several runs: `--session`, `--by session`. The app and its
+version are `backend.label` and the provider version.
 
 ## Commands
 
-- `summary [filters] [--by backend|model|kind|purpose|day|draft|app-commit|server-commit|bridge-commit|provider-version]`:
+- `summary [filters] [--by backend|model|kind|purpose|day|draft|session|app-commit|server-commit|bridge-commit|provider-version]`:
   counts, outcomes, check, wall time, rating, cost
 - `list [filters] [--limit N] [--json]`: one line a run, newest first
-- filters: `--since 7d|2026-11-16 --until … --backend … --model … --kind … --purpose turn|complete --outcome
+- filters: `--since 7d|2026-11-16 --until … --backend … --session … --model … --kind … --purpose turn|complete --outcome
   completed|failed|stopped --rated yes|no --rating-min N --rating-max N --draft … --app-commit … --server-commit …
   --bridge-commit … --provider-version …`
 - `show <id> [--full]`: facts, what it was sent (message, brief, file names), the timeline: texts, tool calls, tool
@@ -43,6 +50,7 @@ Backend ids: `claude-cli` (Claude Code through the bridge), `ollama`, `gemini`, 
    down, a stop reason, what Claude Code read).
 4. Report by cause, not by run: each cause, the run ids it covers, the evidence (a quoted line), and where in the
    code it comes from when you can tell (the bridge `installables/claude-bridge/`, the page's tools
-   `packages/workshop/src/agents/`, the template `packages/workshop/agent-template/`). Say how many runs you read
+   `packages/workshop/src/agents/`, the template `packages/workshop/agent-template/`, the server's drafting tools and
+   MCP `web/server/src/drafting/`, `web/server/src/mcp/`). Say how many runs you read
    and which you didn't.
 5. Offer notes on the runs (the user decides), so what you found shows in `/runs`.

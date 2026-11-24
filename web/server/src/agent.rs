@@ -18,7 +18,7 @@
 //! conversation is kept on disk (`agent/<draft>.json`), open question and all.
 
 use std::collections::{BTreeMap, HashMap};
-use std::path::{Path as FsPath, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -32,6 +32,10 @@ use serde_json::{Value, json};
 use tokio::sync::Notify;
 
 use crate::auth::SignedIn;
+use crate::drafting::contract::MAX_READ_BYTES;
+use crate::drafting::workbench::{api_content, page_content, summary};
+use crate::drafting::{SERVER_AGENT, ToolOut, Workspace};
+pub use crate::drafting::{KindRef, Reference};
 use crate::{ApiError, ApiResult, AppState, now_iso, random_hex};
 
 pub const MODEL: &str = "claude-opus-5-5";
@@ -44,15 +48,6 @@ const EVENT_POLL: Duration = Duration::from_secs(20);
 const FINISHED_KEEP: Duration = Duration::from_secs(600);
 /// how long a conversation is kept after its last turn: an open question may wait that long for its answer
 const SESSION_KEEP: Duration = Duration::from_secs(7 * 24 * 3600);
-/// the `ask` tool, as the bridge's agent has it too
-const ASK: &str = include_str!("../../../packages/workshop/agent-template/ask.json");
-const MAX_FILE_BYTES: usize = 512 * 1024;
-const MAX_READ_BYTES: usize = 200 * 1024;
-
-/// Who the agent makes things for, before any kind's contract: the same text the Claude bridge's agent gets.
-const BRIEF: &str = include_str!("../../../packages/workshop/agent-template/brief.md");
-const VIEW_KIND: &str = include_str!("../../../packages/workshop/agent-template/kinds/view.json");
-const VIZ_KIND: &str = include_str!("../../../packages/workshop/agent-template/kinds/viz.json");
 
 /// How a visualization's check renders it here (`GESTALTS_VIZ_RENDER`): headless Chromium in the worker, or handed to
 /// the workshop page the turn was started from, as the Claude bridge hands every tool to it.
@@ -71,289 +66,6 @@ impl std::str::FromStr for VizRender {
             "page" => Ok(VizRender::Page),
             other => Err(format!("GESTALTS_VIZ_RENDER: worker or page, not {other}")),
         }
-    }
-}
-
-/// What the agent works on and with for one kind of draft. `agent-template/kinds/<kind>.json` is shared with the page:
-/// what it's told about the kind, which paths are the draft, the check's description. The rest is this agent's own,
-/// as its file tools are (the CLI has its own): what it may read besides the draft, and how those tools are described.
-pub struct KindRef {
-    kind: &'static str,
-    told: String,
-    keep: regex::Regex,
-    check: String,
-    contract: PathBuf,
-    /// readable, not writable: a path prefix and the folder it is
-    mounts: Vec<(String, PathBuf)>,
-    /// what may be deleted (prefixes of the draft's paths)
-    deletable: &'static [&'static str],
-    /// what the draft is and what else may be read, for the tools' paragraph
-    draft_files: &'static str,
-    readable: &'static str,
-    example_path: &'static str,
-}
-
-impl KindRef {
-    fn new(kind: &'static str, json: &str, contract: PathBuf, mounts: Vec<(String, PathBuf)>) -> Self {
-        let v: Value = serde_json::from_str(json).expect("the kind's json is JSON");
-        let s = |k: &str| v[k].as_str().unwrap_or_else(|| panic!("{kind}.json: no {k}")).to_owned();
-        let keep = regex::Regex::new(&format!("^(?:{})$", s("keep"))).expect("the kind's keep is a regex");
-        let (deletable, draft_files, readable, example_path): (&[&str], _, _, _) = match kind {
-            "view" => (&["gestalts/", "data/"], "`view.tsx`, `view.json`, `gestalts/` and `data/`", "`SPEC.md`, the kit's sources (`node_modules/@gestalts/<package>/src/…`) and `examples/`", "e.g. view.tsx, gestalts/noun@1.yml, data/haus.yml, examples/noun-gender/view.tsx"),
-            _ => (&[], "`viz.ts` and `package.json`", "`SPEC.md`, `files/`, `@gestalts/viz`'s sources (`viz-sources/`) and `examples/`", "e.g. viz.ts, package.json, SPEC.md, files/data.csv, viz-sources/marks.ts"),
-        };
-        KindRef { kind, told: s("system"), keep, check: s("check"), contract, mounts, deletable, draft_files, readable, example_path }
-    }
-
-    pub fn is_draft_file(&self, path: &str) -> bool {
-        self.keep.is_match(path)
-    }
-
-    /// The brief, how this agent's tools work, the kind's instructions and its contract. Fixed text, so it caches.
-    fn system(&self) -> Result<String, String> {
-        let contract = std::fs::read_to_string(&self.contract).map_err(|e| format!("the {} agent's contract ({}): {e}", self.kind, self.contract.display()))?;
-        let delete = if self.deletable.is_empty() { "" } else { ", `delete_file`" };
-        let tools = format!(
-            "Here the folder below is not a disk: you work on the draft's files through tools. `read_file`, `write_file`, \
-             `edit_file`{delete} and `list_files` work on {}; {} can be read and listed, not written; `search` finds text \
-             in all of them; `check` is the contract's check. There is no shell.",
-            self.draft_files, self.readable
-        );
-        Ok(format!("{}\n\n{tools}\n\n{}\n\n{contract}", BRIEF.trim(), self.told))
-    }
-
-    fn tools(&self) -> Value {
-        let path = json!({ "type": "string", "description": self.example_path });
-        let mut tools = vec![
-            json!({ "name": "list_files", "description": "Lists the draft's files and what may be read besides, or with `path` a folder of what may be read.",
-              "input_schema": { "type": "object", "properties": { "path": path }, "additionalProperties": false } }),
-            json!({ "name": "read_file", "description": "Reads a file of the draft, or one that may be read besides.",
-              "input_schema": { "type": "object", "properties": { "path": path }, "required": ["path"], "additionalProperties": false } }),
-            json!({ "name": "write_file", "description": format!("Writes a whole file of the draft: {}.", self.draft_files),
-              "input_schema": { "type": "object", "properties": { "path": path, "content": { "type": "string" } }, "required": ["path", "content"], "additionalProperties": false } }),
-            json!({ "name": "edit_file", "description": "Replaces `old_string` with `new_string` in a file of the draft. `old_string` must occur exactly once, unless `replace_all`.",
-              "input_schema": { "type": "object", "properties": { "path": path, "old_string": { "type": "string" }, "new_string": { "type": "string" }, "replace_all": { "type": "boolean" } }, "required": ["path", "old_string", "new_string"], "additionalProperties": false } }),
-        ];
-        if !self.deletable.is_empty() {
-            tools.push(json!({ "name": "delete_file", "description": format!("Deletes a file of the draft under {}.", self.deletable.join(" or ")),
-              "input_schema": { "type": "object", "properties": { "path": path }, "required": ["path"], "additionalProperties": false } }));
-        }
-        tools.push(json!({ "name": "search", "description": "Finds lines containing `text` (case-insensitive) in the draft and in what may be read; `path` limits it to a folder or file.",
-          "input_schema": { "type": "object", "properties": { "text": { "type": "string" }, "path": path }, "required": ["text"], "additionalProperties": false } }));
-        tools.push(json!({ "name": "check", "description": self.check, "input_schema": { "type": "object", "properties": {}, "additionalProperties": false } }));
-        tools.push(serde_json::from_str::<Value>(ASK).expect("ask.json is JSON"));
-        Value::Array(tools)
-    }
-
-    /// A path under one of the readable folders, as a file there, or `None`.
-    fn resolve(&self, path: &str) -> Option<PathBuf> {
-        if path.split('/').any(|p| p == ".." || p.is_empty() || p == ".") {
-            return None;
-        }
-        self.mounts.iter().find_map(|(prefix, dir)| {
-            if path == prefix {
-                Some(dir.clone())
-            } else {
-                path.strip_prefix(&format!("{prefix}/")).map(|rest| dir.join(rest))
-            }
-        })
-    }
-
-    fn read(&self, path: &str) -> Option<String> {
-        let p = self.resolve(path)?;
-        let meta = std::fs::metadata(&p).ok()?;
-        if !meta.is_file() || meta.len() as usize > MAX_READ_BYTES {
-            return None;
-        }
-        std::fs::read_to_string(p).ok()
-    }
-
-    fn list(&self, path: &str) -> Option<Vec<String>> {
-        let p = self.resolve(path)?;
-        let mut out: Vec<String> = std::fs::read_dir(p).ok()?.flatten().map(|e| {
-            let name = e.file_name().to_string_lossy().into_owned();
-            if e.path().is_dir() { format!("{path}/{name}/") } else { format!("{path}/{name}") }
-        }).collect();
-        out.sort();
-        Some(out)
-    }
-
-    /// Every file under the readable folders, for searching.
-    fn files(&self) -> Vec<String> {
-        fn walk(dir: &FsPath, rel: &str, out: &mut Vec<String>, depth: usize) {
-            let Ok(entries) = std::fs::read_dir(dir) else { return };
-            for e in entries.flatten() {
-                let name = e.file_name().to_string_lossy().into_owned();
-                let r = format!("{rel}/{name}");
-                if e.path().is_dir() {
-                    if depth < 8 && name != "node_modules" { walk(&e.path(), &r, out, depth + 1); }
-                } else if [".ts", ".tsx", ".json", ".yml", ".md"].iter().any(|x| name.ends_with(x)) && !name.contains(".test.") {
-                    out.push(r);
-                }
-            }
-        }
-        let mut out = Vec::new();
-        for (prefix, dir) in &self.mounts {
-            walk(dir, prefix, &mut out, 0);
-        }
-        out.sort();
-        out
-    }
-}
-
-/// Where the agent reads what it works against, by kind. A view's: the agent template, which links the packages'
-/// sources. A viz's: `@gestalts/viz` (`packages/viz`, beside the template's package).
-pub struct Reference {
-    view: KindRef,
-    viz: KindRef,
-}
-
-impl Reference {
-    pub fn new(template: PathBuf) -> Self {
-        let mut view_mounts = vec![("examples".to_owned(), template.join("examples"))];
-        for p in ["view", "kit", "learning", "sources"] {
-            let root = format!("node_modules/@gestalts/{p}/src");
-            view_mounts.push((root.clone(), template.join(&root)));
-        }
-        let viz = template.join("../../viz");
-        let viz_mounts = vec![("examples".to_owned(), viz.join("examples")), ("viz-sources".to_owned(), viz.join("src"))];
-        Reference {
-            view: KindRef::new("view", VIEW_KIND, template.join("CLAUDE.md"), view_mounts),
-            viz: KindRef::new("viz", VIZ_KIND, viz.join("agent/CLAUDE.md"), viz_mounts),
-        }
-    }
-
-    /// The kind of draft the agent works on, if it works on it (a lesson of several views it only plans).
-    pub fn kind(&self, kind: &str) -> Option<&KindRef> {
-        match kind {
-            "view" => Some(&self.view),
-            "viz" => Some(&self.viz),
-            _ => None,
-        }
-    }
-}
-
-/// A tool's result for the model: its content (a text, or text and images), and whether it failed.
-type ToolOut = (Value, bool);
-
-/// The draft's files during a turn, and what the turn may read besides.
-struct Workspace<'a> {
-    files: BTreeMap<String, String>,
-    /// read-only: the brief (`SPEC.md`), a viz's `files/` as text where they are
-    extra: BTreeMap<String, String>,
-    gestalts: &'a [String],
-    kind: &'a KindRef,
-}
-
-impl Workspace<'_> {
-    /// What a file tool did, as its result text, or an error the model sees. `check` is the turn's (`check`).
-    fn run(&mut self, name: &str, input: &Value) -> Result<String, String> {
-        let s = |k: &str| input.get(k).and_then(Value::as_str);
-        let need = |k: &str| s(k).ok_or_else(|| format!("`{k}` is missing"));
-        match name {
-            "list_files" => match s("path").filter(|p| !p.is_empty() && *p != ".") {
-                None => Ok(self.files.keys().chain(self.extra.keys()).cloned().collect::<Vec<_>>().join("\n")),
-                Some(p) => {
-                    let p = p.trim_end_matches('/');
-                    let mine: Vec<String> = self.files.keys().chain(self.extra.keys()).filter(|f| f.starts_with(&format!("{p}/"))).cloned().collect();
-                    if !mine.is_empty() || self.kind.deletable.iter().any(|d| d.trim_end_matches('/') == p) {
-                        return Ok(mine.join("\n"));
-                    }
-                    self.kind.list(p).map(|l| l.join("\n")).ok_or_else(|| format!("{p}: no such folder here"))
-                }
-            },
-            "read_file" => {
-                let p = need("path")?;
-                self.files.get(p).or_else(|| self.extra.get(p)).cloned().or_else(|| self.kind.read(p)).ok_or_else(|| format!("{p}: no such file"))
-            }
-            "write_file" => {
-                let (p, content) = (need("path")?, need("content")?);
-                if !self.kind.is_draft_file(p) {
-                    return Err(format!("{p}: only {} can be written", self.kind.draft_files));
-                }
-                if content.len() > MAX_FILE_BYTES {
-                    return Err(format!("{p}: longer than {MAX_FILE_BYTES} bytes"));
-                }
-                self.files.insert(p.to_owned(), content.to_owned());
-                Ok(format!("wrote {p}"))
-            }
-            "edit_file" => {
-                let (p, old, new) = (need("path")?, need("old_string")?, need("new_string")?);
-                let all = input.get("replace_all").and_then(Value::as_bool).unwrap_or(false);
-                let text = self.files.get(p).ok_or_else(|| format!("{p}: no such file in the draft"))?;
-                let n = text.matches(old).count();
-                if old.is_empty() || n == 0 {
-                    return Err(format!("{p}: old_string isn't there; read the file again"));
-                }
-                if n > 1 && !all {
-                    return Err(format!("{p}: old_string is there {n} times; give more context, or replace_all"));
-                }
-                let next = if all { text.replace(old, new) } else { text.replacen(old, new, 1) };
-                if next.len() > MAX_FILE_BYTES {
-                    return Err(format!("{p}: longer than {MAX_FILE_BYTES} bytes"));
-                }
-                self.files.insert(p.to_owned(), next);
-                Ok(format!("edited {p}"))
-            }
-            "delete_file" => {
-                let p = need("path")?;
-                if !self.kind.deletable.iter().any(|d| p.starts_with(d)) || self.files.remove(p).is_none() {
-                    return Err(format!("{p}: only an existing file under {} can be deleted", if self.kind.deletable.is_empty() { "nothing here".to_owned() } else { self.kind.deletable.join(" or ") }));
-                }
-                Ok(format!("deleted {p}"))
-            }
-            "search" => {
-                let text = need("text")?.to_lowercase();
-                let scope = s("path").unwrap_or("").trim_end_matches('/');
-                let in_scope = |f: &str| scope.is_empty() || f == scope || f.starts_with(&format!("{scope}/"));
-                let mut hits = Vec::new();
-                let mut search = |f: &str, body: &str| {
-                    for (i, line) in body.lines().enumerate() {
-                        if hits.len() < 60 && line.to_lowercase().contains(&text) {
-                            hits.push(format!("{f}:{}: {}", i + 1, line.trim().chars().take(200).collect::<String>()));
-                        }
-                    }
-                };
-                for (f, body) in self.files.iter().chain(self.extra.iter()) {
-                    if in_scope(f) { search(f, body); }
-                }
-                for f in self.kind.files().into_iter().filter(|f| in_scope(f)) {
-                    if let Some(body) = self.kind.read(&f) { search(&f, &body); }
-                }
-                Ok(if hits.is_empty() { "nothing found".into() } else { hits.join("\n") })
-            }
-            other => Err(format!("no tool {other}")),
-        }
-    }
-}
-
-/// MCP content (the page's: `{type: text, text}`, `{type: image, data, mimeType}`) as the Messages API takes it.
-fn api_content(content: &[Value]) -> Value {
-    Value::Array(content.iter().filter_map(|c| match c["type"].as_str() {
-        Some("text") => Some(json!({ "type": "text", "text": c["text"].as_str().unwrap_or_default() })),
-        Some("image") => Some(json!({ "type": "image", "source": { "type": "base64", "media_type": c["mimeType"].as_str().unwrap_or("image/png"), "data": c["data"].as_str().unwrap_or_default() } })),
-        _ => None,
-    }).collect())
-}
-
-/// A tool result's content as the page's tools give it (`ToolContent`): texts, and images as base64 with their type.
-fn page_content(content: &Value) -> Value {
-    match content {
-        Value::String(s) => json!([{ "type": "text", "text": s }]),
-        Value::Array(blocks) => Value::Array(blocks.iter().map(|b| match b["type"].as_str() {
-            Some("image") => json!({ "type": "image", "mimeType": b["source"]["media_type"], "data": b["source"]["data"] }),
-            Some("text") => json!({ "type": "text", "text": b["text"] }),
-            _ => b.clone(),
-        }).collect()),
-        other => json!([{ "type": "text", "text": other.to_string() }]),
-    }
-}
-
-fn summary(name: &str, input: &Value) -> String {
-    match name {
-        "search" => format!("“{}”", input["text"].as_str().unwrap_or_default()),
-        "check" => String::new(),
-        _ => input["path"].as_str().unwrap_or_default().to_owned(),
     }
 }
 
@@ -488,7 +200,7 @@ pub struct Agents {
 
 impl Agents {
     pub fn new(model: Model, reference: Reference, viz_render: VizRender) -> Self {
-        let systems = ["view", "viz"].into_iter().map(|k| (k, reference.kind(k).expect("a kind the agent makes").system())).collect();
+        let systems = ["view", "viz"].into_iter().map(|k| (k, reference.kind(k).expect("a kind the agent makes").system(&SERVER_AGENT))).collect();
         let http = reqwest::Client::builder().timeout(Duration::from_secs(600)).build().expect("an HTTP client");
         Agents { jobs: Mutex::default(), http, model, reference, systems, viz_render }
     }
@@ -815,7 +527,7 @@ async fn run_turn(state: AppState, job: Arc<Job>, req: TurnRequest) {
     let mut asked: Option<Ask> = None;
     let mut ws = Workspace { files: req.files.clone(), extra, gestalts: &req.gestalts, kind };
     let system = agents.systems.get(kind.kind).and_then(|s| s.as_ref().ok()).cloned().unwrap_or_default();
-    let tools = kind.tools();
+    let tools = Value::Array(kind.tools(&SERVER_AGENT));
 
     let outcome: Result<(), String> = async {
         for _ in 0..MAX_STEPS {
@@ -1028,43 +740,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn draft_files() {
-        let r = Reference::new(PathBuf::from("/t/packages/workshop/agent-template"));
-        let view = r.kind("view").unwrap();
-        for ok in ["view.tsx", "view.json", "gestalts/noun@1.yml", "data/haus.yml"] {
-            assert!(view.is_draft_file(ok), "{ok}");
-        }
-        for bad in ["notes.md", "SPEC.md", "gestalts/Noun@1.yml", "gestalts/noun@01.yml", "data/../x.yml", "data/a/b.yml", "node_modules/x.ts", "viz.ts"] {
-            assert!(!view.is_draft_file(bad), "{bad}");
-        }
-        let viz = r.kind("viz").unwrap();
-        assert!(viz.is_draft_file("viz.ts") && viz.is_draft_file("package.json"));
-        for bad in ["SPEC.md", "files/a.csv", "view.tsx", "viz-sources/marks.ts"] {
-            assert!(!viz.is_draft_file(bad), "{bad}");
-        }
-        assert!(r.kind("sequence").is_none());
-    }
-
-    #[test]
     fn what_comes_before_a_fallback_is_left_out_but_the_fallback_stays() {
         let content = vec![json!({"type": "thinking", "thinking": ""}), json!({"type": "text", "text": "a"}), json!({"type": "tool_use", "id": "x"}), json!({"type": "fallback"}), json!({"type": "thinking"}), json!({"type": "tool_use", "id": "y"})];
         let kept: Vec<String> = echoable(&content).iter().map(|b| b["type"].as_str().unwrap().to_owned()).collect();
         assert_eq!(kept, ["text", "fallback", "thinking", "tool_use"]);
         assert_eq!(echoable(&content[..3]).len(), 3);
-    }
-
-    #[test]
-    fn the_reference_stays_in_its_roots() {
-        let r = Reference::new(PathBuf::from("/t/packages/workshop/agent-template"));
-        let view = r.kind("view").unwrap();
-        assert!(view.resolve("examples/noun-gender/view.tsx").is_some());
-        assert!(view.resolve("node_modules/@gestalts/kit/src/index.ts").is_some());
-        for bad in ["node_modules/react/index.js", "examples/../check.ts", "/etc/passwd", "node_modules/@gestalts/kit/package.json", "CLAUDE.md", "viz-sources/marks.ts"] {
-            assert!(view.resolve(bad).is_none(), "{bad}");
-        }
-        let viz = r.kind("viz").unwrap();
-        assert_eq!(viz.resolve("viz-sources/marks.ts"), Some(PathBuf::from("/t/packages/workshop/agent-template/../../viz/src/marks.ts")));
-        assert!(viz.resolve("examples/bezier/viz.ts").is_some());
-        assert!(viz.resolve("node_modules/@gestalts/kit/src/index.ts").is_none());
     }
 }

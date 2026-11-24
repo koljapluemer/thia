@@ -3,6 +3,8 @@
 //! server appends them to the run's record, untouched but for who sent them, and folds them into the index.
 //!
 //! - `POST /api/runs/{id}/events` `[envelope…]` (signed in): appends what's new of them
+//! - `POST /api/runs/{id}/rating` `{score, comment?}` (its account): a rating of a run the server recorded
+//!   ([`server_run`]), whose seqs are the server's to give
 //! - `POST /api/runs/blobs/missing` `[sha…]` → the ones not kept yet; `PUT /api/runs/blobs/{sha}` keeps one
 //! - admins: `GET /api/admin/runs` (a page of the index, filtered), `…/summary` (grouped), `…/facets`, `…/{id}` (its
 //!   events, in pages), `…/blobs/{sha}`, `POST …/{id}/notes`, `GET …/{id}/export` (a zip of its record and blobs)
@@ -11,6 +13,7 @@ pub mod cli;
 pub mod index;
 pub mod prices;
 pub mod read;
+pub mod server_run;
 pub mod store;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -38,7 +41,7 @@ const MAX_BLOB: usize = 64 * 1024 * 1024;
 /// at most this many runs' rows are summed for one summary
 pub const SUMMARY_ROWS: i64 = 10_000;
 
-fn server_provenance() -> Value {
+pub(crate) fn server_provenance() -> Value {
     json!({ "server": {
         "version": env!("CARGO_PKG_VERSION"), "commit": option_env!("GESTALTS_GIT_COMMIT"),
         "tag": option_env!("GESTALTS_BUILD"), "dirty": option_env!("GESTALTS_GIT_DIRTY").map(|v| v == "true"),
@@ -142,6 +145,32 @@ async fn append(State(state): State<AppState>, me: SignedIn, Path(id): Path<Stri
     Ok(Json(json!({ "accepted": accepted })))
 }
 
+#[derive(Deserialize)]
+struct Rating {
+    score: i64,
+    #[serde(default)]
+    comment: Option<String>,
+}
+
+/// The account's rating of one of its runs, at the next seq: for the runs the server records (a chat host's), where the
+/// page doesn't know the seqs.
+async fn rate(State(state): State<AppState>, me: SignedIn, Path(id): Path<String>, Json(r): Json<Rating>) -> ApiResult<StatusCode> {
+    if !(1..=5).contains(&r.score) { return Err(ApiError::BadRequest("score: 1 to 5".into())); }
+    let comment = r.comment.map(|c| c.trim().to_owned()).filter(|c| !c.is_empty());
+    if comment.as_ref().is_some_and(|c| c.len() > 20_000) { return Err(ApiError::BadRequest("a comment of at most 20000 characters".into())); }
+    let _w = state.runs.writes.lock().await;
+    let (mut s, rel) = state.db.with(|c| index::load(c, &id))?.ok_or(ApiError::NotFound)?;
+    if s.account != me.0.id { return Err(ApiError::NotFound); }
+    let seq = s.seen.last().map_or(0, |r| r.1 + 1);
+    let mut e = json!({ "v": 1, "run": id, "seq": seq, "at": now_iso(), "type": "rating", "score": r.score });
+    if let Some(c) = comment { e["comment"] = json!(c); }
+    s.first_time(seq);
+    s.fold(&e);
+    state.runs.store.append(&rel, &[e]).map_err(io)?;
+    state.db.with(|c| index::save(c, &id, &rel, &s))?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 async fn missing(State(state): State<AppState>, _me: SignedIn, Json(shas): Json<Vec<String>>) -> ApiResult<Json<Vec<String>>> {
     if shas.len() > MAX_BATCH { return Err(ApiError::TooLarge(format!("at most {MAX_BATCH} at once"))); }
     Ok(Json(shas.into_iter().filter(|s| is_sha(s) && !state.runs.store.has_blob(s)).collect()))
@@ -160,6 +189,7 @@ pub struct Filter {
     pub since: Option<String>,
     pub until: Option<String>,
     pub backend: Option<String>,
+    pub session: Option<String>,
     pub app_commit: Option<String>,
     pub server_commit: Option<String>,
     pub bridge_commit: Option<String>,
@@ -193,6 +223,7 @@ impl Filter {
         eq("started", &self.since, ">=");
         eq("started", &self.until, "<");
         eq("backend", &self.backend, "=");
+        eq("session", &self.session, "=");
         eq("app_commit", &self.app_commit, "LIKE");
         eq("server_commit", &self.server_commit, "LIKE");
         eq("bridge_commit", &self.bridge_commit, "LIKE");
@@ -225,6 +256,7 @@ pub struct Row {
     pub kind: Option<String>,
     pub purpose: Option<String>,
     pub backend: Option<String>,
+    pub session: Option<String>,
     pub app_commit: Option<String>,
     pub app_build: Option<String>,
     pub server_commit: Option<String>,
@@ -254,7 +286,7 @@ pub struct Row {
     pub notes: i64,
 }
 
-const COLUMNS: &str = "id, account, started, last_at, draft, kind, purpose, backend,
+const COLUMNS: &str = "id, account, started, last_at, draft, kind, purpose, backend, session,
     app_commit, app_build, server_commit, server_build, bridge_commit, bridge_version, provider_version,
     models, billing, outcome, waiting, wall_ms,
     first_output_ms, requests, input, output, cache_read, cache_write, cost_usd, tools, tool_failures, check_ok, files_changed,
@@ -263,12 +295,12 @@ const COLUMNS: &str = "id, account, started, last_at, draft, kind, purpose, back
 fn row(r: &rusqlite::Row<'_>) -> rusqlite::Result<Row> {
     Ok(Row {
         id: r.get(0)?, account: r.get(1)?, started: r.get(2)?, last_at: r.get(3)?, draft: r.get(4)?, kind: r.get(5)?, purpose: r.get(6)?,
-        backend: r.get(7)?, app_commit: r.get(8)?, app_build: r.get(9)?, server_commit: r.get(10)?, server_build: r.get(11)?,
-        bridge_commit: r.get(12)?, bridge_version: r.get(13)?, provider_version: r.get(14)?, models: r.get(15)?,
-        billing: r.get(16)?, outcome: r.get(17)?, waiting: r.get(18)?, wall_ms: r.get(19)?, first_output_ms: r.get(20)?,
-        requests: r.get(21)?, input: r.get(22)?, output: r.get(23)?, cache_read: r.get(24)?, cache_write: r.get(25)?,
-        cost_usd: r.get(26)?, tools: r.get(27)?, tool_failures: r.get(28)?, check_ok: r.get(29)?, files_changed: r.get(30)?,
-        errors: r.get(31)?, rating: r.get(32)?, comment: r.get(33)?, notes: r.get(34)?,
+        backend: r.get(7)?, session: r.get(8)?, app_commit: r.get(9)?, app_build: r.get(10)?, server_commit: r.get(11)?, server_build: r.get(12)?,
+        bridge_commit: r.get(13)?, bridge_version: r.get(14)?, provider_version: r.get(15)?, models: r.get(16)?,
+        billing: r.get(17)?, outcome: r.get(18)?, waiting: r.get(19)?, wall_ms: r.get(20)?, first_output_ms: r.get(21)?,
+        requests: r.get(22)?, input: r.get(23)?, output: r.get(24)?, cache_read: r.get(25)?, cache_write: r.get(26)?,
+        cost_usd: r.get(27)?, tools: r.get(28)?, tool_failures: r.get(29)?, check_ok: r.get(30)?, files_changed: r.get(31)?,
+        errors: r.get(32)?, rating: r.get(33)?, comment: r.get(34)?, notes: r.get(35)?,
     })
 }
 
@@ -327,6 +359,7 @@ pub fn summarize(all: &[Row], by: &str) -> Value {
             "purpose" => r.purpose.clone(),
             "day" => Some(r.started.chars().take(10).collect()),
             "draft" => r.draft.clone(),
+            "session" => r.session.clone(),
             "app-commit" => r.app_commit.clone(),
             "server-commit" => r.server_commit.clone(),
             "bridge-commit" => r.bridge_commit.clone(),
@@ -479,6 +512,7 @@ async fn export(State(state): State<AppState>, _admin: Admin, Path(id): Path<Str
 pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/runs/{id}/events", post(append).layer(DefaultBodyLimit::max(MAX_BATCH_BYTES)))
+        .route("/runs/{id}/rating", post(rate))
         .route("/runs/blobs/missing", post(missing))
         .route("/runs/blobs/{sha}", put(put_blob).layer(DefaultBodyLimit::max(MAX_BLOB)))
         .route("/admin/runs", get(list))

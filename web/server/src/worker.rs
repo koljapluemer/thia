@@ -2,7 +2,7 @@
 //! started on first use and again if it dies, spoken to in JSON lines; calls run concurrently and are matched to
 //! answers by id.
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::PathBuf;
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -139,4 +139,54 @@ impl Worker {
         }
         Ok(r["problems"].as_array().into_iter().flatten().filter_map(|p| p.as_str().map(str::to_owned)).collect())
     }
+
+    /// A view's draft as ymls (its view `view` among them) as the agent sees it: its files and its brief.
+    pub async fn files_of(&self, ymls: &BTreeMap<String, String>, view: &str) -> Result<(BTreeMap<String, String>, String), String> {
+        let r = self.call("files-of", json!({ "ymls": yml_list(ymls), "view": view })).await?;
+        let files = serde_json::from_value(r["files"].clone()).map_err(|e| format!("the worker's files: {e}"))?;
+        Ok((files, r["spec"].as_str().unwrap_or_default().to_owned()))
+    }
+
+    /// What changed files (`None`: deleted) make of a view's draft, as the page's `applyFiles` and `saveDraft` make it.
+    pub async fn apply_files(&self, ymls: &BTreeMap<String, String>, view: &str, changed: &BTreeMap<String, Option<String>>) -> Result<Applied, String> {
+        let r = self.call("apply-files", json!({ "ymls": yml_list(ymls), "view": view, "changed": changed })).await?;
+        let strings = |k: &str| r[k].as_array().into_iter().flatten().filter_map(|v| v.as_str().map(str::to_owned)).collect::<Vec<_>>();
+        Ok(Applied { put: ymls_of(&r["put"])?, remove: strings("remove"), problems: strings("problems") })
+    }
+
+    /// A new view draft's yml, as the page's `createDraft` makes it: its id and text.
+    pub async fn new_view(&self, draft: &str, title: &str, package: &str, lang: &str) -> Result<(String, String), String> {
+        let r = self.call("new-view", json!({ "draft": draft, "title": title, "package": package, "lang": lang })).await?;
+        one_yml(&r)
+    }
+
+    /// The view's yml with `spec` as its brief.
+    pub async fn set_spec(&self, ymls: &BTreeMap<String, String>, view: &str, spec: &str) -> Result<(String, String), String> {
+        let r = self.call("set-spec", json!({ "ymls": yml_list(ymls), "view": view, "spec": spec })).await?;
+        one_yml(&r)
+    }
+}
+
+/// What a change to a draft's files is as ymls: what to write (the view's last), which members are gone, and what
+/// couldn't be read.
+#[derive(Debug, Default)]
+pub struct Applied {
+    pub put: Vec<(String, String)>,
+    pub remove: Vec<String>,
+    pub problems: Vec<String>,
+}
+
+fn yml_list(ymls: &BTreeMap<String, String>) -> Vec<Value> {
+    ymls.iter().map(|(id, text)| json!({ "id": id, "text": text })).collect()
+}
+
+fn one_yml(v: &Value) -> Result<(String, String), String> {
+    match (v["id"].as_str(), v["text"].as_str()) {
+        (Some(id), Some(text)) => Ok((id.to_owned(), text.to_owned())),
+        _ => Err("the worker answered no yml".into()),
+    }
+}
+
+fn ymls_of(v: &Value) -> Result<Vec<(String, String)>, String> {
+    v.as_array().into_iter().flatten().map(one_yml).collect()
 }

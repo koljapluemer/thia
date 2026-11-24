@@ -142,6 +142,38 @@ const MIGRATIONS: &[&str] = &[r"
     ALTER TABLE accounts_new RENAME TO accounts;
     ALTER TABLE drafts_new RENAME TO drafts;
     ALTER TABLE publications_new RENAME TO publications;
+", r"
+    -- chat hosts (claude.ai) that act for an account over MCP: each registers itself (OAuth dynamic registration)
+    CREATE TABLE oauth_clients (
+        id TEXT PRIMARY KEY,
+        -- sha256 of its secret; null for a public client (PKCE only)
+        secret_hash TEXT,
+        name TEXT NOT NULL,
+        -- JSON array: where codes may go, matched exactly
+        redirect_uris TEXT NOT NULL,
+        created TEXT NOT NULL
+    );
+    CREATE TABLE oauth_codes (
+        code_hash TEXT PRIMARY KEY,
+        client TEXT NOT NULL REFERENCES oauth_clients(id) ON DELETE CASCADE,
+        account TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        redirect_uri TEXT NOT NULL,
+        -- PKCE: base64url(sha256(verifier))
+        challenge TEXT NOT NULL,
+        expires TEXT NOT NULL
+    );
+    CREATE TABLE oauth_tokens (
+        -- sha256 of the token, as sessions keep theirs
+        token_hash TEXT PRIMARY KEY,
+        -- access or refresh
+        kind TEXT NOT NULL,
+        client TEXT NOT NULL REFERENCES oauth_clients(id) ON DELETE CASCADE,
+        account TEXT NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+        -- when the account first allowed the client: kept across refreshes
+        since TEXT NOT NULL,
+        expires TEXT NOT NULL
+    );
+    CREATE INDEX oauth_tokens_by_account ON oauth_tokens(account, client);
 "];
 
 pub struct Db(Mutex<Connection>);
@@ -242,6 +274,8 @@ impl Db {
         let n = conn.execute("UPDATE accounts SET password = ?2 WHERE email = ?1", params![email, password_hash])?;
         // a new password signs every session out
         conn.execute("DELETE FROM sessions WHERE account IN (SELECT id FROM accounts WHERE email = ?1)", [email])?;
+        // and every chat host it allowed
+        conn.execute("DELETE FROM oauth_tokens WHERE account IN (SELECT id FROM accounts WHERE email = ?1)", [email])?;
         Ok(n == 1)
     }
 

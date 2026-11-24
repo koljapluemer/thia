@@ -13,7 +13,7 @@ web/
   site/                 the use app: every view (on its decks), the user's notes, curricula; data in the browser;
                         also plays published lessons' links on the lesson domain
   app/                  the make app: the workshop, the review, agent runs; behind an account
-  server/               the server (thia-server), its worker, docs and deploy/
+  server/               the server (thia-server), its worker, docs and deploy/; also MCP for chat apps (doc/mcp.md)
 installables/           optional, on the user's computer
   folder-sync/          gestalts-node: a folder synced with the app; desktop/ (tray), settings/
   claude-bridge/        lets a site you allow run Claude Code here, with the site's tools (the web app's agents)

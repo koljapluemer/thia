@@ -26,7 +26,7 @@ export function Workshop() {
   return <Drafts me={me} onOut={() => setMe(null)} />;
 }
 
-function Login({ onIn }: { onIn: (m: api.Me) => void }) {
+export function Login({ onIn }: { onIn: (m: api.Me) => void }) {
   const { m } = useLang();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

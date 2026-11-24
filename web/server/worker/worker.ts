@@ -9,6 +9,11 @@
 // - `check-viz {files, binary}`: `checkViz` on a viz as the agent sees it (`binary`: its `files/`, base64), rendered in
 //   headless Chromium (`render.ts`): `{ok, content}`, the report and a screenshot of each size as MCP content
 // - `compile {source}`: the view as the frame loads it
+// - `files-of {ymls, view}`: a view's draft as ymls, as the agent sees it: `{files, spec}` (`filesOf`)
+// - `apply-files {ymls, view, changed}`: what changed files (`null`: deleted) make of the draft (`applyFiles`), as ymls
+//   to write: `{put: [{id, text}], remove: [id], problems}`, the view's yml last
+// - `new-view {draft, title, package, lang, spec?}`: a new draft's view yml (`createDraft`): `{id, text}`
+// - `set-spec {ymls, view, spec}`: the view yml with its brief changed (`saveSpec`): `{id, text}`
 // - `npm {specifier, version}`: one bundle, from the cache when it was made before
 //
 // Env: THIA_NPM_CACHE.
@@ -20,8 +25,8 @@ import { nodePlatform } from '@gestalts/check/node';
 import { compile } from '@gestalts/view/compile';
 import type { Item, JsonMap } from '@gestalts/view';
 import { bundle, isVersion, packageName, resolveVersion } from '@gestalts/npm-bundle';
-import { asDraft, filesOf } from '@gestalts/workshop/draft';
-import { parse } from 'yaml';
+import { applyFiles, asDraft, createDraft, filesOf, saveDraft, saveSpec } from '@gestalts/workshop/draft';
+import { parse, stringify } from 'yaml';
 import { render } from './render.ts';
 
 const CACHE = resolve(process.env.THIA_NPM_CACHE ?? join(tmpdir(), 'gestalts-npm-cache'));
@@ -71,8 +76,10 @@ async function checkBundles(files: Record<string, string>): Promise<{ ok: boolea
   return { ok, lines };
 }
 
-/** A draft as ymls (`[{id, text}]`, its view `view` among them) as the agent sees it, as files. */
-function draftFiles(ymls: { id: string; text: string }[], view: string): Record<string, string> {
+type Yml = { id: string; text: string };
+
+/** A draft as ymls (`[{id, text}]`, its view `view` among them): the draft and its members as items. */
+function draftOf(ymls: Yml[], view: string): { draft: ReturnType<typeof asDraft>; members: Item[] } {
   const items = new Map<string, Item>();
   for (const { id, text } of ymls) {
     const value = parse(text) as JsonMap | null;
@@ -81,7 +88,35 @@ function draftFiles(ymls: { id: string; text: string }[], view: string): Record<
   const v = items.get(view);
   if (!v) throw new Error(`no view ${view}`);
   const draft = asDraft(v);
-  return filesOf(draft, draft.members.flatMap((m) => items.get(m) ?? []));
+  return { draft, members: draft.members.flatMap((m) => items.get(m) ?? []) };
+}
+
+/** A draft as ymls as the agent sees it, as files. */
+function draftFiles(ymls: Yml[], view: string): Record<string, string> {
+  const { draft, members } = draftOf(ymls, view);
+  return filesOf(draft, members);
+}
+
+const yml = (v: JsonMap): Yml => ({ id: String(v.id), text: stringify(v) });
+
+/** What `put` writes, as the page's repo would: the ymls a `Repo.put` was handed, in order. */
+async function captured(write: (repo: { put(v: JsonMap): Promise<Item> }) => Promise<unknown>): Promise<Yml[]> {
+  const out: Yml[] = [];
+  await write({ async put(v) { out.push(yml(v)); return { id: String(v.id), gestalt: String(v.gestalt ?? ''), value: v }; } });
+  return out;
+}
+
+/**
+ * Changed files as ymls to write, as the page's `saveDraft` writes them: definitions, the rest, then the view (its
+ * members those that are left). Deletions are the caller's (tombstones). Nothing is half-applied: the caller refuses
+ * the whole change when there are problems.
+ */
+async function applyHere(ymls: Yml[], view: string, changed: Record<string, string | null>) {
+  const { draft, members } = draftOf(ymls, view);
+  const change = applyFiles(draft, members, changed);
+  // the view's yml as `saveDraft` writes it, members and all; the members' ymls are `change.put`
+  const viewYml = await captured((repo) => saveDraft({ ...repo, async delete() { /* tombstones are the caller's */ return true; } }, { ...change, put: [] }));
+  return { put: [...change.put.map(yml), ...viewYml], remove: change.remove, problems: change.problems };
 }
 
 /** A viz's check with the render, as the agent's `check` tool answers. */
@@ -97,9 +132,23 @@ async function checkVizHere(files: Record<string, string>, binary: Record<string
 async function handle(req: Request): Promise<unknown> {
   switch (req.op) {
     case 'check': return check(req.files as Record<string, string>, (req.gestalts as string[]) ?? []);
-    case 'check-draft': return check(draftFiles(req.ymls as { id: string; text: string }[], String(req.view)), (req.gestalts as string[]) ?? []);
+    case 'check-draft': return check(draftFiles(req.ymls as Yml[], String(req.view)), (req.gestalts as string[]) ?? []);
     case 'check-viz': return checkVizHere(req.files as Record<string, string>, (req.binary as Record<string, string>) ?? {});
     case 'compile': return compile(String(req.source ?? ''));
+    case 'files-of': {
+      const { draft, members } = draftOf(req.ymls as Yml[], String(req.view));
+      return { files: filesOf(draft, members), spec: draft.spec };
+    }
+    case 'apply-files': return applyHere(req.ymls as Yml[], String(req.view), req.changed as Record<string, string | null>);
+    case 'new-view': {
+      const [v] = await captured((repo) => createDraft(repo, String(req.title), undefined, { id: String(req.draft), package: String(req.package), spec: typeof req.spec === 'string' ? req.spec : '' }, String(req.lang ?? 'en')));
+      return v;
+    }
+    case 'set-spec': {
+      const { draft } = draftOf(req.ymls as Yml[], String(req.view));
+      const [v] = await captured((repo) => saveSpec(repo, draft, String(req.spec ?? '')));
+      return v;
+    }
     case 'npm': return bundle(String(req.specifier), String(req.version), { cacheDir: CACHE });
     default: throw new Error(`no op ${req.op}`);
   }

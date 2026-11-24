@@ -133,6 +133,8 @@ export class Repo {
   private statusListeners = new Set<() => void>();
   private syncTimer: ReturnType<typeof setTimeout> | undefined;
   private pollTimer: ReturnType<typeof setInterval> | undefined;
+  /** how often it syncs while nothing is written here */
+  private pollMs = 15_000;
   /** direct mode: the node's change events */
   private events: WebSocket | undefined;
   private closed = false;
@@ -436,15 +438,27 @@ export class Repo {
     this.statusListeners.forEach((l) => l());
   }
 
-  /** Syncs with the connector at `url` now, then after each write and every 15 s. */
+  /** Syncs with the connector at `url` now, then after each write and every 15 s (or as `pollEvery` says). */
   async connect(url: string): Promise<void> {
     if (this.status.mode !== 'sync') return;
     log.info('connect', { url });
     try { localStorage.setItem(this.storageKey, url); } catch { /* not remembered */ }
     clearInterval(this.pollTimer);
     this.setStatus({ url, state: 'syncing', error: undefined, conflicts: [] });
-    this.pollTimer = setInterval(() => void this.sync(), 15_000);
+    this.pollTimer = setInterval(() => void this.sync(), this.pollMs);
     await this.sync();
+  }
+
+  /**
+   * How often it syncs while nothing is written here, from now on: more often while someone else changes the same
+   * folder (a chat app working on a draft), back to 15 s after.
+   */
+  pollEvery(ms: number) {
+    if (ms === this.pollMs) return;
+    this.pollMs = ms;
+    if (this.status.mode !== 'sync' || !this.status.url) return;
+    clearInterval(this.pollTimer);
+    this.pollTimer = setInterval(() => void this.sync(), ms);
   }
 
   /** Stops syncing without forgetting the connector, e.g. before opening the same folder again. */

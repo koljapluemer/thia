@@ -1,4 +1,5 @@
 /** The workshop server's API (web/server), on this origin under /api, with the session cookie. */
+import type { ViewError } from '@gestalts/view';
 
 export type Me = { email: string; school: string | null; admin: boolean; maintainer: boolean };
 /** What a draft makes: a learning view, a visualization, or a lesson of several views. */
@@ -100,3 +101,29 @@ export const exportUrl = (id: string) => `/api/drafts/${id}/export`;
 
 /** The repo folder a draft syncs with. */
 export const draftUrl = (id: string) => `${location.origin}/api/drafts/${id}`;
+
+/** A request a chat app (over MCP) worked on a draft for: what was asked, how it went, how the person rated it. */
+export type HostRun = {
+  id: string; started: string; outcome: string | null; checkOk: boolean | null; filesChanged: number;
+  rating: number | null; comment: string | null; message: string | null; label: string | null; open: boolean;
+};
+/** Whether a chat app works on the draft now, and its recent requests on it. */
+export const draftHost = (id: string) => api<{ active: boolean; runs: HostRun[] }>(`/drafts/${id}/mcp`);
+/** What the draft's preview reports now (nothing: it runs fine), for a chat app's check. */
+export const reportPreview = (id: string, errors: ViewError[]) => api<void>(`/drafts/${id}/diagnostics`, { method: 'POST', json: { errors } });
+/** The person's rating of a run the server recorded (a chat app's). */
+export const rateRun = (run: string, score: number, comment: string) => api<void>(`/runs/${run}/rating`, { method: 'POST', json: { score, comment } });
+
+/** A chat app the account allowed to work on its drafts (OAuth), since when. */
+export type Connection = { client: string; name: string; since: string };
+export const connections = () => api<Connection[]>('/oauth/connections');
+export const disconnect = (client: string) => api<void>(`/oauth/connections/${encodeURIComponent(client)}`, { method: 'DELETE' });
+/** An app's request to connect, as `/oauth/authorize` passed it on (its query). */
+export type ConnectRequest = Record<string, string>;
+export const connectingApp = (r: ConnectRequest) =>
+  api<{ name: string }>(`/oauth/client?client_id=${encodeURIComponent(r.client_id ?? '')}&redirect_uri=${encodeURIComponent(r.redirect_uri ?? '')}`);
+/** Allowing it, or not: where the browser goes next (back to the app). */
+export const allowApp = (r: ConnectRequest) => api<{ redirect: string }>('/oauth/approve', { method: 'POST', json: r });
+export const denyApp = (r: ConnectRequest) => api<{ redirect: string }>('/oauth/deny', { method: 'POST', json: r });
+/** Where a chat app reaches thia (the custom connector's address). */
+export const mcpUrl = () => `${location.origin}/mcp`;

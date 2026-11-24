@@ -252,7 +252,7 @@ mod tests {
     fn row() -> Row {
         Row {
             id: "r1".into(), account: "a".into(), started: "2026-11-23T10:00:00Z".into(), last_at: None, draft: Some("d".into()),
-            kind: Some("view".into()), purpose: Some("turn".into()), backend: Some("claude-cli".into()),
+            kind: Some("view".into()), purpose: Some("turn".into()), backend: Some("claude-cli".into()), session: None,
             app_commit: None, app_build: None, server_commit: None, server_build: None, bridge_commit: None,
             bridge_version: None, provider_version: None, models: None, billing: None,
             outcome: Some("completed".into()), waiting: false, wall_ms: Some(30_000), first_output_ms: Some(2000), requests: 1,

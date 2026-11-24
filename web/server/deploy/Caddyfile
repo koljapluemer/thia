@@ -10,6 +10,11 @@ lehrer.example.de {
 	handle /api/* {
 		reverse_proxy 127.0.0.1:7740
 	}
+	# chat hosts (claude.ai) reach drafts over MCP, and sign in for it with OAuth
+	@mcp path /mcp /oauth/* /.well-known/oauth-protected-resource /.well-known/oauth-protected-resource/* /.well-known/oauth-authorization-server
+	handle @mcp {
+		reverse_proxy 127.0.0.1:7740
+	}
 	@make path /workshop /workshop/* /review /review/* /runs /runs/*
 	handle @make {
 		root * /opt/thia-server/current/web

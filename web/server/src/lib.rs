@@ -23,8 +23,10 @@ use serde::Serialize;
 pub mod agent;
 pub mod auth;
 pub mod db;
+pub mod drafting;
 pub mod drafts;
 pub mod lessons;
+pub mod mcp;
 pub mod npm;
 pub mod promote;
 pub mod publish;
@@ -128,6 +130,8 @@ pub struct Inner {
     pub promote_into: Option<PathBuf>,
     /// the record of agent runs, `runs/`
     pub runs: runs::Runs,
+    /// chat hosts working on drafts over MCP: their sessions, and what the workshop reports for them
+    pub mcp: mcp::Mcp,
 }
 
 /// What the server runs besides itself.
@@ -176,6 +180,7 @@ impl AppState {
             misses: lessons::Misses::default(),
             promote_into: services.promote_into,
             runs,
+            mcp: mcp::Mcp::default(),
         })))
     }
 }
@@ -273,9 +278,11 @@ pub fn now_iso() -> String {
     gestalts_core::iso_datetime(now_ms())
 }
 
-/// The app's routes, under `/api`.
+/// The app's routes: its API under `/api`; MCP (`/mcp`) and what signs a chat host in for it (`/oauth/*`,
+/// `/.well-known/*`) at the root.
 pub fn app(state: AppState) -> axum::Router {
-    axum::Router::new().nest("/api", auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(sequence::routes()).merge(submissions::routes()).merge(runs::routes())).with_state(state)
+    let api = auth::routes().merge(drafts::routes()).merge(agent::routes()).merge(npm::routes()).merge(publish::routes()).merge(sequence::routes()).merge(submissions::routes()).merge(runs::routes()).merge(mcp::api_routes());
+    axum::Router::new().nest("/api", api).merge(mcp::public_routes()).with_state(state)
 }
 
 /// The lesson domain's routes.

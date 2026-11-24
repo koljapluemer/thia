@@ -5,7 +5,7 @@ web/app/src/workshop/      the app (/workshop): sign-in, drafts of each kind, th
 web/server/worker/         Node beside the server: compile and check a view or a viz (render.ts: headless Chromium), bundle npm
 web/site/                  the public site, whose build also runs a published lesson from its link
 web/app/src/review/        the review queue (/review): admins accept or reject submissions
-web/server/                thia-server: the API, the agent, publishing, the lesson domain, submissions
+web/server/                thia-server: the API, the agent, MCP for chat apps, publishing, the lesson domain, submissions
 packages/workshop/         drafts, Preview, Chat, the job protocol, the agent template, the Claude
                            bridge's client and the agents' tools (agents/), the lesson format (lesson.ts)
 packages/check/            the check every agent runs: in the page, and in the worker
@@ -38,6 +38,12 @@ model package in the repo, with a larger quota (`Limits::maintainer`), and one g
 within `MODELS`.
 
 ## The agent
+
+What an agent works on and against is shared by whoever runs its loop (`src/drafting/`): the contract for each kind
+(`contract.rs`), the draft's files and the tools over them (`workbench.rs`), and a `Driver` naming what differs (who
+asks the person, where the files come from, who records the run). The server's own agent is one driver. A chat app
+over MCP is another ([`mcp.md`](mcp.md)): Claude works on an account's view drafts with the same tools, signed in with
+OAuth, and each write is saved as the workshop saves one.
 
 Besides turns, `POST /api/drafts/<id>/agent/complete` `{system, prompt}` gives one answer without tools, at low effort,
 within the budget: the transport for features built on any agent (`AgentBackend.complete`; planning a lesson), which
@@ -124,7 +130,8 @@ under `runs/blobs/`. The `runs` table is an index folded from them (`src/runs/in
 whenever its `VERSION` changes, and by `admin reindex-runs`; cost is derived there from tokens and the dated prices in
 `src/runs/prices.rs`. A run is its account's: the first line says whose (`owner`), and only that account appends to
 it; admins read every run (`/api/admin/runs…`, or `admin runs …` in a terminal) and add notes. The server's own agent sends its usage, retries,
-tool results and responses as job events, which reach the record through the page like the rest. See
+tool results and responses as job events, which reach the record through the page like the rest. A chat app's
+requests over MCP don't pass through a page: the server records them itself, in the same format (`runs/server_run.rs`). See
 [`web/app/doc/workshop/runs.md`](../../app/doc/workshop/runs.md).
 
 ## Not yet

@@ -16,6 +16,7 @@ import * as api from './api';
 import { OpenDraft } from './open';
 import { SubmitMenu } from './submit';
 import { TextPane } from './TextPane';
+import { HostRuns, useHostWork, useReportPreview } from './host';
 
 /**
  * Where a view's draft is tried out: what it would go out in. An account's is a lesson's (the `lessons` distribution:
@@ -49,7 +50,10 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
   const items = useHostQuery({ gestalt: VIEWS, ids: [info.id] });
   const draft = useMemo(() => (items[0] ? asDraft(items[0]) : undefined), [items]);
   const [errors, setErrors] = useState<ViewError[]>([]);
-  const onError = useCallback((e: ViewError) => setErrors((es) => [...es, e].slice(-20)), []);
+  // what the preview reports goes with the next turn here, and to the server for a chat app's check
+  const report = useReportPreview(info.id, draft?.source);
+  const onError = useCallback((e: ViewError) => { setErrors((es) => [...es, e].slice(-20)); report(e); }, [report]);
+  const host = useHostWork(repo, info.id);
   const backend = usePickedBackend(agent, info.id);
   const runtime = registry.runtime.version;
   const base = useMemo(() => viewWork(repo, info.id, runtime), [repo, info.id, runtime]);
@@ -86,6 +90,7 @@ function Workbench({ repo, registry, info, agent, onChanged, onDeleted }: { repo
           </div>
           {tab === 'chat' ? (
             <>
+              <HostRuns {...host} />
               <Brief work={work} spec={draft.spec} edit={edit} flush={flush} placeholder={m.view_brief_placeholder()} />
               <div className="min-h-0 flex-1">
                 <Chat work={work} backend={backend} errors={errors} actions={buildActions(m, draft.spec, !isStarter(draft))} onTurnDone={() => setErrors([])} />

@@ -2,6 +2,7 @@ import { useArea } from './router';
 import { Review } from './review/Review';
 import { Runs } from './runs/Runs';
 import { Workshop } from './workshop/Workshop';
+import { CONNECT, Connect } from './workshop/Connect';
 
 /**
  * The make app: each area is a path. In the workshop, each draft is its own store, synced with the server
@@ -9,6 +10,11 @@ import { Workshop } from './workshop/Workshop';
  * /review. Using views is the site's (the use app), on the same origin when deployed.
  */
 export function App() {
+  // a chat app's request to connect is answered on a page of its own, outside the areas (which would drop its query)
+  return location.pathname === CONNECT ? <Connect /> : <ByArea />;
+}
+
+function ByArea() {
   const area = useArea();
   return (
     <>
