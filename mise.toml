@@ -130,6 +130,35 @@ description = "Build and install the Claude bridge on this machine, the way a us
 depends = ["claude-bridge:package"]
 run = "bash scripts/install-package.sh target/packages gestalts-claude-bridge"
 
+# --- the codex bridge ---
+
+[tasks.codex-bridge]
+hide = true
+description = "The Codex bridge headless for development on :7739 (scripts/codex-bridge.sh)"
+depends = ["setup"]
+run = "bash scripts/codex-bridge.sh"
+
+[tasks."codex-bridge:package"]
+hide = true
+description = "Codex bridge installers for this OS into target/packages"
+depends = ["icons:check"]
+shell = "bash -c"
+run = """
+set -euo pipefail
+case "$(uname -s)" in
+  Linux)  cargo packager -p gestalts-codex-bridge --release --formats deb,appimage
+          cargo generate-rpm -p installables/codex-bridge -o target/packages ;;
+  Darwin) cargo packager -p gestalts-codex-bridge --release --formats dmg ;;
+  *)      cargo packager -p gestalts-codex-bridge --release --formats nsis ;;
+esac
+"""
+
+[tasks."codex-bridge:install"]
+hide = true
+description = "Build and install the Codex bridge on this machine"
+depends = ["codex-bridge:package"]
+run = "bash scripts/install-package.sh target/packages gestalts-codex-bridge"
+
 # --- the ollama bridge (experimental) ---
 
 [tasks.ollama-bridge]

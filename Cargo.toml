@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/merge", "crates/core", "crates/fs", "crates/peer", "crates/wasm", "crates/node", "web/server", "installables/folder-sync/desktop", "installables/claude-bridge", "installables/ollama-bridge"]
+members = ["crates/merge", "crates/core", "crates/fs", "crates/peer", "crates/wasm", "crates/node", "web/server", "installables/folder-sync/desktop", "installables/claude-bridge", "installables/codex-bridge", "installables/ollama-bridge"]
 
 [workspace.package]
 edition = "2024"

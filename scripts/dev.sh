@@ -5,6 +5,7 @@
 #   - the use app (web/site): every view and visualization, the notes on the store in the browser, accepted workshop results
 #   - the Claude bridge (scripts/claude-bridge.sh): runs the agents (the claude CLI), with the pages' tools: the
 #     workshop's
+#   - the Codex bridge (scripts/codex-bridge.sh): the same protocol, with the signed-in Codex CLI
 #   - the Ollama bridge (scripts/ollama-bridge.sh, experimental): the same, with a local Ollama model
 #   - folder-sync, headless (scripts/node.sh): the plugin backends, /net and /llm for the home areas
 #   - the server (server-data/; its agent with ANTHROPIC_API_KEY), with the site's build to play lessons, and
@@ -39,6 +40,7 @@ take() {
 }
 take bridge 7737
 take ollamabridge 7738
+take codexbridge 7739
 # the node in a step of two: the port after it is its home-network port. Clear of an installed node on 7717
 take node 7727 2
 take serverapi 7740 2
@@ -63,7 +65,7 @@ prepare() {
 # dependencies, the wasm core and the agent template up to date (after a pull)
 prepare "dependencies" mise run setup
 # the binaries once, so the node and the server don't wait on each other's cargo
-prepare "Rust binaries" cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-ollama-bridge -p thia-server
+prepare "Rust binaries" cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-codex-bridge -p gestalts-ollama-bridge -p thia-server
 # the server plays lessons with the site built from here
 prepare "the site" pnpm --dir web/site build
 prepare "the site, installed as the lessons' player" cargo run -q -p thia-server -- --data server-data admin install-player --dist web/site/dist
@@ -85,6 +87,8 @@ serve servers bridge "Claude bridge" "http://127.0.0.1:$bridge" "$bridge" "the a
   env GESTALTS_BRIDGE_PORT="$bridge" scripts/claude-bridge.sh
 serve servers ollamabridge "Ollama bridge" "http://127.0.0.1:$ollamabridge" "$ollamabridge" "experimental: a local model, with the pages' tools" \
   env GESTALTS_OLLAMA_BRIDGE_PORT="$ollamabridge" scripts/ollama-bridge.sh
+serve servers codexbridge "Codex bridge" "http://127.0.0.1:$codexbridge" "$codexbridge" "the agents: codex, with the pages' tools" \
+  env GESTALTS_CODEX_BRIDGE_PORT="$codexbridge" scripts/codex-bridge.sh
 serve servers node "folder-sync" "http://127.0.0.1:$node" "$node" "plugin backends, /net, /llm · dev profile" \
   env GESTALTS_NODE_PORT="$node" scripts/node.sh
 servernote="API · lessons on :$serverlessons"
@@ -98,6 +102,7 @@ else login="lessons sign-in: your account, or mise run server:admin add-account 
 serve apps web "make app" "http://localhost:$web/workshop" "$web" "$login" \
   env VITE_AGENT_NODE="http://127.0.0.1:$bridge" \
   VITE_OLLAMA_NODE="http://127.0.0.1:$ollamabridge" \
+  VITE_CODEX_NODE="http://127.0.0.1:$codexbridge" \
   VITE_THIA_API="http://127.0.0.1:$serverapi" VITE_SITE="http://localhost:$site/" pnpm --dir web/app dev --port "$web" --strictPort
 serve apps site "use app" "http://localhost:$site/" "$site" "every view, your notes; what's accepted shows here once it's in plugins/" \
   env VITE_LESSONS="http://127.0.0.1:$serverlessons" VITE_GESTALTS_NODE="http://127.0.0.1:$node" VITE_MAKE="http://localhost:$web/workshop" \

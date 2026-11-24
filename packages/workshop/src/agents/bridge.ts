@@ -35,17 +35,17 @@ export type BridgeEvent = AgentEvent;
 
 export const INSTALL_BRIDGE = 'Install the Claude bridge and Claude Code on this computer, then start the bridge';
 
-const tokenKey = (url: string) => `claude-bridge:token:${url.replace(/\/+$/, '')}`;
-function token(url: string): string | undefined {
-  try { return localStorage.getItem(tokenKey(url)) ?? undefined; } catch { return undefined; }
+const tokenKey = (url: string, tokenPrefix = 'claude-bridge') => `${tokenPrefix}:token:${url.replace(/\/+$/, '')}`;
+function token(url: string, tokenPrefix?: string): string | undefined {
+  try { return localStorage.getItem(tokenKey(url, tokenPrefix)) ?? undefined; } catch { return undefined; }
 }
 
 const base = (url: string) => url.replace(/\/+$/, '');
 
 /** What the bridge at `url` says, or why there's no answer. `name` and `install` word it (the Claude bridge's by default). */
-export async function bridgeStatus<S = BridgeStatus>(url: string, name = 'Claude bridge', install = INSTALL_BRIDGE): Promise<S | string> {
+export async function bridgeStatus<S = BridgeStatus>(url: string, name = 'Claude bridge', install = INSTALL_BRIDGE, tokenPrefix?: string): Promise<S | string> {
   try {
-    const t = token(url);
+    const t = token(url, tokenPrefix);
     const r = await fetch(`${base(url)}/status`, { headers: t ? { Authorization: `Bearer ${t}` } : {} });
     if (!r.ok) return `the ${name} at ${base(url)} answered ${r.status}`;
     return (await r.json()) as S;
@@ -55,12 +55,12 @@ export async function bridgeStatus<S = BridgeStatus>(url: string, name = 'Claude
 }
 
 /** Asks the bridge to let this site use it; the person decides in a dialog on their computer. */
-export async function pairBridge(url: string, name = 'Claude bridge'): Promise<true | string> {
+export async function pairBridge(url: string, name = 'Claude bridge', tokenPrefix?: string): Promise<true | string> {
   try {
     const r = await fetch(`${base(url)}/pair`, { method: 'POST' });
     const body = (await r.json().catch(() => ({}))) as { token?: string; error?: string };
     if (!r.ok || !body.token) return body.error ?? `the ${name} answered ${r.status}`;
-    try { localStorage.setItem(tokenKey(url), body.token); } catch { return 'this browser keeps nothing: allow storage for this site'; }
+    try { localStorage.setItem(tokenKey(url, tokenPrefix), body.token); } catch { return 'this browser keeps nothing: allow storage for this site'; }
     return true;
   } catch {
     return `no ${name} answers at ${base(url)}`;
@@ -80,8 +80,8 @@ export async function bridgeAvailable(url: string): Promise<true | string> {
  * Runs one turn on the bridge at `url`, answering its tool calls with `tools`. Aborting `signal` stops claude; what
  * it changed until then still comes back.
  */
-export async function* runOnBridge(url: string, start: BridgeStart, tools: AgentTool[], signal: AbortSignal, name = 'Claude bridge'): AsyncIterable<BridgeEvent> {
-  const t = token(url);
+export async function* runOnBridge(url: string, start: BridgeStart, tools: AgentTool[], signal: AbortSignal, name = 'Claude bridge', tokenPrefix?: string): AsyncIterable<BridgeEvent> {
+  const t = token(url, tokenPrefix);
   const ws = new WebSocket(`${base(url).replace(/^http/, 'ws')}/runs${t ? `?token=${encodeURIComponent(t)}` : ''}`);
   const queue: BridgeEvent[] = [];
   let wake: (() => void) | undefined;
@@ -145,7 +145,7 @@ export function errorsFile(diagnostics: TurnRequest['diagnostics']): string {
 }
 
 /** Who runs on a bridge, and how the page tells whether it can. */
-export type OnBridge = { id: string; label: string; name: string; available: () => Promise<true | string> };
+export type OnBridge = { id: string; label: string; name: string; tokenPrefix?: string; available: () => Promise<true | string> };
 
 /**
  * A backend on the bridge at `url` (claude-bridge's protocol), for any kind of draft: what it's told, given and checked
@@ -156,7 +156,7 @@ export function onBridge(url: string, who: OnBridge): AgentBackend & { connect()
     id: who.id,
     label: who.label,
     available: who.available,
-    connect: () => pairBridge(url, who.name),
+    connect: () => pairBridge(url, who.name, who.tokenPrefix),
     async *turn(req: TurnRequest, signal: AbortSignal): AsyncIterable<AgentEvent> {
       const kind = contracts[req.kind ?? 'view'];
       const template = await kind.template();
@@ -171,13 +171,13 @@ export function onBridge(url: string, who: OnBridge): AgentBackend & { connect()
         workspace: req.view, session: req.session, prompt, files, binary: { ...template.binary, ...req.binary }, keep: kind.keep,
         system: systemOf(req.kind ?? 'view'), run: req.run,
       };
-      yield* runOnBridge(url, start, kind.tools(req), signal, who.name);
+      yield* runOnBridge(url, start, kind.tools(req), signal, who.name, who.tokenPrefix);
     },
     async complete(req: CompleteRequest, signal: AbortSignal): Promise<string> {
       // a run with nothing in its workspace, no tools of the page's and nothing kept: only what it says
       const start: BridgeStart = { workspace: req.view, prompt: req.prompt, system: req.system, files: {}, keep: 'nothing-is-kept', effort: 'low' };
       let text = '';
-      for await (const e of runOnBridge(url, start, [], signal, who.name)) {
+      for await (const e of runOnBridge(url, start, [], signal, who.name, who.tokenPrefix)) {
         if (e.type === 'text') text += e.text;
         else if (e.type === 'error') throw new Error(e.message);
       }

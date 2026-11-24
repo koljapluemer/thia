@@ -17,6 +17,7 @@ web/
 installables/           optional, on the user's computer
   folder-sync/          gestalts-node: a folder synced with the app; desktop/ (tray), settings/
   claude-bridge/        lets a site you allow run Claude Code here, with the site's tools (the web app's agents)
+  codex-bridge/         the same for the locally signed-in Codex CLI
   ollama-bridge/        the same with a local Ollama model, experimental
 scripts/      shared by the tasks
 ```
@@ -32,7 +33,7 @@ packaging tools as pinned in `mise.toml`; rustup picks up the Rust version (and 
 ```sh
 mise run just setup   # a new machine: the pinned tools and Rust, dependencies, the core in wasm, a local
                       # account; again after pulling
-mise run just dev     # the web app, the public site, the claude and ollama bridges, folder-sync and the server with hot reload:
+mise run just dev     # the web app, public site, Claude/Codex/Ollama bridges, folder-sync and server with hot reload:
                       # where each is, their output in target/dev/<name>.log
 ```
 
@@ -43,6 +44,7 @@ mise run check                                    # tests, lints, typechecks, de
 mise run web:dev                                  # the web app alone, hot reload
 mise run site:dev                                 # the public site alone, hot reload (site:build: static files)
 mise run claude-bridge                            # the Claude bridge alone, headless; localhost pages may use it
+mise run codex-bridge                             # the Codex bridge alone, headless; localhost pages may use it
 mise run ollama-bridge                            # the Ollama bridge (experimental) alone, the same way
 mise run node                                     # folder-sync headless: plugin backends, /net, /llm
 mise run node:dev                                 # the desktop node and its settings page, hot reload
@@ -51,4 +53,5 @@ mise run health-data ~/some-folder                # which ymls can't be used, an
 mise run serve ~/some-folder                      # the node headless with the repo's plugins
 mise run server:deploy                           # the server and app to its box (web/server/deploy/README.md)
 mise run claude-bridge:install                    # the Claude bridge installed here, as a user gets it
+mise run codex-bridge:install                     # the Codex bridge installed here, as a user gets it
 ```

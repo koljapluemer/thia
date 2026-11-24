@@ -1,6 +1,6 @@
 # Agent runs: the record, and `/runs`
 
-Every agent turn in the workshop is recorded, whichever backend runs it (the server's, Claude Code through the Claude
+Every agent turn in the workshop is recorded, whichever backend runs it (the server's, Claude Code or Codex through their
 bridge, Ollama through the Ollama bridge, Gemini in the page), so the agents can be compared and improved from what
 they actually did. The page records, since every turn passes through it (`runTurn`, `packages/workshop/src/turns.ts`);
 the server keeps the record (`web/server/src/runs/`); admins read it in `/runs`.
@@ -13,10 +13,10 @@ sends what it can of them:
 
 | event | what | sent by |
 |---|---|---|
-| `usage` | one model request: `model`, `input`, `output`, `cacheRead`, `cacheWrite`, `reasoning`, `ms`, `billing` (`api`, `subscription`, `free`), `costUsd` only when the provider says what the request cost | the server (each Messages call), the Claude bridge (each assistant message, once: the stream repeats a message per block), the Ollama bridge (`prompt_eval_count`, `eval_count`, `total_duration`), Gemini (`usageMetadata`, `modelVersion`: the model of the chain that answered) |
+| `usage` | one model request: `model`, `input`, `output`, `cacheRead`, `cacheWrite`, `reasoning`, `ms`, `billing` (`api`, `subscription`, `free`), `costUsd` only when the provider says what the request cost | the server, Claude and Codex bridges, Ollama bridge, and Gemini |
 | `tool_result` | how a tool call came out: `name`, `ok`, `ms`, `content` (texts, screenshots) | whoever runs the tool: the page for its own tools on the bridges (`timed`, `agents/tools.ts`), the server for all of its agent's, the Ollama bridge and Gemini for their file tools. Claude Code's own (Read, Edit…) are only in its raw stream |
 | `throttle` | a request turned away for now: `model`, `status`, `waitMs`, `reason` | the server (each retry), Gemini (each model paused after a 429 or 503) |
-| `trace` | the provider's answer as it came: `source`, `data` | the server (each response), the Claude bridge (every line of `claude -p`'s stream-json, and stderr), the Ollama bridge and Gemini (each reply) |
+| `trace` | the provider's answer as it came: `source`, `data` | the server, every Claude/Codex CLI JSONL line and stderr, the Ollama bridge, and Gemini |
 
 `done` may also say the backend's own `outcome` (`completed`, `failed`, `cancelled`) and the process's `exitCode`
 (the Claude bridge). Every field is optional: a backend that knows less sends less, and a new one needs nothing here

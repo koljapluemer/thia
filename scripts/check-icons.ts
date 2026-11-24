@@ -55,4 +55,7 @@ if (!desktopConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gesta
 const bridgeConfig = readFileSync('installables/claude-bridge/Cargo.toml', 'utf8');
 if (!bridgeConfig.includes('icons = ["assets/icon.png"]')) fail('the Claude bridge packager does not reference its icon');
 if (!bridgeConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gestalts-claude-bridge.png"')) fail('the Claude bridge RPM does not install its icon');
+const codexBridgeConfig = readFileSync('installables/codex-bridge/Cargo.toml', 'utf8');
+if (!codexBridgeConfig.includes('icons = ["../claude-bridge/assets/icon.png"]')) fail('the Codex bridge packager does not reference its icon');
+if (!codexBridgeConfig.includes('dest = "/usr/share/icons/hicolor/256x256/apps/gestalts-codex-bridge.png"')) fail('the Codex bridge RPM does not install its icon');
 console.log('Web and desktop icons are present and wired into their builds.');

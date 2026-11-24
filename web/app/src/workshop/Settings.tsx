@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useLang, type Messages } from '@gestalts/i18n';
-import { GEMINI_KEY_PAGE, geminiBackend, ollamaBackend, type AgentBackend } from '@gestalts/workshop';
-import { DEFAULT_NODE, DEFAULT_OLLAMA_NODE, cliAgent, nodeProblem, type AgentChoice, type AgentId } from './agent';
+import { GEMINI_KEY_PAGE, codexBackend, geminiBackend, ollamaBackend, type AgentBackend } from '@gestalts/workshop';
+import { DEFAULT_CODEX_NODE, DEFAULT_NODE, DEFAULT_OLLAMA_NODE, cliAgent, nodeProblem, type AgentChoice, type AgentId } from './agent';
 
 /** What the address field says for each bridge. */
 type BridgeText = { name: string; placeholder: string; backend: (url: string) => AgentBackend & { connect(): Promise<true | string> }; ok: string; start: string };
 const CLAUDE = (m: Messages): BridgeText => ({ name: m.claude_bridge(), placeholder: DEFAULT_NODE, backend: cliAgent, ok: m.claude_bridge_ok(), start: m.claude_bridge_start() });
+const CODEX = (m: Messages): BridgeText => ({ name: m.codex_bridge(), placeholder: DEFAULT_CODEX_NODE, backend: codexBackend, ok: m.codex_bridge_ok(), start: m.codex_bridge_start() });
 const OLLAMA = (m: Messages): BridgeText => ({ name: m.ollama_bridge(), placeholder: DEFAULT_OLLAMA_NODE, backend: ollamaBackend, ok: m.ollama_bridge_ok(), start: m.ollama_bridge_start() });
 
 const TEXT = (m: Messages): Record<AgentId, { name: string; about: ReactNode }> => ({
   server: { name: m.agent_server(), about: m.agent_server_about() },
   cli: { name: m.agent_cli(), about: m.agent_cli_about({ command: 'claude' }) },
+  codex: { name: m.agent_codex(), about: m.agent_codex_about({ command: 'codex' }) },
   ollama: { name: m.agent_ollama(), about: m.agent_ollama_about() },
   gemini: { name: m.agent_gemini(), about: m.agent_gemini_about() },
 });
@@ -22,6 +24,7 @@ export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onS
   const text = TEXT(m);
   const [order, setOrder] = useState(choice.order);
   const [node, setNode] = useState(choice.node);
+  const [codexNode, setCodexNode] = useState(choice.codexNode);
   const [ollamaNode, setOllamaNode] = useState(choice.ollamaNode);
   const [geminiKey, setGeminiKey] = useState(choice.geminiKey);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -30,6 +33,7 @@ export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onS
   const on = (id: AgentId) => order.some((o) => o.id === id && o.on);
   const problems: Partial<Record<AgentId, string>> = {
     cli: on('cli') ? nodeProblem(m, node.trim()) : undefined,
+    codex: on('codex') ? nodeProblem(m, codexNode.trim(), DEFAULT_CODEX_NODE) : undefined,
     ollama: on('ollama') ? nodeProblem(m, ollamaNode.trim(), DEFAULT_OLLAMA_NODE) : undefined,
     gemini: on('gemini') && !geminiKey.trim() ? m.gemini_key_missing() : undefined,
   };
@@ -44,7 +48,7 @@ export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onS
     e.preventDefault();
     if (blocked) return;
     const clean = (u: string) => u.trim().replace(/\/+$/, '');
-    onSave({ order, node: clean(node), ollamaNode: clean(ollamaNode), geminiKey: geminiKey.trim() });
+    onSave({ order, node: clean(node), codexNode: clean(codexNode), ollamaNode: clean(ollamaNode), geminiKey: geminiKey.trim() });
   };
 
   return (
@@ -71,6 +75,7 @@ export function Settings({ choice, onSave, onClose }: { choice: AgentChoice; onS
                   </div>
                 </div>
                 {o.on && o.id === 'cli' && <Node bridge={CLAUDE(m)} node={node} setNode={setNode} problem={problems.cli} />}
+                {o.on && o.id === 'codex' && <Node bridge={CODEX(m)} node={codexNode} setNode={setCodexNode} problem={problems.codex} />}
                 {o.on && o.id === 'ollama' && <Node bridge={OLLAMA(m)} node={ollamaNode} setNode={setOllamaNode} problem={problems.ollama} />}
                 {o.on && o.id === 'gemini' && <GeminiKey value={geminiKey} onChange={setGeminiKey} />}
               </li>

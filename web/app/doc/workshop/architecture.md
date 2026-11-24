@@ -20,8 +20,8 @@ web/app/src/workshop/
   SequencePane.tsx           a lesson of several views and vizzes: its steps, the planner, the play-through
   submit.tsx                 offering a draft for the public site
   move.tsx                   moving drafts this browser kept before the workshop moved to accounts
-  agent.ts, Settings.tsx     which agents make views, tried in the order set there: the server's, Claude Code through
-                             the Claude bridge, Ollama through the Ollama bridge (experimental), Gemini's free tier
+  agent.ts, Settings.tsx     which agents make views, tried in the order set there: the server's, Claude Code or Codex
+                             through their bridges, Ollama through its bridge (experimental), Gemini's free tier
   api.ts                     the server's API
   runs.ts                    where the agents' runs are recorded: the server's (runs.md)
 
@@ -42,6 +42,7 @@ packages/workshop/           shared by the panes:
                              agent too), a view's contract (CLAUDE.md) and examples, the lesson planner's instructions
 packages/check/              the `check` tool, run in the page (and in Node, by the tests)
 installables/claude-bridge/  runs `claude -p` on this computer for a site the person allowed
+installables/codex-bridge/   runs `codex exec` with the same page protocol, isolated workspace and page tools
 installables/ollama-bridge/  the same protocol, with an Ollama model asked with tools in a loop (experimental)
 ```
 
@@ -91,7 +92,7 @@ A turn is the same for every kind and either agent (`Chat` over `Work`): the dra
 files the turn changed come back and are written, what couldn't be saved goes with the next message. Then the kind
 may check what's there itself (`settle`): a viz is built and rendered in the page, and its page kept only when that
 passes. Which agent runs the turn is Settings': the server's (API calls, within the account's budget) or Claude Code
-through the Claude bridge (your own plan, no API tokens), which is how anything is tried locally for free.
+through the Claude bridge, or Codex CLI through the Codex bridge (your own plans, no app API tokens).
 Experimental: a local Ollama model through the Ollama bridge. The page sends it the same as the Claude bridge, and
 it runs its own file tools on the files in memory ([its README](../../../../installables/ollama-bridge/README.md)).
 

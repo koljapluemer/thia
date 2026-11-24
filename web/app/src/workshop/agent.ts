@@ -1,23 +1,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Messages } from '@gestalts/i18n';
-import { bridgeBackend, geminiBackend, httpBackend, ollamaBackend, useRunning, type AgentBackend } from '@gestalts/workshop';
-import { AGENT_NODE, OLLAMA_NODE } from '../nodes';
+import { bridgeBackend, codexBackend, geminiBackend, httpBackend, ollamaBackend, useRunning, type AgentBackend } from '@gestalts/workshop';
+import { AGENT_NODE, CODEX_NODE, OLLAMA_NODE } from '../nodes';
 
 /**
  * Who works on a draft, whatever its kind: the server's agent (on our API key, within the account's budget); the
  * claude CLI on this computer, through the claude bridge (`mise run claude-bridge`), which costs no API tokens;
+ * Codex CLI on this computer through the Codex bridge (`mise run codex-bridge`);
  * experimental, a local Ollama model through the Ollama bridge (`mise run ollama-bridge`); or Google's free Gemini
  * models on the person's own key, from this page. They're tried in the order set in Settings: a turn goes to the
  * first one switched on that's available. Kept in this browser, since the bridges and the key are this computer's.
  */
-export type AgentId = 'server' | 'cli' | 'ollama' | 'gemini';
-export const AGENTS: AgentId[] = ['server', 'cli', 'ollama', 'gemini'];
-export type AgentChoice = { order: { id: AgentId; on: boolean }[]; node: string; ollamaNode: string; geminiKey: string };
+export type AgentId = 'server' | 'cli' | 'codex' | 'ollama' | 'gemini';
+export const AGENTS: AgentId[] = ['server', 'cli', 'codex', 'ollama', 'gemini'];
+export type AgentChoice = { order: { id: AgentId; on: boolean }[]; node: string; codexNode: string; ollamaNode: string; geminiKey: string };
 
 const KEY = 'workshop:agent';
 /** where it was kept before, read once when there's nothing under `KEY` */
 const OLD_KEY = 'teacher:agent';
 export const DEFAULT_NODE: string = AGENT_NODE;
+export const DEFAULT_CODEX_NODE: string = CODEX_NODE;
 export const DEFAULT_OLLAMA_NODE: string = OLLAMA_NODE;
 
 const isAgent = (a: unknown): a is AgentId => AGENTS.includes(a as AgentId);
@@ -30,7 +32,7 @@ function complete(order: { id: AgentId; on: boolean }[]): { id: AgentId; on: boo
 }
 
 export function loadChoice(): AgentChoice {
-  const choice: AgentChoice = { order: complete([]), node: DEFAULT_NODE, ollamaNode: DEFAULT_OLLAMA_NODE, geminiKey: '' };
+  const choice: AgentChoice = { order: complete([]), node: DEFAULT_NODE, codexNode: DEFAULT_CODEX_NODE, ollamaNode: DEFAULT_OLLAMA_NODE, geminiKey: '' };
   try {
     const v = JSON.parse(localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY) ?? 'null') as (Partial<AgentChoice> & { agent?: unknown }) | null;
     if (!v) return choice;
@@ -39,7 +41,7 @@ export function loadChoice(): AgentChoice {
       ? v.order.filter((o) => isAgent(o?.id)).map((o) => ({ id: o.id, on: o.on === true }))
       // before the list: one agent, picked
       : isAgent(v.agent) ? [{ id: v.agent, on: true }] : [];
-    return { order: complete(order), node: text(v.node, DEFAULT_NODE), ollamaNode: text(v.ollamaNode, DEFAULT_OLLAMA_NODE), geminiKey: text(v.geminiKey, '') };
+    return { order: complete(order), node: text(v.node, DEFAULT_NODE), codexNode: text(v.codexNode, DEFAULT_CODEX_NODE), ollamaNode: text(v.ollamaNode, DEFAULT_OLLAMA_NODE), geminiKey: text(v.geminiKey, '') };
   } catch {
     return choice;
   }
@@ -75,6 +77,7 @@ export function geminiAgent(key: string): AgentBackend {
 
 export function backendOf(id: AgentId, choice: AgentChoice, draft: string): AgentBackend {
   if (id === 'cli') return cliAgent(choice.node);
+  if (id === 'codex') return codexBackend(choice.codexNode);
   if (id === 'ollama') return ollamaBackend(choice.ollamaNode);
   if (id === 'gemini') return geminiAgent(choice.geminiKey);
   return httpBackend(`/api/drafts/${draft}/agent`, { id: 'server', label: 'Claude' });

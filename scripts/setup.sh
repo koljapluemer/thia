@@ -31,7 +31,7 @@ step "dependencies, the core in wasm, the agent template"
 mise run setup
 
 step "the Rust binaries"
-cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p thia-server
+cargo build -q -p gestalts-node-desktop -p gestalts-claude-bridge -p gestalts-codex-bridge -p thia-server
 
 admin() { cargo run -q -p thia-server -- --data server-data admin "$@"; }
 if [[ ! -e server-data/dev-login.txt ]]; then
@@ -49,6 +49,7 @@ if [[ -e server-data/dev-login.txt ]]; then admin grant-admin dev@localhost && a
 
 step "optional"
 command -v claude > /dev/null || echo "no claude CLI: the workshop's local agent needs it, and it's the only one that builds visualizations (https://claude.com/claude-code)"
+command -v codex > /dev/null || echo "no codex CLI: install it and sign in to use Codex from the workshop"
 [[ -n "${ANTHROPIC_API_KEY:-}" ]] || echo "no ANTHROPIC_API_KEY: the server's own agent stays off in just dev (the local CLI agent works without it)"
 
 printf '\nReady: mise run just dev\n'

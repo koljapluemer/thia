@@ -25,8 +25,8 @@ packages/npm-bundle npm packages for views, installed without scripts, bundled a
 packages/viz      @gestalts/viz: interactive visualizations (params, clock, model, scene) and their runtime; imports nothing of ours
 plugins/          the views that live in source: notes, flashcards, sources, concepts
 web/              the web app (app/), the public site (site/), the page the Android app wraps (android/), the server
-installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings), claude-bridge
-                  (Claude Code for a site the person allowed, with the site's tools)
+installables/     optional tools on the user's computer: folder-sync (gestalts-node: tray, settings), Claude and Codex
+                  bridges (local subscription CLIs for an allowed site, with the site's tools)
 sdk/python        gestalts_backend.py, what a backend.py imports
 ```
 

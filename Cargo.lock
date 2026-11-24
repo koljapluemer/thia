@@ -1229,6 +1229,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "gestalts-codex-bridge"
+version = "0.1.0"
+dependencies = [
+ "auto-launch",
+ "axum",
+ "base64 0.22.1",
+ "clap",
+ "directories",
+ "futures-util",
+ "png",
+ "regex",
+ "reqwest",
+ "rfd",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tao",
+ "tempfile",
+ "tokio",
+ "tokio-tungstenite",
+ "tower-http",
+ "tray-icon",
+ "uuid",
+]
+
+[[package]]
 name = "gestalts-core"
 version = "0.1.0"
 dependencies = [
